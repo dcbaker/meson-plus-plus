@@ -7,6 +7,9 @@
 
 %%
 
-int main(void) {
-    yylex();
+int main() {
+    yyFlexLexer lexer{};
+    while(lexer.yylex() != 0)
+        ;
+    return 0;
 }
