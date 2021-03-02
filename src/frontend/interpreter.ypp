@@ -1,0 +1,24 @@
+%{
+    #include <string>
+    #include "node.hpp"
+
+    node::Block * rootBlock;  // Root AST block of the whole program
+%}
+
+%union {
+    node::Node * node;
+    node::Expression * expr;
+    node::Statement * stmt
+    std::string * string;
+    int token;
+}
+
+%token <string> TIDENTIFIER TINTEGER;
+
+%start program
+
+%%
+
+
+
+%%

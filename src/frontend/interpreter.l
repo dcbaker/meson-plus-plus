@@ -5,13 +5,22 @@
 %option nodefault
 
 %{
+    #include <string>
+    #include <iostream>
+
+    #include "node.hpp"
+    #include "interpreter.hpp"
+
+    #define SAVE_TOKEN yylval.string = new std::string>{yytext, yyleng}
+    #define TOKEN(t) (yylval.token = t)
 %}
 
 %%
 
-,                 { std::cout << "comma" << std::endl;}
-[0-9]+            { std::cout << "number: " << yytext << std::endl; }
-[a-zA-Z0-9_.+-]+  { std::cout << "string: " << yytext << std::endl; }
+[ \t\n]                    ;  // Ignore whitespace
+[a-zA-Z_][a-zA-Z0-9_]*     { SAVE_TOKEN; return TIDENTIFIER; }
+[0-9]+                     { SAVE_TOKEN; return TINTEGER; }
+.                          { std::cerr << "Uknown token: " << yytext << std::endl; yyterminate(); }
 
 %%
 

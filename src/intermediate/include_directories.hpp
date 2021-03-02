@@ -10,6 +10,7 @@ class IncludeDirectories {
 public:
     IncludeDirectories() : dirs() {};
     IncludeDirectories(const std::vector<std::string> d) : dirs{d} {};
+    IncludeDirectories(const IncludeDirectories &inc) = delete;
     std::vector<std::string> getDirs() { return dirs; };
 private:
     const std::vector<std::string> dirs;
