@@ -9,9 +9,11 @@
     #include <iostream>
 
     #include "node.hpp"
-    #include "interpreter.hpp"
+    #include "interpreter.tab.hpp"
 
-    #define SAVE_TOKEN yylval.string = new std::string>{yytext, yyleng}
+    extern int yylex();
+
+    #define SAVE_TOKEN yylval.string = new std::string{yytext, static_cast<std::string::size_type>(yyleng)}
     #define TOKEN(t) (yylval.token = t)
 %}
 
@@ -23,12 +25,3 @@
 .                          { std::cerr << "Uknown token: " << yytext << std::endl; yyterminate(); }
 
 %%
-
-int main() {
-    yyFlexLexer lexer{};
-
-    while(lexer.yylex() != 0) {
-        ;
-    }
-    return 0;
-}
