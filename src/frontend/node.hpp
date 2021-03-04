@@ -82,14 +82,15 @@ private:
 
 class Assignment : public Expression {
 public:
-    Assignment(const Identifier & l, std::unique_ptr<Expression> & r) : lhs{l}, rhs{std::move(r)} {};
+    Assignment(std::unique_ptr<Identifier> && l, std::unique_ptr<Expression> && r) :
+        lhs{std::move(l)}, rhs{std::move(r)} {};
     ~Assignment() {};
 
     virtual std::string as_string() const override {
-        return lhs.as_string() + " = " + rhs->as_string();
+        return lhs->as_string() + " = " + rhs->as_string();
     }
 private:
-    const Identifier lhs;
+    const std::unique_ptr<Identifier> lhs;
     const std::unique_ptr<Expression> rhs;
 };
 

@@ -64,7 +64,10 @@ expression : literal                { $$ = std::move($1); }
            | assignment_expression  { $$ = std::move($1); }
            ;
 
-assignment_expression : identifier_expression EQUAL expression { $$ = std::make_unique<AST::Assignment>(*$1, $3); }
+subscript_expression : expression "[" expression "]"
+                     ;
+
+assignment_expression : identifier_expression EQUAL expression { $$ = std::make_unique<AST::Assignment>(std::move($1), std::move($3)); }
                       ;
 
 literal : integer_literal  { $$ = std::move($1); }
