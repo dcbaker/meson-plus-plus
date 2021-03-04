@@ -35,6 +35,7 @@ using token = Frontend::Parser::token;
 0o[0-7]+                        { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }
 [0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::DECIMAL_NUMBER; }
 "="                             { return token::EQUAL; }
+<<EOF>>                         { return token::END; }
 .                               { std::cerr << "unknown statement: " << yytext << std::endl; }
 
 %%

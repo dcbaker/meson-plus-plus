@@ -95,8 +95,8 @@ private:
 
 class CodeBlock : public Expression {
 public:
-    CodeBlock() {};
-    CodeBlock(std::unique_ptr<Expression> & expr) {
+    CodeBlock() : expressions{} {} ;
+    CodeBlock(std::unique_ptr<Expression> & expr) : expressions{} {
         expressions.push_back(std::move(expr));
     };
     ~CodeBlock() {};

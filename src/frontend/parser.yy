@@ -53,11 +53,11 @@
 
 %%
 
-program : expressions               { block = std::move($1); }
+program : expressions END              { block = std::move($1); }
         ;
 
 expressions : expression                { $$ = std::make_unique<AST::CodeBlock>($1); }
-            | expressions expression    { $1->expressions.push_back(std::move($2)); }
+            | expressions expression    { $1->expressions.push_back(std::move($2)); $$ = std::move($1); }
 
 expression : literal                { $$ = std::move($1); }
            | identifier_expression  { $$ = std::move($1); }
