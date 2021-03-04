@@ -94,6 +94,20 @@ private:
     const std::unique_ptr<Expression> rhs;
 };
 
+class Subscript : public Expression {
+public:
+    Subscript(std::unique_ptr<Expression> && l, std::unique_ptr<Expression> && r) :
+        lhs{std::move(l)}, rhs{std::move(r)} {};
+    ~Subscript() {};
+
+    virtual std::string as_string() const override {
+        return lhs->as_string() + "[" + rhs->as_string() + "]";
+    }
+private:
+    const std::unique_ptr<Expression> lhs;
+    const std::unique_ptr<Expression> rhs;
+};
+
 class CodeBlock : public Expression {
 public:
     CodeBlock() : expressions{} {} ;
