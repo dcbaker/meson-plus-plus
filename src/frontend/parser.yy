@@ -45,6 +45,8 @@
 %nterm <std::unique_ptr<AST::Number>>          decimal_literal
 %nterm <std::unique_ptr<AST::Number>>          octal_literal
 %nterm <std::unique_ptr<AST::Boolean>>         boolean_literal
+%nterm <std::unique_ptr<AST::String>>          string_literal
+%nterm <std::unique_ptr<AST::Identifier>>      identifier_expression
 
 %%
 
@@ -68,7 +70,7 @@ literal : integer_literal
 boolean_literal : BOOL { $$ = std::make_unique<AST::Boolean>($1); }
                 ;
 
-string_literal : STRING
+string_literal : STRING { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 1)); }
                ;
 
 integer_literal : hex_literal
@@ -85,7 +87,7 @@ decimal_literal : DECIMAL_NUMBER { $$ = std::make_unique<AST::Number>($1); }
 octal_literal : OCTAL_NUMBER { $$ = std::make_unique<AST::Number>($1); }
               ;
 
-identifier_expression : IDENTIFIER
+identifier_expression : IDENTIFIER { $$ = std::make_unique<AST::Identifier>($1); }
                       ;
 
 %%

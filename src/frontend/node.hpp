@@ -26,7 +26,7 @@ public:
         return std::to_string(value);
     }
 private:
-    int64_t value;
+    const int64_t value;
 };
 
 class Boolean : public Node {
@@ -38,7 +38,32 @@ public:
         return value ? "true" : "false";
     }
 private:
-    bool value;
+    const bool value;
+};
+
+class String : public Node {
+public:
+    String(const std::string & str) : value{str} {};
+    ~String() {};
+
+    explicit operator std::string() const {
+        // XXX: should this return '{value}'?
+        return value;
+    }
+private:
+    const std::string value;
+};
+
+class Identifier : public Node {
+public:
+    Identifier(const std::string & str) : value{str} {};
+    ~Identifier() {};
+
+    explicit operator std::string() const {
+        return value;
+    }
+private:
+    const std::string value;
 };
 
 }
