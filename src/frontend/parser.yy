@@ -18,7 +18,9 @@
 
 }
 
-%parse-param { Scanner  &scanner }
+%parse-param { Scanner & scanner }
+%parse-param { std::unique_ptr<AST::CodeBlock> & block }
+
 
 %code {
     #include <iostream>
@@ -47,19 +49,22 @@
 %nterm <std::unique_ptr<AST::Identifier>>      identifier_expression
 %nterm <std::unique_ptr<AST::Assignment>>      assignment_expression
 %nterm <std::unique_ptr<AST::Expression>>      literal expression
+%nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
 
 %%
 
-program : expression
-        | program expression
+program : expressions               { block = std::move($1); }
         ;
+
+expressions : expression                { $$ = std::make_unique<AST::CodeBlock>($1); }
+            | expressions expression    { $1->expressions.push_back(std::move($2)); }
 
 expression : literal                { $$ = std::move($1); }
            | identifier_expression  { $$ = std::move($1); }
            | assignment_expression  { $$ = std::move($1); }
            ;
 
-assignment_expression : identifier_expression EQUAL expression { $$ = std::make_unique<AST::Assignment>(*$1, *$3); }
+assignment_expression : identifier_expression EQUAL expression { $$ = std::make_unique<AST::Assignment>(*$1, $3); }
                       ;
 
 literal : integer_literal  { $$ = std::move($1); }
@@ -70,7 +75,7 @@ literal : integer_literal  { $$ = std::move($1); }
 boolean_literal : BOOL { $$ = std::make_unique<AST::Boolean>($1); }
                 ;
 
-string_literal : STRING { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 1)); }
+string_literal : STRING { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 2)); }
                ;
 
 integer_literal : hex_literal       { $$ = std::move($1); }

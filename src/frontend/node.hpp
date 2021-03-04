@@ -13,11 +13,21 @@ namespace Frontend::AST {
 class Node {
 public:
     virtual ~Node() {};
+    virtual std::string as_string() const = 0;
 protected:
     Node() {};
 };
 
-class Expression : public Node {};
+class Expression : public Node {
+public:
+    Expression() {};
+    ~Expression() {};
+
+    virtual std::string as_string() const {
+        return "Base Expression";
+    }
+};
+
 class Statement : public Node {};
 
 typedef std::vector<std::unique_ptr<Expression>> ExpressionList;
@@ -27,7 +37,7 @@ public:
     Number(const int64_t & number) : value{number} {};
     ~Number() {};
 
-    explicit operator std::string() const {
+    virtual std::string as_string() const override {
         return std::to_string(value);
     }
 private:
@@ -39,7 +49,7 @@ public:
     Boolean(const bool & b) : value{b} {};
     ~Boolean() {};
 
-    explicit operator std::string() const {
+    virtual std::string as_string() const override {
         return value ? "true" : "false";
     }
 private:
@@ -51,9 +61,8 @@ public:
     String(const std::string & str) : value{str} {};
     ~String() {};
 
-    explicit operator std::string() const {
-        // XXX: should this return '{value}'?
-        return value;
+    virtual std::string as_string() const override {
+        return "'" + value + "'";
     }
 private:
     const std::string value;
@@ -64,7 +73,7 @@ public:
     Identifier(const std::string & str) : value{str} {};
     ~Identifier() {};
 
-    explicit operator std::string() const {
+    virtual std::string as_string() const override {
         return value;
     }
 private:
@@ -73,11 +82,29 @@ private:
 
 class Assignment : public Expression {
 public:
-    Assignment(const Identifier & l, const Expression & r) : lhs{l}, rhs{r} {};
+    Assignment(const Identifier & l, std::unique_ptr<Expression> & r) : lhs{l}, rhs{std::move(r)} {};
     ~Assignment() {};
+
+    virtual std::string as_string() const override {
+        return lhs.as_string() + " = " + rhs->as_string();
+    }
 private:
     const Identifier lhs;
-    const Expression rhs;
+    const std::unique_ptr<Expression> rhs;
+};
+
+class CodeBlock : public Expression {
+public:
+    CodeBlock() {};
+    CodeBlock(std::unique_ptr<Expression> & expr) {
+        expressions.push_back(std::move(expr));
+    };
+    ~CodeBlock() {};
+
+    virtual std::string as_string() const override;
+
+    // XXX: this should probably be a statement list
+    ExpressionList expressions;
 };
 
 }

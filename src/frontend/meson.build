@@ -20,7 +20,7 @@ scanner = custom_target(
 
 libfrontend = static_library(
   'frontend',
-  [parser, scanner],
+  [parser, scanner, 'node.cpp'],
 )
 
 executable(
