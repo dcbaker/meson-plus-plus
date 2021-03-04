@@ -10,14 +10,15 @@ namespace Frontend::AST {
 
 class Node {
 public:
+    virtual ~Node() {};
+protected:
     Node() {};
-    ~Node() {};
 };
 
 class Expression : public Node {};
 class Statement : public Node {};
 
-class Number : public Node {
+class Number : public Expression {
 public:
     Number(const int64_t & number) : value{number} {};
     ~Number() {};
@@ -29,7 +30,7 @@ private:
     const int64_t value;
 };
 
-class Boolean : public Node {
+class Boolean : public Expression {
 public:
     Boolean(const bool & b) : value{b} {};
     ~Boolean() {};
@@ -41,7 +42,7 @@ private:
     const bool value;
 };
 
-class String : public Node {
+class String : public Expression {
 public:
     String(const std::string & str) : value{str} {};
     ~String() {};
@@ -54,7 +55,7 @@ private:
     const std::string value;
 };
 
-class Identifier : public Node {
+class Identifier : public Expression {
 public:
     Identifier(const std::string & str) : value{str} {};
     ~Identifier() {};
