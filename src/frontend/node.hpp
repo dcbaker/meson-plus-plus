@@ -5,6 +5,8 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+#include <memory>
 
 namespace Frontend::AST {
 
@@ -17,6 +19,8 @@ protected:
 
 class Expression : public Node {};
 class Statement : public Node {};
+
+typedef std::vector<std::unique_ptr<Expression>> ExpressionList;
 
 class Number : public Expression {
 public:
@@ -65,6 +69,15 @@ public:
     }
 private:
     const std::string value;
+};
+
+class Assignment : public Expression {
+public:
+    Assignment(const Identifier & l, const Expression & r) : lhs{l}, rhs{r} {};
+    ~Assignment() {};
+private:
+    const Identifier lhs;
+    const Expression rhs;
 };
 
 }

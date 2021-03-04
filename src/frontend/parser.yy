@@ -35,18 +35,18 @@
 %define api.value.type variant
 %define parse.assert
 
-%token <std::string>    IDENTIFIER
-%token <std::string>    STRING
+%token <std::string>    IDENTIFIER STRING
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
+%token                  EQUAL
 %token                  END                 0
 
-%nterm <std::unique_ptr<AST::Number>>          hex_literal
-%nterm <std::unique_ptr<AST::Number>>          decimal_literal
-%nterm <std::unique_ptr<AST::Number>>          octal_literal
+%nterm <std::unique_ptr<AST::Number>>          hex_literal decimal_literal octal_literal integer_literal
 %nterm <std::unique_ptr<AST::Boolean>>         boolean_literal
 %nterm <std::unique_ptr<AST::String>>          string_literal
 %nterm <std::unique_ptr<AST::Identifier>>      identifier_expression
+%nterm <std::unique_ptr<AST::Assignment>>      assignment_expression
+%nterm <std::unique_ptr<AST::Expression>>      literal expression
 
 %%
 
@@ -54,17 +54,17 @@ program : expression
         | program expression
         ;
 
-expression : literal
-           | identifier_expression
-           | subscript_expression
+expression : literal                { $$ = std::move($1); }
+           | identifier_expression  { $$ = std::move($1); }
+           | assignment_expression  { $$ = std::move($1); }
            ;
 
-subscript_expression : expression "[" expression "]"
-                     ;
+assignment_expression : identifier_expression EQUAL expression { $$ = std::make_unique<AST::Assignment>(*$1, *$3); }
+                      ;
 
-literal : integer_literal
-        | string_literal
-        | boolean_literal
+literal : integer_literal  { $$ = std::move($1); }
+        | string_literal   { $$ = std::move($1); }
+        | boolean_literal  { $$ = std::move($1); }
         ;
 
 boolean_literal : BOOL { $$ = std::make_unique<AST::Boolean>($1); }
@@ -73,9 +73,9 @@ boolean_literal : BOOL { $$ = std::make_unique<AST::Boolean>($1); }
 string_literal : STRING { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 1)); }
                ;
 
-integer_literal : hex_literal
-                | decimal_literal
-                | octal_literal
+integer_literal : hex_literal       { $$ = std::move($1); }
+                | decimal_literal   { $$ = std::move($1); }
+                | octal_literal     { $$ = std::move($1); }
                 ;
 
 hex_literal : HEX_NUMBER { $$ = std::make_unique<AST::Number>($1); }

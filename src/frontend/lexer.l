@@ -34,6 +34,7 @@ using token = Frontend::Parser::token;
 0x[0-9a-zA-Z]+                  { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }
 0o[0-7]+                        { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }
 [0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::DECIMAL_NUMBER; }
+"="                             { return token::EQUAL; }
 .                               { std::cerr << "unknown statement: " << yytext << std::endl; }
 
 %%
