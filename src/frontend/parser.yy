@@ -9,23 +9,27 @@
 %define api.parser.class { Parser }
 
 %code requires {
+    #include <memory>
+    #include "node.hpp"
 
-   namespace Frontend {
-      class Scanner;
-   }
+    namespace Frontend {
+        class Scanner;
+    }
 
 }
 
 %parse-param { Scanner  &scanner }
 
-%code{
-   #include <iostream>
-   #include <fstream>
+%code {
+    #include <iostream>
+    #include <fstream>
+    #include <memory>
 
-   #include "scanner.hpp"
+    #include "node.hpp"
+    #include "scanner.hpp"
 
-#undef yylex
-#define yylex scanner.yylex
+    #undef yylex
+    #define yylex scanner.yylex
 }
 
 %define api.value.type variant
@@ -33,42 +37,60 @@
 
 %token <std::string>    IDENTIFIER
 %token <std::string>    STRING
-%token <int64_t>        DECIMAL_NUMBER
-%token <int64_t>        OCTAL_NUMBER
-%token <int64_t>        HEX_NUMBER
+%token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
 %token                  END                 0
 
+%nterm <std::unique_ptr<AST::Number>>          hex_literal
+%nterm <std::unique_ptr<AST::Number>>          decimal_literal
+%nterm <std::unique_ptr<AST::Number>>          octal_literal
+%nterm <std::unique_ptr<AST::Boolean>>         boolean_literal
+
 %%
 
-program : literal
-        | program literal
+program : expression
+        | program expression
         ;
+
+expression : literal
+           | identifier_expression
+           | subscript_expression
+           ;
+
+subscript_expression : expression "[" expression "]"
+                     ;
 
 literal : integer_literal
         | string_literal
         | boolean_literal
-        | identifier
         ;
 
-boolean_literal : BOOL { std::cout << "bool: " << $1 << std::endl; }
+boolean_literal : BOOL { $$ = std::make_unique<AST::Boolean>($1); }
                 ;
 
-string_literal : STRING { std::cout << "string: " << $1 << std::endl; }
+string_literal : STRING
                ;
 
-integer_literal : HEX_NUMBER { std::cout << "hex number: " << $1 << std::endl; }
-                | DECIMAL_NUMBER { std::cout << "decimal number: " << $1 << std::endl; }
-                | OCTAL_NUMBER { std::cout << "octal number: " << $1 << std::endl; }
+integer_literal : hex_literal
+                | decimal_literal
+                | octal_literal
                 ;
 
-identifier : IDENTIFIER { std::cout << "identifier: " << $1 << std::endl; }
-           ;
+hex_literal : HEX_NUMBER { $$ = std::make_unique<AST::Number>($1); }
+            ;
+
+decimal_literal : DECIMAL_NUMBER { $$ = std::make_unique<AST::Number>($1); }
+                ;
+
+octal_literal : OCTAL_NUMBER { $$ = std::make_unique<AST::Number>($1); }
+              ;
+
+identifier_expression : IDENTIFIER
+                      ;
 
 %%
 
-void
-Frontend::Parser::error(const std::string & err_message)
+void Frontend::Parser::error(const std::string & err_message)
 {
    std::cerr << "Error: " << err_message << std::endl;
 }
