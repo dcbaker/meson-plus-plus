@@ -32,8 +32,20 @@
 %define parse.assert
 
 %token <std::string>    IDENTIFIER
+%token <int64_t>        DECIMAL_NUMBER
 
 %%
+
+foo : integer_literal
+    | identifier
+    ;
+
+integer_literal : decimal_literal
+                ;
+
+decimal_literal : DECIMAL_NUMBER { std::cout << "decimal number: " << $1 << std::endl; }
+                ;
+
 
 identifier : IDENTIFIER { std::cout << "identifier: " << $1 << std::endl; }
            ;

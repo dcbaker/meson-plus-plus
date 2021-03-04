@@ -27,6 +27,7 @@ using token = Frontend::Parser::token;
 
 [ \t\n]                         { }
 [a-zA-Z_][a-zA-Z0-9_]*          { lval->build<std::string>(yytext); return token::IDENTIFIER; }
+[0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::DECIMAL_NUMBER; }
 .                               { yyterminate(); }
 
 %%
