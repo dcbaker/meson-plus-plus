@@ -12,6 +12,13 @@ project(
 
 cpp = meson.get_compiler('cpp')
 
+add_project_arguments(
+  cpp.get_supported_arguments(
+    '-Werror=switch-enum',
+  ),
+  language : 'cpp',
+)
+
 dep_gtest = dependency('gtest_main', disabler : true, required : get_option('tests'), fallback : ['gtest', 'gtest_main_dep'])
 
 subdir('src')
