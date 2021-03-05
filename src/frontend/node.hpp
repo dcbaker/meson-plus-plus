@@ -109,7 +109,7 @@ private:
 };
 
 enum class UnaryOp {
-    NOT,
+    NEG,
 };
 
 class UnaryExpression : public Expression {

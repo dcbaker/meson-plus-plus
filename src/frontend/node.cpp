@@ -10,12 +10,12 @@ namespace Frontend::AST {
 std::string UnaryExpression::as_string() const {
     std::string o;
     switch (op) {
-        case UnaryOp::NOT:
-            o = "not";
+        case UnaryOp::NEG:
+            o = "-";
             break;
     }
 
-    return o + " " + rhs->as_string();
+    return o + rhs->as_string();
 }
 
 std::string MultiplicativeExpression::as_string() const {

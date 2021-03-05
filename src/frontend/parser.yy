@@ -45,13 +45,13 @@
 %token                  EQUAL LBRACKET RBRACKET LPAREN RPAREN
 %token                  END                 0
 
+%nterm <std::unique_ptr<AST::Expression>>      literal expression
+%nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
+
 %left                   "-" "+"
 %left                   "*" "/" "%"
 %left                   "(" ")"
-
-%nterm <std::unique_ptr<AST::Number>>          integer_literal
-%nterm <std::unique_ptr<AST::Expression>>      literal expression
-%nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
+%precedence             NEG         // Negation
 
 %%
 
@@ -71,15 +71,12 @@ expression : expression "+" expression              { $$ = std::make_unique<AST:
            | IDENTIFIER                             { $$ = std::make_unique<AST::Identifier>($1); }
            ;
 
-literal : integer_literal                           { $$ = std::move($1); }
+literal : HEX_NUMBER                                { $$ = std::make_unique<AST::Number>($1); }
+        | DECIMAL_NUMBER                            { $$ = std::make_unique<AST::Number>($1); }
+        | OCTAL_NUMBER                              { $$ = std::make_unique<AST::Number>($1); }
         | STRING                                    { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 2)); }
         | BOOL                                      { $$ = std::make_unique<AST::Boolean>($1); }
         ;
-
-integer_literal : HEX_NUMBER                        { $$ = std::make_unique<AST::Number>($1); }
-                | DECIMAL_NUMBER                    { $$ = std::make_unique<AST::Number>($1); }
-                | OCTAL_NUMBER                      { $$ = std::make_unique<AST::Number>($1); }
-                ;
 
 %%
 

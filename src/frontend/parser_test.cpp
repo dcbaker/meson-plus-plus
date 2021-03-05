@@ -18,11 +18,6 @@ static std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     return block;
 }
 
-TEST(parser, unary_negation) {
-    auto block = parse("-5");
-    ASSERT_EQ(block->as_string(), "-5");
-}
-
 TEST(parser, string) {
     auto block = parse("'foo'");
     ASSERT_EQ(block->as_string(), "'foo'");
