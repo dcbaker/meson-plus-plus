@@ -42,8 +42,10 @@
 %token <std::string>    IDENTIFIER STRING
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
-%token                  EQUAL LBRACKET RBRACKET
+%token                  EQUAL LBRACKET RBRACKET LPAREN RPAREN
 %token                  END                 0
+
+%left                   LPAREN
 
 %nterm <std::unique_ptr<AST::Number>>          hex_literal decimal_literal octal_literal integer_literal
 %nterm <std::unique_ptr<AST::Boolean>>         boolean_literal
@@ -62,14 +64,16 @@ program : expressions END              { block = std::move($1); }
 expressions : expression                { $$ = std::make_unique<AST::CodeBlock>($1); }
             | expressions expression    { $1->expressions.push_back(std::move($2)); $$ = std::move($1); }
 
-expression : literal                { $$ = std::move($1); }
-           | identifier_expression  { $$ = std::move($1); }
-           | assignment_expression  { $$ = std::move($1); }
-           | subscript_expression   { $$ = std::move($1); }
+expression : literal                    { $$ = std::move($1); }
+           | identifier_expression      { $$ = std::move($1); }
+           | LPAREN expression RPAREN   { $$ = std::move($2); }
+           | assignment_expression      { $$ = std::move($1); }
+           | subscript_expression       { $$ = std::move($1); }
            ;
 
 subscript_expression : expression LBRACKET expression RBRACKET { $$ = std::make_unique<AST::Subscript>(std::move($1), std::move($3)); }
                      ;
+
 
 assignment_expression : identifier_expression EQUAL expression { $$ = std::make_unique<AST::Assignment>(std::move($1), std::move($3)); }
                       ;
