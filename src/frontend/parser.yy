@@ -43,6 +43,11 @@
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
 %token                  EQUAL LBRACKET RBRACKET LPAREN RPAREN
+%token                  ADD                 "+"
+%token                  SUB                 "-"
+%token                  MUL                 "*"
+%token                  DIV                 "/"
+%token                  MOD                 "%"
 %token                  END                 0
 
 %nterm <std::unique_ptr<AST::Expression>>      literal expression

@@ -62,3 +62,8 @@ TEST(parser, subtraction) {
     auto block = parse("5 - 4 ");
     ASSERT_EQ(block->as_string(), "5 - 4");
 }
+
+TEST(parser, mod) {
+    auto block = parse("5 % 4 ");
+    ASSERT_EQ(block->as_string(), "5 % 4");
+}
