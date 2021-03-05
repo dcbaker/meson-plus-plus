@@ -1,7 +1,7 @@
 # SPDX-license-identifier: Apache-2.0
 # Copyright © 2021 Intel Corporation
 
-prog_bison = find_program('bison', version : '>= 3.0')
+prog_bison = find_program('bison', version : '>= 3.2')
 prog_flex = find_program('flex')
 
 parser = custom_target(
