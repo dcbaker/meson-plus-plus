@@ -18,13 +18,24 @@ scanner = custom_target(
   command : [prog_flex, '-o', '@OUTPUT@', '@INPUT@'],
 )
 
+# Bison generates swtiches tahat don't handle all of their enum values
+# We can't fix that, so we have to ignore it.
+#
+# Because of this we want to be sure that we don't propogate the parser header
+# out of thehis bit of code
+_frontend_args = cpp.get_supported_arguments(
+  '-Wno-switch-enum',
+)
+
 libfrontend = static_library(
   'frontend',
   [parser, scanner, 'node.cpp'],
+  cpp_args : _frontend_args,
 )
 
 executable(
   'standalone_parser',
   ['standalone.cpp', parser[1]],
   link_with : libfrontend,
+  cpp_args : _frontend_args,
 )
