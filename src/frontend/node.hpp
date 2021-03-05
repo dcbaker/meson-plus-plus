@@ -20,12 +20,10 @@ protected:
 
 class Expression : public Node {
 public:
+    virtual ~Expression() {};
+    virtual std::string as_string() const = 0;
+protected:
     Expression() {};
-    ~Expression() {};
-
-    virtual std::string as_string() const {
-        return "Base Expression";
-    }
 };
 
 class Statement : public Node {};
