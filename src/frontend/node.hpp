@@ -108,24 +108,22 @@ private:
     const std::unique_ptr<Expression> rhs;
 };
 
-enum class UnaryOpEnum {
+enum class UnaryOp {
     NOT,
-    MINUS,
-    PLUS,
 };
 
 class UnaryExpression : public Expression {
 public:
-    UnaryExpression(const UnaryOpEnum & o, std::unique_ptr<Expression> && r) : op{o}, rhs{std::move(r)} {};
+    UnaryExpression(const UnaryOp & o, std::unique_ptr<Expression> && r) : op{o}, rhs{std::move(r)} {};
     ~UnaryExpression() {};
 
     virtual std::string as_string() const override;
 private:
-    const UnaryOpEnum op;
+    const UnaryOp op;
     const std::unique_ptr<Expression> rhs;
 };
 
-enum class MulOpEnum {
+enum class MulOp {
     MUL,
     DIV,
     MOD,
@@ -133,14 +131,32 @@ enum class MulOpEnum {
 
 class MultiplicativeExpression : public Expression {
 public:
-    MultiplicativeExpression(std::unique_ptr<Expression> && l, const MulOpEnum & o, std::unique_ptr<Expression> && r) :
+    MultiplicativeExpression(std::unique_ptr<Expression> && l, const MulOp & o, std::unique_ptr<Expression> && r) :
        lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~MultiplicativeExpression() {};
 
     virtual std::string as_string() const override;
 private:
     const std::unique_ptr<Expression> lhs;
-    const MulOpEnum op;
+    const MulOp op;
+    const std::unique_ptr<Expression> rhs;
+};
+
+enum class AddOp {
+    ADD,
+    SUB,
+};
+
+class AdditiveExpression : public Expression {
+public:
+    AdditiveExpression(std::unique_ptr<Expression> && l, const AddOp & o, std::unique_ptr<Expression> && r) :
+       lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    ~AdditiveExpression() {};
+
+    virtual std::string as_string() const override;
+private:
+    const std::unique_ptr<Expression> lhs;
+    const AddOp op;
     const std::unique_ptr<Expression> rhs;
 };
 

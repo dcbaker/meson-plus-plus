@@ -10,14 +10,8 @@ namespace Frontend::AST {
 std::string UnaryExpression::as_string() const {
     std::string o;
     switch (op) {
-        case UnaryOpEnum::NOT:
+        case UnaryOp::NOT:
             o = "not";
-            break;
-        case UnaryOpEnum::PLUS:
-            o = "+";
-            break;
-        case UnaryOpEnum::MINUS:
-            o = "+";
             break;
     }
 
@@ -27,14 +21,28 @@ std::string UnaryExpression::as_string() const {
 std::string MultiplicativeExpression::as_string() const {
     std::string o;
     switch (op) {
-        case MulOpEnum::MUL:
+        case MulOp::MUL:
             o = "*";
             break;
-        case MulOpEnum::DIV:
+        case MulOp::DIV:
             o = "/";
             break;
-        case MulOpEnum::MOD:
+        case MulOp::MOD:
             o = "%";
+            break;
+    }
+
+    return lhs->as_string() + " " + o + " " + rhs->as_string();
+}
+
+std::string AdditiveExpression::as_string() const {
+    std::string o;
+    switch (op) {
+        case AddOp::ADD:
+            o = "+";
+            break;
+        case AddOp::SUB:
+            o = "-";
             break;
     }
 

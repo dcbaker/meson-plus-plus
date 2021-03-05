@@ -8,7 +8,7 @@ parser = custom_target(
   'parser.[ch]pp',
   input : 'parser.yy',
   output : ['@PLAINNAME@.cpp', '@PLAINNAME@.hpp', 'locations.hpp'],
-  command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@'],
+  command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@', '-Wcounterexamples', '-v'],
 )
 
 scanner = custom_target(
