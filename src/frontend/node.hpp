@@ -108,6 +108,42 @@ private:
     const std::unique_ptr<Expression> rhs;
 };
 
+enum class UnaryOpEnum {
+    NOT,
+    MINUS,
+    PLUS,
+};
+
+class UnaryExpression : public Expression {
+public:
+    UnaryExpression(const UnaryOpEnum & o, std::unique_ptr<Expression> && r) : op{o}, rhs{std::move(r)} {};
+    ~UnaryExpression() {};
+
+    virtual std::string as_string() const override;
+private:
+    const UnaryOpEnum op;
+    const std::unique_ptr<Expression> rhs;
+};
+
+enum class MulOpEnum {
+    MUL,
+    DIV,
+    MOD,
+};
+
+class MultiplicativeExpression : public Expression {
+public:
+    MultiplicativeExpression(std::unique_ptr<Expression> && l, const MulOpEnum & o, std::unique_ptr<Expression> && r) :
+       lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    ~MultiplicativeExpression() {};
+
+    virtual std::string as_string() const override;
+private:
+    const std::unique_ptr<Expression> lhs;
+    const MulOpEnum op;
+    const std::unique_ptr<Expression> rhs;
+};
+
 class CodeBlock : public Expression {
 public:
     CodeBlock() : expressions{} {} ;
