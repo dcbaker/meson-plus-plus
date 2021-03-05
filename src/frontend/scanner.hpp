@@ -18,7 +18,8 @@ public:
 
     using FlexLexer::yylex;
 
-    virtual int yylex(Frontend::Parser::semantic_type * const lval);
+    virtual int yylex(Frontend::Parser::semantic_type * const lval,
+                      Frontend::Parser::location_type * loc);
 
 };
 

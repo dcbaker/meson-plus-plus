@@ -7,14 +7,17 @@
 #include <iostream>
 
 #include "scanner.hpp"
+
 #undef  YY_DECL
-#define YY_DECL int Frontend::Scanner::yylex(Frontend::Parser::semantic_type * lval)
+#define YY_DECL int Frontend::Scanner::yylex(Frontend::Parser::semantic_type * lval, Frontend::Parser::location_type * loc)
 
 /* typedef to make the returns for the tokens shorter */
 using token = Frontend::Parser::token;
 
-/* msvc2010 requires that we exclude this header file. */
+/* For windows */
 #define YY_NO_UNISTD_H
+
+#define YY_USER_ACTION loc->step(); loc->columns(yyleng);
 
 %}
 
@@ -27,7 +30,8 @@ using token = Frontend::Parser::token;
 %%
 
 
-[ \t\n]                         { }
+[ \t]                           { }
+\n                              { loc->lines(); }
 (true|false)                    { lval->build<bool>(std::string(yytext) == "true"); return token::BOOL; }
 [a-zA-Z_][a-zA-Z0-9_]*          { lval->build<std::string>(yytext); return token::IDENTIFIER; }
 '.*'                            { lval->build<std::string>(yytext); return token::STRING; }

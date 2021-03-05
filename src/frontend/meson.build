@@ -7,7 +7,7 @@ prog_flex = find_program('flex')
 parser = custom_target(
   'parser.[ch]pp',
   input : 'parser.yy',
-  output : ['@PLAINNAME@.cpp', '@PLAINNAME@.hpp'],
+  output : ['@PLAINNAME@.cpp', '@PLAINNAME@.hpp', 'locations.hpp'],
   command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@'],
 )
 

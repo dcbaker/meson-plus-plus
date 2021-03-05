@@ -4,9 +4,11 @@
 %skeleton "lalr1.cc"
 %require  "3.2"
 %debug
+%locations
 %defines
 %define api.namespace { Frontend }
 %define api.parser.class { Parser }
+%define api.location.file "locations.hpp"
 
 %code requires {
     #include <memory>
@@ -102,7 +104,7 @@ identifier_expression : IDENTIFIER { $$ = std::make_unique<AST::Identifier>($1);
 
 %%
 
-void Frontend::Parser::error(const std::string & err_message)
+void Frontend::Parser::error(const location_type & loc, const std::string & err_message)
 {
-   std::cerr << "Error: " << err_message << std::endl;
+   std::cerr << "Error: " << err_message << " at " << loc << std::endl;
 }
