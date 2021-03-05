@@ -44,6 +44,7 @@ using token = Frontend::Parser::token;
 "("                             { return token::LPAREN; }
 ")"                             { return token::RPAREN; }
 <<EOF>>                         { return token::END; }
+\s*#.*$                         { }
 .                               { std::cerr << "unknown statement: " << yytext << std::endl; }
 
 %%
