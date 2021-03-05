@@ -33,6 +33,18 @@ libfrontend = static_library(
   cpp_args : _frontend_args,
 )
 
+test(
+  'parser',
+  executable(
+    'parser_test',
+    ['parser_test.cpp', parser[1]],
+    cpp_args : _frontend_args,
+    link_with : libfrontend,
+    dependencies : dep_gtest,
+  ),
+  protocol : 'gtest',
+)
+
 executable(
   'standalone_parser',
   ['standalone.cpp', parser[1]],
