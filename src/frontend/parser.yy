@@ -50,9 +50,6 @@
 %left                   "(" ")"
 
 %nterm <std::unique_ptr<AST::Number>>          integer_literal
-%nterm <std::unique_ptr<AST::Boolean>>         boolean_literal
-%nterm <std::unique_ptr<AST::String>>          string_literal
-%nterm <std::unique_ptr<AST::Identifier>>      identifier_expression
 %nterm <std::unique_ptr<AST::Expression>>      literal expression
 %nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
 
@@ -64,34 +61,25 @@ program : expressions END                           { block = std::move($1); }
 expressions : expression                            { $$ = std::make_unique<AST::CodeBlock>($1); }
             | expressions expression                { $1->expressions.push_back(std::move($2)); $$ = std::move($1); }
 
-expression : expression "+" expression         { $$ = std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3)); }
-           | expression "-" expression         { $$ = std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3)); }
-           | expression "*" expression         { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3)); }
-           | expression "/" expression         { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)); }
-           | expression "%" expression         { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)); }
-           | "(" expression ")"                { $$ = std::move($2); }
-           | literal                           { $$ = std::move($1); }
-           | identifier_expression             { $$ = std::move($1); }
+expression : expression "+" expression              { $$ = std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3)); }
+           | expression "-" expression              { $$ = std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3)); }
+           | expression "*" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3)); }
+           | expression "/" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)); }
+           | expression "%" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)); }
+           | "(" expression ")"                     { $$ = std::move($2); }
+           | literal                                { $$ = std::move($1); }
+           | IDENTIFIER                             { $$ = std::make_unique<AST::Identifier>($1); }
            ;
 
-literal : integer_literal  { $$ = std::move($1); }
-        | string_literal   { $$ = std::move($1); }
-        | boolean_literal  { $$ = std::move($1); }
+literal : integer_literal                           { $$ = std::move($1); }
+        | STRING                                    { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 2)); }
+        | BOOL                                      { $$ = std::make_unique<AST::Boolean>($1); }
         ;
-
-boolean_literal : BOOL { $$ = std::make_unique<AST::Boolean>($1); }
-                ;
-
-string_literal : STRING { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 2)); }
-               ;
 
 integer_literal : HEX_NUMBER                        { $$ = std::make_unique<AST::Number>($1); }
                 | DECIMAL_NUMBER                    { $$ = std::make_unique<AST::Number>($1); }
                 | OCTAL_NUMBER                      { $$ = std::make_unique<AST::Number>($1); }
                 ;
-
-identifier_expression : IDENTIFIER { $$ = std::make_unique<AST::Identifier>($1); }
-                      ;
 
 %%
 
