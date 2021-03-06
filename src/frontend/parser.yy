@@ -48,6 +48,7 @@
 %token                  MUL                 "*"
 %token                  DIV                 "/"
 %token                  MOD                 "%"
+%token                  UMINUS
 %token                  END                 0
 
 %nterm <std::unique_ptr<AST::Expression>>      literal expression
@@ -56,7 +57,7 @@
 %left                   "-" "+"
 %left                   "*" "/" "%"
 %left                   "(" ")"
-%precedence             NEG         // Negation
+%right                  UMINUS      // Negation
 
 %%
 
@@ -72,6 +73,7 @@ expression : expression "+" expression              { $$ = std::make_unique<AST:
            | expression "/" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)); }
            | expression "%" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)); }
            | "(" expression ")"                     { $$ = std::move($2); }
+           | "-" expression %prec UMINUS            { $$ = std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)); }
            | literal                                { $$ = std::move($1); }
            | IDENTIFIER                             { $$ = std::make_unique<AST::Identifier>($1); }
            ;
