@@ -1,0 +1,8 @@
+BasedOnStyle: LLVM
+ColumnLimit: 120
+IndentWidth: 4
+PointerAlignment: Middle
+SpacesInContainerLiterals: false
+Standard: Cpp17
+
+# vim: ft=yaml
