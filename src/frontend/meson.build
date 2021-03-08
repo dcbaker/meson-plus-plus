@@ -29,7 +29,7 @@ _frontend_args = cpp.get_supported_arguments(
 
 libfrontend = static_library(
   'frontend',
-  [parser, scanner, 'node.cpp'],
+  [parser, scanner],
   cpp_args : _frontend_args,
 )
 
@@ -45,9 +45,9 @@ test(
   protocol : 'gtest',
 )
 
-executable(
-  'standalone_parser',
-  ['standalone.cpp', parser[1]],
-  link_with : libfrontend,
-  cpp_args : _frontend_args,
-)
+# executable(
+#   'standalone_parser',
+#   ['standalone.cpp', parser[1]],
+#   link_with : libfrontend,
+#   cpp_args : _frontend_args,
+# )

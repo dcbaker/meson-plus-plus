@@ -51,7 +51,7 @@
 %token                  UMINUS
 %token                  END                 0
 
-%nterm <std::unique_ptr<AST::Expression>>      literal expression
+%nterm <AST::ExpressionV>                       literal expression
 %nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
 
 %left                   "-" "+"
@@ -64,25 +64,25 @@
 program : expressions END                           { block = std::move($1); }
         ;
 
-expressions : expression                            { $$ = std::make_unique<AST::CodeBlock>($1); }
+expressions : expression                            { $$ = std::make_unique<AST::CodeBlock>(std::move($1)); }
             | expressions expression                { $1->expressions.push_back(std::move($2)); $$ = std::move($1); }
 
-expression : expression "+" expression              { $$ = std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3)); }
-           | expression "-" expression              { $$ = std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3)); }
-           | expression "*" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3)); }
-           | expression "/" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)); }
-           | expression "%" expression              { $$ = std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)); }
+expression : expression "+" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3)))); }
+           | expression "-" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3)))); }
+           | expression "*" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3)))); }
+           | expression "/" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)))); }
+           | expression "%" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)))); }
            | "(" expression ")"                     { $$ = std::move($2); }
-           | "-" expression %prec UMINUS            { $$ = std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)); }
+           | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)))); }
            | literal                                { $$ = std::move($1); }
-           | IDENTIFIER                             { $$ = std::make_unique<AST::Identifier>($1); }
+           | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
            ;
 
-literal : HEX_NUMBER                                { $$ = std::make_unique<AST::Number>($1); }
-        | DECIMAL_NUMBER                            { $$ = std::make_unique<AST::Number>($1); }
-        | OCTAL_NUMBER                              { $$ = std::make_unique<AST::Number>($1); }
-        | STRING                                    { $$ = std::make_unique<AST::String>($1.substr(1, $1.size() - 2)); }
-        | BOOL                                      { $$ = std::make_unique<AST::Boolean>($1); }
+literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
+        | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
+        | OCTAL_NUMBER                              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
+        | STRING                                    { $$ = AST::ExpressionV(std::move(std::make_unique<AST::String>($1.substr(1, $1.size() - 2)))); }
+        | BOOL                                      { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Boolean>($1))); }
         ;
 
 %%

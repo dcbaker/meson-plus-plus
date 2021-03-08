@@ -3,131 +3,94 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace Frontend::AST {
 
-class Node {
-  public:
-    virtual ~Node(){};
-    virtual std::string as_string() const = 0;
+namespace {};
 
-  protected:
-    Node(){};
-};
+class AdditiveExpression;
+class Boolean;
+class Identifier;
+class MultiplicativeExpression;
+class Number;
+class String;
+class UnaryExpression;
 
-class Expression : public Node {
-  public:
-    virtual ~Expression(){};
-    virtual std::string as_string() const = 0;
+using ExpressionV = std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>,
+                                 std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
+                                 std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>>;
 
-  protected:
-    Expression(){};
-};
+using ExpressionList = std::vector<ExpressionV>;
 
-class Statement : public Node {};
-
-typedef std::vector<std::unique_ptr<Expression>> ExpressionList;
-
-class Number : public Expression {
+class Number {
   public:
     Number(const int64_t & number) : value{number} {};
     ~Number(){};
 
-    virtual std::string as_string() const override {
-        return std::to_string(value);
-    }
-
-  private:
     const int64_t value;
 };
 
-class Boolean : public Expression {
+class Boolean {
   public:
     Boolean(const bool & b) : value{b} {};
     ~Boolean(){};
 
-    virtual std::string as_string() const override {
-        return value ? "true" : "false";
-    }
-
-  private:
     const bool value;
 };
 
-class String : public Expression {
+class String {
   public:
     String(const std::string & str) : value{str} {};
     ~String(){};
 
-    virtual std::string as_string() const override {
-        return "'" + value + "'";
-    }
-
-  private:
     const std::string value;
 };
 
-class Identifier : public Expression {
+class Identifier {
   public:
     Identifier(const std::string & str) : value{str} {};
     ~Identifier(){};
 
-    virtual std::string as_string() const override {
-        return value;
-    }
-
-  private:
     const std::string value;
 };
 
-class Assignment : public Expression {
+class Assignment {
   public:
-    Assignment(std::unique_ptr<Identifier> && l, std::unique_ptr<Expression> && r)
-        : lhs{std::move(l)}, rhs{std::move(r)} {};
+    Assignment(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {
+        assert(std::holds_alternative<std::unique_ptr<Identifier>>(lhs));
+    };
     ~Assignment(){};
 
-    virtual std::string as_string() const override {
-        return lhs->as_string() + " = " + rhs->as_string();
-    }
-
-  private:
-    const std::unique_ptr<Identifier> lhs;
-    const std::unique_ptr<Expression> rhs;
+    const ExpressionV lhs;
+    const ExpressionV rhs;
 };
 
-class Subscript : public Expression {
+class Subscript {
   public:
-    Subscript(std::unique_ptr<Expression> && l, std::unique_ptr<Expression> && r)
-        : lhs{std::move(l)}, rhs{std::move(r)} {};
+    Subscript(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
     ~Subscript(){};
 
-    virtual std::string as_string() const override {
-        return lhs->as_string() + "[" + rhs->as_string() + "]";
-    }
-
-  private:
-    const std::unique_ptr<Expression> lhs;
-    const std::unique_ptr<Expression> rhs;
+    const ExpressionV lhs;
+    const ExpressionV rhs;
 };
 
 enum class UnaryOp {
     NEG,
 };
 
-class UnaryExpression : public Expression {
+class UnaryExpression {
   public:
-    UnaryExpression(const UnaryOp & o, std::unique_ptr<Expression> && r) : op{o}, rhs{std::move(r)} {};
+    UnaryExpression(const UnaryOp & o, ExpressionV && r) : op{o}, rhs{std::move(r)} {};
     ~UnaryExpression(){};
 
-    virtual std::string as_string() const override;
-
-  private:
     const UnaryOp op;
-    const std::unique_ptr<Expression> rhs;
+    const ExpressionV rhs;
 };
 
 enum class MulOp {
@@ -136,18 +99,15 @@ enum class MulOp {
     MOD,
 };
 
-class MultiplicativeExpression : public Expression {
+class MultiplicativeExpression {
   public:
-    MultiplicativeExpression(std::unique_ptr<Expression> && l, const MulOp & o, std::unique_ptr<Expression> && r)
+    MultiplicativeExpression(ExpressionV && l, const MulOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~MultiplicativeExpression(){};
 
-    virtual std::string as_string() const override;
-
-  private:
-    const std::unique_ptr<Expression> lhs;
+    const ExpressionV lhs;
     const MulOp op;
-    const std::unique_ptr<Expression> rhs;
+    const ExpressionV rhs;
 };
 
 enum class AddOp {
@@ -155,29 +115,24 @@ enum class AddOp {
     SUB,
 };
 
-class AdditiveExpression : public Expression {
+class AdditiveExpression {
   public:
-    AdditiveExpression(std::unique_ptr<Expression> && l, const AddOp & o, std::unique_ptr<Expression> && r)
+    AdditiveExpression(ExpressionV && l, const AddOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~AdditiveExpression(){};
 
-    virtual std::string as_string() const override;
-
-  private:
-    const std::unique_ptr<Expression> lhs;
+    const ExpressionV lhs;
     const AddOp op;
-    const std::unique_ptr<Expression> rhs;
+    const ExpressionV rhs;
 };
 
-class CodeBlock : public Expression {
+class CodeBlock {
   public:
     CodeBlock() : expressions{} {};
-    CodeBlock(std::unique_ptr<Expression> & expr) : expressions{} {
+    CodeBlock(ExpressionV && expr) : expressions{} {
         expressions.emplace_back(std::move(expr));
     };
     ~CodeBlock(){};
-
-    virtual std::string as_string() const override;
 
     // XXX: this should probably be a statement list
     ExpressionList expressions;
