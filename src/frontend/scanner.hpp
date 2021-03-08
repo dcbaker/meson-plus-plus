@@ -4,7 +4,7 @@
 #pragma once
 
 #ifndef yyFlexLexerOnce
-# include <FlexLexer.h>
+#include <FlexLexer.h>
 #endif
 
 #include "parser.yy.hpp"
@@ -12,15 +12,13 @@
 namespace Frontend {
 
 class Scanner : public yyFlexLexer {
-public:
-    Scanner(std::istream * in) : yyFlexLexer(in) {};
-    ~Scanner() {};
+  public:
+    Scanner(std::istream * in) : yyFlexLexer(in){};
+    ~Scanner(){};
 
     using FlexLexer::yylex;
 
-    virtual int yylex(Frontend::Parser::semantic_type * const lval,
-                      Frontend::Parser::location_type * loc);
-
+    virtual int yylex(Frontend::Parser::semantic_type * const lval, Frontend::Parser::location_type * loc);
 };
 
-};
+}; // namespace Frontend
