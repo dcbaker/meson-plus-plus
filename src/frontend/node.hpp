@@ -33,6 +33,8 @@ class Number {
     Number(const int64_t & number) : value{number} {};
     ~Number(){};
 
+    explicit operator std::string() const;
+
     const int64_t value;
 };
 
@@ -40,6 +42,8 @@ class Boolean {
   public:
     Boolean(const bool & b) : value{b} {};
     ~Boolean(){};
+
+    explicit operator std::string() const;
 
     const bool value;
 };
@@ -49,6 +53,8 @@ class String {
     String(const std::string & str) : value{str} {};
     ~String(){};
 
+    explicit operator std::string() const;
+
     const std::string value;
 };
 
@@ -56,6 +62,8 @@ class Identifier {
   public:
     Identifier(const std::string & str) : value{str} {};
     ~Identifier(){};
+
+    explicit operator std::string() const;
 
     const std::string value;
 };
@@ -67,6 +75,8 @@ class Assignment {
     };
     ~Assignment(){};
 
+    explicit operator std::string() const;
+
     const ExpressionV lhs;
     const ExpressionV rhs;
 };
@@ -75,6 +85,8 @@ class Subscript {
   public:
     Subscript(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
     ~Subscript(){};
+
+    explicit operator std::string() const;
 
     const ExpressionV lhs;
     const ExpressionV rhs;
@@ -88,6 +100,8 @@ class UnaryExpression {
   public:
     UnaryExpression(const UnaryOp & o, ExpressionV && r) : op{o}, rhs{std::move(r)} {};
     ~UnaryExpression(){};
+
+    explicit operator std::string() const;
 
     const UnaryOp op;
     const ExpressionV rhs;
@@ -105,6 +119,8 @@ class MultiplicativeExpression {
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~MultiplicativeExpression(){};
 
+    explicit operator std::string() const;
+
     const ExpressionV lhs;
     const MulOp op;
     const ExpressionV rhs;
@@ -121,6 +137,8 @@ class AdditiveExpression {
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~AdditiveExpression(){};
 
+    explicit operator std::string() const;
+
     const ExpressionV lhs;
     const AddOp op;
     const ExpressionV rhs;
@@ -133,6 +151,8 @@ class CodeBlock {
         expressions.emplace_back(std::move(expr));
     };
     ~CodeBlock(){};
+
+    explicit operator std::string() const;
 
     // XXX: this should probably be a statement list
     ExpressionList expressions;

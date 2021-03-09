@@ -81,7 +81,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
 literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
         | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
         | OCTAL_NUMBER                              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
-        | STRING                                    { $$ = AST::ExpressionV(std::move(std::make_unique<AST::String>($1.substr(1, $1.size() - 2)))); }
+        | STRING                                    { $$ = AST::ExpressionV(std::move(std::make_unique<AST::String>($1.substr(1, $1.size() - 2)))(); }
         | BOOL                                      { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Boolean>($1))); }
         ;
 
