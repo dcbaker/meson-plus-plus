@@ -127,6 +127,17 @@ struct StmtStringVisitor {
     }
 };
 
+/**
+ * Convert an A list of ExperssionV elements into a comma separated string
+ */
+std::string stringlistify(const ExpressionList & expressions) {
+    return std::accumulate(std::begin(expressions), std::end(expressions), std::string{},
+                           [](std::string & s, auto const & e) {
+                               ExprStringVisitor as{};
+                               return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
+                           });
+}
+
 } // namespace
 
 std::string Number::as_string() const {
@@ -166,11 +177,7 @@ std::string MultiplicativeExpression::as_string() const {
 };
 
 std::string Arguments::as_string() const {
-    auto pos = std::accumulate(std::begin(positional), std::end(positional), std::string{},
-                               [](std::string & s, auto const & e) {
-                                   ExprStringVisitor as{};
-                                   return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
-                               });
+    auto pos = stringlistify(positional);
     auto kw =
         std::accumulate(std::begin(keyword), std::end(keyword), std::string{}, [](std::string & s, auto const & e) {
             ExprStringVisitor as{};
