@@ -31,6 +31,11 @@ struct AsStringVisitor {
         return s->as_string();
     }
 
+    std::string operator()(const std::unique_ptr<Subscript> & s) {
+        AsStringVisitor as{};
+        return std::visit(as, s->lhs) + "[" + std::visit(as, s->rhs) + "]";
+    }
+
     std::string operator()(const std::unique_ptr<UnaryExpression> & s) {
         // There's currently only unary negation
         return "-" + std::visit(AsStringVisitor(), s->rhs);

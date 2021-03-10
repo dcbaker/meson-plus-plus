@@ -102,3 +102,17 @@ TEST(parser, assignment) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Assignment>>(block->expressions[0]));
     ASSERT_EQ(block->as_string(), "x = 5 + 3");
 }
+
+TEST(parser, subscript) {
+    auto block = parse("foo[bar + 1]");
+    ASSERT_EQ(block->expressions.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Subscript>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "foo[bar + 1]");
+}
+
+TEST(parser, parens) {
+    auto block = parse("(4 * (5 + 3))");
+    ASSERT_EQ(block->expressions.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MultiplicativeExpression>>(block->expressions[0]));
+    // ASSERT_EQ(block->as_string(), "(4 * (5 +3))");
+}

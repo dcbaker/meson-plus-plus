@@ -44,6 +44,10 @@ using token = Frontend::Parser::token;
 \/                              { return token::DIV; }
 \%                              { return token::MOD; }
 =                               { return token::EQUAL; }
+\[                              { return token::LBRACKET; }
+\]                              { return token::RBRACKET; }
+\(                              { return token::LPAREN; }
+\)                              { return token::RPAREN; }
 <<EOF>>                         { return token::END; }
 \s*#.*$                         { }
 .                               { }
