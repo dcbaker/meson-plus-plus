@@ -21,12 +21,13 @@ class Number;
 class String;
 class Subscript;
 class UnaryExpression;
+class Relational;
 
 using ExpressionV =
     std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
-                 std::unique_ptr<Subscript>>;
+                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -144,6 +145,45 @@ class AdditiveExpression {
 
     const ExpressionV lhs;
     const AddOp op;
+    const ExpressionV rhs;
+};
+
+enum class RelationalOp {
+    LT,
+    LE,
+    EQ,
+    NE,
+    GE,
+    GT,
+};
+
+static AST::RelationalOp to_relop(const std::string & s) {
+    if (s == "<") {
+        return AST::RelationalOp::LT;
+    } else if (s == "<=") {
+        return AST::RelationalOp::LE;
+    } else if (s == "==") {
+        return AST::RelationalOp::EQ;
+    } else if (s == "!=") {
+        return AST::RelationalOp::NE;
+    } else if (s == ">=") {
+        return AST::RelationalOp::GE;
+    } else if (s == ">") {
+        return AST::RelationalOp::GT;
+    }
+    assert(false);
+}
+
+class Relational {
+  public:
+    Relational(ExpressionV && l, const std::string & o, ExpressionV && r) :
+        lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)} {};
+    ~Relational(){};
+
+    std::string as_string() const;
+
+    const ExpressionV lhs;
+    const RelationalOp op;
     const ExpressionV rhs;
 };
 

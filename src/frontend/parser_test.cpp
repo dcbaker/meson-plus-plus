@@ -110,9 +110,16 @@ TEST(parser, subscript) {
     ASSERT_EQ(block->as_string(), "foo[bar + 1]");
 }
 
-TEST(parser, parens) {
+TEST(parser, subexpression) {
     auto block = parse("(4 * (5 + 3))");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MultiplicativeExpression>>(block->expressions[0]));
     // ASSERT_EQ(block->as_string(), "(4 * (5 +3))");
+}
+
+TEST(parser, relational_ops) {
+    auto block = parse("5 < 3");
+    ASSERT_EQ(block->expressions.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Relational>>(block->expressions[0]));
+   ASSERT_EQ(block->as_string(), "5 < 3");
 }

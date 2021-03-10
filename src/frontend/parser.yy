@@ -42,6 +42,7 @@
 %token <std::string>    IDENTIFIER STRING
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
+%token <std::string>    RELATIONAL
 %token                  LBRACKET            "["
 %token                  RBRACKET            "]"
 %token                  LPAREN              "("
@@ -61,6 +62,7 @@
 %left                   "-" "+"
 %left                   "*" "/" "%"
 %left                   "(" ")"
+%left                   RELATIONAL
 %right                  UMINUS      // Negation
 
 %%
@@ -78,6 +80,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression "%" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)))); }
            | expression "=" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Assignment>(std::move($1), std::move($3)))); }
            | expression "[" expression "]"          { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Subscript>(std::move($1), std::move($3)))); }
+           | expression RELATIONAL expression       { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Relational>(std::move($1), $2, std::move($3)))); } // XXX: this might now actually be safe, since x < y < z isnt valid.
            | "(" expression ")"                     { $$ = std::move($2); } // XXX: Do we need a subexpression type?
            | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)))); }
            | literal                                { $$ = std::move($1); }

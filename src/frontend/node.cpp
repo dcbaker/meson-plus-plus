@@ -36,6 +36,34 @@ struct AsStringVisitor {
         return std::visit(as, s->lhs) + "[" + std::visit(as, s->rhs) + "]";
     }
 
+    std::string operator()(const std::unique_ptr<Relational> & s) {
+        AsStringVisitor as{};
+
+        std::string opstr{};
+        switch (s->op) {
+            case RelationalOp::LT:
+                opstr = "<";
+                break;
+            case RelationalOp::LE:
+                opstr = "<=";
+                break;
+            case RelationalOp::EQ:
+                opstr = "==";
+                break;
+            case RelationalOp::NE:
+                opstr = "!=";
+                break;
+            case RelationalOp::GE:
+                opstr = ">=";
+                break;
+            case RelationalOp::GT:
+                opstr = ">";
+                break;
+        }
+
+        return std::visit(as, s->lhs) + " " + opstr + " " + std::visit(as, s->rhs);
+    }
+
     std::string operator()(const std::unique_ptr<UnaryExpression> & s) {
         // There's currently only unary negation
         return "-" + std::visit(AsStringVisitor(), s->rhs);
