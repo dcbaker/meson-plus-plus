@@ -23,12 +23,14 @@ TEST(parser, string) {
     auto block = parse("'foo'");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "'foo'");
 }
 
 TEST(parser, decminal_number) {
     auto block = parse("77");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "'foo'");
 }
 
 TEST(parser, octal_number) {

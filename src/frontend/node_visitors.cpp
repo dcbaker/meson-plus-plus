@@ -5,24 +5,28 @@
 
 namespace Frontend::AST {
 
-std::string as_string::operator()(const std::unique_ptr<String> & s) {
-    return std::string{*s};
+std::string AsStringVisitor::operator()(const std::unique_ptr<String> & s) {
+    return s->as_string();
 }
 
-std::string as_string::operator()(const std::unique_ptr<Number> & s) {
-    return std::string{*s};
+std::string AsStringVisitor::operator()(const std::unique_ptr<Number> & s) {
+    return s->as_string();
 }
 
-std::string as_string::operator()(const std::unique_ptr<Boolean> & s) {
-    return std::string{*s};
+std::string AsStringVisitor::operator()(const std::unique_ptr<Identifier> & s) {
+    return s->as_string();
 }
 
-std::string as_string::operator()(const std::unique_ptr<UnaryExpression> & s) {
+std::string AsStringVisitor::operator()(const std::unique_ptr<Boolean> & s) {
+    return s->as_string();
+}
+
+std::string AsStringVisitor::operator()(const std::unique_ptr<UnaryExpression> & s) {
     // There's currently only unary negation
-    return "-" + std::visit(as_string(), s->rhs);
+    return "-" + std::visit(AsStringVisitor(), s->rhs);
 }
 
-std::string as_string::operator()(const std::unique_ptr<AdditiveExpression> & s) {
+std::string AsStringVisitor::operator()(const std::unique_ptr<AdditiveExpression> & s) {
     std::string o;
     switch (s->op) {
         case AddOp::ADD:
@@ -33,10 +37,10 @@ std::string as_string::operator()(const std::unique_ptr<AdditiveExpression> & s)
             break;
     }
 
-    return std::visit(as_string(), s->lhs) + " " + o + " " + std::visit(as_string(), s->rhs);
+    return std::visit(AsStringVisitor(), s->lhs) + " " + o + " " + std::visit(AsStringVisitor(), s->rhs);
 }
 
-std::string as_string::operator()(const std::unique_ptr<MultiplicativeExpression> & s) {
+std::string AsStringVisitor::operator()(const std::unique_ptr<MultiplicativeExpression> & s) {
     std::string o;
     switch (s->op) {
         case MulOp::MOD:
@@ -50,7 +54,7 @@ std::string as_string::operator()(const std::unique_ptr<MultiplicativeExpression
             break;
     }
 
-    return std::visit(as_string(), s->lhs) + " " + o + " " + std::visit(as_string(), s->rhs);
+    return std::visit(AsStringVisitor(), s->lhs) + " " + o + " " + std::visit(AsStringVisitor(), s->rhs);
 }
 
 } // namespace Frontend::AST

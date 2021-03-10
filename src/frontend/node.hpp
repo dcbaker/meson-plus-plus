@@ -33,7 +33,7 @@ class Number {
     Number(const int64_t & number) : value{number} {};
     ~Number(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const int64_t value;
 };
@@ -43,7 +43,7 @@ class Boolean {
     Boolean(const bool & b) : value{b} {};
     ~Boolean(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const bool value;
 };
@@ -53,7 +53,7 @@ class String {
     String(const std::string & str) : value{str} {};
     ~String(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const std::string value;
 };
@@ -63,7 +63,7 @@ class Identifier {
     Identifier(const std::string & str) : value{str} {};
     ~Identifier(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const std::string value;
 };
@@ -75,7 +75,7 @@ class Assignment {
     };
     ~Assignment(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const ExpressionV lhs;
     const ExpressionV rhs;
@@ -86,7 +86,7 @@ class Subscript {
     Subscript(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
     ~Subscript(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const ExpressionV lhs;
     const ExpressionV rhs;
@@ -101,7 +101,7 @@ class UnaryExpression {
     UnaryExpression(const UnaryOp & o, ExpressionV && r) : op{o}, rhs{std::move(r)} {};
     ~UnaryExpression(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const UnaryOp op;
     const ExpressionV rhs;
@@ -119,7 +119,7 @@ class MultiplicativeExpression {
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~MultiplicativeExpression(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const ExpressionV lhs;
     const MulOp op;
@@ -137,7 +137,7 @@ class AdditiveExpression {
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     ~AdditiveExpression(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     const ExpressionV lhs;
     const AddOp op;
@@ -152,7 +152,7 @@ class CodeBlock {
     };
     ~CodeBlock(){};
 
-    explicit operator std::string() const;
+    std::string as_string() const;
 
     // XXX: this should probably be a statement list
     ExpressionList expressions;

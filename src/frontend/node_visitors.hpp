@@ -7,7 +7,7 @@
 
 namespace Frontend::AST {
 
-struct as_string {
+struct AsStringVisitor {
     std::string operator()(const std::unique_ptr<String> &);
     std::string operator()(const std::unique_ptr<Number> &);
     std::string operator()(const std::unique_ptr<Identifier> &);
