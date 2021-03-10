@@ -15,6 +15,7 @@ namespace Frontend::AST {
 namespace {};
 
 class AdditiveExpression;
+class Assignment;
 class Boolean;
 class Identifier;
 class MultiplicativeExpression;
@@ -22,9 +23,10 @@ class Number;
 class String;
 class UnaryExpression;
 
-using ExpressionV = std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>,
-                                 std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
-                                 std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>>;
+using ExpressionV =
+    std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
+                 std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
+                 std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -71,6 +73,7 @@ class Identifier {
 class Assignment {
   public:
     Assignment(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {
+        // TODO: add real error message? or would it be better for this to take an identifier?
         assert(std::holds_alternative<std::unique_ptr<Identifier>>(lhs));
     };
     ~Assignment(){};

@@ -42,16 +42,17 @@
 %token <std::string>    IDENTIFIER STRING
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
-%token                  EQUAL LBRACKET RBRACKET LPAREN RPAREN
+%token                  LBRACKET RBRACKET LPAREN RPAREN
 %token                  ADD                 "+"
 %token                  SUB                 "-"
 %token                  MUL                 "*"
 %token                  DIV                 "/"
 %token                  MOD                 "%"
+%token                  EQUAL               "="
 %token                  UMINUS
 %token                  END                 0
 
-%nterm <AST::ExpressionV>                       literal expression
+%nterm <AST::ExpressionV>                      literal expression
 %nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
 
 %left                   "-" "+"
@@ -72,6 +73,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression "*" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3)))); }
            | expression "/" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)))); }
            | expression "%" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)))); }
+           | expression "=" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Assignment>(std::move($1), std::move($3)))); }
            | "(" expression ")"                     { $$ = std::move($2); }
            | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)))); }
            | literal                                { $$ = std::move($1); }

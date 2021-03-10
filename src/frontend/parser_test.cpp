@@ -95,3 +95,10 @@ TEST(parser, unary_negate) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::UnaryExpression>>(block->expressions[0]));
     ASSERT_EQ(block->as_string(), "-5");
 }
+
+TEST(parser, assignment) {
+    auto block = parse("x = 5 + 3");
+    ASSERT_EQ(block->expressions.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Assignment>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "x = 5 + 3");
+}

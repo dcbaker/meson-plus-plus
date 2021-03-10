@@ -27,6 +27,10 @@ struct AsStringVisitor {
         return s->as_string();
     }
 
+    std::string operator()(const std::unique_ptr<Assignment> & s) {
+        return s->as_string();
+    }
+
     std::string operator()(const std::unique_ptr<UnaryExpression> & s) {
         // There's currently only unary negation
         return "-" + std::visit(AsStringVisitor(), s->rhs);
@@ -80,6 +84,11 @@ std::string String::as_string() const {
 
 std::string Identifier::as_string() const {
     return value;
+};
+
+std::string Assignment::as_string() const {
+    AsStringVisitor as{};
+    return std::visit(as, lhs) + " = " + std::visit(as, rhs);
 };
 
 // XXX: it would sure be nice not to have duplication here...
