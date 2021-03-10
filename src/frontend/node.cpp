@@ -100,7 +100,7 @@ struct AsStringVisitor {
         return std::visit(AsStringVisitor(), s->lhs) + " " + o + " " + std::visit(AsStringVisitor(), s->rhs);
     }
 
-    std::string operator()(const std::unique_ptr<PositionalArguments> & s) {
+    std::string operator()(const std::unique_ptr<FunctionCall> & s) {
         return s->as_string();
     }
 };
@@ -149,6 +149,15 @@ std::string PositionalArguments::as_string() const {
                                AsStringVisitor as{};
                                return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
                            });
+}
+
+std::string FunctionCall::as_string() const {
+    auto name = std::visit(AsStringVisitor(), id);
+    if (pos_args == nullptr) {
+        return name + "()";
+    } else {
+        return name + "(" + pos_args->as_string() + ")";
+    }
 }
 
 std::string CodeBlock::as_string() const {

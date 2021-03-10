@@ -54,11 +54,12 @@
 %token                  MOD                 "%"
 %token                  EQUAL               "="
 %token                  COMMA               ","
+%token                  COLON               ":"
 %token                  UMINUS
 %token                  END                 0
 
 %nterm <AST::ExpressionV>                           literal expression
-%nterm <std::unique_ptr<AST::ExpressionV>>          positional_arguments
+%nterm <std::unique_ptr<AST::PositionalArguments>>  positional_arguments
 %nterm <std::unique_ptr<AST::CodeBlock>>            program expressions
 
 %left                   "-" "+"
@@ -85,12 +86,14 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression RELATIONAL expression       { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Relational>(std::move($1), $2, std::move($3)))); } // XXX: this might now actually be safe, since x < y < z isnt valid.
            | "(" expression ")"                     { $$ = std::move($2); } // XXX: Do we need a subexpression type?
            | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)))); }
+           | expression "(" positional_arguments ")" { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
            | literal                                { $$ = std::move($1); }
            | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
            ;
 
-positional_arguments : expression                   { $$ = std::make_unique<PositinalArguments>(std::move($1)); }
-                     | expression "," positional_arguments { $3->expressions.emplace_back(std::move($1)); $$ = std::move($3); }
+positional_arguments : %empty                       { $$ = nullptr; }
+                     | expression                   { $$ = std::make_unique<AST::PositionalArguments>(std::move($1)); }
+                     | positional_arguments "," expression { $1->expressions.emplace_back(std::move($3)); $$ = std::move($1); }
                      ;
 
 literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }

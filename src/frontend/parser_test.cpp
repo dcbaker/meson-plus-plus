@@ -121,5 +121,17 @@ TEST(parser, relational_ops) {
     auto block = parse("5 < 3");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Relational>>(block->expressions[0]));
-   ASSERT_EQ(block->as_string(), "5 < 3");
+    ASSERT_EQ(block->as_string(), "5 < 3");
+}
+
+TEST(parser, empty_function) {
+    auto block = parse("func()");
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "func()");
+}
+
+TEST(parser, function_with_args) {
+    auto block = parse("func(a, b, c)");
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "func(a, b, c)");
 }

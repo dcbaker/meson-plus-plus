@@ -22,13 +22,13 @@ class String;
 class Subscript;
 class UnaryExpression;
 class Relational;
-class PositionalArguments;
+class FunctionCall;
 
 using ExpressionV =
     std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
-                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<PositionalArguments>>;
+                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -199,6 +199,18 @@ class PositionalArguments {
     std::string as_string() const;
 
     ExpressionList expressions;
+};
+
+class FunctionCall {
+  public:
+    FunctionCall(ExpressionV && i, std::unique_ptr<PositionalArguments> && pos) :
+      id{std::move(i)}, pos_args{std::move(pos)} {};
+    ~FunctionCall(){};
+
+    std::string as_string() const;
+
+    const ExpressionV id;
+    const std::unique_ptr<PositionalArguments> pos_args;
 };
 
 class CodeBlock {
