@@ -22,12 +22,13 @@ class String;
 class Subscript;
 class UnaryExpression;
 class Relational;
+class PositionalArguments;
 
 using ExpressionV =
     std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
-                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>>;
+                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<PositionalArguments>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -176,8 +177,8 @@ static AST::RelationalOp to_relop(const std::string & s) {
 
 class Relational {
   public:
-    Relational(ExpressionV && l, const std::string & o, ExpressionV && r) :
-        lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)} {};
+    Relational(ExpressionV && l, const std::string & o, ExpressionV && r)
+        : lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)} {};
     ~Relational(){};
 
     std::string as_string() const;
@@ -185,6 +186,19 @@ class Relational {
     const ExpressionV lhs;
     const RelationalOp op;
     const ExpressionV rhs;
+};
+
+class PositionalArguments {
+  public:
+    PositionalArguments() : expressions{} {};
+    PositionalArguments(ExpressionV && expr) : expressions{} {
+        expressions.emplace_back(std::move(expr));
+    };
+    ~PositionalArguments(){};
+
+    std::string as_string() const;
+
+    ExpressionList expressions;
 };
 
 class CodeBlock {

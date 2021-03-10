@@ -99,6 +99,10 @@ struct AsStringVisitor {
 
         return std::visit(AsStringVisitor(), s->lhs) + " " + o + " " + std::visit(AsStringVisitor(), s->rhs);
     }
+
+    std::string operator()(const std::unique_ptr<PositionalArguments> & s) {
+        return s->as_string();
+    }
 };
 
 } // namespace
@@ -138,6 +142,14 @@ std::string MultiplicativeExpression::as_string() const {
     // XXX: this is a lie
     return std::visit(AsStringVisitor(), lhs) + " * " + std::visit(AsStringVisitor(), rhs);
 };
+
+std::string PositionalArguments::as_string() const {
+    return std::accumulate(std::begin(expressions), std::end(expressions), std::string{},
+                           [](std::string & s, auto const & e) {
+                               AsStringVisitor as{};
+                               return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
+                           });
+}
 
 std::string CodeBlock::as_string() const {
     return std::accumulate(std::begin(expressions), std::end(expressions), std::string{},

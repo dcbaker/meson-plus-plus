@@ -53,11 +53,13 @@
 %token                  DIV                 "/"
 %token                  MOD                 "%"
 %token                  EQUAL               "="
+%token                  COMMA               ","
 %token                  UMINUS
 %token                  END                 0
 
-%nterm <AST::ExpressionV>                      literal expression
-%nterm <std::unique_ptr<AST::CodeBlock>>       program expressions
+%nterm <AST::ExpressionV>                           literal expression
+%nterm <std::unique_ptr<AST::ExpressionV>>          positional_arguments
+%nterm <std::unique_ptr<AST::CodeBlock>>            program expressions
 
 %left                   "-" "+"
 %left                   "*" "/" "%"
@@ -86,6 +88,10 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | literal                                { $$ = std::move($1); }
            | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
            ;
+
+positional_arguments : expression                   { $$ = std::make_unique<PositinalArguments>(std::move($1)); }
+                     | expression "," positional_arguments { $3->expressions.emplace_back(std::move($1)); $$ = std::move($3); }
+                     ;
 
 literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
         | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }

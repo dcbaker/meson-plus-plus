@@ -49,6 +49,7 @@ using token = Frontend::Parser::token;
 \]                              { return token::RBRACKET; }
 \(                              { return token::LPAREN; }
 \)                              { return token::RPAREN; }
+,                               { return token::COMMA; }
 <<EOF>>                         { return token::END; }
 \s*#.*$                         { }
 .                               { }
