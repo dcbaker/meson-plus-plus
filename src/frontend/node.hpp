@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <variant>
 #include <vector>
 
@@ -188,15 +189,22 @@ class Relational {
     const ExpressionV rhs;
 };
 
+// XXX: this isn't really true, it's really an identifier : expressionv
+using KeywordPair = std::tuple<ExpressionV, ExpressionV>;
+using KeywordList = std::vector<KeywordPair>;
+
 class Arguments {
   public:
     Arguments() : positional{} {};
-    Arguments(ExpressionList && v) : positional{std::move(v)} {};
+    Arguments(ExpressionList && v) : positional{std::move(v)}, keyword{} {};
+    Arguments(KeywordList && k) : positional{}, keyword{std::move(k)} {};
+    Arguments(ExpressionList && v, KeywordList && k) : positional{std::move(v)}, keyword{std::move(k)} {};
     ~Arguments(){};
 
     std::string as_string() const;
 
     ExpressionList positional;
+    KeywordList keyword;
 };
 
 class FunctionCall {

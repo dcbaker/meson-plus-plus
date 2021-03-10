@@ -149,8 +149,25 @@ std::string Arguments::as_string() const {
                                    AsStringVisitor as{};
                                    return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
                                });
-    // TODO: keyword
-    return pos;
+    auto kw =
+        std::accumulate(std::begin(keyword), std::end(keyword), std::string{}, [](std::string & s, auto const & e) {
+            AsStringVisitor as{};
+            const auto & [k, a] = e;
+            auto v = std::visit(as, k) + " : " + std::visit(as, a);
+            if (s.empty()) {
+                return v;
+            } else {
+                return s + ", " + v;
+            }
+        });
+
+    if (!pos.empty() && !kw.empty()) {
+        return pos + ", " + kw;
+    } else if (!pos.empty()) {
+        return pos;
+    } else {
+        return kw;
+    }
 }
 
 std::string FunctionCall::as_string() const {

@@ -135,3 +135,15 @@ TEST(parser, function_with_args) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(block->expressions[0]));
     ASSERT_EQ(block->as_string(), "func(a, b, c)");
 }
+
+TEST(parser, function_with_kw_args) {
+    auto block = parse("func(a : 'f', b : 5)");
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "func(a : 'f', b : 5)");
+}
+
+TEST(parser, function_with_both_args) {
+    auto block = parse("func(1, 2, a : 'f', b : 5)");
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "func(1, 2, a : 'f', b : 5)");
+}
