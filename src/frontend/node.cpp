@@ -143,21 +143,19 @@ std::string MultiplicativeExpression::as_string() const {
     return std::visit(AsStringVisitor(), lhs) + " * " + std::visit(AsStringVisitor(), rhs);
 };
 
-std::string PositionalArguments::as_string() const {
-    return std::accumulate(std::begin(expressions), std::end(expressions), std::string{},
-                           [](std::string & s, auto const & e) {
-                               AsStringVisitor as{};
-                               return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
-                           });
+std::string Arguments::as_string() const {
+    auto pos = std::accumulate(std::begin(positional), std::end(positional), std::string{},
+                               [](std::string & s, auto const & e) {
+                                   AsStringVisitor as{};
+                                   return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
+                               });
+    // TODO: keyword
+    return pos;
 }
 
 std::string FunctionCall::as_string() const {
     auto name = std::visit(AsStringVisitor(), id);
-    if (pos_args == nullptr) {
-        return name + "()";
-    } else {
-        return name + "(" + pos_args->as_string() + ")";
-    }
+    return name + "(" + args->as_string() + ")";
 }
 
 std::string CodeBlock::as_string() const {

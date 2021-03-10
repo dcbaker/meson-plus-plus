@@ -188,29 +188,27 @@ class Relational {
     const ExpressionV rhs;
 };
 
-class PositionalArguments {
+class Arguments {
   public:
-    PositionalArguments() : expressions{} {};
-    PositionalArguments(ExpressionV && expr) : expressions{} {
-        expressions.emplace_back(std::move(expr));
-    };
-    ~PositionalArguments(){};
+    Arguments() : positional{} {};
+    Arguments(std::vector<ExpressionV> && v) : positional{std::move(v)} {};
+    ~Arguments(){};
 
     std::string as_string() const;
 
-    ExpressionList expressions;
+    ExpressionList positional;
 };
 
 class FunctionCall {
   public:
-    FunctionCall(ExpressionV && i, std::unique_ptr<PositionalArguments> && pos) :
-      id{std::move(i)}, pos_args{std::move(pos)} {};
+    FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a) :
+      id{std::move(i)}, args{std::move(a)} {};
     ~FunctionCall(){};
 
     std::string as_string() const;
 
     const ExpressionV id;
-    const std::unique_ptr<PositionalArguments> pos_args;
+    const std::unique_ptr<Arguments> args;
 };
 
 class CodeBlock {
