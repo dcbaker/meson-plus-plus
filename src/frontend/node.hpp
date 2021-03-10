@@ -24,12 +24,14 @@ class Subscript;
 class UnaryExpression;
 class Relational;
 class FunctionCall;
+class MethodCall;
 
 using ExpressionV =
     std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
-                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>>;
+                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
+                 std::unique_ptr<MethodCall>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -214,6 +216,19 @@ class FunctionCall {
 
     std::string as_string() const;
 
+    const ExpressionV id;
+    const std::unique_ptr<Arguments> args;
+};
+
+class MethodCall {
+  public:
+    MethodCall(ExpressionV && o, ExpressionV && i, std::unique_ptr<Arguments> && a)
+        : object{std::move(o)}, id{std::move(i)}, args{std::move(a)} {};
+    ~MethodCall(){};
+
+    std::string as_string() const;
+
+    const ExpressionV object;
     const ExpressionV id;
     const std::unique_ptr<Arguments> args;
 };

@@ -51,6 +51,7 @@ using token = Frontend::Parser::token;
 \)                              { return token::RPAREN; }
 ,                               { return token::COMMA; }
 :                               { return token::COLON; }
+\.                              { return token::DOT; }
 <<EOF>>                         { return token::END; }
 \s*#.*$                         { }
 .                               { }

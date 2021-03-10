@@ -103,6 +103,10 @@ struct AsStringVisitor {
     std::string operator()(const std::unique_ptr<FunctionCall> & s) {
         return s->as_string();
     }
+
+    std::string operator()(const std::unique_ptr<MethodCall> & s) {
+        return s->as_string();
+    }
 };
 
 } // namespace
@@ -173,6 +177,13 @@ std::string Arguments::as_string() const {
 std::string FunctionCall::as_string() const {
     auto name = std::visit(AsStringVisitor(), id);
     return name + "(" + args->as_string() + ")";
+}
+
+std::string MethodCall::as_string() const {
+    AsStringVisitor as{};
+    auto obj = std::visit(as, object);
+    auto name = std::visit(as, id);
+    return obj + "." + name + "(" + args->as_string() + ")";
 }
 
 std::string CodeBlock::as_string() const {

@@ -147,3 +147,9 @@ TEST(parser, function_with_both_args) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(block->expressions[0]));
     ASSERT_EQ(block->as_string(), "func(1, 2, a : 'f', b : 5)");
 }
+
+TEST(parser, method) {
+    auto block = parse("meson.get_compiler('cpp')");
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MethodCall>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "meson.get_compiler('cpp')");
+}

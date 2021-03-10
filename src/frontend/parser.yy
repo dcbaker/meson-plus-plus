@@ -55,6 +55,7 @@
 %token                  EQUAL               "="
 %token                  COMMA               ","
 %token                  COLON               ":"
+%token                  DOT                 "."
 %token                  UMINUS
 %token                  END                 0
 
@@ -90,6 +91,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | "(" expression ")"                     { $$ = std::move($2); } // XXX: Do we need a subexpression type?
            | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)))); }
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
+           | expression "." expression "(" arguments ")" { $$ = AST::ExpressionV(std::make_unique<AST::MethodCall>(std::move($1), std::move($3), std::move($5))); }
            | literal                                { $$ = std::move($1); }
            | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
            ;
