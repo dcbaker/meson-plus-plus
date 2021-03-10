@@ -30,59 +30,68 @@ TEST(parser, decminal_number) {
     auto block = parse("77");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(block->expressions[0]));
-    ASSERT_EQ(block->as_string(), "'foo'");
+    ASSERT_EQ(block->as_string(), "77");
 }
 
 TEST(parser, octal_number) {
     auto block = parse("0o10");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "8");
 }
 
 TEST(parser, hex_number) {
     auto block = parse("0xf");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "15");
 }
 
 TEST(parser, identifier) {
     auto block = parse("foo");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Identifier>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "foo");
 }
 
 TEST(parser, multiplication) {
     auto block = parse("5  * 4 ");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MultiplicativeExpression>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "5 * 4");
 }
 
 TEST(parser, division) {
     auto block = parse("5 / 4 ");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MultiplicativeExpression>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "5 / 4");
 }
 
 TEST(parser, addition) {
     auto block = parse("5 + 4 ");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::AdditiveExpression>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "5 + 4");
 }
 
 TEST(parser, subtraction) {
     auto block = parse("5 - 4 ");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::AdditiveExpression>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "5 - 4");
 }
 
 TEST(parser, mod) {
     auto block = parse("5 % 4 ");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MultiplicativeExpression>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "5 % 4");
 }
 
 TEST(parser, unary_negate) {
     auto block = parse("- 5");
     ASSERT_EQ(block->expressions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::UnaryExpression>>(block->expressions[0]));
+    ASSERT_EQ(block->as_string(), "-5");
 }
