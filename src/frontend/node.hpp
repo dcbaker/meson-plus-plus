@@ -159,6 +159,10 @@ enum class RelationalOp {
     NE,
     GE,
     GT,
+    AND,
+    OR,
+    IN,
+    NOT_IN,
 };
 
 static AST::RelationalOp to_relop(const std::string & s) {
@@ -174,6 +178,14 @@ static AST::RelationalOp to_relop(const std::string & s) {
         return AST::RelationalOp::GE;
     } else if (s == ">") {
         return AST::RelationalOp::GT;
+    } else if (s == "and") {
+        return AST::RelationalOp::AND;
+    } else if (s == "or") {
+        return AST::RelationalOp::OR;
+    } else if (s == "in") {
+        return AST::RelationalOp::IN;
+    } else if (s == "not in") {
+        return AST::RelationalOp::NOT_IN;
     }
     assert(false);
 }

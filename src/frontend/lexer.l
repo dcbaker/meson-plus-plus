@@ -27,18 +27,20 @@ using token = Frontend::Parser::token;
 %option noyywrap
 %option c++
 
+
+
 %%
 
 
 [ \t]                           { }
 \n                              { loc->lines(); }
 (true|false)                    { lval->build<bool>(std::string(yytext) == "true"); return token::BOOL; }
+(>|>=|==|!=|=<|<|and|or|in|not\ in) { lval->build<std::string>(yytext); return token::RELATIONAL; }
 [a-zA-Z_][a-zA-Z0-9_]*          { lval->build<std::string>(yytext); return token::IDENTIFIER; }
 '.*'                            { lval->build<std::string>(yytext); return token::STRING; }
 0x[0-9a-fA-F]+                  { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }
 0o[0-7]+                        { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }
 [0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::DECIMAL_NUMBER; }
-(>|>=|==|!=|=<|<)               { lval->build<std::string>(yytext); return token::RELATIONAL; }
 \-                              { return token::SUB; }
 \+                              { return token::ADD; }
 \*                              { return token::MUL; }

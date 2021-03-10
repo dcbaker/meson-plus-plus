@@ -59,6 +59,18 @@ struct AsStringVisitor {
             case RelationalOp::GT:
                 opstr = ">";
                 break;
+            case RelationalOp::AND:
+                opstr = "and";
+                break;
+            case RelationalOp::OR:
+                opstr = "or";
+                break;
+            case RelationalOp::IN:
+                opstr = "in";
+                break;
+            case RelationalOp::NOT_IN:
+                opstr = "not in";
+                break;
         }
 
         return std::visit(as, s->lhs) + " " + opstr + " " + std::visit(as, s->rhs);
