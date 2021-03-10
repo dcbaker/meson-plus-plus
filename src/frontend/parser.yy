@@ -60,7 +60,7 @@
 
 %nterm <AST::ExpressionV>                           literal expression
 %nterm <std::unique_ptr<AST::Arguments>>            arguments
-%nterm <std::vector<AST::ExpressionV>>              positional_arguments
+%nterm <AST::ExpressionList>                        positional_arguments
 %nterm <std::unique_ptr<AST::CodeBlock>>            program expressions
 
 %left                   "-" "+"
@@ -96,7 +96,7 @@ arguments : %empty                                  { $$ = std::make_unique<AST:
           | positional_arguments                    { $$ = std::make_unique<AST::Arguments>(std::move($1)); }
           ;
 
-positional_arguments : expression                   { $$ = std::vector<AST::ExpressionV>(); $$.emplace_back(std::move($1)); }
+positional_arguments : expression                   { $$ = AST::ExpressionList(); $$.emplace_back(std::move($1)); }
                      | positional_arguments "," expression { $1.emplace_back(std::move($3)); $$ = std::move($1); }
                      ;
 

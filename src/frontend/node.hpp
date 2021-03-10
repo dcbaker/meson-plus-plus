@@ -191,7 +191,7 @@ class Relational {
 class Arguments {
   public:
     Arguments() : positional{} {};
-    Arguments(std::vector<ExpressionV> && v) : positional{std::move(v)} {};
+    Arguments(ExpressionList && v) : positional{std::move(v)} {};
     ~Arguments(){};
 
     std::string as_string() const;
@@ -201,8 +201,7 @@ class Arguments {
 
 class FunctionCall {
   public:
-    FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a) :
-      id{std::move(i)}, args{std::move(a)} {};
+    FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a) : id{std::move(i)}, args{std::move(a)} {};
     ~FunctionCall(){};
 
     std::string as_string() const;
