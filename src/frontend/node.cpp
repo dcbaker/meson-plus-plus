@@ -119,6 +119,10 @@ struct ExprStringVisitor {
     std::string operator()(const std::unique_ptr<MethodCall> & s) {
         return s->as_string();
     }
+
+    std::string operator()(const std::unique_ptr<Array> & s) {
+        return s->as_string();
+    }
 };
 
 struct StmtStringVisitor {
@@ -209,6 +213,10 @@ std::string MethodCall::as_string() const {
     auto obj = std::visit(as, object);
     auto name = std::visit(as, id);
     return obj + "." + name + "(" + args->as_string() + ")";
+}
+
+std::string Array::as_string() const {
+    return "[" + stringlistify(elements) + "]";
 }
 
 std::string Statement::as_string() const {

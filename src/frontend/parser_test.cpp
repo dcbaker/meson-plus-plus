@@ -184,3 +184,11 @@ INSTANTIATE_TEST_CASE_P(
                       std::make_tuple("meson.get_compiler ( 'cpp', 'c' )", "meson.get_compiler('cpp', 'c')"),
                       std::make_tuple("o.method(x : y, z : 1)", "o.method(x : y, z : 1)"),
                       std::make_tuple("o.method(a, b, x : y, z : 1)", "o.method(a, b, x : y, z : 1)")));
+
+
+TEST(parser, array) {
+    auto block = parse("[1, 2, 3, a, 'b']");
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Array>>(stmt->expr));
+    ASSERT_EQ(block->as_string(), "[1, 2, 3, a, 'b']");
+}

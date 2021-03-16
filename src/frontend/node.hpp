@@ -25,13 +25,14 @@ class UnaryExpression;
 class Relational;
 class FunctionCall;
 class MethodCall;
+class Array;
 
 using ExpressionV =
     std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
                  std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
-                 std::unique_ptr<MethodCall>>;
+                 std::unique_ptr<MethodCall>, std::unique_ptr<Array>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -243,6 +244,16 @@ class MethodCall {
     const ExpressionV object;
     const ExpressionV id;
     const std::unique_ptr<Arguments> args;
+};
+
+class Array {
+  public:
+    Array(ExpressionList && e) : elements{std::move(e)} {};
+    ~Array(){};
+
+    std::string as_string() const;
+
+    ExpressionList elements;
 };
 
 class Statement {
