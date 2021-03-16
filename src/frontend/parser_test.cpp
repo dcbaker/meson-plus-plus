@@ -198,3 +198,18 @@ TEST_P(ArrayToStringTests, arguments) {
 INSTANTIATE_TEST_CASE_P(ArrayParsingTests, ArrayToStringTests,
                         ::testing::Values(std::make_tuple("[ ]", "[]"), std::make_tuple("[a, b]", "[a, b]"),
                                           std::make_tuple("[a, [b]]", "[a, [b]]")));
+
+class DictToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
+
+TEST_P(DictToStringTests, arguments) {
+    const auto & [input, expected] = GetParam();
+    auto block = parse(input);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Dict>>(stmt->expr));
+    ASSERT_EQ(block->as_string(), expected);
+}
+
+INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
+                        ::testing::Values(std::make_tuple("{}", "{}"), std::make_tuple("{a : b}", "{a : b}")));
+                        // We can't test a multi item dict reliably like this be
+                        // cause meson dicts are unordered

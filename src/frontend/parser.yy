@@ -45,6 +45,8 @@
 %token <std::string>    RELATIONAL
 %token                  LBRACKET            "["
 %token                  RBRACKET            "]"
+%token                  LCURLY              "{"
+%token                  RCURLY              "}"
 %token                  LPAREN              "("
 %token                  RPAREN              ")"
 %token                  ADD                 "+"
@@ -99,6 +101,8 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression "." expression "(" arguments ")" { $$ = AST::ExpressionV(std::make_unique<AST::MethodCall>(std::move($1), std::move($3), std::move($5))); }
            | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Array>(std::move($2)))); }
            | "[" "]"                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Array>())); }
+           | "{" keyword_arguments "}"              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Dict>(std::move($2)))); }
+           | "{" "}"                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Dict>())); }
            | literal                                { $$ = std::move($1); }
            | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
            ;

@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -26,13 +27,14 @@ class Relational;
 class FunctionCall;
 class MethodCall;
 class Array;
+class Dict;
 
 using ExpressionV =
     std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
                  std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
-                 std::unique_ptr<MethodCall>, std::unique_ptr<Array>>;
+                 std::unique_ptr<MethodCall>, std::unique_ptr<Array>, std::unique_ptr<Dict>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -270,6 +272,18 @@ class Array {
     std::string as_string() const;
 
     const ExpressionList elements;
+};
+
+class Dict {
+  public:
+    Dict() : elements{} {};
+    Dict(KeywordList && l);
+    Dict(const Dict &) = delete;
+    ~Dict(){};
+
+    std::string as_string() const;
+
+    std::unordered_map<ExpressionV, ExpressionV> elements;
 };
 
 class Statement {

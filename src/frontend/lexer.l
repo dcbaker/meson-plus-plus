@@ -51,6 +51,8 @@ using token = Frontend::Parser::token;
 \]                              { return token::RBRACKET; }
 \(                              { return token::LPAREN; }
 \)                              { return token::RPAREN; }
+\{                              { return token::LCURLY; }
+\}                              { return token::RCURLY; }
 ,                               { return token::COMMA; }
 :                               { return token::COLON; }
 \.                              { return token::DOT; }

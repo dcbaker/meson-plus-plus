@@ -123,6 +123,10 @@ struct ExprStringVisitor {
     std::string operator()(const std::unique_ptr<Array> & s) {
         return s->as_string();
     }
+
+    std::string operator()(const std::unique_ptr<Dict> & s) {
+        return s->as_string();
+    }
 };
 
 struct StmtStringVisitor {
@@ -221,6 +225,24 @@ std::string Array::as_string() const {
 
 std::string Statement::as_string() const {
     return std::visit(ExprStringVisitor{}, expr);
+}
+
+Dict::Dict(KeywordList && l) {
+    for (auto & e : l) {
+        auto && [k, v] = e;
+        elements[std::move(k)] = std::move(v);
+    }
+};
+
+std::string Dict::as_string() const {
+    auto es =
+        std::accumulate(std::begin(elements), std::end(elements), std::string{}, [](std::string & s, auto const & e) {
+            ExprStringVisitor as{};
+            const auto & [k, a] = e;
+            auto v = std::visit(as, k) + " : " + std::visit(as, a);
+            return s.empty() ? v : s + ", " + v;
+        });
+    return "{" + es + "}";
 }
 
 std::string CodeBlock::as_string() const {
