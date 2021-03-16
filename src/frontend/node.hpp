@@ -39,6 +39,7 @@ using ExpressionList = std::vector<ExpressionV>;
 class Number {
   public:
     Number(const int64_t & number) : value{number} {};
+    Number(const Number &) = delete;
     ~Number(){};
 
     std::string as_string() const;
@@ -49,6 +50,7 @@ class Number {
 class Boolean {
   public:
     Boolean(const bool & b) : value{b} {};
+    Boolean(const Boolean &) = delete;
     ~Boolean(){};
 
     std::string as_string() const;
@@ -59,6 +61,7 @@ class Boolean {
 class String {
   public:
     String(const std::string & str) : value{str} {};
+    String(const String &) = delete;
     ~String(){};
 
     std::string as_string() const;
@@ -69,6 +72,7 @@ class String {
 class Identifier {
   public:
     Identifier(const std::string & str) : value{str} {};
+    Identifier(const Identifier &) = delete;
     ~Identifier(){};
 
     std::string as_string() const;
@@ -80,8 +84,10 @@ class Assignment {
   public:
     Assignment(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {
         // TODO: add real error message? or would it be better for this to take an identifier?
+        // Or is this really not a parsing issue, but a semantics issue?
         assert(std::holds_alternative<std::unique_ptr<Identifier>>(lhs));
     };
+    Assignment(const Assignment &) = delete;
     ~Assignment(){};
 
     std::string as_string() const;
@@ -93,6 +99,7 @@ class Assignment {
 class Subscript {
   public:
     Subscript(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
+    Subscript(const Subscript &) = delete;
     ~Subscript(){};
 
     std::string as_string() const;
@@ -108,6 +115,7 @@ enum class UnaryOp {
 class UnaryExpression {
   public:
     UnaryExpression(const UnaryOp & o, ExpressionV && r) : op{o}, rhs{std::move(r)} {};
+    UnaryExpression(const UnaryExpression &) = delete;
     ~UnaryExpression(){};
 
     std::string as_string() const;
@@ -126,6 +134,7 @@ class MultiplicativeExpression {
   public:
     MultiplicativeExpression(ExpressionV && l, const MulOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    MultiplicativeExpression(const MultiplicativeExpression &) = delete;
     ~MultiplicativeExpression(){};
 
     std::string as_string() const;
@@ -144,6 +153,7 @@ class AdditiveExpression {
   public:
     AdditiveExpression(ExpressionV && l, const AddOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    AdditiveExpression(const AdditiveExpression &) = delete;
     ~AdditiveExpression(){};
 
     std::string as_string() const;
@@ -195,6 +205,7 @@ class Relational {
   public:
     Relational(ExpressionV && l, const std::string & o, ExpressionV && r)
         : lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)} {};
+    Relational(const Relational &) = delete;
     ~Relational(){};
 
     std::string as_string() const;
@@ -214,6 +225,7 @@ class Arguments {
     Arguments(ExpressionList && v) : positional{std::move(v)}, keyword{} {};
     Arguments(KeywordList && k) : positional{}, keyword{std::move(k)} {};
     Arguments(ExpressionList && v, KeywordList && k) : positional{std::move(v)}, keyword{std::move(k)} {};
+    Arguments(const Arguments &) = delete;
     ~Arguments(){};
 
     std::string as_string() const;
@@ -225,6 +237,7 @@ class Arguments {
 class FunctionCall {
   public:
     FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a) : id{std::move(i)}, args{std::move(a)} {};
+    FunctionCall(const FunctionCall &) = delete;
     ~FunctionCall(){};
 
     std::string as_string() const;
@@ -237,6 +250,7 @@ class MethodCall {
   public:
     MethodCall(ExpressionV && o, ExpressionV && i, std::unique_ptr<Arguments> && a)
         : object{std::move(o)}, id{std::move(i)}, args{std::move(a)} {};
+    MethodCall(const MethodCall &) = delete;
     ~MethodCall(){};
 
     std::string as_string() const;
@@ -250,6 +264,7 @@ class Array {
   public:
     Array() : elements{} {};
     Array(ExpressionList && e) : elements{std::move(e)} {};
+    Array(const Array &) = delete;
     ~Array(){};
 
     std::string as_string() const;
@@ -260,6 +275,7 @@ class Array {
 class Statement {
   public:
     Statement(ExpressionV && e) : expr{std::move(e)} {};
+    Statement(const Statement &) = delete;
     ~Statement(){};
 
     std::string as_string() const;
@@ -275,6 +291,7 @@ class CodeBlock {
     CodeBlock(StatementV && stmt) : statements{} {
         statements.emplace_back(std::move(stmt));
     };
+    CodeBlock(const CodeBlock &) = delete;
     ~CodeBlock(){};
 
     std::string as_string() const;
