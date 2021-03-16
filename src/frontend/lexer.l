@@ -33,9 +33,9 @@ using token = Frontend::Parser::token;
 
 
 [ \t]                           { }
-\n                              { loc->lines(); }
+\n                              { loc->lines(); return token::NEWLINE; }
 (true|false)                    { lval->build<bool>(std::string(yytext) == "true"); return token::BOOL; }
-(>|>=|==|!=|=<|<|and|or|in|not\ in) { lval->build<std::string>(yytext); return token::RELATIONAL; }
+(>=|==|!=|<=|>|<|and|or|in|not\ in) { lval->build<std::string>(yytext); return token::RELATIONAL; }
 [a-zA-Z_][a-zA-Z0-9_]*          { lval->build<std::string>(yytext); return token::IDENTIFIER; }
 '.*'                            { lval->build<std::string>(yytext); return token::STRING; }
 0x[0-9a-fA-F]+                  { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }

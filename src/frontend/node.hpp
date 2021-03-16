@@ -245,18 +245,30 @@ class MethodCall {
     const std::unique_ptr<Arguments> args;
 };
 
+class Statement {
+  public:
+    Statement(ExpressionV && e) : expr{std::move(e)} {};
+    ~Statement(){};
+
+    std::string as_string() const;
+
+    const ExpressionV expr;
+};
+
+using StatementV = std::variant<std::unique_ptr<Statement>>;
+
 class CodeBlock {
   public:
-    CodeBlock() : expressions{} {};
-    CodeBlock(ExpressionV && expr) : expressions{} {
-        expressions.emplace_back(std::move(expr));
+    CodeBlock() : statements{} {};
+    CodeBlock(StatementV && stmt) : statements{} {
+        statements.emplace_back(std::move(stmt));
     };
     ~CodeBlock(){};
 
     std::string as_string() const;
 
     // XXX: this should probably be a statement list
-    ExpressionList expressions;
+    std::vector<StatementV> statements;
 };
 
 } // namespace Frontend::AST

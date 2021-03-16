@@ -56,15 +56,16 @@
 %token                  COMMA               ","
 %token                  COLON               ":"
 %token                  DOT                 "."
-%token                  UMINUS
+%token                  UMINUS NEWLINE
 %token                  END                 0
 
 %nterm <AST::ExpressionV>                           literal expression
+%nterm <AST::StatementV>                            statement
 %nterm <AST::KeywordPair>                           keyword_item
 %nterm <AST::KeywordList>                           keyword_arguments
 %nterm <std::unique_ptr<AST::Arguments>>            arguments
 %nterm <AST::ExpressionList>                        positional_arguments
-%nterm <std::unique_ptr<AST::CodeBlock>>            program expressions
+%nterm <std::unique_ptr<AST::CodeBlock>>            program statements
 
 %left                   "-" "+"
 %left                   "*" "/" "%"
@@ -74,11 +75,15 @@
 
 %%
 
-program : expressions END                           { block = std::move($1); }
+program : statements END                           { block = std::move($1); }
         ;
 
-expressions : expression                            { $$ = std::make_unique<AST::CodeBlock>(std::move($1)); }
-            | expressions expression                { $1->expressions.push_back(std::move($2)); $$ = std::move($1); }
+statements : statement                              { $$ = std::make_unique<AST::CodeBlock>(std::move($1)); }
+           | statements NEWLINE statement           { $1->statements.push_back(std::move($3)); $$ = std::move($1); }
+           ;
+
+statement : expression                              { $$ = AST::StatementV(std::make_unique<AST::Statement>(std::move($1))); }
+          ;
 
 expression : expression "+" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3)))); }
            | expression "-" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3)))); }
