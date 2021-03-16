@@ -87,24 +87,24 @@ statements : statement                              { $$ = std::make_unique<AST:
 statement : expression                              { $$ = AST::StatementV(std::make_unique<AST::Statement>(std::move($1))); }
           ;
 
-expression : expression "+" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3)))); }
-           | expression "-" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3)))); }
-           | expression "*" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3)))); }
-           | expression "/" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3)))); }
-           | expression "%" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3)))); }
-           | expression "=" expression              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Assignment>(std::move($1), std::move($3)))); }
-           | expression "[" expression "]"          { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Subscript>(std::move($1), std::move($3)))); }
-           | expression RELATIONAL expression       { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Relational>(std::move($1), $2, std::move($3)))); } // XXX: this might now actually be safe, since x < y < z isnt valid.
+expression : expression "+" expression              { $$ = AST::ExpressionV(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3))); }
+           | expression "-" expression              { $$ = AST::ExpressionV(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3))); }
+           | expression "*" expression              { $$ = AST::ExpressionV(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3))); }
+           | expression "/" expression              { $$ = AST::ExpressionV(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3))); }
+           | expression "%" expression              { $$ = AST::ExpressionV(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3))); }
+           | expression "=" expression              { $$ = AST::ExpressionV(std::make_unique<AST::Assignment>(std::move($1), std::move($3))); }
+           | expression "[" expression "]"          { $$ = AST::ExpressionV(std::make_unique<AST::Subscript>(std::move($1), std::move($3))); }
+           | expression RELATIONAL expression       { $$ = AST::ExpressionV(std::make_unique<AST::Relational>(std::move($1), $2, std::move($3))); } // XXX: this might now actually be safe, since x < y < z isnt valid.
            | "(" expression ")"                     { $$ = std::move($2); } // XXX: Do we need a subexpression type?
-           | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2)))); }
+           | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2))); }
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
            | expression "." expression "(" arguments ")" { $$ = AST::ExpressionV(std::make_unique<AST::MethodCall>(std::move($1), std::move($3), std::move($5))); }
-           | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Array>(std::move($2)))); }
-           | "[" "]"                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Array>())); }
-           | "{" keyword_arguments "}"              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Dict>(std::move($2)))); }
-           | "{" "}"                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Dict>())); }
+           | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::make_unique<AST::Array>(std::move($2))); }
+           | "[" "]"                                { $$ = AST::ExpressionV(std::make_unique<AST::Array>()); }
+           | "{" keyword_arguments "}"              { $$ = AST::ExpressionV(std::make_unique<AST::Dict>(std::move($2))); }
+           | "{" "}"                                { $$ = AST::ExpressionV(std::make_unique<AST::Dict>()); }
            | literal                                { $$ = std::move($1); }
-           | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
+           | IDENTIFIER                             { $$ = AST::ExpressionV(std::make_unique<AST::Identifier>($1)); }
            ;
 
 arguments : %empty                                  { $$ = std::make_unique<AST::Arguments>(); }
@@ -124,11 +124,11 @@ keyword_arguments : keyword_item                    { $$ = AST::KeywordList(); $
 keyword_item : expression ":" expression            { $$ = AST::KeywordPair(std::move($1), std::move($3)); }
              ;
 
-literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
-        | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
-        | OCTAL_NUMBER                              { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Number>($1))); }
-        | STRING                                    { $$ = AST::ExpressionV(std::move(std::make_unique<AST::String>($1.substr(1, $1.size() - 2)))); }
-        | BOOL                                      { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Boolean>($1))); }
+literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1)); }
+        | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1)); }
+        | OCTAL_NUMBER                              { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1)); }
+        | STRING                                    { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(1, $1.size() - 2))); }
+        | BOOL                                      { $$ = AST::ExpressionV(std::make_unique<AST::Boolean>($1)); }
         ;
 
 %%
