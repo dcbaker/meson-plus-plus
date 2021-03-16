@@ -185,10 +185,16 @@ INSTANTIATE_TEST_CASE_P(
                       std::make_tuple("o.method(x : y, z : 1)", "o.method(x : y, z : 1)"),
                       std::make_tuple("o.method(a, b, x : y, z : 1)", "o.method(a, b, x : y, z : 1)")));
 
+class ArrayToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
-TEST(parser, array) {
-    auto block = parse("[1, 2, 3, a, 'b']");
+TEST_P(ArrayToStringTests, arguments) {
+    const auto & [input, expected] = GetParam();
+    auto block = parse(input);
     auto const & stmt = std::get<0>(block->statements[0]);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Array>>(stmt->expr));
-    ASSERT_EQ(block->as_string(), "[1, 2, 3, a, 'b']");
+    ASSERT_EQ(block->as_string(), expected);
 }
+
+INSTANTIATE_TEST_CASE_P(ArrayParsingTests, ArrayToStringTests,
+                        ::testing::Values(std::make_tuple("[ ]", "[]"), std::make_tuple("[a, b]", "[a, b]"),
+                                          std::make_tuple("[a, [b]]", "[a, [b]]")));

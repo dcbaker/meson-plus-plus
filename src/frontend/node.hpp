@@ -248,12 +248,13 @@ class MethodCall {
 
 class Array {
   public:
+    Array() : elements{} {};
     Array(ExpressionList && e) : elements{std::move(e)} {};
     ~Array(){};
 
     std::string as_string() const;
 
-    ExpressionList elements;
+    const ExpressionList elements;
 };
 
 class Statement {

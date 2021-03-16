@@ -98,6 +98,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
            | expression "." expression "(" arguments ")" { $$ = AST::ExpressionV(std::make_unique<AST::MethodCall>(std::move($1), std::move($3), std::move($5))); }
            | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Array>(std::move($2)))); }
+           | "[" "]"                                { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Array>())); }
            | literal                                { $$ = std::move($1); }
            | IDENTIFIER                             { $$ = AST::ExpressionV(std::move(std::make_unique<AST::Identifier>($1))); }
            ;
