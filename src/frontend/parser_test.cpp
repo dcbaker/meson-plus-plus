@@ -145,9 +145,9 @@ INSTANTIATE_TEST_CASE_P(RelationalParsingTests, RelationalToStringTests,
                         ::testing::Values(std::make_tuple("4<3", "4 < 3"), std::make_tuple("4>3", "4 > 3"),
                                           std::make_tuple("0 == true", "0 == true"),
                                           std::make_tuple("0 != true", "0 != true"),
-                                          std::make_tuple("x or y", "x or y"), std::make_tuple("x and y", "x and y")));
-//   std::make_tuple("x in [a, b]", "x in [a, b]"),
-//   std::make_tuple("x not in [a, b]", "x not in [a, b]")));
+                                          std::make_tuple("x or y", "x or y"), std::make_tuple("x and y", "x and y"),
+                                          std::make_tuple("x in y", "x in y"),
+                                          std::make_tuple("x not in y", "x not in y")));
 
 class FunctionToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
