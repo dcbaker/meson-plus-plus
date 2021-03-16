@@ -41,45 +41,49 @@ using ExpressionList = std::vector<ExpressionV>;
 class Number {
   public:
     Number(const int64_t & number) : value{number} {};
+    Number(Number && n) noexcept : value{std::move(n.value)} {};
     Number(const Number &) = delete;
     ~Number(){};
 
     std::string as_string() const;
 
-    const int64_t value;
+    int64_t value;
 };
 
 class Boolean {
   public:
     Boolean(const bool & b) : value{b} {};
+    Boolean(Boolean && b) noexcept : value{std::move(b.value)} {};
     Boolean(const Boolean &) = delete;
     ~Boolean(){};
 
     std::string as_string() const;
 
-    const bool value;
+    bool value;
 };
 
 class String {
   public:
     String(const std::string & str) : value{str} {};
+    String(String && s) noexcept : value{std::move(s.value)} {};
     String(const String &) = delete;
     ~String(){};
 
     std::string as_string() const;
 
-    const std::string value;
+    std::string value;
 };
 
 class Identifier {
   public:
     Identifier(const std::string & str) : value{str} {};
+    Identifier(Identifier && s) noexcept : value{std::move(s.value)} {};
     Identifier(const Identifier &) = delete;
     ~Identifier(){};
 
     std::string as_string() const;
 
-    const std::string value;
+    std::string value;
 };
 
 class Assignment {
@@ -89,25 +93,27 @@ class Assignment {
         // Or is this really not a parsing issue, but a semantics issue?
         assert(std::holds_alternative<std::unique_ptr<Identifier>>(lhs));
     };
+    Assignment(Assignment && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)} {};
     Assignment(const Assignment &) = delete;
     ~Assignment(){};
 
     std::string as_string() const;
 
-    const ExpressionV lhs;
-    const ExpressionV rhs;
+    ExpressionV lhs;
+    ExpressionV rhs;
 };
 
 class Subscript {
   public:
     Subscript(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
     Subscript(const Subscript &) = delete;
+    Subscript(Subscript && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)} {};
     ~Subscript(){};
 
     std::string as_string() const;
 
-    const ExpressionV lhs;
-    const ExpressionV rhs;
+    ExpressionV lhs;
+    ExpressionV rhs;
 };
 
 enum class UnaryOp {
@@ -117,13 +123,14 @@ enum class UnaryOp {
 class UnaryExpression {
   public:
     UnaryExpression(const UnaryOp & o, ExpressionV && r) : op{o}, rhs{std::move(r)} {};
+    UnaryExpression(UnaryExpression && a) noexcept : op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
     UnaryExpression(const UnaryExpression &) = delete;
     ~UnaryExpression(){};
 
     std::string as_string() const;
 
-    const UnaryOp op;
-    const ExpressionV rhs;
+    UnaryOp op;
+    ExpressionV rhs;
 };
 
 enum class MulOp {
@@ -136,14 +143,16 @@ class MultiplicativeExpression {
   public:
     MultiplicativeExpression(ExpressionV && l, const MulOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    MultiplicativeExpression(MultiplicativeExpression && a) noexcept
+        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
     MultiplicativeExpression(const MultiplicativeExpression &) = delete;
     ~MultiplicativeExpression(){};
 
     std::string as_string() const;
 
-    const ExpressionV lhs;
-    const MulOp op;
-    const ExpressionV rhs;
+    ExpressionV lhs;
+    MulOp op;
+    ExpressionV rhs;
 };
 
 enum class AddOp {
@@ -155,14 +164,16 @@ class AdditiveExpression {
   public:
     AdditiveExpression(ExpressionV && l, const AddOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    AdditiveExpression(AdditiveExpression && a) noexcept
+        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
     AdditiveExpression(const AdditiveExpression &) = delete;
     ~AdditiveExpression(){};
 
     std::string as_string() const;
 
-    const ExpressionV lhs;
-    const AddOp op;
-    const ExpressionV rhs;
+    ExpressionV lhs;
+    AddOp op;
+    ExpressionV rhs;
 };
 
 enum class RelationalOp {
@@ -207,14 +218,15 @@ class Relational {
   public:
     Relational(ExpressionV && l, const std::string & o, ExpressionV && r)
         : lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)} {};
+    Relational(Relational && a) noexcept : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
     Relational(const Relational &) = delete;
     ~Relational(){};
 
     std::string as_string() const;
 
-    const ExpressionV lhs;
-    const RelationalOp op;
-    const ExpressionV rhs;
+    ExpressionV lhs;
+    RelationalOp op;
+    ExpressionV rhs;
 };
 
 // XXX: this isn't really true, it's really an identifier : expressionv
@@ -227,6 +239,7 @@ class Arguments {
     Arguments(ExpressionList && v) : positional{std::move(v)}, keyword{} {};
     Arguments(KeywordList && k) : positional{}, keyword{std::move(k)} {};
     Arguments(ExpressionList && v, KeywordList && k) : positional{std::move(v)}, keyword{std::move(k)} {};
+    Arguments(Arguments && a) noexcept : positional{std::move(a.positional)}, keyword{std::move(a.keyword)} {};
     Arguments(const Arguments &) = delete;
     ~Arguments(){};
 
@@ -239,45 +252,49 @@ class Arguments {
 class FunctionCall {
   public:
     FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a) : id{std::move(i)}, args{std::move(a)} {};
+    FunctionCall(FunctionCall && a) noexcept : id{std::move(a.id)}, args{std::move(a.args)} {};
     FunctionCall(const FunctionCall &) = delete;
     ~FunctionCall(){};
 
     std::string as_string() const;
 
-    const ExpressionV id;
-    const std::unique_ptr<Arguments> args;
+    ExpressionV id;
+    std::unique_ptr<Arguments> args;
 };
 
 class MethodCall {
   public:
     MethodCall(ExpressionV && o, ExpressionV && i, std::unique_ptr<Arguments> && a)
         : object{std::move(o)}, id{std::move(i)}, args{std::move(a)} {};
+    MethodCall(MethodCall && a) noexcept : object{std::move(a.object)}, id{std::move(a.id)}, args{std::move(a.args)} {};
     MethodCall(const MethodCall &) = delete;
     ~MethodCall(){};
 
     std::string as_string() const;
 
-    const ExpressionV object;
-    const ExpressionV id;
-    const std::unique_ptr<Arguments> args;
+    ExpressionV object;
+    ExpressionV id;
+    std::unique_ptr<Arguments> args;
 };
 
 class Array {
   public:
     Array() : elements{} {};
     Array(ExpressionList && e) : elements{std::move(e)} {};
+    Array(Array && a) noexcept : elements{std::move(a.elements)} {};
     Array(const Array &) = delete;
     ~Array(){};
 
     std::string as_string() const;
 
-    const ExpressionList elements;
+    ExpressionList elements;
 };
 
 class Dict {
   public:
     Dict() : elements{} {};
     Dict(KeywordList && l);
+    Dict(Dict && a) : elements{std::move(a.elements)} {};
     Dict(const Dict &) = delete;
     ~Dict(){};
 
@@ -289,12 +306,13 @@ class Dict {
 class Statement {
   public:
     Statement(ExpressionV && e) : expr{std::move(e)} {};
+    Statement(Statement && a) noexcept : expr{std::move(a.expr)} {};
     Statement(const Statement &) = delete;
     ~Statement(){};
 
     std::string as_string() const;
 
-    const ExpressionV expr;
+    ExpressionV expr;
 };
 
 using StatementV = std::variant<std::unique_ptr<Statement>>;
@@ -305,6 +323,7 @@ class CodeBlock {
     CodeBlock(StatementV && stmt) : statements{} {
         statements.emplace_back(std::move(stmt));
     };
+    CodeBlock(CodeBlock && b) noexcept : statements{std::move(b.statements)} {};
     CodeBlock(const CodeBlock &) = delete;
     ~CodeBlock(){};
 
