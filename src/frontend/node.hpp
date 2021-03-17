@@ -25,16 +25,16 @@ class Subscript;
 class UnaryExpression;
 class Relational;
 class FunctionCall;
-class MethodCall;
+class GetAttribute;
 class Array;
 class Dict;
 
 using ExpressionV =
-    std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Assignment>, std::unique_ptr<Boolean>,
+    std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
                  std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
                  std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
-                 std::unique_ptr<MethodCall>, std::unique_ptr<Array>, std::unique_ptr<Dict>>;
+                 std::unique_ptr<GetAttribute>, std::unique_ptr<Array>, std::unique_ptr<Dict>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -84,23 +84,6 @@ class Identifier {
     std::string as_string() const;
 
     std::string value;
-};
-
-class Assignment {
-  public:
-    Assignment(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {
-        // TODO: add real error message? or would it be better for this to take an identifier?
-        // Or is this really not a parsing issue, but a semantics issue?
-        assert(std::holds_alternative<std::unique_ptr<Identifier>>(lhs));
-    };
-    Assignment(Assignment && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)} {};
-    Assignment(const Assignment &) = delete;
-    ~Assignment(){};
-
-    std::string as_string() const;
-
-    ExpressionV lhs;
-    ExpressionV rhs;
 };
 
 class Subscript {
@@ -262,19 +245,17 @@ class FunctionCall {
     std::unique_ptr<Arguments> args;
 };
 
-class MethodCall {
+class GetAttribute {
   public:
-    MethodCall(ExpressionV && o, ExpressionV && i, std::unique_ptr<Arguments> && a)
-        : object{std::move(o)}, id{std::move(i)}, args{std::move(a)} {};
-    MethodCall(MethodCall && a) noexcept : object{std::move(a.object)}, id{std::move(a.id)}, args{std::move(a.args)} {};
-    MethodCall(const MethodCall &) = delete;
-    ~MethodCall(){};
+    GetAttribute(ExpressionV && o, ExpressionV && i) : object{std::move(o)}, id{std::move(i)} {};
+    GetAttribute(GetAttribute && a) noexcept : object{std::move(a.object)}, id{std::move(a.id)} {};
+    GetAttribute(const GetAttribute &) = delete;
+    ~GetAttribute(){};
 
     std::string as_string() const;
 
     ExpressionV object;
     ExpressionV id;
-    std::unique_ptr<Arguments> args;
 };
 
 class Array {
@@ -315,7 +296,22 @@ class Statement {
     ExpressionV expr;
 };
 
-using StatementV = std::variant<std::unique_ptr<Statement>>;
+class Assignment {
+  public:
+    Assignment(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
+    Assignment(Assignment && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)} {};
+    Assignment(const Assignment &) = delete;
+    ~Assignment(){};
+
+    std::string as_string() const;
+
+    ExpressionV lhs;
+    ExpressionV rhs;
+};
+
+class IfStatement;
+
+using StatementV = std::variant<std::unique_ptr<Statement>, std::unique_ptr<Assignment>, std::unique_ptr<IfStatement>>;
 
 class CodeBlock {
   public:
@@ -327,10 +323,75 @@ class CodeBlock {
     CodeBlock(const CodeBlock &) = delete;
     ~CodeBlock(){};
 
+    CodeBlock & operator=(CodeBlock &&) = default;
+
     std::string as_string() const;
 
     // XXX: this should probably be a statement list
     std::vector<StatementV> statements;
+};
+
+class IfBlock {
+  public:
+    IfBlock() {};
+    IfBlock(ExpressionV && cond) : condition{std::move(cond)}, block{} {};
+    IfBlock(ExpressionV && cond, std::unique_ptr<CodeBlock> && b) : condition{std::move(cond)}, block{std::move(b)} {};
+    IfBlock(IfBlock && i) noexcept : condition{std::move(i.condition)}, block{std::move(i.block)} {};
+    IfBlock(const IfBlock &) = delete;
+    ~IfBlock(){};
+
+    IfBlock & operator=(IfBlock &&) = default;
+
+    ExpressionV condition;
+    std::unique_ptr<CodeBlock> block;
+};
+
+class ElifBlock {
+  public:
+    ElifBlock() : condition{}, block{} {};
+    ElifBlock(ExpressionV && cond, std::unique_ptr<CodeBlock> && b)
+        : condition{std::move(cond)}, block{std::move(b)} {};
+    ElifBlock(ElifBlock && e) noexcept : condition{std::move(e.condition)}, block{std::move(e.block)} {};
+    ElifBlock(const ElifBlock &) = delete;
+    ~ElifBlock(){};
+
+    ElifBlock & operator=(ElifBlock &&) = default;
+
+    ExpressionV condition;
+    std::unique_ptr<CodeBlock> block;
+};
+
+class ElseBlock {
+  public:
+    ElseBlock() : block{} {};
+    ElseBlock(std::unique_ptr<CodeBlock> && b) : block{std::move(b)} {};
+    ElseBlock(ElseBlock && e) noexcept : block{std::move(e.block)} {};
+    ElseBlock(const ElseBlock &) = delete;
+    ~ElseBlock(){};
+
+    ElseBlock & operator=(ElseBlock &&) = default;
+
+    std::unique_ptr<CodeBlock> block;
+};
+
+class IfStatement {
+  public:
+    IfStatement(IfBlock && ib) : ifblock{std::move(ib)}, efblock{}, eblock{} {};
+    IfStatement(IfBlock && ib, ElseBlock && eb) : ifblock{std::move(ib)}, efblock{}, eblock{std::move(eb)} {};
+    IfStatement(IfBlock && ib, std::vector<ElifBlock> && ef)
+        : ifblock{std::move(ib)}, efblock{std::move(ef)}, eblock{} {};
+    IfStatement(IfBlock && ib, std::vector<ElifBlock> && ef, ElseBlock && eb)
+        : ifblock{std::move(ib)}, efblock{std::move(ef)}, eblock{std::move(eb)} {};
+    IfStatement(IfStatement && i)
+        : ifblock{std::move(i.ifblock)}, efblock{std::move(i.efblock)}, eblock{std::move(i.eblock)} {};
+    IfStatement(const IfStatement &) = delete;
+    ~IfStatement(){};
+
+    std::string as_string() const;
+
+    IfBlock ifblock;
+    std::vector<ElifBlock> efblock;
+    ElseBlock eblock;
 };
 
 } // namespace Frontend::AST

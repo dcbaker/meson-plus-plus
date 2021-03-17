@@ -8,7 +8,7 @@ parser = custom_target(
   'parser.[ch]pp',
   input : 'parser.yy',
   output : ['@PLAINNAME@.cpp', '@PLAINNAME@.hpp', 'locations.hpp'],
-  command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@'],
+  command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@', '-Wcounterexamples'],
 )
 
 scanner = custom_target(
@@ -50,4 +50,5 @@ executable(
   ['standalone.cpp', parser[1]],
   link_with : libfrontend,
   cpp_args : _frontend_args,
+  build_by_default : false,
 )

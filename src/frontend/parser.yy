@@ -39,10 +39,9 @@
 %define api.value.type variant
 %define parse.assert
 
-%token <std::string>    IDENTIFIER STRING
+%token <std::string>    IDENTIFIER STRING RELATIONAL
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
-%token <std::string>    RELATIONAL
 %token                  LBRACKET            "["
 %token                  RBRACKET            "]"
 %token                  LCURLY              "{"
@@ -58,47 +57,73 @@
 %token                  COMMA               ","
 %token                  COLON               ":"
 %token                  DOT                 "."
-%token                  UMINUS NEWLINE
+%token                  IF ELIF ELSE ENDIF
+%token                  UMINUS
+%token                  NEWLINE             "\n"
 %token                  END                 0
 
 %nterm <AST::ExpressionV>                           literal expression
 %nterm <AST::StatementV>                            statement
+%nterm <std::unique_ptr<AST::IfStatement>>          if_statement
 %nterm <AST::KeywordPair>                           keyword_item
 %nterm <AST::KeywordList>                           keyword_arguments
 %nterm <std::unique_ptr<AST::Arguments>>            arguments
 %nterm <AST::ExpressionList>                        positional_arguments
 %nterm <std::unique_ptr<AST::CodeBlock>>            program statements
+%nterm <AST::ElseBlock>                             else_clause
+%nterm <std::vector<AST::ElifBlock>>                elif_clause
+%nterm <AST::IfBlock>                               if_clause
 
 %left                   "-" "+"
 %left                   "*" "/" "%"
-%left                   "(" ")"
-%left                   RELATIONAL
+%left                   "."
+%left                   "(" ")" "[" "]"
+%left                   RELATIONAL  // XXX: is the priority of this off?
+%left                  "\n"
+%nonassoc               IF ELIF ELSE ENDIF
 %right                  UMINUS      // Negation
 
 %%
 
-program : statements END                           { block = std::move($1); }
+program : statements END                            { block = std::move($1); }
         ;
 
 statements : statement                              { $$ = std::make_unique<AST::CodeBlock>(std::move($1)); }
-           | statements NEWLINE statement           { $1->statements.push_back(std::move($3)); $$ = std::move($1); }
+           | statements "\n" statement              { $1->statements.push_back(std::move($3)); $$ = std::move($1); }
            ;
 
 statement : expression                              { $$ = AST::StatementV(std::make_unique<AST::Statement>(std::move($1))); }
+          | expression "=" expression               { $$ = AST::StatementV(std::make_unique<AST::Assignment>(std::move($1), std::move($3))); }
+          | if_statement                            { $$ = AST::StatementV(std::move($1)); }
           ;
+
+if_statement : if_clause "\n" ENDIF                 { $$ = std::make_unique<AST::IfStatement>(std::move($1)); }
+             | if_clause "\n" else_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3)); }
+             | if_clause "\n" elif_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3)); }
+             | if_clause "\n" elif_clause "\n" else_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3), std::move($5)); }
+             ;
+
+if_clause : IF expression "\n" statements           { $$ = AST::IfBlock(std::move($2), std::move($4)); }
+          ;
+
+elif_clause : ELIF expression "\n" statements       { $$ = std::vector<AST::ElifBlock>{}; $$.emplace_back(AST::ElifBlock(std::move($2), std::move($4))); }
+            | elif_clause "\n" elif_clause          { $$ = std::move($1); std::move($3.begin(), $3.end(), std::back_inserter($$)); }
+            ;
+
+else_clause : ELSE "\n" statements                  { $$ = AST::ElseBlock(std::move($3)); }
+            ;
 
 expression : expression "+" expression              { $$ = AST::ExpressionV(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3))); }
            | expression "-" expression              { $$ = AST::ExpressionV(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::SUB, std::move($3))); }
            | expression "*" expression              { $$ = AST::ExpressionV(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MUL, std::move($3))); }
            | expression "/" expression              { $$ = AST::ExpressionV(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::DIV, std::move($3))); }
            | expression "%" expression              { $$ = AST::ExpressionV(std::make_unique<AST::MultiplicativeExpression>(std::move($1), AST::MulOp::MOD, std::move($3))); }
-           | expression "=" expression              { $$ = AST::ExpressionV(std::make_unique<AST::Assignment>(std::move($1), std::move($3))); }
            | expression "[" expression "]"          { $$ = AST::ExpressionV(std::make_unique<AST::Subscript>(std::move($1), std::move($3))); }
            | expression RELATIONAL expression       { $$ = AST::ExpressionV(std::make_unique<AST::Relational>(std::move($1), $2, std::move($3))); } // XXX: this might now actually be safe, since x < y < z isnt valid.
            | "(" expression ")"                     { $$ = std::move($2); } // XXX: Do we need a subexpression type?
            | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2))); }
+           | expression "." expression              { $$ = AST::ExpressionV(std::make_unique<AST::GetAttribute>(std::move($1), std::move($3))); }
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
-           | expression "." expression "(" arguments ")" { $$ = AST::ExpressionV(std::make_unique<AST::MethodCall>(std::move($1), std::move($3), std::move($5))); }
            | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::make_unique<AST::Array>(std::move($2))); }
            | "[" "]"                                { $$ = AST::ExpressionV(std::make_unique<AST::Array>()); }
            | "{" keyword_arguments "}"              { $$ = AST::ExpressionV(std::make_unique<AST::Dict>(std::move($2))); }

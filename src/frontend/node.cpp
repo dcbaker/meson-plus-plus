@@ -27,10 +27,6 @@ struct ExprStringVisitor {
         return s->as_string();
     }
 
-    std::string operator()(const std::unique_ptr<Assignment> & s) {
-        return s->as_string();
-    }
-
     std::string operator()(const std::unique_ptr<Subscript> & s) {
         ExprStringVisitor as{};
         return std::visit(as, s->lhs) + "[" + std::visit(as, s->rhs) + "]";
@@ -116,7 +112,7 @@ struct ExprStringVisitor {
         return s->as_string();
     }
 
-    std::string operator()(const std::unique_ptr<MethodCall> & s) {
+    std::string operator()(const std::unique_ptr<GetAttribute> & s) {
         return s->as_string();
     }
 
@@ -131,6 +127,14 @@ struct ExprStringVisitor {
 
 struct StmtStringVisitor {
     std::string operator()(const std::unique_ptr<Statement> & s) {
+        return s->as_string();
+    }
+
+    std::string operator()(const std::unique_ptr<IfStatement> & s) {
+        return s->as_string();
+    }
+
+    std::string operator()(const std::unique_ptr<Assignment> & s) {
         return s->as_string();
     }
 };
@@ -212,11 +216,11 @@ std::string FunctionCall::as_string() const {
     return name + "(" + args->as_string() + ")";
 }
 
-std::string MethodCall::as_string() const {
+std::string GetAttribute::as_string() const {
     ExprStringVisitor as{};
     auto obj = std::visit(as, object);
     auto name = std::visit(as, id);
-    return obj + "." + name + "(" + args->as_string() + ")";
+    return obj + "." + name;
 }
 
 std::string Array::as_string() const {
@@ -251,6 +255,10 @@ std::string CodeBlock::as_string() const {
                                StmtStringVisitor as{};
                                return s.empty() ? std::visit(as, e) : s + ", " + std::visit(as, e);
                            });
+}
+
+std::string IfStatement::as_string() const {
+    return "TODO";
 }
 
 } // namespace Frontend::AST

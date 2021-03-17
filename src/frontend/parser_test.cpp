@@ -107,14 +107,6 @@ TEST(parser, unary_negate) {
     ASSERT_EQ(block->as_string(), "-5");
 }
 
-TEST(parser, assignment) {
-    auto block = parse("x = 5 + 3");
-    ASSERT_EQ(block->statements.size(), 1);
-    auto const & stmt = std::get<0>(block->statements[0]);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Assignment>>(stmt->expr));
-    ASSERT_EQ(block->as_string(), "x = 5 + 3");
-}
-
 TEST(parser, subscript) {
     auto block = parse("foo[bar + 1]");
     ASSERT_EQ(block->statements.size(), 1);
@@ -173,7 +165,7 @@ TEST_P(MethodToStringTests, arguments) {
     const auto & [input, expected] = GetParam();
     auto block = parse(input);
     auto const & stmt = std::get<0>(block->statements[0]);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::MethodCall>>(stmt->expr));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::GetAttribute>>(stmt->expr));
     ASSERT_EQ(block->as_string(), expected);
 }
 
@@ -211,5 +203,30 @@ TEST_P(DictToStringTests, arguments) {
 
 INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
                         ::testing::Values(std::make_tuple("{}", "{}"), std::make_tuple("{a : b}", "{a : b}")));
-                        // We can't test a multi item dict reliably like this be
-                        // cause meson dicts are unordered
+// We can't test a multi item dict reliably like this be
+// cause meson dicts are unordered
+
+TEST(parser, assignment_stmt) {
+    auto block = parse("x = 5 + 3");
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Assignment>>(stmt));
+    ASSERT_EQ(block->as_string(), "x = 5 + 3");
+}
+
+class IfStatementParsingTests : public ::testing::TestWithParam<std::string> {};
+
+TEST_P(IfStatementParsingTests, arguments) {
+    auto const & input = GetParam();
+    auto block = parse(input);
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::IfStatement>>(stmt));
+}
+
+INSTANTIATE_TEST_CASE_P(parser, IfStatementParsingTests,
+                        ::testing::Values("if true\na = b\nendif", "if true\na = b\n\n\nendif",
+                                          "if false\na = b\nelse\na = c\nendif",
+                                          "if false\na = b\nelif true\na = c\nendif",
+                                          "if false\na = b\nelif false\na =b\nelif true\na = c\nendif",
+                                          "if false\na = b\nelif 1 == 2\na = c\nelse\na = d\nendif",
+                                          "if true\nif true\na = b\nendif\nendif"));
