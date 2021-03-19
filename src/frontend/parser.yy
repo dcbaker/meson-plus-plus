@@ -57,7 +57,7 @@
 %token                  COMMA               ","
 %token                  COLON               ":"
 %token                  DOT                 "."
-%token                  IF ELIF ELSE ENDIF
+%token                  IF ELIF ELSE ENDIF FOREACH ENDFOREACH
 %token                  UMINUS
 %token                  NOT
 %token                  NEWLINE             "\n"
@@ -66,6 +66,7 @@
 %nterm <AST::ExpressionV>                           literal expression
 %nterm <AST::StatementV>                            statement
 %nterm <std::unique_ptr<AST::IfStatement>>          if_statement
+%nterm <std::unique_ptr<AST::ForeachStatement>>     foreach_statement
 %nterm <AST::KeywordPair>                           keyword_item
 %nterm <AST::KeywordList>                           keyword_arguments
 %nterm <std::unique_ptr<AST::Arguments>>            arguments
@@ -97,7 +98,12 @@ statements : statement                              { $$ = std::make_unique<AST:
 statement : expression                              { $$ = AST::StatementV(std::make_unique<AST::Statement>(std::move($1))); }
           | expression "=" expression               { $$ = AST::StatementV(std::make_unique<AST::Assignment>(std::move($1), std::move($3))); }
           | if_statement                            { $$ = AST::StatementV(std::move($1)); }
+          | foreach_statement                       { $$ = AST::StatementV(std::move($1)); }
           ;
+
+foreach_statement : FOREACH IDENTIFIER ":" expression "\n" statements "\n" ENDFOREACH {
+                                                        $$ = std::make_unique<AST::ForeachStatement>(std::move($2), std::move($4), std::move($6)); }
+                  ;
 
 if_statement : if_clause "\n" ENDIF                 { $$ = std::make_unique<AST::IfStatement>(std::move($1)); }
              | if_clause "\n" else_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3)); }

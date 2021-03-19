@@ -144,6 +144,10 @@ struct StmtStringVisitor {
         return s->as_string();
     }
 
+    std::string operator()(const std::unique_ptr<ForeachStatement> & s) {
+        return s->as_string();
+    }
+
     std::string operator()(const std::unique_ptr<Assignment> & s) {
         return s->as_string();
     }
@@ -268,6 +272,10 @@ std::string CodeBlock::as_string() const {
 }
 
 std::string IfStatement::as_string() const {
+    return "TODO";
+}
+
+std::string ForeachStatement::as_string() const {
     return "TODO";
 }
 

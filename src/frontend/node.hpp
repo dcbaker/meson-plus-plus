@@ -29,12 +29,11 @@ class GetAttribute;
 class Array;
 class Dict;
 
-using ExpressionV =
-    std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>,
-                 std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
-                 std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
-                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
-                 std::unique_ptr<GetAttribute>, std::unique_ptr<Array>, std::unique_ptr<Dict>>;
+using ExpressionV = std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>,
+                                 std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
+                                 std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
+                                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
+                                 std::unique_ptr<GetAttribute>, std::unique_ptr<Array>, std::unique_ptr<Dict>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -311,8 +310,10 @@ class Assignment {
 };
 
 class IfStatement;
+class ForeachStatement;
 
-using StatementV = std::variant<std::unique_ptr<Statement>, std::unique_ptr<Assignment>, std::unique_ptr<IfStatement>>;
+using StatementV = std::variant<std::unique_ptr<Statement>, std::unique_ptr<Assignment>, std::unique_ptr<IfStatement>,
+                                std::unique_ptr<ForeachStatement>>;
 
 class CodeBlock {
   public:
@@ -334,7 +335,7 @@ class CodeBlock {
 
 class IfBlock {
   public:
-    IfBlock() {};
+    IfBlock(){};
     IfBlock(ExpressionV && cond) : condition{std::move(cond)}, block{} {};
     IfBlock(ExpressionV && cond, std::unique_ptr<CodeBlock> && b) : condition{std::move(cond)}, block{std::move(b)} {};
     IfBlock(IfBlock && i) noexcept : condition{std::move(i.condition)}, block{std::move(i.block)} {};
@@ -393,6 +394,22 @@ class IfStatement {
     IfBlock ifblock;
     std::vector<ElifBlock> efblock;
     ElseBlock eblock;
+};
+
+class ForeachStatement {
+  public:
+    ForeachStatement(Identifier && i, ExpressionV && e, std::unique_ptr<CodeBlock> && b)
+        : id{std::move(i)}, expr{std::move(e)}, block{std::move(b)} {};
+    ForeachStatement(ForeachStatement && f) noexcept
+        : id{std::move(f.id)}, expr{std::move(f.expr)}, block{std::move(f.block)} {};
+    ForeachStatement(const ForeachStatement &) = delete;
+    ~ForeachStatement(){};
+
+    std::string as_string() const;
+
+    Identifier id;
+    ExpressionV expr;
+    std::unique_ptr<CodeBlock> block;
 };
 
 } // namespace Frontend::AST

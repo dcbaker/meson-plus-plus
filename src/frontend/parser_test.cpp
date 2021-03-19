@@ -238,3 +238,10 @@ INSTANTIATE_TEST_CASE_P(parser, IfStatementParsingTests,
                                           "if false\na = b\nelif false\na =b\nelif true\na = c\nendif",
                                           "if false\na = b\nelif 1 == 2\na = c\nelse\na = d\nendif",
                                           "if true\nif true\na = b\nendif\nendif"));
+
+TEST(parser, foreach_statement) {
+    auto block = parse("foreach x : a\na = b\ntarget()\nendforeach");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::ForeachStatement>>(stmt));
+}
