@@ -131,6 +131,14 @@ TEST(parser, subexpression) {
     // ASSERT_EQ(block->as_string(), "(4 * (5 +3))");
 };
 
+TEST(Parser, ternary) {
+    auto block = parse("true ? x : b");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Ternary>>(stmt->expr));
+    ASSERT_EQ(block->as_string(), "true ? x : b");
+}
+
 class RelationalToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
 TEST_P(RelationalToStringTests, relational) {

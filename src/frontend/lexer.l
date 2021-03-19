@@ -60,6 +60,7 @@ endforeach                      { return token::ENDFOREACH; }
 \}                              { return token::RCURLY; }
 ,                               { return token::COMMA; }
 :                               { return token::COLON; }
+\?                              { return token::QMARK; }
 \.                              { return token::DOT; }
 <<EOF>>                         { return token::END; }
 \s*#.*$                         { }

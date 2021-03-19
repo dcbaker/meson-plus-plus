@@ -28,12 +28,14 @@ class FunctionCall;
 class GetAttribute;
 class Array;
 class Dict;
+class Ternary;
 
-using ExpressionV = std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>,
-                                 std::unique_ptr<Identifier>, std::unique_ptr<MultiplicativeExpression>,
-                                 std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>, std::unique_ptr<String>,
-                                 std::unique_ptr<Subscript>, std::unique_ptr<Relational>, std::unique_ptr<FunctionCall>,
-                                 std::unique_ptr<GetAttribute>, std::unique_ptr<Array>, std::unique_ptr<Dict>>;
+using ExpressionV =
+    std::variant<std::unique_ptr<AdditiveExpression>, std::unique_ptr<Boolean>, std::unique_ptr<Identifier>,
+                 std::unique_ptr<MultiplicativeExpression>, std::unique_ptr<UnaryExpression>, std::unique_ptr<Number>,
+                 std::unique_ptr<String>, std::unique_ptr<Subscript>, std::unique_ptr<Relational>,
+                 std::unique_ptr<FunctionCall>, std::unique_ptr<GetAttribute>, std::unique_ptr<Array>,
+                 std::unique_ptr<Dict>, std::unique_ptr<Ternary>>;
 
 using ExpressionList = std::vector<ExpressionV>;
 
@@ -282,6 +284,20 @@ class Dict {
     std::string as_string() const;
 
     std::unordered_map<ExpressionV, ExpressionV> elements;
+};
+
+class Ternary {
+  public:
+    Ternary(ExpressionV && c, ExpressionV && l, ExpressionV && r)
+        : condition{std::move(c)}, lhs{std::move(l)}, rhs{std::move(r)} {};
+    Ternary(const Ternary &) = delete;
+    ~Ternary(){};
+
+    std::string as_string() const;
+
+    ExpressionV condition;
+    ExpressionV lhs;
+    ExpressionV rhs;
 };
 
 class Statement {

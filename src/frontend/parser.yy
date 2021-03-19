@@ -57,6 +57,7 @@
 %token                  COMMA               ","
 %token                  COLON               ":"
 %token                  DOT                 "."
+%token                  QMARK               "?"
 %token                  IF ELIF ELSE ENDIF FOREACH ENDFOREACH
 %token                  UMINUS
 %token                  NOT
@@ -82,6 +83,7 @@
 %left                   "(" ")" "[" "]"
 %left                   RELATIONAL  // XXX: is the priority of this off?
 %left                   "\n"
+%nonassoc               "?" ":"
 %nonassoc               IF ELIF ELSE ENDIF
 %right                  UMINUS      // Negation
 %right                  NOT
@@ -133,6 +135,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | NOT expression                         { $$ = AST::ExpressionV(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NOT, std::move($2))); }
            | expression "." expression              { $$ = AST::ExpressionV(std::make_unique<AST::GetAttribute>(std::move($1), std::move($3))); }
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
+           | expression "?" expression ":" expression { $$ = AST::ExpressionV(std::make_unique<AST::Ternary>(std::move($1), std::move($3), std::move($5))); }
            | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::make_unique<AST::Array>(std::move($2))); }
            | "[" "]"                                { $$ = AST::ExpressionV(std::make_unique<AST::Array>()); }
            | "{" keyword_arguments "}"              { $$ = AST::ExpressionV(std::make_unique<AST::Dict>(std::move($2))); }

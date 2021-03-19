@@ -133,6 +133,10 @@ struct ExprStringVisitor {
     std::string operator()(const std::unique_ptr<Dict> & s) {
         return s->as_string();
     }
+
+    std::string operator()(const std::unique_ptr<Ternary> & s) {
+        return s->as_string();
+    }
 };
 
 struct StmtStringVisitor {
@@ -261,6 +265,11 @@ std::string Dict::as_string() const {
             return s.empty() ? v : s + ", " + v;
         });
     return "{" + es + "}";
+}
+
+std::string Ternary::as_string() const {
+    ExprStringVisitor es{};
+    return std::visit(es, condition) + " ? " + std::visit(es, lhs) + " : " + std::visit(es, rhs);
 }
 
 std::string CodeBlock::as_string() const {
