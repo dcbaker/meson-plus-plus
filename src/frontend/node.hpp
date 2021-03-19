@@ -101,6 +101,7 @@ class Subscript {
 
 enum class UnaryOp {
     NEG,
+    NOT,
 };
 
 class UnaryExpression {

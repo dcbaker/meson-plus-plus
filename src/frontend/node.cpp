@@ -74,7 +74,17 @@ struct ExprStringVisitor {
 
     std::string operator()(const std::unique_ptr<UnaryExpression> & s) {
         // There's currently only unary negation
-        return "-" + std::visit(ExprStringVisitor(), s->rhs);
+        std::string o;
+        switch (s->op) {
+            case UnaryOp::NEG:
+                o = "-";
+                break;
+            case UnaryOp::NOT:
+                o = "not ";
+                break;
+        }
+
+        return o + std::visit(ExprStringVisitor(), s->rhs);
     }
 
     std::string operator()(const std::unique_ptr<AdditiveExpression> & s) {

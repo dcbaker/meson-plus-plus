@@ -59,6 +59,7 @@
 %token                  DOT                 "."
 %token                  IF ELIF ELSE ENDIF
 %token                  UMINUS
+%token                  NOT
 %token                  NEWLINE             "\n"
 %token                  END                 0
 
@@ -79,9 +80,10 @@
 %left                   "."
 %left                   "(" ")" "[" "]"
 %left                   RELATIONAL  // XXX: is the priority of this off?
-%left                  "\n"
+%left                   "\n"
 %nonassoc               IF ELIF ELSE ENDIF
 %right                  UMINUS      // Negation
+%right                  NOT
 
 %%
 
@@ -122,6 +124,7 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression RELATIONAL expression       { $$ = AST::ExpressionV(std::make_unique<AST::Relational>(std::move($1), $2, std::move($3))); } // XXX: this might now actually be safe, since x < y < z isnt valid.
            | "(" expression ")"                     { $$ = std::move($2); } // XXX: Do we need a subexpression type?
            | "-" expression %prec UMINUS            { $$ = AST::ExpressionV(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NEG, std::move($2))); }
+           | NOT expression                         { $$ = AST::ExpressionV(std::make_unique<AST::UnaryExpression>(AST::UnaryOp::NOT, std::move($2))); }
            | expression "." expression              { $$ = AST::ExpressionV(std::make_unique<AST::GetAttribute>(std::move($1), std::move($3))); }
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3))); }
            | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::make_unique<AST::Array>(std::move($2))); }

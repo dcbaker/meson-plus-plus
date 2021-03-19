@@ -34,6 +34,7 @@ using token = Frontend::Parser::token;
 \n                              { loc->lines(); return token::NEWLINE; } // Newlines are only significant as statement separators
 (true|false)                    { lval->build<bool>(std::string(yytext) == "true"); return token::BOOL; }
 (>=|==|!=|<=|>|<|and|or|in|not\ in) { lval->build<std::string>(yytext); return token::RELATIONAL; }
+not                             { return token::NOT; }
 if                              { return token::IF; }
 elif                            { return token::ELIF; }
 else                            { return token::ELSE; }
