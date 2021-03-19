@@ -53,7 +53,6 @@
 %token                  MUL                 "*"
 %token                  DIV                 "/"
 %token                  MOD                 "%"
-%token                  EQUAL               "="
 %token                  COMMA               ","
 %token                  COLON               ":"
 %token                  DOT                 "."
@@ -61,6 +60,7 @@
 %token                  IF ELIF ELSE ENDIF FOREACH ENDFOREACH
 %token                  UMINUS
 %token                  NOT
+%token                  ASSIGN
 %token                  NEWLINE             "\n"
 %token                  END                 0
 
@@ -98,7 +98,7 @@ statements : statement                              { $$ = std::make_unique<AST:
            ;
 
 statement : expression                              { $$ = AST::StatementV(std::make_unique<AST::Statement>(std::move($1))); }
-          | expression "=" expression               { $$ = AST::StatementV(std::make_unique<AST::Assignment>(std::move($1), std::move($3))); }
+          | expression ASSIGN expression            { $$ = AST::StatementV(std::make_unique<AST::Assignment>(std::move($1), std::move($3))); }
           | if_statement                            { $$ = AST::StatementV(std::move($1)); }
           | foreach_statement                       { $$ = AST::StatementV(std::move($1)); }
           ;

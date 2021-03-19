@@ -51,7 +51,7 @@ endforeach                      { return token::ENDFOREACH; }
 \*                              { return token::MUL; }
 \/                              { return token::DIV; }
 \%                              { return token::MOD; }
-=                               { return token::EQUAL; }
+=                               { return token::ASSIGN; }
 \[                              { return token::LBRACKET; }
 \]                              { return token::RBRACKET; }
 \(                              { return token::LPAREN; }
