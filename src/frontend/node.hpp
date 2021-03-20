@@ -312,24 +312,52 @@ class Statement {
     ExpressionV expr;
 };
 
+enum class AssignOp {
+    EQUAL,
+    ADD_EQUAL,
+    SUB_EQUAL,
+    MUL_EQUAL,
+    DIV_EQUAL,
+    MOD_EQUAL,
+};
+
 class Assignment {
   public:
-    Assignment(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
-    Assignment(Assignment && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)} {};
+    Assignment(ExpressionV && l, AssignOp & o, ExpressionV && r) : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    Assignment(Assignment && a) noexcept : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
     Assignment(const Assignment &) = delete;
     ~Assignment(){};
 
     std::string as_string() const;
 
     ExpressionV lhs;
+    AssignOp op;
     ExpressionV rhs;
+};
+
+class Break {
+  public:
+    Break(){};
+    ~Break(){};
+    Break(const Break &) = delete;
+
+    std::string as_string() const;
+};
+
+class Continue {
+  public:
+    Continue(){};
+    ~Continue(){};
+    Continue(const Break &) = delete;
+
+    std::string as_string() const;
 };
 
 class IfStatement;
 class ForeachStatement;
 
 using StatementV = std::variant<std::unique_ptr<Statement>, std::unique_ptr<Assignment>, std::unique_ptr<IfStatement>,
-                                std::unique_ptr<ForeachStatement>>;
+                                std::unique_ptr<ForeachStatement>, std::unique_ptr<Break>, std::unique_ptr<Continue>>;
 
 class CodeBlock {
   public:

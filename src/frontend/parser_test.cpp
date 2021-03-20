@@ -222,12 +222,20 @@ INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
 // We can't test a multi item dict reliably like this be
 // cause meson dicts are unordered
 
-TEST(parser, assignment_stmt) {
-    auto block = parse("x = 5 + 3");
+class AssignmentStatementParsingTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
+
+TEST_P(AssignmentStatementParsingTests, arguments) {
+    auto const & [input, expected] = GetParam();
+    auto block = parse(input);
     auto const & stmt = block->statements[0];
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Assignment>>(stmt));
-    ASSERT_EQ(block->as_string(), "x = 5 + 3");
+    ASSERT_EQ(block->as_string(), expected);
 }
+
+INSTANTIATE_TEST_CASE_P(parser, AssignmentStatementParsingTests,
+                        ::testing::Values(std::make_tuple("a=1+1", "a = 1 + 1"), std::make_tuple("a += 2", "a += 2"),
+                                          std::make_tuple("a -= 2", "a -= 2"), std::make_tuple("a *= 2", "a *= 2"),
+                                          std::make_tuple("a /= 2", "a /= 2"), std::make_tuple("a %= 2", "a %= 2")));
 
 class IfStatementParsingTests : public ::testing::TestWithParam<std::string> {};
 
@@ -252,4 +260,18 @@ TEST(parser, foreach_statement) {
     ASSERT_EQ(block->statements.size(), 1);
     auto const & stmt = block->statements[0];
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::ForeachStatement>>(stmt));
+}
+
+TEST(parser, break_statement) {
+    auto block = parse("break");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Break>>(stmt));
+}
+
+TEST(parser, continue_statement) {
+    auto block = parse("continue");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Continue>>(stmt));
 }

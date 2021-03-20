@@ -155,6 +155,14 @@ struct StmtStringVisitor {
     std::string operator()(const std::unique_ptr<Assignment> & s) {
         return s->as_string();
     }
+
+    std::string operator()(const std::unique_ptr<Break> & s) {
+        return s->as_string();
+    }
+
+    std::string operator()(const std::unique_ptr<Continue> & s) {
+        return s->as_string();
+    }
 };
 
 /**
@@ -187,8 +195,29 @@ std::string Identifier::as_string() const {
 };
 
 std::string Assignment::as_string() const {
+    std::string o{};
+    switch (op) {
+        case AssignOp::EQUAL:
+            o = "=";
+            break;
+        case AssignOp::ADD_EQUAL:
+            o = "+=";
+            break;
+        case AssignOp::SUB_EQUAL:
+            o = "-=";
+            break;
+        case AssignOp::MUL_EQUAL:
+            o = "*=";
+            break;
+        case AssignOp::DIV_EQUAL:
+            o = "/=";
+            break;
+        case AssignOp::MOD_EQUAL:
+            o = "%=";
+            break;
+    }
     ExprStringVisitor as{};
-    return std::visit(as, lhs) + " = " + std::visit(as, rhs);
+    return std::visit(as, lhs) + " " + o + " " + std::visit(as, rhs);
 };
 
 // XXX: it would sure be nice not to have duplication here...
@@ -286,6 +315,14 @@ std::string IfStatement::as_string() const {
 
 std::string ForeachStatement::as_string() const {
     return "TODO";
+}
+
+std::string Break::as_string() const {
+    return "break";
+}
+
+std::string Continue::as_string() const {
+    return "continue";
 }
 
 } // namespace Frontend::AST
