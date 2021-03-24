@@ -21,7 +21,7 @@ std::unique_ptr<AST::CodeBlock> Driver::parse(const std::string & s){
 
 std::unique_ptr<AST::CodeBlock> Driver::parse(std::istream & iss) {
     auto block = std::make_unique<Frontend::AST::CodeBlock>();
-    auto scanner = std::make_unique<Frontend::Scanner>(&iss);
+    auto scanner = std::make_unique<Frontend::Scanner>(&iss, name);
     auto parser = std::make_unique<Frontend::Parser>(*scanner, block);
 
     parser->parse();

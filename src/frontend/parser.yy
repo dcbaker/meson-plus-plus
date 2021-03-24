@@ -4,7 +4,6 @@
 %skeleton "lalr1.cc"
 %require  "3.2"
 %debug
-%locations
 %defines
 %define api.namespace { Frontend }
 %define api.parser.class { Parser }
@@ -23,6 +22,10 @@
 %parse-param { Scanner & scanner }
 %parse-param { std::unique_ptr<AST::CodeBlock> & block }
 
+%locations
+%initial-action {
+    @$.begin.filename = @$.end.filename = &scanner.filename;
+}
 
 %code {
     #include <iostream>

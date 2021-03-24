@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #ifndef yyFlexLexerOnce
 #include <FlexLexer.h>
 #endif
@@ -13,12 +15,14 @@ namespace Frontend {
 
 class Scanner : public yyFlexLexer {
   public:
-    Scanner(std::istream * in) : yyFlexLexer(in){};
+    Scanner(std::istream * in, const std::string & s) : yyFlexLexer{in}, filename{s} {};
     ~Scanner(){};
 
     using FlexLexer::yylex;
 
     virtual int yylex(Frontend::Parser::semantic_type * const lval, Frontend::Parser::location_type * loc);
+
+    const std::string filename;
 };
 
 }; // namespace Frontend
