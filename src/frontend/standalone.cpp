@@ -10,8 +10,7 @@
 #include "scanner.hpp"
 
 int main(int argc, char ** argv) {
-    std::ifstream stream;
-    stream.open(argv[1]);
+    std::ifstream stream{argv[1], std::ios_base::in | std::ios_base::binary};
 
     auto block = std::make_unique<Frontend::AST::CodeBlock>();
     auto scanner = std::make_unique<Frontend::Scanner>(&stream);

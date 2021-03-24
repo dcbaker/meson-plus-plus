@@ -275,3 +275,13 @@ TEST(parser, continue_statement) {
     auto const & stmt = block->statements[0];
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Continue>>(stmt));
 }
+
+TEST(parser, trailing_newline) {
+    auto block = parse("'foo'\n");
+    ASSERT_EQ(block->statements.size(), 1);
+}
+
+TEST(parser, newline_in_statements) {
+    auto block = parse("a = b\nb = c\n\n\nc = a\n");
+    ASSERT_EQ(block->statements.size(), 3);
+}

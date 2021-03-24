@@ -83,8 +83,7 @@ continue                        { return token::CONTINUE; }
 :                               { return token::COLON; }
 \?                              { return token::QMARK; }
 \.                              { return token::DOT; }
-<<EOF>>                         { return token::END; }
 \s*#.*$                         { }
-.                               { }
+.                               { std::cerr << "unhandled input: " << yytext << std::endl; }
 
 %%
