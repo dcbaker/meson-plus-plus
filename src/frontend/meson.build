@@ -29,7 +29,7 @@ _frontend_args = cpp.get_supported_arguments(
 
 libfrontend = static_library(
   'frontend',
-  [parser, scanner, 'node.cpp', 'node_visitors.cpp'],
+  [parser, scanner, 'node.cpp', 'node_visitors.cpp', 'driver.cpp'],
   cpp_args : _frontend_args,
 )
 

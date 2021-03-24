@@ -7,15 +7,12 @@
 #include <variant>
 
 #include "node.hpp"
-#include "parser.yy.hpp"
-#include "scanner.hpp"
+#include "driver.hpp"
 
 static std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
+    Frontend::Driver drv{};
     std::istringstream stream{in};
-    auto block = std::make_unique<Frontend::AST::CodeBlock>();
-    auto scanner = std::make_unique<Frontend::Scanner>(&stream);
-    auto parser = std::make_unique<Frontend::Parser>(*scanner, block);
-    parser->parse();
+    auto block = drv.parse(stream);
     return block;
 }
 
