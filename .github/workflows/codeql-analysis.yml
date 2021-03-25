@@ -39,8 +39,8 @@ jobs:
       
     - name: Install dependencies
       run: |
-        apt update
-        apt install flex bison ninja-build
+        sudo apt update
+        sudo apt install flex bison ninja-build
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
