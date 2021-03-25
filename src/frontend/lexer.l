@@ -84,6 +84,6 @@ continue                        { return token::CONTINUE; }
 \?                              { return token::QMARK; }
 \.                              { return token::DOT; }
 \s*#.*$                         { }
-.                               { std::cerr << "unhandled input: " << yytext << std::endl; }
+.                               { yyterminate(); }
 
 %%
