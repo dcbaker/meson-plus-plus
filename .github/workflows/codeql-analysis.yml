@@ -36,6 +36,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      
+    - name: Install dependencies
+      run: |
+        apt update
+        apt install flex bison ninja-build
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
