@@ -12,6 +12,7 @@
 static std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     Frontend::Driver drv{};
     std::istringstream stream{in};
+    drv.name = "test file name";
     auto block = drv.parse(stream);
     return block;
 }
@@ -30,6 +31,18 @@ TEST(parser, decminal_number) {
     auto const & stmt = std::get<0>(block->statements[0]);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
     ASSERT_EQ(stmt->as_string(), "77");
+}
+
+TEST(parser, locations) {
+    auto block = parse("77");
+    auto const & stmt = std::get<0>(block->statements[0]);
+    auto const & expr = *std::get_if<std::unique_ptr<Frontend::AST::Number>>(&stmt->expr);
+    ASSERT_EQ(expr->loc.begin.column, 1);
+    ASSERT_EQ(expr->loc.begin.line, 1);
+    ASSERT_EQ(expr->loc.end.column, 3);
+    ASSERT_EQ(expr->loc.end.line, 1);
+    std::string expected{"test file name"};
+    ASSERT_EQ(*expr->loc.begin.filename, expected);
 }
 
 TEST(parser, octal_number) {

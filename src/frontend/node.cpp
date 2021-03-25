@@ -278,7 +278,7 @@ std::string Statement::as_string() const {
     return std::visit(ExprStringVisitor{}, expr);
 }
 
-Dict::Dict(KeywordList && l) {
+Dict::Dict(KeywordList && l, location & lo) : loc{lo} {
     for (auto & e : l) {
         auto && [k, v] = e;
         elements[std::move(k)] = std::move(v);

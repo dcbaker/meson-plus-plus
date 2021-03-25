@@ -12,6 +12,8 @@
 #include <variant>
 #include <vector>
 
+#include "locations.hpp"
+
 namespace Frontend::AST {
 
 class AdditiveExpression;
@@ -41,63 +43,68 @@ using ExpressionList = std::vector<ExpressionV>;
 
 class Number {
   public:
-    Number(const int64_t & number) : value{number} {};
-    Number(Number && n) noexcept : value{std::move(n.value)} {};
+    Number(const int64_t & number, const location & l) : value{number}, loc{l} {};
+    Number(Number && n) noexcept : value{std::move(n.value)}, loc{std::move(n.loc)} {};
     Number(const Number &) = delete;
     ~Number(){};
 
     std::string as_string() const;
 
     int64_t value;
+    location loc;
 };
 
 class Boolean {
   public:
-    Boolean(const bool & b) : value{b} {};
-    Boolean(Boolean && b) noexcept : value{std::move(b.value)} {};
+    Boolean(const bool & b, const location & l) : value{b}, loc{l} {};
+    Boolean(Boolean && b) noexcept : value{std::move(b.value)}, loc{std::move(b.loc)} {};
     Boolean(const Boolean &) = delete;
     ~Boolean(){};
 
     std::string as_string() const;
 
     bool value;
+    location loc;
 };
 
 class String {
   public:
-    String(const std::string & str) : value{str} {};
-    String(String && s) noexcept : value{std::move(s.value)} {};
+    String(const std::string & str, const location & l) : value{str}, loc{l} {};
+    String(String && s) noexcept : value{std::move(s.value)}, loc{std::move(s.loc)} {};
     String(const String &) = delete;
     ~String(){};
 
     std::string as_string() const;
 
     std::string value;
+    location loc;
 };
 
 class Identifier {
   public:
-    Identifier(const std::string & str) : value{str} {};
-    Identifier(Identifier && s) noexcept : value{std::move(s.value)} {};
+    Identifier(const std::string & str, const location & l) : value{str}, loc{l} {};
+    Identifier(Identifier && s) noexcept : value{std::move(s.value)}, loc{std::move(s.loc)} {};
     Identifier(const Identifier &) = delete;
     ~Identifier(){};
 
     std::string as_string() const;
 
     std::string value;
+    location loc;
 };
 
 class Subscript {
   public:
-    Subscript(ExpressionV && l, ExpressionV && r) : lhs{std::move(l)}, rhs{std::move(r)} {};
+    Subscript(ExpressionV && l, ExpressionV && r, location & lo) : lhs{std::move(l)}, rhs{std::move(r)}, loc{lo} {};
     Subscript(const Subscript &) = delete;
-    Subscript(Subscript && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)} {};
+    Subscript(Subscript && a) noexcept : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
     ~Subscript(){};
 
     std::string as_string() const;
 
     ExpressionV lhs;
     ExpressionV rhs;
+    location loc;
 };
 
 enum class UnaryOp {
@@ -107,8 +114,9 @@ enum class UnaryOp {
 
 class UnaryExpression {
   public:
-    UnaryExpression(const UnaryOp & o, ExpressionV && r) : op{o}, rhs{std::move(r)} {};
-    UnaryExpression(UnaryExpression && a) noexcept : op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
+    UnaryExpression(const UnaryOp & o, ExpressionV && r, location & l) : op{o}, rhs{std::move(r)}, loc{l} {};
+    UnaryExpression(UnaryExpression && a) noexcept
+        : op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
     UnaryExpression(const UnaryExpression &) = delete;
     ~UnaryExpression(){};
 
@@ -116,6 +124,7 @@ class UnaryExpression {
 
     UnaryOp op;
     ExpressionV rhs;
+    location loc;
 };
 
 enum class MulOp {
@@ -126,10 +135,10 @@ enum class MulOp {
 
 class MultiplicativeExpression {
   public:
-    MultiplicativeExpression(ExpressionV && l, const MulOp & o, ExpressionV && r)
-        : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    MultiplicativeExpression(ExpressionV && l, const MulOp & o, ExpressionV && r, location & lo)
+        : lhs{std::move(l)}, op{o}, rhs{std::move(r)}, loc{lo} {};
     MultiplicativeExpression(MultiplicativeExpression && a) noexcept
-        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
+        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
     MultiplicativeExpression(const MultiplicativeExpression &) = delete;
     ~MultiplicativeExpression(){};
 
@@ -138,6 +147,7 @@ class MultiplicativeExpression {
     ExpressionV lhs;
     MulOp op;
     ExpressionV rhs;
+    location loc;
 };
 
 enum class AddOp {
@@ -147,10 +157,10 @@ enum class AddOp {
 
 class AdditiveExpression {
   public:
-    AdditiveExpression(ExpressionV && l, const AddOp & o, ExpressionV && r)
-        : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
+    AdditiveExpression(ExpressionV && l, const AddOp & o, ExpressionV && r, location & lo)
+        : lhs{std::move(l)}, op{o}, rhs{std::move(r)}, loc{lo} {};
     AdditiveExpression(AdditiveExpression && a) noexcept
-        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
+        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
     AdditiveExpression(const AdditiveExpression &) = delete;
     ~AdditiveExpression(){};
 
@@ -159,6 +169,7 @@ class AdditiveExpression {
     ExpressionV lhs;
     AddOp op;
     ExpressionV rhs;
+    location loc;
 };
 
 enum class RelationalOp {
@@ -174,6 +185,7 @@ enum class RelationalOp {
     NOT_IN,
 };
 
+// TODO: move this into the parser cpp
 static AST::RelationalOp to_relop(const std::string & s) {
     if (s == "<") {
         return AST::RelationalOp::LT;
@@ -201,9 +213,10 @@ static AST::RelationalOp to_relop(const std::string & s) {
 
 class Relational {
   public:
-    Relational(ExpressionV && l, const std::string & o, ExpressionV && r)
-        : lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)} {};
-    Relational(Relational && a) noexcept : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
+    Relational(ExpressionV && l, const std::string & o, ExpressionV && r, location & lo)
+        : lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)}, loc{lo} {};
+    Relational(Relational && a) noexcept
+        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
     Relational(const Relational &) = delete;
     ~Relational(){};
 
@@ -212,6 +225,7 @@ class Relational {
     ExpressionV lhs;
     RelationalOp op;
     ExpressionV rhs;
+    location loc;
 };
 
 // XXX: this isn't really true, it's really an identifier : expressionv
@@ -220,11 +234,13 @@ using KeywordList = std::vector<KeywordPair>;
 
 class Arguments {
   public:
-    Arguments() : positional{} {};
-    Arguments(ExpressionList && v) : positional{std::move(v)}, keyword{} {};
-    Arguments(KeywordList && k) : positional{}, keyword{std::move(k)} {};
-    Arguments(ExpressionList && v, KeywordList && k) : positional{std::move(v)}, keyword{std::move(k)} {};
-    Arguments(Arguments && a) noexcept : positional{std::move(a.positional)}, keyword{std::move(a.keyword)} {};
+    Arguments(location & l) : positional{}, keyword{}, loc{l} {};
+    Arguments(ExpressionList && v, location & l) : positional{std::move(v)}, keyword{}, loc{l} {};
+    Arguments(KeywordList && k, location & l) : positional{}, keyword{std::move(k)}, loc{l} {};
+    Arguments(ExpressionList && v, KeywordList && k, location & l)
+        : positional{std::move(v)}, keyword{std::move(k)}, loc{l} {};
+    Arguments(Arguments && a) noexcept
+        : positional{std::move(a.positional)}, keyword{std::move(a.keyword)}, loc{std::move(a.loc)} {};
     Arguments(const Arguments &) = delete;
     ~Arguments(){};
 
@@ -232,12 +248,14 @@ class Arguments {
 
     ExpressionList positional;
     KeywordList keyword;
+    location loc;
 };
 
 class FunctionCall {
   public:
-    FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a) : id{std::move(i)}, args{std::move(a)} {};
-    FunctionCall(FunctionCall && a) noexcept : id{std::move(a.id)}, args{std::move(a.args)} {};
+    FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a, location & l)
+        : id{std::move(i)}, args{std::move(a)}, loc{l} {};
+    FunctionCall(FunctionCall && a) noexcept : id{std::move(a.id)}, args{std::move(a.args)}, loc{std::move(a.loc)} {};
     FunctionCall(const FunctionCall &) = delete;
     ~FunctionCall(){};
 
@@ -245,12 +263,14 @@ class FunctionCall {
 
     ExpressionV id;
     std::unique_ptr<Arguments> args;
+    location loc;
 };
 
 class GetAttribute {
   public:
-    GetAttribute(ExpressionV && o, ExpressionV && i) : object{std::move(o)}, id{std::move(i)} {};
-    GetAttribute(GetAttribute && a) noexcept : object{std::move(a.object)}, id{std::move(a.id)} {};
+    GetAttribute(ExpressionV && o, ExpressionV && i, location & l) : object{std::move(o)}, id{std::move(i)}, loc{l} {};
+    GetAttribute(GetAttribute && a) noexcept
+        : object{std::move(a.object)}, id{std::move(a.id)}, loc{std::move(a.loc)} {};
     GetAttribute(const GetAttribute &) = delete;
     ~GetAttribute(){};
 
@@ -258,38 +278,43 @@ class GetAttribute {
 
     ExpressionV object;
     ExpressionV id;
+    location loc;
 };
 
 class Array {
   public:
-    Array() : elements{} {};
-    Array(ExpressionList && e) : elements{std::move(e)} {};
-    Array(Array && a) noexcept : elements{std::move(a.elements)} {};
+    Array(location & l) : elements{}, loc{l} {};
+    Array(ExpressionList && e, location & l) : elements{std::move(e)}, loc{l} {};
+    Array(Array && a) noexcept : elements{std::move(a.elements)}, loc{std::move(a.loc)} {};
     Array(const Array &) = delete;
     ~Array(){};
 
     std::string as_string() const;
 
     ExpressionList elements;
+    location loc;
 };
 
 class Dict {
   public:
-    Dict() : elements{} {};
-    Dict(KeywordList && l);
-    Dict(Dict && a) : elements{std::move(a.elements)} {};
+    Dict(location & l) : elements{}, loc{l} {};
+    Dict(KeywordList && l, location & lo);
+    Dict(Dict && a) : elements{std::move(a.elements)}, loc{std::move(a.loc)} {};
     Dict(const Dict &) = delete;
     ~Dict(){};
 
     std::string as_string() const;
 
     std::unordered_map<ExpressionV, ExpressionV> elements;
+    location loc;
 };
 
 class Ternary {
   public:
-    Ternary(ExpressionV && c, ExpressionV && l, ExpressionV && r)
-        : condition{std::move(c)}, lhs{std::move(l)}, rhs{std::move(r)} {};
+    Ternary(ExpressionV && c, ExpressionV && l, ExpressionV && r, location & lo)
+        : condition{std::move(c)}, lhs{std::move(l)}, rhs{std::move(r)}, loc{lo} {};
+    Ternary(Ternary && t)
+        : condition{std::move(t.condition)}, lhs{std::move(t.lhs)}, rhs{std::move(t.rhs)}, loc{std::move(t.loc)} {};
     Ternary(const Ternary &) = delete;
     ~Ternary(){};
 
@@ -298,6 +323,7 @@ class Ternary {
     ExpressionV condition;
     ExpressionV lhs;
     ExpressionV rhs;
+    location loc;
 };
 
 class Statement {
