@@ -40,7 +40,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install flex bison ninja-build python3 python3-pip
+        sudo apt install flex bison ninja-build python3 python3-pip libfl-dev
         sudo pip install meson
 
     # Initializes the CodeQL tools for scanning.
