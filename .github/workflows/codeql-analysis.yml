@@ -25,7 +25,7 @@ jobs:
     name: Analyze
     runs-on: ubuntu-latest
     env:
-      PATH: $HOME/.local/bin:$PATH
+      PATH: "$HOME/.local/bin:$PATH"
 
     strategy:
       fail-fast: false
