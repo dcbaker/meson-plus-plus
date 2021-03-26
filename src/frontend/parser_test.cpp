@@ -183,7 +183,10 @@ INSTANTIATE_TEST_CASE_P(FunctionParsingTests, FunctionToStringTests,
                                           std::make_tuple("func(a,b, c)", "func(a, b, c)"),
                                           std::make_tuple("func(x : 'f')", "func(x : 'f')"),
                                           std::make_tuple("func(x : 'f', y : 1)", "func(x : 'f', y : 1)"),
-                                          std::make_tuple("func(a, b, x : 'f')", "func(a, b, x : 'f')")));
+                                          std::make_tuple("func(a, b, x : 'f')", "func(a, b, x : 'f')"),
+                                          std::make_tuple("func(a,\nb,\nc)", "func(a, b, c)"),
+                                          std::make_tuple("func(a : 1,\nb: 2,\nc : 3)", "func(a : 1, b : 2, c : 3)"),
+                                          std::make_tuple("func(a,\nb,\nc : 1,\n d: 3)", "func(a, b, c : 1, d : 3)")));
 
 class MethodToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
