@@ -9,14 +9,18 @@
 namespace Frontend::AST {
 
 std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
-    const auto & func = *std::get_if<std::unique_ptr<FunctionCall>>(&stmt->expr);
-    if (func == nullptr) { return std::nullopt; }
+    const auto func_ptr = std::get_if<std::unique_ptr<FunctionCall>>(&stmt->expr);
+    if (func_ptr == nullptr) { return std::nullopt; }
+
+    const auto & func = *func_ptr;
 
     // Meson functions are not first class, so we know that if the type is not
     // an identifier it's not what we want. The other option would be a
     // `GetAttribute` (a method).
-    const auto & id = *std::get_if<std::unique_ptr<Identifier>>(&func->id);
-    if (id == nullptr) { return std::nullopt; }
+    const auto id_ptr = std::get_if<std::unique_ptr<Identifier>>(&func->id);
+    if (id_ptr == nullptr) { return std::nullopt; }
+
+    const auto & id = *id_ptr;
 
     if (id->value != "subdir") { return std::nullopt; }
 
