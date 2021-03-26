@@ -19,6 +19,15 @@ add_project_arguments(
   language : 'cpp',
 )
 
+# Older versions of GCC and Clang require linking with special libraries to get
+# std::filesystem support
+dep_fs = dependency('', required : false)
+if cpp.get_id() == 'gcc'
+  dep_fs = cpp.find_library('stdc++fs', required : false)
+elif cpp.get_id() == 'clang'
+  dep_fs = cpp.find_library('c++fs', required : false)
+endif
+
 dep_gtest = dependency('gtest_main', disabler : true, required : get_option('tests'), fallback : ['gtest', 'gtest_main_dep'])
 
 subdir('src')
