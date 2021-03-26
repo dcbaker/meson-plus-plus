@@ -43,7 +43,11 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
     }
 
     // This assumes that the filename is foo/meson.build
-    std::filesystem::path p{*id->loc.begin.filename};
+    const std::filesystem::path p{*id->loc.begin.filename};
+    if (!std::filesystem::exists(p)) {
+        // TODO: something useful here
+        throw std::exception{};
+    }
 
     Driver drv{};
     return drv.parse(p.stem() / dir->value / "meson.build");
