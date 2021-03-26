@@ -147,16 +147,21 @@ expression : expression "+" expression              { $$ = AST::ExpressionV(std:
            | expression "(" arguments ")"           { $$ = AST::ExpressionV(std::make_unique<AST::FunctionCall>(std::move($1), std::move($3), @$)); }
            | expression "?" expression ":" expression { $$ = AST::ExpressionV(std::make_unique<AST::Ternary>(std::move($1), std::move($3), std::move($5), @$)); }
            | "[" positional_arguments "]"           { $$ = AST::ExpressionV(std::make_unique<AST::Array>(std::move($2), @$)); }
+           | "[" positional_arguments "," "]"       { $$ = AST::ExpressionV(std::make_unique<AST::Array>(std::move($2), @$)); }
            | "[" "]"                                { $$ = AST::ExpressionV(std::make_unique<AST::Array>(@$)); }
            | "{" keyword_arguments "}"              { $$ = AST::ExpressionV(std::make_unique<AST::Dict>(std::move($2), @$)); }
+           | "{" keyword_arguments "," "}"          { $$ = AST::ExpressionV(std::make_unique<AST::Dict>(std::move($2), @$)); }
            | "{" "}"                                { $$ = AST::ExpressionV(std::make_unique<AST::Dict>(@$)); }
            | literal                                { $$ = std::move($1); }
            ;
 
 arguments : %empty                                              { $$ = std::make_unique<AST::Arguments>(@$); }
           | positional_arguments                                { $$ = std::make_unique<AST::Arguments>(std::move($1), @$); }
+          | positional_arguments ","                            { $$ = std::make_unique<AST::Arguments>(std::move($1), @$); }
           | keyword_arguments                                   { $$ = std::make_unique<AST::Arguments>(std::move($1), @$); }
+          | keyword_arguments ","                               { $$ = std::make_unique<AST::Arguments>(std::move($1), @$); }
           | positional_arguments "," keyword_arguments          { $$ = std::make_unique<AST::Arguments>(std::move($1), std::move($3), @$); }
+          | positional_arguments "," keyword_arguments ","      { $$ = std::make_unique<AST::Arguments>(std::move($1), std::move($3), @$); }
           ;
 
 positional_arguments : expression                               { $$ = AST::ExpressionList(); $$.emplace_back(std::move($1)); }

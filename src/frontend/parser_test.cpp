@@ -181,6 +181,7 @@ TEST_P(FunctionToStringTests, arguments) {
 INSTANTIATE_TEST_CASE_P(FunctionParsingTests, FunctionToStringTests,
                         ::testing::Values(std::make_tuple("func(  )", "func()"), std::make_tuple("func(a)", "func(a)"),
                                           std::make_tuple("func(a,b, c)", "func(a, b, c)"),
+                                          std::make_tuple("func(a,)", "func(a)"),
                                           std::make_tuple("func(x : 'f')", "func(x : 'f')"),
                                           std::make_tuple("func(x : 'f', y : 1)", "func(x : 'f', y : 1)"),
                                           std::make_tuple("func(a, b, x : 'f')", "func(a, b, x : 'f')"),
@@ -222,6 +223,7 @@ TEST_P(ArrayToStringTests, arguments) {
 INSTANTIATE_TEST_CASE_P(ArrayParsingTests, ArrayToStringTests,
                         ::testing::Values(std::make_tuple("[ ]", "[]"), std::make_tuple("[a, b]", "[a, b]"),
                                           std::make_tuple("[a, [b]]", "[a, [b]]"),
+                                          std::make_tuple("[a, ]", "[a]"),
                                           std::make_tuple("[\n  a,\n  b\n]", "[a, b]")));
 
 class DictToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
@@ -237,6 +239,7 @@ TEST_P(DictToStringTests, arguments) {
 INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
                         ::testing::Values(std::make_tuple("{}", "{}"),
                                           std::make_tuple("{a:b}", "{a : b}"),
+                                          std::make_tuple("{a : b, }", "{a : b}"),
                                           std::make_tuple("{a : b}", "{a : b}")));
 // We can't test a multi item dict reliably like this be
 // cause meson dicts are unordered
