@@ -50,7 +50,14 @@ Frontend::AST::AssignOp from_str(const std::string & s) {
 
 [ \t]                           { }
 ^\s*\n                          { loc->lines(); }
-\n                              { loc->lines(); return token::NEWLINE; } // Newlines are only significant as statement separators
+\n                              {
+                                    // Newlines are only significant as statement separators
+                                    // We want to ignore them inside of braces,
+                                    // as only expressions and not statements
+                                    // are allowed
+                                    loc->lines();
+                                    if (!brace()) { return token::NEWLINE; }
+                                }
 (true|false)                    { lval->build<bool>(std::string(yytext) == "true"); return token::BOOL; }
 (>=|==|!=|<=|>|<|and|or|in|not\ in) { lval->build<std::string>(yytext); return token::RELATIONAL; }
 not                             { return token::NOT; }
@@ -73,12 +80,12 @@ continue                        { return token::CONTINUE; }
 \/                              { return token::DIV; }
 \%                              { return token::MOD; }
 (=|\+=|-=|\*=|\/=|\%=)          { lval->build<AST::AssignOp>(from_str(yytext)); return token::ASSIGN; }
-\[                              { return token::LBRACKET; }
-\]                              { return token::RBRACKET; }
-\(                              { return token::LPAREN; }
-\)                              { return token::RPAREN; }
-\{                              { return token::LCURLY; }
-\}                              { return token::RCURLY; }
+\[                              { inc_brace(); return token::LBRACKET; }
+\]                              { dec_brace(); return token::RBRACKET; }
+\(                              { inc_brace(); return token::LPAREN; }
+\)                              { dec_brace(); return token::RPAREN; }
+\{                              { inc_brace(); return token::LCURLY; }
+\}                              { dec_brace(); return token::RCURLY; }
 ,                               { return token::COMMA; }
 :                               { return token::COLON; }
 \?                              { return token::QMARK; }

@@ -157,17 +157,14 @@ arguments : %empty                                              { $$ = std::make
           | positional_arguments                                { $$ = std::make_unique<AST::Arguments>(std::move($1), @$); }
           | keyword_arguments                                   { $$ = std::make_unique<AST::Arguments>(std::move($1), @$); }
           | positional_arguments "," keyword_arguments          { $$ = std::make_unique<AST::Arguments>(std::move($1), std::move($3), @$); }
-          | positional_arguments "," "\n" keyword_arguments     { $$ = std::make_unique<AST::Arguments>(std::move($1), std::move($4), @$); }
           ;
 
 positional_arguments : expression                               { $$ = AST::ExpressionList(); $$.emplace_back(std::move($1)); }
                      | positional_arguments "," expression      { $1.emplace_back(std::move($3)); $$ = std::move($1); }
-                     | positional_arguments "," "\n" expression { $1.emplace_back(std::move($4)); $$ = std::move($1); }
                      ;
 
 keyword_arguments : keyword_item                                { $$ = AST::KeywordList(); $$.emplace_back(std::move($1)); }
                   | keyword_arguments "," keyword_item          { $1.emplace_back(std::move($3)); $$ = std::move($1); }
-                  | keyword_arguments "," "\n" keyword_item     { $1.emplace_back(std::move($4)); $$ = std::move($1); }
                   ;
 
 keyword_item : expression ":" expression            { $$ = AST::KeywordPair(std::move($1), std::move($3)); }
