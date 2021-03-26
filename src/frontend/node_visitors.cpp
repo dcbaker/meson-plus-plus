@@ -50,7 +50,7 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
     }
 
     Driver drv{};
-    return drv.parse(p.stem() / dir->value / "meson.build");
+    return drv.parse(p.parent_path() / dir->value / "meson.build");
 };
 
 } // namespace Frontend::AST
