@@ -5,8 +5,8 @@
 
 namespace HIR::Toolchain::Archiver {
 
-bool Gnu::accepts_rsp_file() const {
-    return true;
+RSPFileSupport Gnu::rsp_support() const {
+    return RSPFileSupport::GCC;
 };
 
 } // namespace HIR::Toolchain::Archiver

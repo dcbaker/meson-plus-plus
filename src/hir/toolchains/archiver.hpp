@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "common.hpp"
+
 namespace HIR::Toolchain::Archiver {
 
 /**
@@ -20,7 +22,7 @@ namespace HIR::Toolchain::Archiver {
 class Archiver {
   public:
     virtual ~Archiver(){};
-    virtual bool accepts_rsp_file() const;
+    virtual RSPFileSupport rsp_support() const;
 
   protected:
     Archiver(const std::vector<std::string> & c) : command{c} {};
