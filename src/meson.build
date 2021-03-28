@@ -2,3 +2,4 @@
 # Copyright © 2021 Intel Corporation
 
 subdir('frontend')
+subdir('hir')
