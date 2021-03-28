@@ -11,6 +11,9 @@ endforeach
 
 static_library(
   'hir',
-  ['machines.cpp'],
+  [
+    'machines.cpp',
+    'toolchains/archivers/gnu.cpp'
+  ],
   cpp_args : _hir_args,
 )
