@@ -13,7 +13,8 @@ static_library(
   'hir',
   [
     'machines.cpp',
-    'toolchains/archivers/gnu.cpp'
+    'toolchains/archivers/gnu.cpp',
+    'toolchains/compilers/cpp/gnu.cpp',
   ],
   cpp_args : _hir_args,
 )

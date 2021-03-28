@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "common.hpp"
+
 namespace HIR::Toolchain::Compiler {
 
 /**
@@ -17,8 +19,11 @@ namespace HIR::Toolchain::Compiler {
 class Compiler {
   public:
     virtual ~Compiler(){};
+    virtual RSPFileSupport rsp_support() const;
 
-  private:
+  protected:
+    Compiler(const std::vector<std::string> & c) : command{c} {};
+
     const std::vector<std::string> command;
 };
 
