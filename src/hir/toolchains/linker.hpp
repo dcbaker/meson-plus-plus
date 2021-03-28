@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "common.hpp"
+
 namespace HIR::Toolchain::Linker {
 
 /**
@@ -20,8 +22,10 @@ namespace HIR::Toolchain::Linker {
 class Linker {
   public:
     virtual ~Linker(){};
+    virtual RSPFileSupport rsp_support() const;
 
-  private:
+  protected:
+    Linker(const std::vector<std::string> & c) : command{c} {};
     const std::vector<std::string> command;
 };
 

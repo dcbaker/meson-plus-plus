@@ -15,6 +15,8 @@ static_library(
     'machines.cpp',
     'toolchains/archivers/gnu.cpp',
     'toolchains/compilers/cpp/gnu.cpp',
+    'toolchains/linker_drivers/gnu.cpp',
+    'toolchains/linkers/gnu.cpp',
   ],
   cpp_args : _hir_args,
 )

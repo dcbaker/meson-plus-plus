@@ -14,7 +14,8 @@ class Gnu : public Archiver {
   public:
     Gnu(const std::vector<std::string> & c) : Archiver{c} {};
     ~Gnu(){};
-    RSPFileSupport rsp_support() const;
+
+    RSPFileSupport rsp_support() const override final;
 };
 
 } // namespace HIR::Toolchain::Archiver
