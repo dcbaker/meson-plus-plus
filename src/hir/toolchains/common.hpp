@@ -18,4 +18,11 @@ enum class RSPFileSupport {
     GCC,
 };
 
+/**
+ * The toolchain language
+ */
+enum class Language {
+    CPP,
+};
+
 } // namespace HIR::Toolchain

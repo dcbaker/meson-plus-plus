@@ -17,6 +17,7 @@ static_library(
     'toolchains/compilers/cpp/gnu.cpp',
     'toolchains/linker_drivers/gnu.cpp',
     'toolchains/linkers/gnu.cpp',
+    'toolchains/detect_compilers.cpp',
   ],
   cpp_args : _hir_args,
 )

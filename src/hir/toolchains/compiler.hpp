@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common.hpp"
+#include "machines.hpp"
 
 namespace HIR::Toolchain::Compiler {
 
@@ -26,5 +27,7 @@ class Compiler {
 
     const std::vector<std::string> command;
 };
+
+Compiler & detect_compiler(const Language &, const Machines::Machine &);
 
 } // namespace HIR::Toolchain::Compiler
