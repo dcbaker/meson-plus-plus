@@ -1,0 +1,3 @@
+[wrap-git]
+url = https://github.com/dcbaker/tiny-process-library.git
+revision = meson

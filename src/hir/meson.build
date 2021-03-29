@@ -20,4 +20,5 @@ static_library(
     'toolchains/detect_compilers.cpp',
   ],
   cpp_args : _hir_args,
+  dependencies : dep_tpl,
 )
