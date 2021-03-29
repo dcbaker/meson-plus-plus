@@ -15,7 +15,9 @@ class Gnu : public Compiler {
     Gnu(const std::vector<std::string> & c) : Compiler{c} {};
     ~Gnu(){};
 
-    RSPFileSupport rsp_support() const override final;
+    std::string id() const override { return "gcc"; };
+
+    RSPFileSupport rsp_support() const override;
 };
 
 } // namespace HIR::Toolchain::Compiler::CPP

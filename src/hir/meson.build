@@ -9,7 +9,7 @@ foreach h : ['endian.h']
   endif
 endforeach
 
-static_library(
+libhir = static_library(
   'hir',
   [
     'machines.cpp',
@@ -21,4 +21,15 @@ static_library(
   ],
   cpp_args : _hir_args,
   dependencies : dep_tpl,
+)
+
+test(
+  'compiler detection',
+  executable(
+    'compiler_detection_test',
+    'toolchains/detect_compilers_test.cpp',
+    link_with : libhir,
+    dependencies : dep_gtest,
+  ),
+  protocol : 'gtest',
 )

@@ -1,7 +1,8 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
-/* Interface for the Compiler class.
+/**
+ * Compiler detection functions
  */
 
 #include <cassert>
@@ -52,18 +53,12 @@ std::unique_ptr<Compiler> detect_cpp_compiler(const Machines::Machine &) {
 
 } // namespace
 
-std::unique_ptr<Compiler> detect_compiler(const Language & lang, const Machines::Machine & machine,
-                                          const bool required) {
-    std::unique_ptr<Compiler> c = nullptr;
+std::unique_ptr<Compiler> detect_compiler(const Language & lang, const Machines::Machine & machine) {
     switch (lang) {
         case Language::CPP:
-            c = detect_cpp_compiler(machine);
-            break;
+            return detect_cpp_compiler(machine);
     }
-    if (c == nullptr && required) {
-        throw std::exception{};
-    }
-    return c;
+    assert(false);
 };
 
 } // namespace HIR::Toolchain::Compiler

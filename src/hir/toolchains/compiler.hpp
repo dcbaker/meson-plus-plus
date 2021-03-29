@@ -22,6 +22,7 @@ class Compiler {
   public:
     virtual ~Compiler(){};
     virtual RSPFileSupport rsp_support() const = 0;
+    virtual std::string id() const = 0;
 
   protected:
     Compiler(const std::vector<std::string> & c) : command{c} {};
