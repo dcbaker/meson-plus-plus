@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,6 @@ class Compiler {
     const std::vector<std::string> command;
 };
 
-Compiler & detect_compiler(const Language &, const Machines::Machine &);
+std::unique_ptr<Compiler> detect_compiler(const Language &, const Machines::Machine &);
 
 } // namespace HIR::Toolchain::Compiler

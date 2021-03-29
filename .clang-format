@@ -1,5 +1,5 @@
 AllowAllArgumentsOnNextLine: true
-AllowShortFunctionsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: true
 BasedOnStyle: LLVM
 ColumnLimit: 120
 IndentCaseLabels: true

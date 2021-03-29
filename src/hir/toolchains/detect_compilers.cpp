@@ -4,11 +4,16 @@
 /* Interface for the Compiler class.
  */
 
+#include <cassert>
+#include <memory>
 #include <optional>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include "compiler.hpp"
+#include "compilers/cpp/gnu.hpp"
+#include "process.hpp"
 
 namespace HIR::Toolchain::Compiler {
 
@@ -24,8 +29,41 @@ std::optional<std::string> detect_version(const std::string & raw) {
     }
 };
 
+std::unique_ptr<Compiler> detect_cpp_compiler(const Machines::Machine &) {
+    // TODO: handle the machine switch, and the cross/native file
+    const std::vector<std::string> names{"c++", "g++"};
+    for (const auto & c : names) {
+        std::string out{}, err{};
+        TinyProcessLib::Process p(
+            std::vector<std::string>{c, "--version"}, "",
+            [&out](const char * bytes, size_t n) { out = std::string(bytes, n); },
+            [&err](const char * bytes, size_t n) { err = std::string(bytes, n); });
+        auto e = p.get_exit_status();
+        if (e != 0) {
+            continue;
+        }
+
+        if (out.find("Free Software Foundation") != std::string::npos) {
+            return std::make_unique<CPP::Gnu>(std::vector<std::string>{c});
+        }
+    }
+    return nullptr;
+}
+
 } // namespace
 
-Compiler & detect_compiler(const Language &, const Machines::Machine &){};
+std::unique_ptr<Compiler> detect_compiler(const Language & lang, const Machines::Machine & machine,
+                                          const bool required) {
+    std::unique_ptr<Compiler> c = nullptr;
+    switch (lang) {
+        case Language::CPP:
+            c = detect_cpp_compiler(machine);
+            break;
+    }
+    if (c == nullptr && required) {
+        throw std::exception{};
+    }
+    return c;
+};
 
 } // namespace HIR::Toolchain::Compiler
