@@ -30,10 +30,11 @@ std::optional<std::string> detect_version(const std::string & raw) {
     }
 };
 
+const std::vector<std::string> DEFAULT_CPP{"c++", "g++"};
+
 std::unique_ptr<Compiler> detect_cpp_compiler(const Machines::Machine &) {
     // TODO: handle the machine switch, and the cross/native file
-    const std::vector<std::string> names{"c++", "g++"};
-    for (const auto & c : names) {
+    for (const auto & c : DEFAULT_CPP) {
         std::string out{}, err{};
         TinyProcessLib::Process p(
             std::vector<std::string>{c, "--version"}, "",
