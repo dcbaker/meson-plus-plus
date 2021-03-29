@@ -22,7 +22,7 @@ namespace HIR::Toolchain::Archiver {
 class Archiver {
   public:
     virtual ~Archiver(){};
-    virtual RSPFileSupport rsp_support() const;
+    virtual RSPFileSupport rsp_support() const = 0;
 
   protected:
     Archiver(const std::vector<std::string> & c) : command{c} {};

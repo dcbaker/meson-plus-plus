@@ -22,7 +22,7 @@ namespace HIR::Toolchain::Linker {
 class Linker {
   public:
     virtual ~Linker(){};
-    virtual RSPFileSupport rsp_support() const;
+    virtual RSPFileSupport rsp_support() const = 0;
 
   protected:
     Linker(const std::vector<std::string> & c) : command{c} {};
