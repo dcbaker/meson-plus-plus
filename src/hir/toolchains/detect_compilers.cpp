@@ -35,15 +35,8 @@ const std::vector<std::string> DEFAULT_CPP{"c++", "g++"};
 std::unique_ptr<Compiler> detect_cpp_compiler(const Machines::Machine &) {
     // TODO: handle the machine switch, and the cross/native file
     for (const auto & c : DEFAULT_CPP) {
-        std::string out{}, err{};
-        TinyProcessLib::Process p(
-            std::vector<std::string>{c, "--version"}, "",
-            [&out](const char * bytes, size_t n) { out = std::string(bytes, n); },
-            [&err](const char * bytes, size_t n) { err = std::string(bytes, n); });
-        auto e = p.get_exit_status();
-        if (e != 0) {
-            continue;
-        }
+        auto const & [ret, out, err] = Util::process(std::vector<std::string>{c, "--version"});
+        if (ret != 0) { continue; }
 
         if (out.find("Free Software Foundation") != std::string::npos) {
             return std::make_unique<CPP::Gnu>(std::vector<std::string>{c});

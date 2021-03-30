@@ -16,6 +16,7 @@ add_project_arguments(
   cpp.get_supported_arguments(
     '-Werror=switch-enum',
   ),
+  '-D_GNU_SOURCE',
   language : 'cpp',
 )
 
@@ -29,6 +30,5 @@ elif cpp.get_id() == 'clang'
 endif
 
 dep_gtest = dependency('gtest_main', disabler : true, required : get_option('tests'), fallback : ['gtest', 'gtest_main_dep'])
-dep_tpl = dependency('tiny-process-library')
 
 subdir('src')

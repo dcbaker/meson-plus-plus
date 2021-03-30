@@ -8,10 +8,11 @@
 
 TEST(detect_compilers, gpp) {
     // Skip if we don't have g++
-    if (system("g++") != 0) {
+    if (system("g++") == 127) {
         GTEST_SKIP();
     }
     const auto comp =
         HIR::Toolchain::Compiler::detect_compiler(HIR::Toolchain::Language::CPP, HIR::Machines::Machine::BUILD);
+    ASSERT_NE(comp, nullptr);
     ASSERT_EQ(comp->id(), "gcc");
 }
