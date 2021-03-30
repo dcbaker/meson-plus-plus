@@ -9,7 +9,7 @@ libutil = static_library(
   ],
 )
 
-dep_util = declare_dependency(
+idep_util = declare_dependency(
   link_with : libutil,
   include_directories : include_directories('.'),
 )
