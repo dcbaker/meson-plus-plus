@@ -5,7 +5,7 @@
 
 namespace HIR::Toolchain::Compiler::CPP {
 
-RSPFileSupport Gnu::rsp_support() const {
+RSPFileSupport Clang::rsp_support() const {
     return RSPFileSupport::GCC;
 };
 

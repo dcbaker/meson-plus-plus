@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "compiler.hpp"
-#include "compilers/cpp/gnu.hpp"
+#include "compilers/cpp/cpp.hpp"
 #include "process.hpp"
 
 namespace HIR::Toolchain::Compiler {

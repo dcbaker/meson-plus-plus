@@ -1,7 +1,8 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
-/* Implementation of g++, the Gnu C++ Compiler
+/**
+ * All C++ Compilers, the interfaces
  */
 
 #pragma once
@@ -16,6 +17,16 @@ class Gnu : public Compiler {
     ~Gnu(){};
 
     std::string id() const override { return "gcc"; };
+
+    RSPFileSupport rsp_support() const override;
+};
+
+class Clang : public Compiler {
+  public:
+    Clang(const std::vector<std::string> & c) : Compiler{c} {};
+    ~Clang(){};
+
+    std::string id() const override { return "clang"; };
 
     RSPFileSupport rsp_support() const override;
 };
