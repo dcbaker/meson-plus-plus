@@ -30,6 +30,6 @@ class Compiler {
     const std::vector<std::string> command;
 };
 
-std::unique_ptr<Compiler> detect_compiler(const Language &, const Machines::Machine &);
+std::unique_ptr<Compiler> detect_compiler(const Language &, const Machines::Machine &, const std::vector<std::string> & bins = {});
 
 } // namespace HIR::Toolchain::Compiler
