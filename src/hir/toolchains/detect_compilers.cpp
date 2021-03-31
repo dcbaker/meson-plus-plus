@@ -7,8 +7,6 @@
 
 #include <cassert>
 #include <memory>
-#include <optional>
-#include <regex>
 #include <string>
 #include <vector>
 
@@ -19,17 +17,6 @@
 namespace HIR::Toolchain::Compiler {
 
 namespace {
-
-std::optional<std::string> detect_version(const std::string & raw) {
-    std::regex re{"\\d\\.\\d\\.\\d"};
-    std::smatch match{};
-    if (std::regex_search(raw, match, re)) {
-        return match.str(1);
-    } else {
-        return std::nullopt;
-    }
-};
-
 const std::vector<std::string> DEFAULT_CPP{"c++", "g++", "clang++"};
 
 std::unique_ptr<Compiler> detect_cpp_compiler(const Machines::Machine & m, const std::vector<std::string> & bins) {

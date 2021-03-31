@@ -18,6 +18,7 @@ libhir = static_library(
     'toolchains/compilers/cpp/clang.cpp',
     'toolchains/linker_drivers/gnu.cpp',
     'toolchains/linkers/gnu.cpp',
+    'toolchains/detect_archivers.cpp',
     'toolchains/detect_compilers.cpp',
   ],
   cpp_args : _hir_args,
@@ -29,6 +30,17 @@ test(
   executable(
     'compiler_detection_test',
     'toolchains/detect_compilers_test.cpp',
+    link_with : libhir,
+    dependencies : dep_gtest,
+  ),
+  protocol : 'gtest',
+)
+
+test(
+  'archiver detection',
+  executable(
+    'archiver_detection_test',
+    'toolchains/detect_archivers_test.cpp',
     link_with : libhir,
     dependencies : dep_gtest,
   ),
