@@ -23,6 +23,7 @@ class Linker {
   public:
     virtual ~Linker(){};
     virtual RSPFileSupport rsp_support() const = 0;
+    virtual std::string id() const = 0;
 
   protected:
     Linker(const std::vector<std::string> & c) : command{c} {};
@@ -34,6 +35,7 @@ class GnuBFD : public Linker {
     GnuBFD(const std::vector<std::string> & c) : Linker{c} {};
     virtual ~GnuBFD(){};
 
+    std::string id() const override { return "ld.bfd"; }
     RSPFileSupport rsp_support() const override final;
 };
 
@@ -45,6 +47,7 @@ class Gnu : Linker {
     Gnu(const std::vector<std::string> & s, const GnuBFD & l) : Linker{s}, linker{l} {};
     virtual ~Gnu(){};
 
+    std::string id() const override { return linker.id(); }
     RSPFileSupport rsp_support() const override final;
 
   private:
