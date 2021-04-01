@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include <optional>
+#include <memory>
 
 #include "archiver.hpp"
+#include "common.hpp"
 #include "compiler.hpp"
 #include "linker.hpp"
 
@@ -16,15 +17,18 @@ namespace HIR::Toolchain {
  */
 class Toolchain {
   public:
-    Toolchain(const Compiler::Compiler & c, const Linker::Linker & l)
-        : compiler{c}, linker{l}, archiver{std::nullopt} {};
-    Toolchain(const Compiler::Compiler & c, const Linker::Linker & l, const Archiver::Archiver & a)
-        : compiler{c}, linker{l}, archiver{a} {};
+    Toolchain(std::unique_ptr<Compiler::Compiler> && c, std::unique_ptr<Linker::Linker> && l)
+        : compiler{std::move(c)}, linker{std::move(l)}, archiver{nullptr} {};
+    Toolchain(std::unique_ptr<Compiler::Compiler> && c, std::unique_ptr<Linker::Linker> && l,
+              std::unique_ptr<Archiver::Archiver> && a)
+        : compiler{std::move(c)}, linker{std::move(l)}, archiver{std::move(a)} {};
     ~Toolchain(){};
 
-    const Compiler::Compiler compiler;
-    const Linker::Linker linker;
-    const std::optional<Archiver::Archiver> archiver;
+    const std::unique_ptr<Compiler::Compiler> compiler;
+    const std::unique_ptr<Linker::Linker> linker;
+    const std::unique_ptr<Archiver::Archiver> archiver;
 };
+
+Toolchain get_toolchain(const Language & l);
 
 } // namespace HIR::Toolchain

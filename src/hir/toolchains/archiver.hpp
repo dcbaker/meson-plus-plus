@@ -52,6 +52,6 @@ class Gnu : public Archiver {
 /**
  * Find the static archiver to use
  */
-std::unique_ptr<Archiver> detect_archiver(const Machines::Machine &, const std::vector<std::string> &);
+std::unique_ptr<Archiver> detect_archiver(const Machines::Machine &, const std::vector<std::string> & bins = {});
 
 } // namespace HIR::Toolchain::Archiver
