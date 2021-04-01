@@ -29,4 +29,13 @@ class Linker {
     const std::vector<std::string> command;
 };
 
+class GnuBFD : public Linker {
+  public:
+    GnuBFD(const std::vector<std::string> & c) : Linker{c} {};
+    virtual ~GnuBFD(){};
+
+    RSPFileSupport rsp_support() const override final;
+};
+
+
 } // namespace HIR::Toolchain::Linker

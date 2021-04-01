@@ -7,7 +7,6 @@
 #pragma once
 
 #include "toolchains/linker.hpp"
-#include "toolchains/linkers/gnu.hpp"
 
 namespace HIR::Toolchain::Linker::Drivers {
 
