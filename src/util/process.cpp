@@ -43,11 +43,11 @@ Result process(const std::vector<std::string> & cmd) {
         close(err_pipes[READ]);
         close(err_pipes[WRITE]);
 
-        char * c_cmd[cmd.size() + 1];
+        char * c_cmd[cmd.size()];
         for (unsigned i = 0; i < cmd.size(); ++i) {
             c_cmd[i] = strdup(cmd[i].c_str());
         }
-        c_cmd[cmd.size() + 1] = NULL;
+        c_cmd[cmd.size()] = NULL;
 
         execvp(c_cmd[0], c_cmd);
         std::cerr << "Program failed to execute: " << strerror(errno) << std::endl;
