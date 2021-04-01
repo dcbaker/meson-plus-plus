@@ -9,10 +9,12 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "common.hpp"
+#include "compiler.hpp"
 
 namespace HIR::Toolchain::Linker {
 
@@ -33,7 +35,7 @@ class Linker {
 class GnuBFD : public Linker {
   public:
     GnuBFD(const std::vector<std::string> & c) : Linker{c} {};
-    virtual ~GnuBFD(){};
+    ~GnuBFD(){};
 
     std::string id() const override { return "ld.bfd"; }
     RSPFileSupport rsp_support() const override final;
@@ -42,10 +44,10 @@ class GnuBFD : public Linker {
 namespace Drivers {
 
 // TODO: this might have to be a templateized class
-class Gnu : Linker {
+class Gnu : public Linker {
   public:
-    Gnu(const std::vector<std::string> & s, const GnuBFD & l) : Linker{s}, linker{l} {};
-    virtual ~Gnu(){};
+    Gnu(const GnuBFD & l) : Linker{{}}, linker{l} {};
+    ~Gnu(){};
 
     std::string id() const override { return linker.id(); }
     RSPFileSupport rsp_support() const override final;
@@ -55,5 +57,8 @@ class Gnu : Linker {
 };
 
 } // namespace Drivers
+
+std::unique_ptr<Linker> detect_linker(const std::unique_ptr<Compiler::Compiler> & comp,
+                                      const Machines::Machine & machine);
 
 } // namespace HIR::Toolchain::Linker

@@ -17,6 +17,7 @@ class Gnu : public Compiler {
     ~Gnu(){};
 
     std::string id() const override { return "gcc"; };
+    std::string language() const override { return "C++"; };
 
     RSPFileSupport rsp_support() const override;
 };
@@ -27,6 +28,7 @@ class Clang : public Compiler {
     ~Clang(){};
 
     std::string id() const override { return "clang"; };
+    std::string language() const override { return "C++"; };
 
     RSPFileSupport rsp_support() const override;
 };
