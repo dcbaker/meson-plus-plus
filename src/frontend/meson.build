@@ -34,6 +34,11 @@ libfrontend = static_library(
   dependencies : [dep_fs],
 )
 
+idep_frontend = declare_dependency(
+  link_with : libfrontend,
+  include_directories : include_directories('.'),
+)
+
 test(
   'parser',
   executable(

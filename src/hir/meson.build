@@ -27,6 +27,15 @@ libhir = static_library(
   dependencies : [idep_util],
 )
 
+libast_to_hir = static_library(
+  'ast_to_hir',
+  [
+    'ast_to_hir/functions.cpp',
+  ],
+  link_with : libhir,
+  dependencies : idep_frontend,
+)
+
 foreach t : ['compiler', 'archiver', 'linker']
   test(
     '@0@ detection'.format(t),
