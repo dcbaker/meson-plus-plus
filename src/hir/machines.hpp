@@ -53,6 +53,19 @@ class Info {
     const std::string cpu;
 };
 
+template <typename T>
+class PerMachine {
+  public:
+    PerMachine(T __build, T __host, T __target) : build{__build}, host{__host}, target{__target} {};
+    PerMachine(T __build, T __host) : build{__build}, host{__host}, target{__host} {};
+    PerMachine(T __build) : build{__build}, host{__build}, target{__build} {};
+    ~PerMachine() {};
+
+    T build;
+    T host;
+    T target;
+};
+
 /**
  * Detect the build machine.
  *
