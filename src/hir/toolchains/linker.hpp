@@ -37,5 +37,20 @@ class GnuBFD : public Linker {
     RSPFileSupport rsp_support() const override final;
 };
 
+namespace Drivers {
+
+// TODO: this might have to be a templateized class
+class Gnu : Linker {
+  public:
+    Gnu(const std::vector<std::string> & s, const GnuBFD & l) : Linker{s}, linker{l} {};
+    virtual ~Gnu(){};
+
+    RSPFileSupport rsp_support() const override final;
+
+  private:
+    const GnuBFD linker;
+};
+
+} // namespace Drivers
 
 } // namespace HIR::Toolchain::Linker
