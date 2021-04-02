@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace HIR::Toolchain {
 
 /**
@@ -24,5 +26,7 @@ enum class RSPFileSupport {
 enum class Language {
     CPP,
 };
+
+Language from_string(const std::string &);
 
 } // namespace HIR::Toolchain

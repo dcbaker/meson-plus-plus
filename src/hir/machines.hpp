@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 namespace HIR::Machines {
@@ -53,17 +54,43 @@ class Info {
     const std::string cpu;
 };
 
-template <typename T>
-class PerMachine {
+template <typename T> class PerMachine {
   public:
-    PerMachine(T __build, T __host, T __target) : build{__build}, host{__host}, target{__target} {};
-    PerMachine(T __build, T __host) : build{__build}, host{__host}, target{__host} {};
-    PerMachine(T __build) : build{__build}, host{__build}, target{__build} {};
-    ~PerMachine() {};
+    PerMachine() : _build{}, _host{std::nullopt}, _target{std::nullopt} {};
+    PerMachine(T & __build, T & __host, T & __target) : _build{__build}, _host{__host}, _target{__target} {};
+    PerMachine(T & __build, T & __host) : _build{__build}, _host{__host}, _target{std::nullopt} {};
+    PerMachine(T & __build) : _build{__build}, _host{std::nullopt}, _target{std::nullopt} {};
+    PerMachine(T && __build, T && __host, T && __target)
+        : _build{std::move(__build)}, _host{std::move(__host)}, _target{std::move(__target)} {};
+    PerMachine(T && __build, T && __host)
+        : _build{std::move(__build)}, _host{std::move(__host)}, _target{std::move(std::nullopt)} {};
+    PerMachine(T && __build) : _build{std::move(__build)}, _host{std::move(std::nullopt)}, _target{std::move(std::nullopt)} {};
+    PerMachine(PerMachine<T> && t) : _build{std::move(t._build)}, _target{std::move(t._target)}, _host{std::move(t._target)} {};
+    ~PerMachine(){};
 
-    T build;
-    T host;
-    T target;
+    PerMachine<T> & operator=(PerMachine<T> && t) {
+        _build = std::move(t._build);
+        _target = std::move(t._target);
+        _host = std::move(t._target);
+        return *this;
+    }
+
+    T & build() const { return _build; }
+    T & host() const { return _host == std::nullopt ? _build : _host; }
+    T & target() const {
+        if (_target != std::nullopt) {
+            return _target;
+        } else if (_host != std::nullopt) {
+            return _host;
+        } else {
+            return _build;
+        }
+    }
+
+  private:
+    T _build;
+    std::optional<T> _host;
+    std::optional<T> _target;
 };
 
 /**

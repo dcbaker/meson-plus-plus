@@ -14,6 +14,7 @@ libhir = static_library(
   [
     'machines.cpp',
     'toolchains/archivers/gnu.cpp',
+    'toolchains/common.cpp',
     'toolchains/compilers/cpp/clang.cpp',
     'toolchains/compilers/cpp/gnu.cpp',
     'toolchains/detect_archivers.cpp',

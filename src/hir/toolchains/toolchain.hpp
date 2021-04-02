@@ -17,18 +17,22 @@ namespace HIR::Toolchain {
  */
 class Toolchain {
   public:
+    Toolchain() : compiler{nullptr}, linker{nullptr}, archiver{nullptr} {};
     Toolchain(std::unique_ptr<Compiler::Compiler> && c, std::unique_ptr<Linker::Linker> && l)
         : compiler{std::move(c)}, linker{std::move(l)}, archiver{nullptr} {};
     Toolchain(std::unique_ptr<Compiler::Compiler> && c, std::unique_ptr<Linker::Linker> && l,
               std::unique_ptr<Archiver::Archiver> && a)
         : compiler{std::move(c)}, linker{std::move(l)}, archiver{std::move(a)} {};
+    Toolchain(Toolchain && t) : compiler{std::move(t.compiler)}, linker{std::move(t.linker)}, archiver{std::move(t.archiver)} {};
     ~Toolchain(){};
 
-    const std::unique_ptr<Compiler::Compiler> compiler;
-    const std::unique_ptr<Linker::Linker> linker;
-    const std::unique_ptr<Archiver::Archiver> archiver;
+    Toolchain & operator=(Toolchain &&) = default;
+
+    std::unique_ptr<Compiler::Compiler> compiler;
+    std::unique_ptr<Linker::Linker> linker;
+    std::unique_ptr<Archiver::Archiver> archiver;
 };
 
-Toolchain get_toolchain(const Language & l);
+Toolchain get_toolchain(const Language & l, const Machines::Machine &);
 
 } // namespace HIR::Toolchain
