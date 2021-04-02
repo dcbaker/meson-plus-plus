@@ -5,7 +5,8 @@
 libutil = static_library(
   'util',
   [
-    'process.cpp'
+    'log.cpp',
+    'process.cpp',
   ],
 )
 

@@ -58,6 +58,9 @@ void project(State::Persistant & pers, State::Transitive & trans, Frontend::AST:
             Toolchain::get_toolchain(lang, Machines::Machine::BUILD),
             Toolchain::get_toolchain(lang, Machines::Machine::HOST)};
     }
+
+    // TODO: to handle keyword arguments properly we need to lower the keys and the
+    // values into basic types
 };
 
 } // namespace HIR::FromAST::Functions
