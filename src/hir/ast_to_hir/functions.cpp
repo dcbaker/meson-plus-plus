@@ -53,6 +53,7 @@ void project(State::Persistant & pers, State::Transitive & trans, Frontend::AST:
 
     for (const auto & l : lang_strs) {
         auto lang = Toolchain::from_string(l);
+        // In the project call we always add languages for both machines.
         pers.toolchains[lang] = Machines::PerMachine{
             Toolchain::get_toolchain(lang, Machines::Machine::BUILD),
             Toolchain::get_toolchain(lang, Machines::Machine::HOST)};
