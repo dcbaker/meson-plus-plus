@@ -25,6 +25,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
+      - name: apt
+        run: |
+          sudo apt update
+          sudo apt upgrade
+          sudo apt install libfl-dev
       - name: Meson Build
         uses: BSFishy/meson-build@v1.0.3
         with:
