@@ -2,5 +2,5 @@
 # Copyright © 2021 Intel Corporation
 
 subdir('util')
+subdir('meson')
 subdir('frontend')
-subdir('hir')
