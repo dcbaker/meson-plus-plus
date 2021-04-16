@@ -31,7 +31,7 @@ libfrontend = static_library(
   'frontend',
   [parser, scanner, 'node.cpp', 'node_visitors.cpp', 'driver.cpp'],
   cpp_args : _frontend_args,
-  dependencies : [dep_fs],
+  dependencies : [dep_fs, idep_util],
 )
 
 idep_frontend = declare_dependency(

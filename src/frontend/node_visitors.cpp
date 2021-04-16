@@ -5,6 +5,7 @@
 
 #include "node_visitors.hpp"
 #include "driver.hpp"
+#include "exceptions.hpp"
 
 namespace Frontend::AST {
 
@@ -30,27 +31,27 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
     // can validate this at the AST level since we don't have strong typing
     //
     // This is unrecoverable, so just throwing here should be fine
-    if (args.size() < 1) {
+    if (args.size() != 1) {
         // TODO: use the location data.
-        // TODO: have our own exception class, catch it at the base and print a
-        // nice message
-        throw std::exception{};
+        throw Util::Exceptions::InvalidArguments{"subdir() requires exactly one argument."};
     }
 
     auto const & dir = *std::get_if<std::unique_ptr<String>>(&args[0]);
     if (dir == nullptr) {
-        throw std::exception{};
+        // TODO: use the location data.
+        throw Util::Exceptions::InvalidArguments{"subdir()'s first argument must be a string."};
     }
 
     // This assumes that the filename is foo/meson.build
-    const std::filesystem::path p{*id->loc.begin.filename};
+    const std::filesystem::path _p{*id->loc.begin.filename};
+    const std::filesystem::path p{_p.parent_path() / dir-> value / "meson.build"};
     if (!std::filesystem::exists(p)) {
-        // TODO: something useful here
-        throw std::exception{};
+        // TODO: use the location data.
+        throw Util::Exceptions::InvalidArguments{"Cannot open file or directory " + std::string{p} + "."};
     }
 
     Driver drv{};
-    return drv.parse(p.parent_path() / dir->value / "meson.build");
+    return drv.parse(p);
 };
 
 } // namespace Frontend::AST

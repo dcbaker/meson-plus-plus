@@ -25,6 +25,11 @@ class MesonException {
 /**
  * Exception for invalid arguments passed to a function
  */
-class InvalidArguments : public MesonException {};
+class InvalidArguments : public MesonException {
+  public:
+    InvalidArguments(const std::string & msg) : MesonException{msg} {};
+    virtual ~InvalidArguments(){};
+
+};
 
 } // namespace Util::Exceptions
