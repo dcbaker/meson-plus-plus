@@ -34,9 +34,11 @@ libfrontend = static_library(
   dependencies : [dep_fs, idep_util],
 )
 
+inc_frontend = include_directories('.')
+
 idep_frontend = declare_dependency(
   link_with : libfrontend,
-  include_directories : include_directories('.'),
+  include_directories : inc_frontend,
 )
 
 test(
