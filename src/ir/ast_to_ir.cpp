@@ -7,10 +7,16 @@ namespace IR {
 
 namespace {
 
-}
+struct FundementalTypeLowering {
+    Holders operator()(const std::unique_ptr<const Frontend::AST::Assignment> & block) {
+        ;
+    }
+};
 
-BlockList lower_ast(const Frontend::AST::CodeBlock &) {
-    BlockList bl{};
+} // namespace
+
+HolderList lower_ast(const Frontend::AST::CodeBlock &) {
+    HolderList bl{};
 
     return bl;
 }

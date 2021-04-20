@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <list>
+#include <map>
 #include <optional>
 #include <string>
 #include <variant>
@@ -12,54 +13,52 @@
 namespace IR {
 
 /**
- * A Meson string.
+ * A Generic holder type.
+ *
+ * This is used to hold assignments of a specific type and it's assignment
+ * information
  */
-class String {
+template <typename T> class Holder {
   public:
-    String(){};
-    virtual ~String(){};
+    Holder(const T & v, const T & n) : value{v}, variable_name{n} {};
+    Holder(const T & v) : value{v}, variable_name{std::nullopt} {};
+    virtual ~Holder(){};
+
+    const T value;
+    const std::optional<T> variable_name;
+    std::optional<std::uint16_t> value_number = std::nullopt;
 };
 
-using IRVariant = std::variant<String>;
+using StringHolder = Holder<std::string>;
+using NumberHolder = Holder<std::int64_t>;
 
-class Instruction {
-  public:
-    Instruction(IRVariant & v) : var{v}, name{std::nullopt}, version{0} {};
-    Instruction(IRVariant & v, const std::string & n, const uint64_t & ver) : var{v}, name{n}, version{ver} {};
-    virtual ~Instruction(){};
-
-    /// The actual IR element being held
-    IRVariant var;
-
-    /**
-     * The name of the variable holding the value
-     *
-     * This is optional, as many Meson functions do not have values, just
-     * side-effects. For example, calling `execurable(...)` will cause
-     * something to happen in the backend, even without the assignment.
-     */
-    const std::optional<const std::string> name;
-
-    /// The version of the variable for value-numbering
-    const uint64_t version;
-};
+using Holders = std::variant<StringHolder, NumberHolder>;
 
 /// List of IR Instructions
-using IRList = std::list<Instruction>;
+using HolderList = std::list<Holders>;
+
+class BasicBlock;
+
+class Phi {
+    Phi(){};
+    virtual ~Phi(){};
+
+    std::map<HolderList, BasicBlock> targets;
+};
 
 /**
  * Basic cdoe block
  *
- * Holds continguous instructions that are to be executed in order.
+ * Holds continguous instructions that are to be executed in order, and
+ * possibly a phi node.
  */
 class BasicBlock {
   public:
-    BasicBlock() : instruction{} {};
+    BasicBlock() : instructions{}, phi{std::nullopt} {};
     virtual ~BasicBlock(){};
 
-    IRList instruction;
+    HolderList instructions;
+    std::optional<Phi> phi;
 };
-
-using BlockList = std::list<BasicBlock>;
 
 } // namespace IR
