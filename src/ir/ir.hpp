@@ -43,7 +43,7 @@ class Phi {
     Phi(){};
     virtual ~Phi(){};
 
-    std::map<HolderList, BasicBlock> targets;
+    std::map<HolderList, BasicBlock *> targets;
 };
 
 /**
@@ -51,6 +51,15 @@ class Phi {
  *
  * Holds continguous instructions that are to be executed in order, and
  * possibly a phi node.
+ *
+ * For our purposes a function call can appear inside a basic block because we
+ * lack user defined functions, so we can think of a function or method call
+ * not as a jump to a different basic block, but as value itself, in other
+ * words, these are equivalent:
+ * ```meson
+ * a = ['gcc']
+ * b = cc.get_compiler('c')
+ * ```
  */
 class BasicBlock {
   public:
