@@ -3,12 +3,12 @@
 
 #pragma once
 
+#include "hir.hpp"
 #include "node.hpp"
-#include "ir.hpp"
 
-namespace IR {
+namespace HIR {
 
 /// Lower AST to IR
 HolderList lower_ast(const Frontend::AST::CodeBlock &);
 
-};
+}; // namespace HIR

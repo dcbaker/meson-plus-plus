@@ -3,14 +3,12 @@
 
 #include "ast_to_ir.hpp"
 
-namespace IR {
+namespace HIR {
 
 namespace {
 
 struct FundementalTypeLowering {
-    Holders operator()(const std::unique_ptr<const Frontend::AST::Assignment> & block) {
-        ;
-    }
+    Holders operator()(const std::unique_ptr<const Frontend::AST::Assignment> & block) { ; }
 };
 
 } // namespace
@@ -21,4 +19,4 @@ HolderList lower_ast(const Frontend::AST::CodeBlock &) {
     return bl;
 }
 
-} // namespace IR
+} // namespace HIR

@@ -3,4 +3,4 @@
 
 #include <gtest.h>
 
-#include "ast_to_ir.hpp"
+#include "ast_to_hir.hpp"

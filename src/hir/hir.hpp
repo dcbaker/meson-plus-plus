@@ -10,7 +10,7 @@
 #include <string>
 #include <variant>
 
-namespace IR {
+namespace HIR {
 
 /**
  * A Generic holder type.
@@ -70,4 +70,4 @@ class BasicBlock {
     std::optional<Phi> phi;
 };
 
-} // namespace IR
+} // namespace HIR
