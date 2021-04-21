@@ -388,9 +388,7 @@ using StatementV = std::variant<std::unique_ptr<Statement>, std::unique_ptr<Assi
 class CodeBlock {
   public:
     CodeBlock() : statements{} {};
-    CodeBlock(StatementV && stmt) : statements{} {
-        statements.emplace_back(std::move(stmt));
-    };
+    CodeBlock(StatementV && stmt) : statements{} { statements.emplace_back(std::move(stmt)); };
     CodeBlock(CodeBlock && b) noexcept : statements{std::move(b.statements)} {};
     CodeBlock(const CodeBlock &) = delete;
     ~CodeBlock(){};
@@ -435,7 +433,7 @@ class ElifBlock {
 
 class ElseBlock {
   public:
-    ElseBlock() : block{} {};
+    ElseBlock() : block{nullptr} {};
     ElseBlock(std::unique_ptr<CodeBlock> && b) : block{std::move(b)} {};
     ElseBlock(ElseBlock && e) noexcept : block{std::move(e.block)} {};
     ElseBlock(const ElseBlock &) = delete;

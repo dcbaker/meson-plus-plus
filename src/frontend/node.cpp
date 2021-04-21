@@ -11,21 +11,13 @@ namespace Frontend::AST {
 namespace {
 
 struct ExprStringVisitor {
-    std::string operator()(const std::unique_ptr<String> & s) {
-        return s->as_string();
-    };
+    std::string operator()(const std::unique_ptr<String> & s) { return s->as_string(); };
 
-    std::string operator()(const std::unique_ptr<Number> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Number> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Identifier> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Identifier> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Boolean> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Boolean> & s) { return s->as_string(); }
 
     std::string operator()(const std::unique_ptr<Subscript> & s) {
         ExprStringVisitor as{};
@@ -118,51 +110,29 @@ struct ExprStringVisitor {
         return std::visit(ExprStringVisitor(), s->lhs) + " " + o + " " + std::visit(ExprStringVisitor(), s->rhs);
     }
 
-    std::string operator()(const std::unique_ptr<FunctionCall> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<FunctionCall> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<GetAttribute> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<GetAttribute> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Array> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Array> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Dict> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Dict> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Ternary> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Ternary> & s) { return s->as_string(); }
 };
 
 struct StmtStringVisitor {
-    std::string operator()(const std::unique_ptr<Statement> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Statement> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<IfStatement> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<IfStatement> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<ForeachStatement> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<ForeachStatement> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Assignment> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Assignment> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Break> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Break> & s) { return s->as_string(); }
 
-    std::string operator()(const std::unique_ptr<Continue> & s) {
-        return s->as_string();
-    }
+    std::string operator()(const std::unique_ptr<Continue> & s) { return s->as_string(); }
 };
 
 /**
@@ -178,21 +148,13 @@ std::string stringlistify(const ExpressionList & expressions) {
 
 } // namespace
 
-std::string Number::as_string() const {
-    return std::to_string(value);
-};
+std::string Number::as_string() const { return std::to_string(value); };
 
-std::string Boolean::as_string() const {
-    return value ? "true" : "false";
-};
+std::string Boolean::as_string() const { return value ? "true" : "false"; };
 
-std::string String::as_string() const {
-    return "'" + value + "'";
-};
+std::string String::as_string() const { return "'" + value + "'"; };
 
-std::string Identifier::as_string() const {
-    return value;
-};
+std::string Identifier::as_string() const { return value; };
 
 std::string Assignment::as_string() const {
     std::string o{};
@@ -221,9 +183,7 @@ std::string Assignment::as_string() const {
 };
 
 // XXX: it would sure be nice not to have duplication here...
-std::string UnaryExpression::as_string() const {
-    return "-" + std::visit(ExprStringVisitor(), rhs);
-};
+std::string UnaryExpression::as_string() const { return "-" + std::visit(ExprStringVisitor(), rhs); };
 
 std::string AdditiveExpression::as_string() const {
     // XXX: this is a lie
@@ -270,13 +230,9 @@ std::string GetAttribute::as_string() const {
     return obj + "." + name;
 }
 
-std::string Array::as_string() const {
-    return "[" + stringlistify(elements) + "]";
-}
+std::string Array::as_string() const { return "[" + stringlistify(elements) + "]"; }
 
-std::string Statement::as_string() const {
-    return std::visit(ExprStringVisitor{}, expr);
-}
+std::string Statement::as_string() const { return std::visit(ExprStringVisitor{}, expr); }
 
 Dict::Dict(KeywordList && l, location & lo) : loc{lo} {
     for (auto & e : l) {
@@ -310,19 +266,27 @@ std::string CodeBlock::as_string() const {
 }
 
 std::string IfStatement::as_string() const {
-    return "TODO";
+    ExprStringVisitor ev{};
+
+    std::string result = "if " + std::visit(ev, ifblock.condition) + ifblock.block->as_string();
+
+    for (const auto & elif : efblock) {
+        result += "elif " + std::visit(ev, elif.condition) + elif.block->as_string();
+    }
+
+    if (eblock.block != nullptr) {
+        result += "else " + eblock.block->as_string();
+    }
+
+    result += "endif";
+
+    return result;
 }
 
-std::string ForeachStatement::as_string() const {
-    return "TODO";
-}
+std::string ForeachStatement::as_string() const { return "TODO"; }
 
-std::string Break::as_string() const {
-    return "break";
-}
+std::string Break::as_string() const { return "break"; }
 
-std::string Continue::as_string() const {
-    return "continue";
-}
+std::string Continue::as_string() const { return "continue"; }
 
 } // namespace Frontend::AST
