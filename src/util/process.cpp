@@ -2,15 +2,15 @@
 // Copyright © 2021 Intel Corporation
 
 #include <array>
-#include <thread>
 #include <cstring>
 #include <iostream>
+#include <thread>
 
 // TODO: a windows version of this.
-#include <unistd.h>
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "process.hpp"
 
@@ -43,7 +43,7 @@ Result process(const std::vector<std::string> & cmd) {
         close(err_pipes[READ]);
         close(err_pipes[WRITE]);
 
-        char * c_cmd[cmd.size()];
+        char * c_cmd[cmd.size() + 1];
         for (unsigned i = 0; i < cmd.size(); ++i) {
             c_cmd[i] = strdup(cmd[i].c_str());
         }
@@ -62,8 +62,8 @@ Result process(const std::vector<std::string> & cmd) {
     int count = 0;
 
     std::array<pollfd, 2> fds;
-    fds[0] = { out_pipes[READ], POLLIN, 0 };
-    fds[1] = { err_pipes[READ], POLLIN, 0 };
+    fds[0] = {out_pipes[READ], POLLIN, 0};
+    fds[1] = {err_pipes[READ], POLLIN, 0};
 
     while (true) {
         int rt = poll(fds.data(), fds.size(), 5 * 1000);
@@ -97,7 +97,8 @@ Result process(const std::vector<std::string> & cmd) {
         close(f.fd);
     }
 
-    while(waitpid(pid, &status, 0) == -1);
+    while (waitpid(pid, &status, 0) == -1)
+        ;
 
     if (status > 255) {
         status %= 255;
