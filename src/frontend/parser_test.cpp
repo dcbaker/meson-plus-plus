@@ -293,6 +293,59 @@ INSTANTIATE_TEST_CASE_P(parser, IfStatementParsingTests,
                                           "if false\na = b\nelif 1 == 2\na = c\nelse\na = d\nendif",
                                           "if true\nif true\na = b\nendif\nendif"));
 
+TEST(IfStatementParsingTests, multiple_if_body_statements) {
+    auto block = parse("if true\na = b\ne = 1\nendif");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<std::unique_ptr<Frontend::AST::IfStatement>>(block->statements[0]);
+    ASSERT_EQ(stmt->ifblock.block->statements.size(), 2);
+}
+
+TEST(IfStatementParsingTests, multiple_elif_body_statements) {
+    auto block = parse("if true\na = b\ne = 1\nelif false\na = 2\nb = 3\n c = 4\nendif");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<std::unique_ptr<Frontend::AST::IfStatement>>(block->statements[0]);
+    ASSERT_EQ(stmt->ifblock.block->statements.size(), 2);
+    ASSERT_EQ(stmt->efblock.size(), 1);
+    ASSERT_EQ(stmt->efblock[0].block->statements.size(), 3);
+}
+
+TEST(IfStatementParsingTests, multiple_elif_body_statements2) {
+    auto block = parse("if true\na = b\ne = 1\nelif false\na = 2\nb = 3\n c = 4\n\nelif 0\na = 1\nb = 1\nendif");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<std::unique_ptr<Frontend::AST::IfStatement>>(block->statements[0]);
+    ASSERT_EQ(stmt->ifblock.block->statements.size(), 2);
+    ASSERT_EQ(stmt->efblock.size(), 2);
+    ASSERT_EQ(stmt->efblock[0].block->statements.size(), 3);
+    ASSERT_EQ(stmt->efblock[1].block->statements.size(), 2);
+}
+
+TEST(IfStatementParsingTests, multiple_else_body_statements) {
+    auto block = parse("if true\na = b\ne = 1\nelse\na = 2\nb = 3\n c = 4\nendif");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<std::unique_ptr<Frontend::AST::IfStatement>>(block->statements[0]);
+    ASSERT_EQ(stmt->ifblock.block->statements.size(), 2);
+    ASSERT_EQ(stmt->efblock.size(), 0);
+    ASSERT_EQ(stmt->eblock.block->statements.size(), 3);
+}
+
+TEST(IfStatementParsingTests, multiple_elif_else_body_statements) {
+    auto block = parse("if true\na = b\ne = 1\n"
+                       "elif 1\na = b\nc = 2\n"
+                       "elif 2\nd = 1\na = 2\nc = b\n"
+                       "else\na = 2\nb = 3\n c = 4\nendif");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<std::unique_ptr<Frontend::AST::IfStatement>>(block->statements[0]);
+    ASSERT_EQ(stmt->ifblock.block->statements.size(), 2);
+    ASSERT_EQ(stmt->efblock.size(), 2);
+    ASSERT_EQ(stmt->efblock[0].block->statements.size(), 2);
+    ASSERT_EQ(stmt->efblock[1].block->statements.size(), 3);
+    ASSERT_EQ(stmt->eblock.block->statements.size(), 3);
+}
+TEST(IfStatementParsingTests, back_to_back_if_statments) {
+    auto block = parse("if true\na = 1\nendif\nif false\nb = 2\nendif\n");
+    ASSERT_EQ(block->statements.size(), 2);
+}
+
 TEST(parser, foreach_statement) {
     auto block = parse("foreach x : a\na = b\ntarget()\nendforeach");
     ASSERT_EQ(block->statements.size(), 1);

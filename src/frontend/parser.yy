@@ -78,7 +78,7 @@
 %nterm <AST::ExpressionList>                        positional_arguments
 %nterm <std::unique_ptr<AST::CodeBlock>>            program statements
 %nterm <AST::ElseBlock>                             else_clause
-%nterm <std::vector<AST::ElifBlock>>                elif_clause
+%nterm <std::vector<AST::ElifBlock>>                elif_clause in_elif_clause
 %nterm <AST::IfBlock>                               if_clause
 
 %left                   "-" "+"
@@ -117,20 +117,23 @@ foreach_statement : FOREACH IDENTIFIER ":" expression "\n" statements "\n" ENDFO
                                                     }
                   ;
 
-if_statement : if_clause "\n" ENDIF                 { $$ = std::make_unique<AST::IfStatement>(std::move($1)); }
-             | if_clause "\n" else_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3)); }
-             | if_clause "\n" elif_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3)); }
-             | if_clause "\n" elif_clause "\n" else_clause "\n" ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($3), std::move($5)); }
+if_statement : if_clause ENDIF                     { $$ = std::make_unique<AST::IfStatement>(std::move($1)); }
+             | if_clause else_clause ENDIF         { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($2)); }
+             | if_clause elif_clause ENDIF         { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($2)); }
+             | if_clause elif_clause else_clause ENDIF    { $$ = std::make_unique<AST::IfStatement>(std::move($1), std::move($2), std::move($3)); }
              ;
 
-if_clause : IF expression "\n" statements           { $$ = AST::IfBlock(std::move($2), std::move($4)); }
+if_clause : IF expression "\n" statements "\n"      { $$ = AST::IfBlock(std::move($2), std::move($4)); }
           ;
 
-elif_clause : ELIF expression "\n" statements       { $$ = std::vector<AST::ElifBlock>{}; $$.emplace_back(AST::ElifBlock(std::move($2), std::move($4))); }
-            | elif_clause "\n" elif_clause          { $$ = std::move($1); std::move($3.begin(), $3.end(), std::back_inserter($$)); }
+in_elif_clause : ELIF expression "\n" statements "\n" { $$ = std::vector<AST::ElifBlock>{}; $$.emplace_back(AST::ElifBlock(std::move($2), std::move($4))); }
+               ;
+
+elif_clause : in_elif_clause                        { $$ = std::move($1); }
+            | elif_clause in_elif_clause            { $$ = std::move($1); std::move($2.begin(), $2.end(), std::back_inserter($$)); }
             ;
 
-else_clause : ELSE "\n" statements                  { $$ = AST::ElseBlock(std::move($3)); }
+else_clause : ELSE "\n" statements "\n"             { $$ = AST::ElseBlock(std::move($3)); }
             ;
 
 expression : expression "+" expression              { $$ = AST::ExpressionV(std::make_unique<AST::AdditiveExpression>(std::move($1), AST::AddOp::ADD, std::move($3), @$)); }
