@@ -42,7 +42,7 @@
 %define api.value.type variant
 %define parse.assert
 
-%token <std::string>    IDENTIFIER STRING RELATIONAL
+%token <std::string>    IDENTIFIER TSTRING STRING RELATIONAL
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
 %token <AST::AssignOp>  ASSIGN
@@ -179,6 +179,7 @@ literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std:
         | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1, @$)); }
         | OCTAL_NUMBER                              { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1, @$)); }
         | STRING                                    { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(1, $1.size() - 2), @$)); }
+        | TSTRING                                   { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(3, $1.size() - 6), @$)); }
         | BOOL                                      { $$ = AST::ExpressionV(std::make_unique<AST::Boolean>($1, @$)); }
         | IDENTIFIER                                { $$ = AST::ExpressionV(std::make_unique<AST::Identifier>($1, @$)); }
         ;
