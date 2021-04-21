@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cstdint>
-#include <list>
 #include <map>
 #include <optional>
 #include <string>
@@ -20,12 +19,12 @@ namespace HIR {
  */
 template <typename T> class Holder {
   public:
-    Holder(const T & v, const T & n) : value{v}, variable_name{n} {};
+    Holder(const T & v, const std::string & n) : value{v}, variable_name{n} {};
     Holder(const T & v) : value{v}, variable_name{std::nullopt} {};
     virtual ~Holder(){};
 
     const T value;
-    const std::optional<T> variable_name;
+    const std::optional<std::string> variable_name;
     std::optional<std::uint16_t> value_number = std::nullopt;
 };
 
@@ -34,40 +33,14 @@ using NumberHolder = Holder<std::int64_t>;
 
 using Holders = std::variant<StringHolder, NumberHolder>;
 
-/// List of IR Instructions
-using HolderList = std::list<Holders>;
-
-class BasicBlock;
-
-class Phi {
-    Phi(){};
-    virtual ~Phi(){};
-
-    std::map<HolderList, BasicBlock *> targets;
-};
-
-/**
- * Basic cdoe block
- *
- * Holds continguous instructions that are to be executed in order, and
- * possibly a phi node.
- *
- * For our purposes a function call can appear inside a basic block because we
- * lack user defined functions, so we can think of a function or method call
- * not as a jump to a different basic block, but as value itself, in other
- * words, these are equivalent:
- * ```meson
- * a = ['gcc']
- * b = cc.get_compiler('c')
- * ```
- */
-class BasicBlock {
+class Node {
   public:
-    BasicBlock() : instructions{}, phi{std::nullopt} {};
-    virtual ~BasicBlock(){};
+    Node(const Holders & h) : holder{h} {};
+    virtual ~Node(){};
 
-    HolderList instructions;
-    std::optional<Phi> phi;
+    Holders holder;
+
+    Node * prev = nullptr;
 };
 
 } // namespace HIR
