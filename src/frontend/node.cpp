@@ -152,7 +152,12 @@ std::string Number::as_string() const { return std::to_string(value); };
 
 std::string Boolean::as_string() const { return value ? "true" : "false"; };
 
-std::string String::as_string() const { return "'" + value + "'"; };
+std::string String::as_string() const {
+    if (is_triple) {
+        return "'''" + value + "'''";
+    }
+    return "'" + value + "'";
+};
 
 std::string Identifier::as_string() const { return value; };
 
