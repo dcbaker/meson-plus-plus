@@ -238,7 +238,9 @@ TEST_P(DictToStringTests, arguments) {
 INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
                         ::testing::Values(std::make_tuple("{}", "{}"), std::make_tuple("{a:b}", "{a : b}"),
                                           std::make_tuple("{a : b, }", "{a : b}"),
-                                          std::make_tuple("{a : b}", "{a : b}")));
+                                          std::make_tuple("{a : b}", "{a : b}"),
+                                          std::make_tuple("{'a' : 'b'}", "{'a' : 'b'}"),
+                                          std::make_tuple("{a : [b]}", "{a : [b]}")));
 // We can't test a multi item dict reliably like this be
 // cause meson dicts are unordered
 
