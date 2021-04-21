@@ -90,7 +90,7 @@ continue                        { return token::CONTINUE; }
 :                               { return token::COLON; }
 \?                              { return token::QMARK; }
 \.                              { return token::DOT; }
-\s*#.*$                         { }
+"#".*\n?                        { }
 .                               { yyterminate(); }
 
 %%

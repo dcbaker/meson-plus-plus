@@ -6,8 +6,8 @@
 #include <sstream>
 #include <variant>
 
-#include "node.hpp"
 #include "driver.hpp"
+#include "node.hpp"
 
 static std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     Frontend::Driver drv{};
@@ -178,19 +178,19 @@ TEST_P(FunctionToStringTests, arguments) {
     ASSERT_EQ(block->as_string(), expected);
 }
 
-INSTANTIATE_TEST_CASE_P(FunctionParsingTests, FunctionToStringTests,
-                        ::testing::Values(std::make_tuple("func(  )", "func()"), std::make_tuple("func(a)", "func(a)"),
-                                          std::make_tuple("func(a,b, c)", "func(a, b, c)"),
-                                          std::make_tuple("func(a,)", "func(a)"),
-                                          std::make_tuple("func(x : 'f')", "func(x : 'f')"),
-                                          std::make_tuple("func(x : 'f', y : 1)", "func(x : 'f', y : 1)"),
-                                          std::make_tuple("func(a, b, x : 'f')", "func(a, b, x : 'f')"),
-                                          std::make_tuple("func(a,\nb,\nc)", "func(a, b, c)"),
-                                          std::make_tuple("func(a,\nb,\nc\n)", "func(a, b, c)"),
-                                          std::make_tuple("func(a : 1,\nb: 2,\nc : 3)", "func(a : 1, b : 2, c : 3)"),
-                                          std::make_tuple("func(a : 1,\nb: 2,\nc : 3\n)", "func(a : 1, b : 2, c : 3)"),
-                                          std::make_tuple("func(a,\nb,\nc : 1,\n d: 3)", "func(a, b, c : 1, d : 3)"),
-                                          std::make_tuple("func(a,\nb,\nc : 1,\n d: 3\n)", "func(a, b, c : 1, d : 3)")));
+INSTANTIATE_TEST_CASE_P(
+    FunctionParsingTests, FunctionToStringTests,
+    ::testing::Values(std::make_tuple("func(  )", "func()"), std::make_tuple("func(a)", "func(a)"),
+                      std::make_tuple("func(a,b, c)", "func(a, b, c)"), std::make_tuple("func(a,)", "func(a)"),
+                      std::make_tuple("func(x : 'f')", "func(x : 'f')"),
+                      std::make_tuple("func(x : 'f', y : 1)", "func(x : 'f', y : 1)"),
+                      std::make_tuple("func(a, b, x : 'f')", "func(a, b, x : 'f')"),
+                      std::make_tuple("func(a,\nb,\nc)", "func(a, b, c)"),
+                      std::make_tuple("func(a,\nb,\nc\n)", "func(a, b, c)"),
+                      std::make_tuple("func(a : 1,\nb: 2,\nc : 3)", "func(a : 1, b : 2, c : 3)"),
+                      std::make_tuple("func(a : 1,\nb: 2,\nc : 3\n)", "func(a : 1, b : 2, c : 3)"),
+                      std::make_tuple("func(a,\nb,\nc : 1,\n d: 3)", "func(a, b, c : 1, d : 3)"),
+                      std::make_tuple("func(a,\nb,\nc : 1,\n d: 3\n)", "func(a, b, c : 1, d : 3)")));
 
 class MethodToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
@@ -222,8 +222,7 @@ TEST_P(ArrayToStringTests, arguments) {
 
 INSTANTIATE_TEST_CASE_P(ArrayParsingTests, ArrayToStringTests,
                         ::testing::Values(std::make_tuple("[ ]", "[]"), std::make_tuple("[a, b]", "[a, b]"),
-                                          std::make_tuple("[a, [b]]", "[a, [b]]"),
-                                          std::make_tuple("[a, ]", "[a]"),
+                                          std::make_tuple("[a, [b]]", "[a, [b]]"), std::make_tuple("[a, ]", "[a]"),
                                           std::make_tuple("[\n  a,\n  b\n]", "[a, b]")));
 
 class DictToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
@@ -237,8 +236,7 @@ TEST_P(DictToStringTests, arguments) {
 }
 
 INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
-                        ::testing::Values(std::make_tuple("{}", "{}"),
-                                          std::make_tuple("{a:b}", "{a : b}"),
+                        ::testing::Values(std::make_tuple("{}", "{}"), std::make_tuple("{a:b}", "{a : b}"),
                                           std::make_tuple("{a : b, }", "{a : b}"),
                                           std::make_tuple("{a : b}", "{a : b}")));
 // We can't test a multi item dict reliably like this be
@@ -306,4 +304,19 @@ TEST(parser, trailing_newline) {
 TEST(parser, newline_in_statements) {
     auto block = parse("a = b\nb = c\n\n\nc = a\n");
     ASSERT_EQ(block->statements.size(), 3);
+}
+
+TEST(parser, comment_no_newline) {
+    auto block = parse("  # foo");
+    ASSERT_EQ(block->statements.size(), 0);
+}
+
+TEST(parser, comment) {
+    auto block = parse("  # foo\n");
+    ASSERT_EQ(block->statements.size(), 0);
+}
+
+TEST(parser, inline_comment) {
+    auto block = parse("a = b  # foo\n");
+    ASSERT_EQ(block->statements.size(), 1);
 }
