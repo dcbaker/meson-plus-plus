@@ -61,4 +61,4 @@ class Gnu : public Linker {
 std::unique_ptr<Linker> detect_linker(const std::unique_ptr<Compiler::Compiler> & comp,
                                       const Machines::Machine & machine);
 
-} // namespace HIR::Toolchain::Linker
+} // namespace Meson::Toolchain::Linker

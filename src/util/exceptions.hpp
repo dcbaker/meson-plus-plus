@@ -29,7 +29,6 @@ class InvalidArguments : public MesonException {
   public:
     InvalidArguments(const std::string & msg) : MesonException{msg} {};
     virtual ~InvalidArguments(){};
-
 };
 
 } // namespace Util::Exceptions

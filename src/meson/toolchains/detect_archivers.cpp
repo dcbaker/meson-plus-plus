@@ -21,11 +21,14 @@ const std::vector<std::string> DEFAULT{"ar"};
 
 }
 
-std::unique_ptr<Archiver> detect_archiver(const Machines::Machine & machine, const std::vector<std::string> & bins) {
+std::unique_ptr<Archiver> detect_archiver(const Machines::Machine & machine,
+                                          const std::vector<std::string> & bins) {
     // TODO: handle the machine switch, and the cross/native file
     for (const auto & c : bins.empty() ? DEFAULT : bins) {
         auto const & [ret, out, err] = Util::process(std::vector<std::string>{c, "--version"});
-        if (ret != 0) { continue; }
+        if (ret != 0) {
+            continue;
+        }
 
         if (out.find("Free Software Foundation") != std::string::npos) {
             return std::make_unique<Gnu>(std::vector<std::string>{c});
@@ -34,4 +37,4 @@ std::unique_ptr<Archiver> detect_archiver(const Machines::Machine & machine, con
     return nullptr;
 };
 
-} // namespace HIR::Toolchain::Compiler
+} // namespace Meson::Toolchain::Archiver

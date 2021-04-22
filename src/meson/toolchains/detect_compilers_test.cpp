@@ -11,8 +11,8 @@ TEST(detect_compilers, g_plus_plus) {
     if (system("g++") == 127) {
         GTEST_SKIP();
     }
-    const auto comp =
-        Meson::Toolchain::Compiler::detect_compiler(Meson::Toolchain::Language::CPP, Meson::Machines::Machine::BUILD, {"g++"});
+    const auto comp = Meson::Toolchain::Compiler::detect_compiler(
+        Meson::Toolchain::Language::CPP, Meson::Machines::Machine::BUILD, {"g++"});
     ASSERT_NE(comp, nullptr);
     ASSERT_EQ(comp->id(), "gcc");
 }
@@ -22,8 +22,8 @@ TEST(detect_compilers, clang_plus_plus) {
     if (system("clang++") == 127) {
         GTEST_SKIP();
     }
-    const auto comp =
-        Meson::Toolchain::Compiler::detect_compiler(Meson::Toolchain::Language::CPP, Meson::Machines::Machine::BUILD, {"clang++"});
+    const auto comp = Meson::Toolchain::Compiler::detect_compiler(
+        Meson::Toolchain::Language::CPP, Meson::Machines::Machine::BUILD, {"clang++"});
     ASSERT_NE(comp, nullptr);
     ASSERT_EQ(comp->id(), "clang");
 }

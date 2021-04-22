@@ -36,4 +36,4 @@ class Argument {
     const Type type;
 };
 
-} // namespace HIR::Arguments
+} // namespace Meson::Arguments

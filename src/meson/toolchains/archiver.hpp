@@ -9,9 +9,9 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "common.hpp"
 #include "machines.hpp"
@@ -52,6 +52,7 @@ class Gnu : public Archiver {
 /**
  * Find the static archiver to use
  */
-std::unique_ptr<Archiver> detect_archiver(const Machines::Machine &, const std::vector<std::string> & bins = {});
+std::unique_ptr<Archiver> detect_archiver(const Machines::Machine &,
+                                          const std::vector<std::string> & bins = {});
 
-} // namespace HIR::Toolchain::Archiver
+} // namespace Meson::Toolchain::Archiver

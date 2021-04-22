@@ -22,7 +22,7 @@ namespace {
  * Specialization for GCC (and G++, etc)
  */
 std::unique_ptr<Linker> detect_linker_gcc(const std::unique_ptr<Compiler::Compiler> & comp,
-                                          const Machines::Machine & machine){
+                                          const Machines::Machine & machine) {
     auto command = comp->command;
     command.emplace_back("-Wl,--version");
     auto const & [ret, out, err] = Util::process(command);
@@ -38,7 +38,7 @@ std::unique_ptr<Linker> detect_linker_gcc(const std::unique_ptr<Compiler::Compil
     assert(false);
 };
 
-}
+} // namespace
 
 std::unique_ptr<Linker> detect_linker(const std::unique_ptr<Compiler::Compiler> & comp,
                                       const Machines::Machine & machine) {
@@ -48,4 +48,4 @@ std::unique_ptr<Linker> detect_linker(const std::unique_ptr<Compiler::Compiler> 
     assert(false);
 };
 
-} // namespace HIR::Toolchain::Linker
+} // namespace Meson::Toolchain::Linker

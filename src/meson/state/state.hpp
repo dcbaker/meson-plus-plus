@@ -18,7 +18,7 @@ namespace Meson::State {
 class Persistant {
   public:
     Persistant() : toolchains{}, machines{Machines::detect_build()} {};
-    ~Persistant() {};
+    ~Persistant(){};
 
     /// A mapping of language : machine : toolchain
     /// XXX: this might need a way to make each machine optional
@@ -38,8 +38,8 @@ class Persistant {
  */
 class Transitive {
   public:
-    Transitive() {};
-    ~Transitive() {};
+    Transitive(){};
+    ~Transitive(){};
 };
 
-}
+} // namespace Meson::State

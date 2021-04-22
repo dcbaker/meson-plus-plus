@@ -34,4 +34,4 @@ class Compiler {
 std::unique_ptr<Compiler> detect_compiler(const Language &, const Machines::Machine &,
                                           const std::vector<std::string> & bins = {});
 
-} // namespace HIR::Toolchain::Compiler
+} // namespace Meson::Toolchain::Compiler

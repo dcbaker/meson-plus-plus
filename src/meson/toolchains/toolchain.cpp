@@ -1,10 +1,10 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
+#include "toolchain.hpp"
 #include "archiver.hpp"
 #include "compiler.hpp"
 #include "linker.hpp"
-#include "toolchain.hpp"
 
 namespace Meson::Toolchain {
 
@@ -16,4 +16,4 @@ Toolchain get_toolchain(const Language & lang, const Machines::Machine & for_mac
     return Toolchain{std::move(compiler), std::move(linker), std::move(archiver)};
 };
 
-} // namespace HIR::Toolchain
+} // namespace Meson::Toolchain

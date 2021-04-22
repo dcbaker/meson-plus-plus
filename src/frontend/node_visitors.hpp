@@ -14,14 +14,19 @@ namespace Frontend::AST {
  */
 struct SubdirVisitor {
     std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<Statement> &) const;
-    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<IfStatement> &) const;
-    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<ForeachStatement> &) const {
+    std::optional<std::unique_ptr<CodeBlock>>
+    operator()(const std::unique_ptr<IfStatement> &) const;
+    std::optional<std::unique_ptr<CodeBlock>>
+    operator()(const std::unique_ptr<ForeachStatement> &) const {
         return std::nullopt;
     };
-    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<Assignment> &) const {
+    std::optional<std::unique_ptr<CodeBlock>>
+    operator()(const std::unique_ptr<Assignment> &) const {
         return std::nullopt;
     };
-    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<Break> &) const { return std::nullopt; };
+    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<Break> &) const {
+        return std::nullopt;
+    };
     std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<Continue> &) const {
         return std::nullopt;
     };

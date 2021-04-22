@@ -13,5 +13,4 @@ Language from_string(const std::string & str) {
     throw std::exception{};
 };
 
-} // namespace HIR::Toolchain
-
+} // namespace Meson::Toolchain

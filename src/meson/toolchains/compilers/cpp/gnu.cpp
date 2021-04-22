@@ -5,8 +5,6 @@
 
 namespace Meson::Toolchain::Compiler::CPP {
 
-RSPFileSupport Gnu::rsp_support() const {
-    return RSPFileSupport::GCC;
-};
+RSPFileSupport Gnu::rsp_support() const { return RSPFileSupport::GCC; };
 
-} // namespace HIR::Toolchain::Compiler::CPP
+} // namespace Meson::Toolchain::Compiler::CPP

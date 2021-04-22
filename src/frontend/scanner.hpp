@@ -21,9 +21,11 @@ class Scanner : public yyFlexLexer {
 
     using FlexLexer::yylex;
 
-    virtual int yylex(Frontend::Parser::semantic_type * const lval, Frontend::Parser::location_type * loc);
+    virtual int yylex(Frontend::Parser::semantic_type * const lval,
+                      Frontend::Parser::location_type * loc);
 
     const std::string filename;
+
   private:
     /**
      * Increase the brace level by one

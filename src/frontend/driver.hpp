@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <string>
 #include <istream>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "parser.yy.hpp"
 

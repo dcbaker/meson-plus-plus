@@ -33,4 +33,4 @@ class Clang : public Compiler {
     RSPFileSupport rsp_support() const override;
 };
 
-} // namespace HIR::Toolchain::Compiler::CPP
+} // namespace Meson::Toolchain::Compiler::CPP

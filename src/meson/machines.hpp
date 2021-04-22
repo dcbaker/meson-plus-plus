@@ -41,7 +41,8 @@ class Info {
   public:
     Info(const Machine & m, const Kernel & k, const Endian & e, const std::string & c)
         : machine{m}, kernel{k}, endian{e}, cpu_family{c}, cpu{c} {};
-    Info(const Machine & m, const Kernel & k, const Endian & e, const std::string & cf, const std::string & c)
+    Info(const Machine & m, const Kernel & k, const Endian & e, const std::string & cf,
+         const std::string & c)
         : machine{m}, kernel{k}, endian{e}, cpu_family{cf}, cpu{c} {};
     ~Info(){};
 
@@ -57,7 +58,8 @@ class Info {
 template <typename T> class PerMachine {
   public:
     PerMachine() : _build{}, _host{std::nullopt}, _target{std::nullopt} {};
-    PerMachine(T & __build, T & __host, T & __target) : _build{__build}, _host{__host}, _target{__target} {};
+    PerMachine(T & __build, T & __host, T & __target)
+        : _build{__build}, _host{__host}, _target{__target} {};
     PerMachine(T & __build, T & __host) : _build{__build}, _host{__host}, _target{std::nullopt} {};
     PerMachine(T & __build) : _build{__build}, _host{std::nullopt}, _target{std::nullopt} {};
     PerMachine(T && __build, T && __host, T && __target)
@@ -65,9 +67,11 @@ template <typename T> class PerMachine {
     PerMachine(T && __build, T && __host)
         : _build{std::move(__build)}, _host{std::move(__host)}, _target{std::move(std::nullopt)} {};
     PerMachine(T && __build)
-        : _build{std::move(__build)}, _host{std::move(std::nullopt)}, _target{std::move(std::nullopt)} {};
+        : _build{std::move(__build)}, _host{std::move(std::nullopt)}, _target{std::move(
+                                                                          std::nullopt)} {};
     PerMachine(PerMachine<T> && t)
-        : _build{std::move(t._build)}, _target{std::move(t._target)}, _host{std::move(t._target)} {};
+        : _build{std::move(t._build)}, _target{std::move(t._target)}, _host{
+                                                                          std::move(t._target)} {};
     ~PerMachine(){};
 
     PerMachine<T> & operator=(PerMachine<T> && t) {

@@ -28,4 +28,4 @@ class Compiled {
     const std::vector<std::string> sources;
 };
 
-} // namespace HIR::Target
+} // namespace Meson::Target

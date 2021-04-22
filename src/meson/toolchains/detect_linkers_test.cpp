@@ -12,11 +12,12 @@ TEST(g_plus_plus, bfd) {
     if (system("g++") == 127 || system("ld.bfd") == 127) {
         GTEST_SKIP();
     }
-    const auto comp =
-        Meson::Toolchain::Compiler::detect_compiler(Meson::Toolchain::Language::CPP, Meson::Machines::Machine::BUILD, {"g++"});
+    const auto comp = Meson::Toolchain::Compiler::detect_compiler(
+        Meson::Toolchain::Language::CPP, Meson::Machines::Machine::BUILD, {"g++"});
     ASSERT_NE(comp, nullptr);
 
-    const auto link = Meson::Toolchain::Linker::detect_linker(comp, Meson::Machines::Machine::BUILD);
+    const auto link =
+        Meson::Toolchain::Linker::detect_linker(comp, Meson::Machines::Machine::BUILD);
     ASSERT_NE(link, nullptr);
     ASSERT_EQ(link->id(), "ld.bfd");
 }

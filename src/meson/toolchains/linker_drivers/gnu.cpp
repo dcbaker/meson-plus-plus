@@ -5,8 +5,6 @@
 
 namespace Meson::Toolchain::Linker::Drivers {
 
-RSPFileSupport Gnu::rsp_support() const {
-    return linker.rsp_support();
-}
+RSPFileSupport Gnu::rsp_support() const { return linker.rsp_support(); }
 
-} // namespace HIR::Toolchain::Linker::Drivers
+} // namespace Meson::Toolchain::Linker::Drivers

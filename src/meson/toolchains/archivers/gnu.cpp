@@ -5,8 +5,6 @@
 
 namespace Meson::Toolchain::Archiver {
 
-RSPFileSupport Gnu::rsp_support() const {
-    return RSPFileSupport::GCC;
-};
+RSPFileSupport Gnu::rsp_support() const { return RSPFileSupport::GCC; };
 
-} // namespace HIR::Toolchain::Archiver
+} // namespace Meson::Toolchain::Archiver

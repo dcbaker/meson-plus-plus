@@ -90,7 +90,8 @@ struct ExprStringVisitor {
                 break;
         }
 
-        return std::visit(ExprStringVisitor(), s->lhs) + " " + o + " " + std::visit(ExprStringVisitor(), s->rhs);
+        return std::visit(ExprStringVisitor(), s->lhs) + " " + o + " " +
+               std::visit(ExprStringVisitor(), s->rhs);
     }
 
     std::string operator()(const std::unique_ptr<MultiplicativeExpression> & s) {
@@ -107,7 +108,8 @@ struct ExprStringVisitor {
                 break;
         }
 
-        return std::visit(ExprStringVisitor(), s->lhs) + " " + o + " " + std::visit(ExprStringVisitor(), s->rhs);
+        return std::visit(ExprStringVisitor(), s->lhs) + " " + o + " " +
+               std::visit(ExprStringVisitor(), s->rhs);
     }
 
     std::string operator()(const std::unique_ptr<FunctionCall> & s) { return s->as_string(); }
@@ -188,7 +190,9 @@ std::string Assignment::as_string() const {
 };
 
 // XXX: it would sure be nice not to have duplication here...
-std::string UnaryExpression::as_string() const { return "-" + std::visit(ExprStringVisitor(), rhs); };
+std::string UnaryExpression::as_string() const {
+    return "-" + std::visit(ExprStringVisitor(), rhs);
+};
 
 std::string AdditiveExpression::as_string() const {
     // XXX: this is a lie
@@ -202,17 +206,17 @@ std::string MultiplicativeExpression::as_string() const {
 
 std::string Arguments::as_string() const {
     auto pos = stringlistify(positional);
-    auto kw =
-        std::accumulate(std::begin(keyword), std::end(keyword), std::string{}, [](std::string & s, auto const & e) {
-            ExprStringVisitor as{};
-            const auto & [k, a] = e;
-            auto v = std::visit(as, k) + " : " + std::visit(as, a);
-            if (s.empty()) {
-                return v;
-            } else {
-                return s + ", " + v;
-            }
-        });
+    auto kw = std::accumulate(std::begin(keyword), std::end(keyword), std::string{},
+                              [](std::string & s, auto const & e) {
+                                  ExprStringVisitor as{};
+                                  const auto & [k, a] = e;
+                                  auto v = std::visit(as, k) + " : " + std::visit(as, a);
+                                  if (s.empty()) {
+                                      return v;
+                                  } else {
+                                      return s + ", " + v;
+                                  }
+                              });
 
     if (!pos.empty() && !kw.empty()) {
         return pos + ", " + kw;
@@ -247,13 +251,13 @@ Dict::Dict(KeywordList && l, location & lo) : loc{lo} {
 };
 
 std::string Dict::as_string() const {
-    auto es =
-        std::accumulate(std::begin(elements), std::end(elements), std::string{}, [](std::string & s, auto const & e) {
-            ExprStringVisitor as{};
-            const auto & [k, a] = e;
-            auto v = std::visit(as, k) + " : " + std::visit(as, a);
-            return s.empty() ? v : s + ", " + v;
-        });
+    auto es = std::accumulate(std::begin(elements), std::end(elements), std::string{},
+                              [](std::string & s, auto const & e) {
+                                  ExprStringVisitor as{};
+                                  const auto & [k, a] = e;
+                                  auto v = std::visit(as, k) + " : " + std::visit(as, a);
+                                  return s.empty() ? v : s + ", " + v;
+                              });
     return "{" + es + "}";
 }
 
@@ -273,7 +277,8 @@ std::string CodeBlock::as_string() const {
 std::string IfStatement::as_string() const {
     ExprStringVisitor ev{};
 
-    std::string result = "if " + std::visit(ev, ifblock.condition) + " " + ifblock.block->as_string();
+    std::string result =
+        "if " + std::visit(ev, ifblock.condition) + " " + ifblock.block->as_string();
 
     for (const auto & elif : efblock) {
         result += "elif " + std::visit(ev, elif.condition) + " " + elif.block->as_string();

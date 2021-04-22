@@ -41,7 +41,8 @@ void subdir_replacer(std::unique_ptr<CodeBlock> & block) {
 
 } // namespace
 
-std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
+std::optional<std::unique_ptr<CodeBlock>>
+SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
     const auto func_ptr = std::get_if<std::unique_ptr<FunctionCall>>(&stmt->expr);
     if (func_ptr == nullptr) {
         return std::nullopt;
@@ -86,14 +87,16 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
     const std::filesystem::path p{_p.parent_path() / dir->value / "meson.build"};
     if (!std::filesystem::exists(p)) {
         // TODO: use the location data.
-        throw Util::Exceptions::InvalidArguments{"Cannot open file or directory " + std::string{p} + "."};
+        throw Util::Exceptions::InvalidArguments{"Cannot open file or directory " + std::string{p} +
+                                                 "."};
     }
 
     Driver drv{};
     return drv.parse(p);
 };
 
-std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<IfStatement> & stmt) const {
+std::optional<std::unique_ptr<CodeBlock>>
+SubdirVisitor::operator()(const std::unique_ptr<IfStatement> & stmt) const {
     subdir_replacer(stmt->ifblock.block);
     if (!stmt->efblock.empty()) {
         for (auto & s : stmt->efblock) {

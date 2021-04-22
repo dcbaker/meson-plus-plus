@@ -29,4 +29,4 @@ enum class Language {
 
 Language from_string(const std::string &);
 
-} // namespace HIR::Toolchain
+} // namespace Meson::Toolchain

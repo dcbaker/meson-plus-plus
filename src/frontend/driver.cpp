@@ -12,7 +12,7 @@
 
 namespace Frontend {
 
-std::unique_ptr<AST::CodeBlock> Driver::parse(const std::string & s){
+std::unique_ptr<AST::CodeBlock> Driver::parse(const std::string & s) {
     name = s;
 
     std::ifstream stream{s, std::ios_base::in | std::ios_base::binary};

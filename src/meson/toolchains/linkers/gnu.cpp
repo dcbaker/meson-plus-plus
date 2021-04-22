@@ -5,8 +5,6 @@
 
 namespace Meson::Toolchain::Linker {
 
-RSPFileSupport GnuBFD::rsp_support() const {
-    return RSPFileSupport::GCC;
-};
+RSPFileSupport GnuBFD::rsp_support() const { return RSPFileSupport::GCC; };
 
-} // namespace HIR::Toolchain::Linker
+} // namespace Meson::Toolchain::Linker
