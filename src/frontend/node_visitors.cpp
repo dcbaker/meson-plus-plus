@@ -3,15 +3,17 @@
 
 #include <filesystem>
 
-#include "node_visitors.hpp"
 #include "driver.hpp"
 #include "exceptions.hpp"
+#include "node_visitors.hpp"
 
 namespace Frontend::AST {
 
 std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
     const auto func_ptr = std::get_if<std::unique_ptr<FunctionCall>>(&stmt->expr);
-    if (func_ptr == nullptr) { return std::nullopt; }
+    if (func_ptr == nullptr) {
+        return std::nullopt;
+    }
 
     const auto & func = *func_ptr;
 
@@ -19,11 +21,15 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
     // an identifier it's not what we want. The other option would be a
     // `GetAttribute` (a method).
     const auto id_ptr = std::get_if<std::unique_ptr<Identifier>>(&func->id);
-    if (id_ptr == nullptr) { return std::nullopt; }
+    if (id_ptr == nullptr) {
+        return std::nullopt;
+    }
 
     const auto & id = *id_ptr;
 
-    if (id->value != "subdir") { return std::nullopt; }
+    if (id->value != "subdir") {
+        return std::nullopt;
+    }
 
     auto const & args = func->args->positional;
 
@@ -44,7 +50,7 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
 
     // This assumes that the filename is foo/meson.build
     const std::filesystem::path _p{*id->loc.begin.filename};
-    const std::filesystem::path p{_p.parent_path() / dir-> value / "meson.build"};
+    const std::filesystem::path p{_p.parent_path() / dir->value / "meson.build"};
     if (!std::filesystem::exists(p)) {
         // TODO: use the location data.
         throw Util::Exceptions::InvalidArguments{"Cannot open file or directory " + std::string{p} + "."};
@@ -52,6 +58,33 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
 
     Driver drv{};
     return drv.parse(p);
+};
+
+std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<IfStatement> & stmt) const {
+    SubdirVisitor sv{};
+    std::vector<StatementV> new_stmts{};
+
+    // TODO: this code is basically copied out of the driver, how can we share it?
+    for (unsigned i = 0; i < stmt->ifblock.block->statements.size(); ++i) {
+        auto const & substmt = stmt->ifblock.block->statements[i];
+        auto res = std::visit(sv, substmt);
+
+        // If we have a value that means that a `subdir()` call was
+        // encounted, we then wnat to add the staements from that call into
+        // our new statements instead of the current `subdir()` call.
+        // Otherwise just move the statement.
+        if (res.has_value()) {
+            auto & v = res.value();
+            std::move(v->statements.begin(), v->statements.end(), std::back_inserter(new_stmts));
+        } else {
+            new_stmts.emplace_back(std::move(stmt->ifblock.block->statements[i]));
+        }
+    }
+
+    std::swap(stmt->ifblock.block->statements, new_stmts);
+
+    // XXX: this is kinda gross...
+    return std::nullopt;
 };
 
 } // namespace Frontend::AST

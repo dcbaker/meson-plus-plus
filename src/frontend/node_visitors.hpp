@@ -14,9 +14,7 @@ namespace Frontend::AST {
  */
 struct SubdirVisitor {
     std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<Statement> &) const;
-    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<IfStatement> &) const {
-        return std::nullopt;
-    };
+    std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<IfStatement> &) const;
     std::optional<std::unique_ptr<CodeBlock>> operator()(const std::unique_ptr<ForeachStatement> &) const {
         return std::nullopt;
     };
