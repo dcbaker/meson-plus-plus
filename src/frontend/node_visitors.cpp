@@ -49,7 +49,7 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
     }
 
     // This assumes that the filename is foo/meson.build
-    const std::filesystem::path _p{*id->loc.begin.filename};
+    const std::filesystem::path _p{id->loc.filename};
     const std::filesystem::path p{_p.parent_path() / dir->value / "meson.build"};
     if (!std::filesystem::exists(p)) {
         // TODO: use the location data.

@@ -53,12 +53,12 @@ TEST(parser, locations) {
     auto block = parse("77");
     auto const & stmt = std::get<0>(block->statements[0]);
     auto const & expr = *std::get_if<std::unique_ptr<Frontend::AST::Number>>(&stmt->expr);
-    ASSERT_EQ(expr->loc.begin.column, 1);
-    ASSERT_EQ(expr->loc.begin.line, 1);
-    ASSERT_EQ(expr->loc.end.column, 3);
-    ASSERT_EQ(expr->loc.end.line, 1);
+    ASSERT_EQ(expr->loc.column_start, 1);
+    ASSERT_EQ(expr->loc.line_start, 1);
+    ASSERT_EQ(expr->loc.column_end, 3);
+    ASSERT_EQ(expr->loc.line_end, 1);
     std::string expected{"test file name"};
-    ASSERT_EQ(*expr->loc.begin.filename, expected);
+    ASSERT_EQ(expected, expr->loc.filename);
 }
 
 TEST(parser, octal_number) {

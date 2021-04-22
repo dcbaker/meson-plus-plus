@@ -41,6 +41,20 @@ using ExpressionV =
 
 using ExpressionList = std::vector<ExpressionV>;
 
+class Location {
+  public:
+    Location(const location & l)
+        : column_start{l.begin.column}, column_end{l.end.column},
+          line_start{l.begin.line}, line_end{l.end.line}, filename{*l.begin.filename} {};
+    virtual ~Location(){};
+
+    const int column_start;
+    const int column_end;
+    const int line_start;
+    const int line_end;
+    const std::string filename;
+};
+
 class Number {
   public:
     Number(const int64_t & number, const location & l) : value{number}, loc{l} {};
@@ -51,7 +65,7 @@ class Number {
     std::string as_string() const;
 
     int64_t value;
-    location loc;
+    Location loc;
 };
 
 class Boolean {
@@ -64,7 +78,7 @@ class Boolean {
     std::string as_string() const;
 
     bool value;
-    location loc;
+    Location loc;
 };
 
 class String {
@@ -79,7 +93,7 @@ class String {
 
     std::string value;
     bool is_triple;
-    location loc;
+    Location loc;
 };
 
 class Identifier {
@@ -92,7 +106,7 @@ class Identifier {
     std::string as_string() const;
 
     std::string value;
-    location loc;
+    Location loc;
 };
 
 class Subscript {
@@ -106,7 +120,7 @@ class Subscript {
 
     ExpressionV lhs;
     ExpressionV rhs;
-    location loc;
+    Location loc;
 };
 
 enum class UnaryOp {
@@ -126,7 +140,7 @@ class UnaryExpression {
 
     UnaryOp op;
     ExpressionV rhs;
-    location loc;
+    Location loc;
 };
 
 enum class MulOp {
@@ -149,7 +163,7 @@ class MultiplicativeExpression {
     ExpressionV lhs;
     MulOp op;
     ExpressionV rhs;
-    location loc;
+    Location loc;
 };
 
 enum class AddOp {
@@ -171,7 +185,7 @@ class AdditiveExpression {
     ExpressionV lhs;
     AddOp op;
     ExpressionV rhs;
-    location loc;
+    Location loc;
 };
 
 enum class RelationalOp {
@@ -227,7 +241,7 @@ class Relational {
     ExpressionV lhs;
     RelationalOp op;
     ExpressionV rhs;
-    location loc;
+    Location loc;
 };
 
 // XXX: this isn't really true, it's really an identifier : expressionv
@@ -250,7 +264,7 @@ class Arguments {
 
     ExpressionList positional;
     KeywordList keyword;
-    location loc;
+    Location loc;
 };
 
 class FunctionCall {
@@ -265,7 +279,7 @@ class FunctionCall {
 
     ExpressionV id;
     std::unique_ptr<Arguments> args;
-    location loc;
+    Location loc;
 };
 
 class GetAttribute {
@@ -280,7 +294,7 @@ class GetAttribute {
 
     ExpressionV object;
     ExpressionV id;
-    location loc;
+    Location loc;
 };
 
 class Array {
@@ -294,7 +308,7 @@ class Array {
     std::string as_string() const;
 
     ExpressionList elements;
-    location loc;
+    Location loc;
 };
 
 class Dict {
@@ -308,7 +322,7 @@ class Dict {
     std::string as_string() const;
 
     std::unordered_map<ExpressionV, ExpressionV> elements;
-    location loc;
+    Location loc;
 };
 
 class Ternary {
@@ -325,7 +339,7 @@ class Ternary {
     ExpressionV condition;
     ExpressionV lhs;
     ExpressionV rhs;
-    location loc;
+    Location loc;
 };
 
 class Statement {
