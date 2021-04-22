@@ -9,6 +9,38 @@
 
 namespace Frontend::AST {
 
+namespace {
+
+/**
+ * Walk a code block and rewrite any subdir() calls with the code in file
+ * referenced
+ */
+void subdir_replacer(std::unique_ptr<CodeBlock> & block) {
+    SubdirVisitor sv{};
+    std::vector<StatementV> new_stmts{};
+
+    // TODO: this code is basically copied out of the driver, how can we share it?
+    for (unsigned i = 0; i < block->statements.size(); ++i) {
+        auto const & stmt = block->statements[i];
+        auto res = std::visit(sv, stmt);
+
+        // If we have a value that means that a `subdir()` call was
+        // encounted, we then wnat to add the staements from that call into
+        // our new statements instead of the current `subdir()` call.
+        // Otherwise just move the statement.
+        if (res.has_value()) {
+            auto & v = res.value();
+            std::move(v->statements.begin(), v->statements.end(), std::back_inserter(new_stmts));
+        } else {
+            new_stmts.emplace_back(std::move(block->statements[i]));
+        }
+    }
+
+    std::swap(block->statements, new_stmts);
+}
+
+} // namespace
+
 std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
     const auto func_ptr = std::get_if<std::unique_ptr<FunctionCall>>(&stmt->expr);
     if (func_ptr == nullptr) {
@@ -61,27 +93,15 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
 };
 
 std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::unique_ptr<IfStatement> & stmt) const {
-    SubdirVisitor sv{};
-    std::vector<StatementV> new_stmts{};
-
-    // TODO: this code is basically copied out of the driver, how can we share it?
-    for (unsigned i = 0; i < stmt->ifblock.block->statements.size(); ++i) {
-        auto const & substmt = stmt->ifblock.block->statements[i];
-        auto res = std::visit(sv, substmt);
-
-        // If we have a value that means that a `subdir()` call was
-        // encounted, we then wnat to add the staements from that call into
-        // our new statements instead of the current `subdir()` call.
-        // Otherwise just move the statement.
-        if (res.has_value()) {
-            auto & v = res.value();
-            std::move(v->statements.begin(), v->statements.end(), std::back_inserter(new_stmts));
-        } else {
-            new_stmts.emplace_back(std::move(stmt->ifblock.block->statements[i]));
+    subdir_replacer(stmt->ifblock.block);
+    if (!stmt->efblock.empty()) {
+        for (auto & s : stmt->efblock) {
+            subdir_replacer(s.block);
         }
     }
-
-    std::swap(stmt->ifblock.block->statements, new_stmts);
+    if (stmt->eblock.block) {
+        subdir_replacer(stmt->eblock.block);
+    }
 
     // XXX: this is kinda gross...
     return std::nullopt;
