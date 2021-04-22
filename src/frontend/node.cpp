@@ -273,17 +273,17 @@ std::string CodeBlock::as_string() const {
 std::string IfStatement::as_string() const {
     ExprStringVisitor ev{};
 
-    std::string result = "if " + std::visit(ev, ifblock.condition) + ifblock.block->as_string();
+    std::string result = "if " + std::visit(ev, ifblock.condition) + " " + ifblock.block->as_string();
 
     for (const auto & elif : efblock) {
-        result += "elif " + std::visit(ev, elif.condition) + elif.block->as_string();
+        result += "elif " + std::visit(ev, elif.condition) + " " + elif.block->as_string();
     }
 
     if (eblock.block != nullptr) {
         result += "else " + eblock.block->as_string();
     }
 
-    result += "endif";
+    result += " endif";
 
     return result;
 }
