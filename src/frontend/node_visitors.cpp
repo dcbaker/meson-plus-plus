@@ -74,11 +74,12 @@ std::optional<std::unique_ptr<CodeBlock>> SubdirVisitor::operator()(const std::u
         throw Util::Exceptions::InvalidArguments{"subdir() requires exactly one argument."};
     }
 
-    auto const & dir = *std::get_if<std::unique_ptr<String>>(&args[0]);
-    if (dir == nullptr) {
+    auto const * dir_ptr = std::get_if<std::unique_ptr<String>>(&args[0]);
+    if (dir_ptr == nullptr) {
         // TODO: use the location data.
         throw Util::Exceptions::InvalidArguments{"subdir()'s first argument must be a string."};
     }
+    auto const & dir = *dir_ptr;
 
     // This assumes that the filename is foo/meson.build
     const std::filesystem::path _p{id->loc.filename};
