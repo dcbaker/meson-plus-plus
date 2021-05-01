@@ -1,6 +1,14 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
+/**
+ * Meson++ High level IR
+ *
+ * HIR is not much different than our AST, it's still a hierarchical IR, but it
+ * is not designed to be losseless as we can do a number of obvious
+ * transformations as this level.
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -11,36 +19,17 @@
 
 namespace HIR {
 
-/**
- * A Generic holder type.
- *
- * This is used to hold assignments of a specific type and it's assignment
- * information
- */
-template <typename T> class Holder {
-  public:
-    Holder(const T & v, const std::string & n) : value{v}, variable_name{n} {};
-    Holder(const T & v) : value{v}, variable_name{std::nullopt} {};
-    virtual ~Holder(){};
+///
+template <typename T> class BasicType {
+    BasicType(const T & v) : value{v} {};
+    virtual ~BasicType(){};
 
     const T value;
-    const std::optional<std::string> variable_name;
-    std::optional<std::uint16_t> value_number = std::nullopt;
+    // TODO: needs location?
 };
 
-using StringHolder = Holder<std::string>;
-using NumberHolder = Holder<std::int64_t>;
-
-using Holders = std::variant<StringHolder, NumberHolder>;
-
-class Node {
-  public:
-    Node(const Holders & h) : holder{h} {};
-    virtual ~Node(){};
-
-    Holders holder;
-
-    Node * prev = nullptr;
-};
+using Boolean = BasicType<bool>;
+using String = BasicType<std::string>;
+using Number = BasicType<int64_t>;
 
 } // namespace HIR
