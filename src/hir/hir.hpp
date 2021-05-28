@@ -12,10 +12,10 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
-#include <optional>
+#include <memory>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace HIR {
 
@@ -31,5 +31,30 @@ template <typename T> class BasicType {
 using Boolean = BasicType<bool>;
 using String = BasicType<std::string>;
 using Number = BasicType<int64_t>;
+
+/// A variant that holds all the value types
+using BasicValues = std::variant<Boolean, String, Number>;
+
+class Variable {
+    Variable(std::unique_ptr<BasicValues> && v) : value{std::move(v)} {};
+    virtual ~Variable(){};
+
+    std::unique_ptr<BasicValues> value;
+};
+
+/// A variable or value
+using VariableOrValue = std::variant<BasicValues, Variable>;
+
+/**
+ * An executable target
+ */
+class ExectuableTarget {
+    ExectuableTarget(const std::string & n, const std::vector<const std::string> & srcs)
+        : name{n}, sources{srcs} {};
+    virtual ~ExectuableTarget(){};
+
+    const std::string name;
+    const std::vector<const std::string> sources;
+};
 
 } // namespace HIR
