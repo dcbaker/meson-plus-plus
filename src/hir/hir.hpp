@@ -19,13 +19,18 @@
 
 namespace HIR {
 
+class String;
+class FunctionCall;
+
+using Object = std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>>;
+
 // Can be a method via an optional paramter maybe?
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(const std::string & f) : fname{f} {};
+    FunctionCall(Object && _name) : name{std::move(_name)} {};
 
-    const std::string fname;
+    Object name;
 };
 
 class String {
@@ -34,8 +39,6 @@ class String {
 
     const std::string value;
 };
-
-using Object = std::variant<FunctionCall, String>;
 
 // TODO: Conditions?
 // One way would be to have some kind of phi-like thing,

@@ -20,59 +20,51 @@ struct StatementLowering {
 struct ExpressionLowering {
 
     Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) {
-        return String{expr->value};
+        return std::make_unique<String>(expr->value);
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) {
         ExpressionLowering lower{};
-        auto raw_fname = std::visit(lower, expr->id);
-        auto fname_ptr = std::get_if<String>(&raw_fname);
-
-        // This can be invalid, we could get basically anything here and need to
-        // deal with it, but for now...
-        if (fname_ptr == nullptr) {
-            throw Util::Exceptions::InvalidArguments{"this might actually be valid"};
-        }
-        auto fname = fname_ptr->value;
-
-        return FunctionCall{fname};
+        auto fname = std::visit(lower, expr->id);
+        return std::make_unique<FunctionCall>(std::move(fname));
     };
+
     // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) {
-        return String{"placeholder"};
+        return std::make_unique<String>("placeholder");
     };
 };
 
