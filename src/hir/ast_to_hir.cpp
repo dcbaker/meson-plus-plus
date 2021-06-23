@@ -9,12 +9,24 @@ namespace HIR {
 namespace {
 
 struct StatementLowering {
-    void operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt){};
-    void operator()(const std::unique_ptr<Frontend::AST::Assignment> & stmt){};
-    void operator()(const std::unique_ptr<Frontend::AST::IfStatement> & stmt){};
-    void operator()(const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt){};
-    void operator()(const std::unique_ptr<Frontend::AST::Break> & stmt){};
-    void operator()(const std::unique_ptr<Frontend::AST::Continue> & stmt){};
+    Object operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt) {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::Assignment> & stmt) {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::IfStatement> & stmt) {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::Break> & stmt) {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::Continue> & stmt) {
+        return std::make_unique<String>("placeholder");
+    };
 };
 
 struct ExpressionLowering {
@@ -74,9 +86,9 @@ IRList lower_ast(const Frontend::AST::CodeBlock & block) {
     IRList bl{};
     StatementLowering lower{};
 
-    // for (const auto & i : block.statements) {
-    //     bl.emplace_back(std::visit(lower, i));
-    // }
+    for (const auto & i : block.statements) {
+        bl.emplace_back(std::visit(lower, i));
+    }
 
     return bl;
 }
