@@ -12,49 +12,37 @@
 #pragma once
 
 #include <cstdint>
+#include <list>
 #include <memory>
 #include <string>
 #include <variant>
-#include <vector>
 
 namespace HIR {
 
-///
-template <typename T> class BasicType {
-    BasicType(const T & v) : value{v} {};
-    virtual ~BasicType(){};
+// Can be a method via an optional paramter maybe?
+/// A function call object
+class FunctionCall {
+  public:
+    FunctionCall(const std::string & f) : fname{f} {};
 
-    const T value;
-    // TODO: needs location?
+    const std::string fname;
 };
 
-using Boolean = BasicType<bool>;
-using String = BasicType<std::string>;
-using Number = BasicType<int64_t>;
+class String {
+  public:
+    String(const std::string & f) : value{f} {};
 
-/// A variant that holds all the value types
-using BasicValues = std::variant<Boolean, String, Number>;
-
-class Variable {
-    Variable(std::unique_ptr<BasicValues> && v) : value{std::move(v)} {};
-    virtual ~Variable(){};
-
-    std::unique_ptr<BasicValues> value;
+    const std::string value;
 };
 
-/// A variable or value
-using VariableOrValue = std::variant<BasicValues, Variable>;
+using Object = std::variant<FunctionCall, String>;
 
-/**
- * An executable target
- */
-class ExectuableTarget {
-    ExectuableTarget(const std::string & n, const std::vector<const std::string> & srcs)
-        : name{n}, sources{srcs} {};
-    virtual ~ExectuableTarget(){};
+// TODO: Conditions?
+// One way would be to have some kind of phi-like thing,
+// Another option would be to have some kind of Conditional, which itself
+// contains another IRList (or a pointer to an IRList)
 
-    const std::string name;
-    const std::vector<const std::string> sources;
-};
+/// List of HIR instructions
+using IRList = std::list<Object>;
 
 } // namespace HIR

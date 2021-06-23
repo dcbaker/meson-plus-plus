@@ -3,13 +3,15 @@
 
 libhir = static_library(
   'hir',
-
+  ['ast_to_hir.cpp'],
   include_directories : inc_frontend,
+  dependencies : idep_util,
 )
 
 inc_hir = include_directories('.')
 
 idep_hir = declare_dependency(
+  link_with : libhir,
   include_directories : inc_hir,
 )
 

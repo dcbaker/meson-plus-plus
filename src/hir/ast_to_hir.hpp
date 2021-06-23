@@ -9,6 +9,6 @@
 namespace HIR {
 
 /// Lower AST to IR
-HolderList lower_ast(const Frontend::AST::CodeBlock &);
+IRList lower_ast(const Frontend::AST::CodeBlock &);
 
 }; // namespace HIR
