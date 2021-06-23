@@ -41,10 +41,11 @@ struct ExpressionLowering {
         return std::make_unique<FunctionCall>(std::move(fname));
     };
 
-    // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) {
-        return std::make_unique<String>("placeholder");
+        return std::make_unique<Boolean>(expr->value);
     };
+
+    // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) {
         return std::make_unique<String>("placeholder");
     };
