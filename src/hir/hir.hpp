@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -88,15 +89,30 @@ class Dict {
     std::unordered_map<std::string, Object> value;
 };
 
-// TODO: Conditions?
-// One way would be to have some kind of phi-like thing,
-// Another option would be to have some kind of Conditional, which itself
-// contains another IRList (or a pointer to an IRList)
+class IRList;
+
+/**
+ * A sort of phi-like thing that holds a condition and two branches
+ */
+class Condition {
+  public:
+    Condition(Object && o) : condition{std::move(o)}, if_true{nullptr}, if_false{nullptr} {};
+
+    Object condition;
+    std::unique_ptr<IRList> if_true;
+    std::unique_ptr<IRList> if_false;
+};
+
+/**
+ * Holds a list of instructions, and optionally a condition
+ *
+ */
 class IRList {
   public:
-    IRList() : instructions{} {};
+    IRList() : instructions{}, condition{std::nullopt} {};
 
     std::list<Object> instructions;
+    std::optional<Condition> condition;
 };
 
 } // namespace HIR
