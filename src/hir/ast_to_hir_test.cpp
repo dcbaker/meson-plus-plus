@@ -135,7 +135,7 @@ TEST(ast_to_ir, if_else) {
 }
 
 TEST(ast_to_ir, if_elif) {
-    auto irlist = lower("if true\n 7\nelif false\n8\nendif\n");
+    auto irlist = lower("if true\n 7\nelif false\n8\nelif true\n9\nendif\n");
     ASSERT_TRUE(irlist.condition.has_value());
     auto const & con = irlist.condition.value();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Boolean>>(con.condition));
@@ -161,6 +161,20 @@ TEST(ast_to_ir, if_elif) {
         auto const & val = if_true.front();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(val));
         ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val)->value, 8);
+
+        auto const & if_false = elcon.if_false->instructions;
+        ASSERT_EQ(if_false.size(), 0);
+    }
+
+    auto const & elcon2 = elcon.if_false->condition.value();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Boolean>>(elcon2.condition));
+
+    {
+        auto const & if_true = elcon2.if_true->instructions;
+        ASSERT_EQ(if_true.size(), 1);
+        auto const & val = if_true.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(val));
+        ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val)->value, 9);
 
         auto const & if_false = elcon.if_false->instructions;
         ASSERT_EQ(if_false.size(), 0);
