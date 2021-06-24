@@ -44,6 +44,21 @@ struct ExpressionLowering {
         return arr;
     };
 
+    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
+        const ExpressionLowering lower{};
+        auto dict = std::make_unique<Dict>();
+        for (const auto & [k, v] : expr->elements) {
+            auto key_obj = std::visit(lower, k);
+            if (!std::holds_alternative<std::unique_ptr<String>>(key_obj)) {
+                throw Util::Exceptions::InvalidArguments("Dictionary keys must be strintg");
+            }
+            auto key = std::get<std::unique_ptr<HIR::String>>(key_obj)->value;
+
+            dict->value[key] = std::visit(lower, v);
+        }
+        return dict;
+    };
+
     // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
         return std::make_unique<String>("placeholder: add");
@@ -62,9 +77,6 @@ struct ExpressionLowering {
     };
     Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
         return std::make_unique<String>("placeholder: getattr");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
-        return std::make_unique<String>("placeholder: dict");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
         return std::make_unique<String>("placeholder: tern");

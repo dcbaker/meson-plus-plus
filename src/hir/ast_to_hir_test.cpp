@@ -80,6 +80,19 @@ TEST(ast_to_ir, array) {
     ASSERT_EQ(arr3_1->value, 2);
 }
 
+TEST(ast_to_ir, dict) {
+    auto irlist = lower("{'str': 1}");
+    ASSERT_EQ(irlist.size(), 1);
+    auto obj = std::move(irlist.front());
+    irlist.pop_front(); // Just good house keeping
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Dict>>(obj));
+
+    const auto & dict = std::get<std::unique_ptr<HIR::Dict>>(obj);
+
+    const auto & val = std::get<std::unique_ptr<HIR::Number>>(dict->value["str"]);
+    ASSERT_EQ(val->value, 1);
+}
+
 TEST(ast_to_ir, simple_function) {
     auto irlist = lower("has_no_args()");
     ASSERT_EQ(irlist.size(), 1);

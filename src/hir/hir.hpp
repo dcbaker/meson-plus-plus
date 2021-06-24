@@ -15,6 +15,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -22,6 +23,7 @@ namespace HIR {
 
 class Array;
 class Boolean;
+class Dict;
 class FunctionCall;
 class Identifier;
 class Number;
@@ -29,7 +31,8 @@ class String;
 
 using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
-                 std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>>;
+                 std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
+                 std::unique_ptr<Dict>>;
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
@@ -74,6 +77,15 @@ class Array {
     Array(std::vector<Object> && a) : value{std::move(a)} {};
 
     std::vector<Object> value;
+};
+
+class Dict {
+  public:
+    Dict() : value{} {};
+
+    // TODO: the key is allowed to be a string or an expression that evaluates
+    // to a string, we need to enforce that somewhere.
+    std::unordered_map<std::string, Object> value;
 };
 
 // TODO: Conditions?
