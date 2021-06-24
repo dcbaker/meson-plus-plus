@@ -120,8 +120,7 @@ struct StatementLowering {
 
         if (stmt->eblock.block != nullptr) {
             for (const auto & i : stmt->eblock.block->statements) {
-                std::visit([&](const auto & a) { s(list->condition.value().if_false.get(), a); },
-                           i);
+                std::visit([&](const auto & a) { s(cur->condition.value().if_false.get(), a); }, i);
             }
         }
     };
