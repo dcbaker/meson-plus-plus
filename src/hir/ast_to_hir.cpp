@@ -18,7 +18,7 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
-        ExpressionLowering lower{};
+        const ExpressionLowering lower{};
         auto fname = std::visit(lower, expr->id);
         return std::make_unique<FunctionCall>(std::move(fname));
     };
@@ -70,7 +70,7 @@ struct ExpressionLowering {
  */
 struct StatementLowering {
     Object operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
-        ExpressionLowering l{};
+        const ExpressionLowering l{};
         return std::visit(l, stmt->expr);
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
@@ -97,7 +97,7 @@ struct StatementLowering {
  */
 IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     IRList bl{};
-    StatementLowering lower{};
+    const StatementLowering lower{};
 
     for (const auto & i : block->statements) {
         bl.emplace_back(std::visit(lower, i));
