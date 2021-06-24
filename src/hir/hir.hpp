@@ -92,8 +92,11 @@ class Dict {
 // One way would be to have some kind of phi-like thing,
 // Another option would be to have some kind of Conditional, which itself
 // contains another IRList (or a pointer to an IRList)
+class IRList {
+  public:
+    IRList() : instructions{} {};
 
-/// List of HIR instructions
-using IRList = std::list<Object>;
+    std::list<Object> instructions;
+};
 
 } // namespace HIR

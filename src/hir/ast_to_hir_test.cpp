@@ -29,39 +29,35 @@ HIR::IRList lower(const std::string & in) {
 
 TEST(ast_to_ir, number) {
     auto irlist = lower("7");
-    ASSERT_EQ(irlist.size(), 1);
-    auto obj = std::move(irlist.front());
-    irlist.pop_front(); // Just good house keeping
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(obj));
-    auto ir = std::move(std::get<std::unique_ptr<HIR::Number>>(obj));
+    const auto & ir = std::get<std::unique_ptr<HIR::Number>>(obj);
     ASSERT_EQ(ir->value, 7);
 }
 
 TEST(ast_to_ir, boolean) {
     auto irlist = lower("true");
-    ASSERT_EQ(irlist.size(), 1);
-    auto obj = std::move(irlist.front());
-    irlist.pop_front(); // Just good house keeping
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Boolean>>(obj));
-    auto ir = std::move(std::get<std::unique_ptr<HIR::Boolean>>(obj));
+    const auto & ir = std::get<std::unique_ptr<HIR::Boolean>>(obj);
     ASSERT_EQ(ir->value, true);
 }
 
 TEST(ast_to_ir, string) {
     auto irlist = lower("'true'");
-    ASSERT_EQ(irlist.size(), 1);
-    auto obj = std::move(irlist.front());
-    irlist.pop_front(); // Just good house keeping
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::String>>(obj));
-    auto ir = std::move(std::get<std::unique_ptr<HIR::String>>(obj));
+    const auto & ir = std::get<std::unique_ptr<HIR::String>>(obj);
     ASSERT_EQ(ir->value, "true");
 }
 
 TEST(ast_to_ir, array) {
     auto irlist = lower("['a', 'b', 1, [2]]");
-    ASSERT_EQ(irlist.size(), 1);
-    auto obj = std::move(irlist.front());
-    irlist.pop_front(); // Just good house keeping
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Array>>(obj));
 
     const auto & arr = std::get<std::unique_ptr<HIR::Array>>(obj);
@@ -82,9 +78,8 @@ TEST(ast_to_ir, array) {
 
 TEST(ast_to_ir, dict) {
     auto irlist = lower("{'str': 1}");
-    ASSERT_EQ(irlist.size(), 1);
-    auto obj = std::move(irlist.front());
-    irlist.pop_front(); // Just good house keeping
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Dict>>(obj));
 
     const auto & dict = std::get<std::unique_ptr<HIR::Dict>>(obj);
@@ -95,12 +90,11 @@ TEST(ast_to_ir, dict) {
 
 TEST(ast_to_ir, simple_function) {
     auto irlist = lower("has_no_args()");
-    ASSERT_EQ(irlist.size(), 1);
-    auto obj = std::move(irlist.front());
-    irlist.pop_front(); // Just good house keeping
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::FunctionCall>>(obj));
-    auto ir = std::move(std::get<std::unique_ptr<HIR::FunctionCall>>(obj));
 
+    const auto & ir = std::get<std::unique_ptr<HIR::FunctionCall>>(obj);
     const auto & name = ir->name;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Identifier>>(name));
     const auto & raw_name = std::move(std::get<std::unique_ptr<HIR::Identifier>>(name));

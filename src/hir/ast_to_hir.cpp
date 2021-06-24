@@ -118,7 +118,7 @@ IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     const StatementLowering lower{};
 
     for (const auto & i : block->statements) {
-        bl.emplace_back(std::visit(lower, i));
+        bl.instructions.emplace_back(std::visit(lower, i));
     }
 
     return bl;
