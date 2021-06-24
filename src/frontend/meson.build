@@ -38,6 +38,7 @@ inc_frontend = include_directories('.')
 
 idep_frontend = declare_dependency(
   link_with : libfrontend,
+  compile_args : _frontend_args,
   include_directories : inc_frontend,
 )
 

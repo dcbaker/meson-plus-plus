@@ -21,10 +21,11 @@ namespace HIR {
 
 class Boolean;
 class String;
+class Number;
 class FunctionCall;
 
-using Object =
-    std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>>;
+using Object = std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>,
+                            std::unique_ptr<Boolean>, std::unique_ptr<Number>>;
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
@@ -47,6 +48,13 @@ class Boolean {
     Boolean(const bool & f) : value{f} {};
 
     const bool value;
+};
+
+class Number {
+  public:
+    Number(const int64_t & f) : value{f} {};
+
+    const int64_t value;
 };
 
 // TODO: Conditions?

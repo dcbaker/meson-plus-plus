@@ -8,86 +8,88 @@ namespace HIR {
 
 namespace {
 
-struct StatementLowering {
-    Object operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt) {
-        return std::make_unique<String>("placeholder");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Assignment> & stmt) {
-        return std::make_unique<String>("placeholder");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::IfStatement> & stmt) {
-        return std::make_unique<String>("placeholder");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) {
-        return std::make_unique<String>("placeholder");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Break> & stmt) {
-        return std::make_unique<String>("placeholder");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Continue> & stmt) {
-        return std::make_unique<String>("placeholder");
-    };
-};
-
 struct ExpressionLowering {
 
-    Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
         return std::make_unique<String>(expr->value);
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
         ExpressionLowering lower{};
         auto fname = std::visit(lower, expr->id);
         return std::make_unique<FunctionCall>(std::move(fname));
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
         return std::make_unique<Boolean>(expr->value);
     };
 
+    Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
+        return std::make_unique<Number>(expr->value);
+    };
+
     // XXX: all of thse are lies to get things compiling
-    Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) {
+    Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
         return std::make_unique<String>("placeholder");
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) {
+};
+
+struct StatementLowering {
+    Object operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+        ExpressionLowering l{};
+        return std::visit(l, stmt->expr);
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+        return std::make_unique<String>("placeholder");
+    };
+    Object operator()(const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
         return std::make_unique<String>("placeholder");
     };
 };
 
 } // namespace
 
-IRList lower_ast(const Frontend::AST::CodeBlock & block) {
+IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     IRList bl{};
     StatementLowering lower{};
 
-    for (const auto & i : block.statements) {
+    for (const auto & i : block->statements) {
         bl.emplace_back(std::visit(lower, i));
     }
 

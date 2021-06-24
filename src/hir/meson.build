@@ -18,6 +18,7 @@ idep_hir = declare_dependency(
 test(
   'ast_to_hir_test',
   executable(
+    'ast_to_hir_test',
     'ast_to_hir_test.cpp',
     dependencies : [idep_frontend, idep_hir, dep_gtest],
   ),
