@@ -19,7 +19,16 @@ struct ExpressionLowering {
 
     Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
         const ExpressionLowering lower{};
-        auto fname = std::visit(lower, expr->id);
+
+        // I think that a function can only be an ID, I think
+        auto fname_id = std::visit(lower, expr->id);
+        auto fname_ptr = std::get_if<std::unique_ptr<Identifier>>(&fname_id);
+        if (fname_ptr == nullptr) {
+            // Better error message witht the thing being called
+            throw Util::Exceptions::MesonException{"Object is not callable"};
+        }
+        auto fname = (*fname_ptr)->value;
+
         return std::make_unique<FunctionCall>(std::move(fname));
     };
 

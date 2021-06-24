@@ -39,9 +39,9 @@ using Object =
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(Object && _name) : name{std::move(_name)} {};
+    FunctionCall(const std::string & _name) : name{_name} {};
 
-    Object name;
+    const std::string name;
 };
 
 class String {

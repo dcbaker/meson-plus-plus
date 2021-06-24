@@ -95,10 +95,7 @@ TEST(ast_to_ir, simple_function) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::FunctionCall>>(obj));
 
     const auto & ir = std::get<std::unique_ptr<HIR::FunctionCall>>(obj);
-    const auto & name = ir->name;
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Identifier>>(name));
-    const auto & raw_name = std::move(std::get<std::unique_ptr<HIR::Identifier>>(name));
-    ASSERT_EQ(raw_name->value, "has_no_args");
+    ASSERT_EQ(ir->name, "has_no_args");
 }
 
 TEST(ast_to_ir, if_only) {
