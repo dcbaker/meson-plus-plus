@@ -102,7 +102,13 @@ struct StatementLowering {
         }
 
         // TODO: elif
-        // TODO: else
+
+        if (stmt->eblock.block != nullptr) {
+            for (const auto & i : stmt->eblock.block->statements) {
+                std::visit([&](const auto & a) { s(list->condition.value().if_false.get(), a); },
+                           i);
+            }
+        }
     };
 
     // XXX: None of this is actually implemented

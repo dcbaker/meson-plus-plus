@@ -114,3 +114,22 @@ TEST(ast_to_ir, if_only) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(val));
     ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val)->value, 7);
 }
+
+TEST(ast_to_ir, if_else) {
+    auto irlist = lower("if true\n 7\nelse\n8\nendif\n");
+    ASSERT_TRUE(irlist.condition.has_value());
+    auto const & con = irlist.condition.value();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Boolean>>(con.condition));
+
+    auto const & if_true = con.if_true->instructions;
+    ASSERT_EQ(if_true.size(), 1);
+    auto const & val = if_true.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(val));
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val)->value, 7);
+
+    auto const & if_false = con.if_false->instructions;
+    ASSERT_EQ(if_false.size(), 1);
+    auto const & val2 = if_false.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(val2));
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val2)->value, 8);
+}
