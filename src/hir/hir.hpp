@@ -23,9 +23,11 @@ class Boolean;
 class String;
 class Number;
 class FunctionCall;
+class Identifier;
 
-using Object = std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>,
-                            std::unique_ptr<Boolean>, std::unique_ptr<Number>>;
+using Object =
+    std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
+                 std::unique_ptr<Number>, std::unique_ptr<Identifier>>;
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
@@ -55,6 +57,13 @@ class Number {
     Number(const int64_t & f) : value{f} {};
 
     const int64_t value;
+};
+
+class Identifier {
+  public:
+    Identifier(const std::string & s) : value{s} {};
+
+    const std::string value;
 };
 
 // TODO: Conditions?

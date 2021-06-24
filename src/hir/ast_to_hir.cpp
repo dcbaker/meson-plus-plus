@@ -28,10 +28,11 @@ struct ExpressionLowering {
         return std::make_unique<Number>(expr->value);
     };
 
-    // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
-        return std::make_unique<String>("placeholder: id");
+        return std::make_unique<Identifier>(expr->value);
     };
+
+    // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
         return std::make_unique<String>("placeholder: add");
     };
