@@ -96,7 +96,9 @@ class IRList;
  */
 class Condition {
   public:
-    Condition(Object && o) : condition{std::move(o)}, if_true{nullptr}, if_false{nullptr} {};
+    Condition(Object && o)
+        : condition{std::move(o)}, if_true{std::make_unique<IRList>()},
+          if_false{std::make_unique<IRList>()} {};
 
     Object condition;
     std::unique_ptr<IRList> if_true;

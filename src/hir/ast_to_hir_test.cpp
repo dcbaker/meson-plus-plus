@@ -100,3 +100,17 @@ TEST(ast_to_ir, simple_function) {
     const auto & raw_name = std::move(std::get<std::unique_ptr<HIR::Identifier>>(name));
     ASSERT_EQ(raw_name->value, "has_no_args");
 }
+
+TEST(ast_to_ir, if_only) {
+    auto irlist = lower("if true\n 7\nendif\n");
+    ASSERT_TRUE(irlist.condition.has_value());
+    auto const & con = irlist.condition.value();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Boolean>>(con.condition));
+
+    auto const & if_true = con.if_true->instructions;
+    ASSERT_EQ(if_true.size(), 1);
+
+    auto const & val = if_true.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(val));
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val)->value, 7);
+}

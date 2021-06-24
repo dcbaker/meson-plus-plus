@@ -87,22 +87,31 @@ struct ExpressionLowering {
  * Lowers AST statements into HIR objects.
  */
 struct StatementLowering {
-    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         const ExpressionLowering l{};
-        list.instructions.emplace_back(std::visit(l, stmt->expr));
+        list->instructions.emplace_back(std::visit(l, stmt->expr));
     };
 
-    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+        const StatementLowering s{};
         const ExpressionLowering l{};
+
+        list->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
+        for (const auto & i : stmt->ifblock.block->statements) {
+            std::visit([&](const auto & a) { s(list->condition.value().if_true.get(), a); }, i);
+        }
+
+        // TODO: elif
+        // TODO: else
     };
 
     // XXX: None of this is actually implemented
-    void operator()(IRList & list,
+    void operator()(IRList * list,
                     const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {};
-    void operator()(IRList & list,
+    void operator()(IRList * list,
                     const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {};
-    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {};
-    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::Continue> & stmt) const {};
+    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {};
+    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Continue> & stmt) const {};
 };
 
 } // namespace
@@ -115,7 +124,7 @@ IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     const StatementLowering lower{};
 
     for (const auto & i : block->statements) {
-        std::visit([&](const auto & a) { lower(bl, a); }, i);
+        std::visit([&](const auto & a) { lower(&bl, a); }, i);
     }
 
     return bl;
