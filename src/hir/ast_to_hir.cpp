@@ -134,9 +134,26 @@ struct StatementLowering {
         }
     };
 
+    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
+        const ExpressionLowering l{};
+        auto target = std::visit(l, stmt->lhs);
+        auto value = std::visit(l, stmt->rhs);
+
+        // XXX: need to handle mutative assignments
+        assert(stmt->op == Frontend::AST::AssignOp::EQUAL);
+
+        // XXX: need to handle other things that can be assigned to, like subscript
+        auto name_ptr = std::get_if<std::unique_ptr<Identifier>>(&target);
+        if (name_ptr == nullptr) {
+            throw Util::Exceptions::MesonException{
+                "This might be a bug, or might be an incomplete implementation"};
+        }
+        std::visit([&](const auto & t) { t->var.name = (*name_ptr)->value; }, value);
+
+        list->instructions.emplace_back(std::move(value));
+    };
+
     // XXX: None of this is actually implemented
-    void operator()(IRList * list,
-                    const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {};
     void operator()(IRList * list,
                     const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {};
     void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {};

@@ -210,3 +210,14 @@ TEST(ast_to_ir, if_elif_else) {
         ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(val2)->value, 9);
     }
 }
+
+TEST(ast_to_ir, assign) {
+    auto irlist = lower("a = 5");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Number>>(obj));
+    const auto & ir = std::get<std::unique_ptr<HIR::Number>>(obj);
+    ASSERT_EQ(ir->value, 5);
+    ASSERT_EQ(ir->var.name, "a");
+    ASSERT_EQ(ir->var.version, 0);
+}

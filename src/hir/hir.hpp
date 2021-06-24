@@ -46,11 +46,13 @@ using Object =
  */
 class Variable {
   public:
-    Variable() : name{}, version{} {};
+    Variable() : name{}, version{0} {};
 
     explicit operator bool() const;
 
-    const std::string name;
+    std::string name;
+
+    /// The version as used by value numbering, 0 means unset
     uint version;
 };
 
