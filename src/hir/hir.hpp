@@ -35,58 +35,84 @@ using Object =
                  std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
                  std::unique_ptr<Dict>>;
 
+/**
+ * Information about an object when it is stored to a variable
+ *
+ * At the HIR level, assignments are stored to the object, as many
+ * objects have creation side effects (creating a Target, for example)
+ *
+ * The name will be referenced against the symbol table, along with the version
+ * which is used by value numbering.
+ */
+class Variable {
+  public:
+    Variable() : name{}, version{} {};
+
+    explicit operator bool() const;
+
+    const std::string name;
+    uint version;
+};
+
 // Can be a method via an optional paramter maybe?
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(const std::string & _name) : name{_name} {};
+    FunctionCall(const std::string & _name) : name{_name}, var{} {};
 
     const std::string name;
+    Variable var;
 };
 
 class String {
   public:
-    String(const std::string & f) : value{f} {};
+    String(const std::string & f) : value{f}, var{} {};
 
     const std::string value;
+    Variable var;
 };
 
 class Boolean {
   public:
-    Boolean(const bool & f) : value{f} {};
+    Boolean(const bool & f) : value{f}, var{} {};
 
     const bool value;
+    Variable var;
 };
 
 class Number {
   public:
-    Number(const int64_t & f) : value{f} {};
+    Number(const int64_t & f) : value{f}, var{} {};
 
     const int64_t value;
+    Variable var;
 };
 
 class Identifier {
   public:
-    Identifier(const std::string & s) : value{s} {};
+    Identifier(const std::string & s) : value{s}, var{} {};
 
     const std::string value;
+    Variable var;
 };
 
 class Array {
   public:
-    Array() : value{} {};
+    Array() : value{}, var{} {};
     Array(std::vector<Object> && a) : value{std::move(a)} {};
 
     std::vector<Object> value;
+    Variable var;
 };
 
 class Dict {
   public:
-    Dict() : value{} {};
+    Dict() : value{}, var{} {};
 
     // TODO: the key is allowed to be a string or an expression that evaluates
     // to a string, we need to enforce that somewhere.
     std::unordered_map<std::string, Object> value;
+    Variable var;
 };
 
 class IRList;
