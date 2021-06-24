@@ -16,18 +16,20 @@
 #include <memory>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace HIR {
 
+class Array;
 class Boolean;
-class String;
-class Number;
 class FunctionCall;
 class Identifier;
+class Number;
+class String;
 
 using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
-                 std::unique_ptr<Number>, std::unique_ptr<Identifier>>;
+                 std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>>;
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
@@ -64,6 +66,14 @@ class Identifier {
     Identifier(const std::string & s) : value{s} {};
 
     const std::string value;
+};
+
+class Array {
+  public:
+    Array() : value{} {};
+    Array(std::vector<Object> && a) : value{std::move(a)} {};
+
+    std::vector<Object> value;
 };
 
 // TODO: Conditions?

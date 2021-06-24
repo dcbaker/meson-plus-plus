@@ -35,6 +35,15 @@ struct ExpressionLowering {
         return std::make_unique<Identifier>(expr->value);
     };
 
+    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
+        const ExpressionLowering lower{};
+        auto arr = std::make_unique<Array>();
+        for (const auto & i : expr->elements) {
+            arr->value.emplace_back(std::visit(lower, i));
+        }
+        return arr;
+    };
+
     // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
         return std::make_unique<String>("placeholder: add");
@@ -53,9 +62,6 @@ struct ExpressionLowering {
     };
     Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
         return std::make_unique<String>("placeholder: getattr");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
-        return std::make_unique<String>("placeholder: arr");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
         return std::make_unique<String>("placeholder: dict");
