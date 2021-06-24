@@ -98,6 +98,8 @@ class Condition {
   public:
     Condition(Object && o)
         : condition{std::move(o)}, if_true{std::make_unique<IRList>()},
+          // We could save a bit of memory here by not initializing if_false, but
+          // that means more manual tracking for a tiny savings…
           if_false{std::make_unique<IRList>()} {};
 
     Object condition;

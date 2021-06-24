@@ -96,12 +96,27 @@ struct StatementLowering {
         const StatementLowering s{};
         const ExpressionLowering l{};
 
-        list->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
+        assert(list != nullptr);
+        auto cur = list;
+
+        cur->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
         for (const auto & i : stmt->ifblock.block->statements) {
             std::visit([&](const auto & a) { s(list->condition.value().if_true.get(), a); }, i);
         }
 
-        // TODO: elif
+        // We're building a web-like structure here, so we walk over the flat
+        // list of elif conditions + statements, generating a web of IRList
+        // objects
+        if (!stmt->efblock.empty()) {
+            for (const auto & el : stmt->efblock) {
+                cur = cur->condition->if_false.get();
+                cur->condition = std::optional<Condition>{std::visit(l, el.condition)};
+                for (const auto & i : el.block->statements) {
+                    std::visit([&](const auto & a) { s(cur->condition.value().if_true.get(), a); },
+                               i);
+                }
+            }
+        }
 
         if (stmt->eblock.block != nullptr) {
             for (const auto & i : stmt->eblock.block->statements) {
