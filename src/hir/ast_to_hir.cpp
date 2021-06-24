@@ -87,25 +87,22 @@ struct ExpressionLowering {
  * Lowers AST statements into HIR objects.
  */
 struct StatementLowering {
-    Object operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         const ExpressionLowering l{};
-        return std::visit(l, stmt->expr);
+        list.instructions.emplace_back(std::visit(l, stmt->expr));
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
-        return std::make_unique<String>("placeholder: assign");
+
+    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+        const ExpressionLowering l{};
     };
-    Object operator()(const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
-        return std::make_unique<String>("placeholder: if");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
-        return std::make_unique<String>("placeholder: foreach");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Break> & stmt) const {
-        return std::make_unique<String>("placeholder: break");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
-        return std::make_unique<String>("placeholder: continue");
-    };
+
+    // XXX: None of this is actually implemented
+    void operator()(IRList & list,
+                    const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {};
+    void operator()(IRList & list,
+                    const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {};
+    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {};
+    void operator()(IRList & list, const std::unique_ptr<Frontend::AST::Continue> & stmt) const {};
 };
 
 } // namespace
@@ -118,7 +115,7 @@ IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     const StatementLowering lower{};
 
     for (const auto & i : block->statements) {
-        bl.instructions.emplace_back(std::visit(lower, i));
+        std::visit([&](const auto & a) { lower(bl, a); }, i);
     }
 
     return bl;
