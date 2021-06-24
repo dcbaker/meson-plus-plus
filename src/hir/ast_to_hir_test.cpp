@@ -37,7 +37,6 @@ TEST(ast_to_ir, number) {
     ASSERT_EQ(ir->value, 7);
 }
 
-
 TEST(ast_to_ir, boolean) {
     auto irlist = lower("true");
     ASSERT_EQ(irlist.size(), 1);
@@ -46,4 +45,14 @@ TEST(ast_to_ir, boolean) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::Boolean>>(obj));
     auto ir = std::move(std::get<std::unique_ptr<HIR::Boolean>>(obj));
     ASSERT_EQ(ir->value, true);
+}
+
+TEST(ast_to_ir, string) {
+    auto irlist = lower("'true'");
+    ASSERT_EQ(irlist.size(), 1);
+    auto obj = std::move(irlist.front());
+    irlist.pop_front(); // Just good house keeping
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::String>>(obj));
+    auto ir = std::move(std::get<std::unique_ptr<HIR::String>>(obj));
+    ASSERT_EQ(ir->value, "true");
 }
