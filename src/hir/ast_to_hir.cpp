@@ -8,6 +8,9 @@ namespace HIR {
 
 namespace {
 
+/**
+ * Lowers AST expressions into HIR objects.
+ */
 struct ExpressionLowering {
 
     Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
@@ -62,6 +65,9 @@ struct ExpressionLowering {
     };
 };
 
+/**
+ * Lowers AST statements into HIR objects.
+ */
 struct StatementLowering {
     Object operator()(const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         ExpressionLowering l{};
@@ -86,6 +92,9 @@ struct StatementLowering {
 
 } // namespace
 
+/**
+ * Lower AST representation into HIR.
+ */
 IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     IRList bl{};
     StatementLowering lower{};
