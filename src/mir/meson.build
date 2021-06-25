@@ -3,7 +3,12 @@
 
 libmir = static_library(
   'mir',
-  ['mir.cpp', 'passes.cpp', 'ast_to_mir.cpp'],
+  [
+    'ast_to_mir.cpp',
+    'mir.cpp',
+    'passes/machines.cpp',
+    'passes/pruning.cpp',
+  ],
   include_directories : inc_frontend,
   dependencies : [idep_util, idep_meson],
 )
