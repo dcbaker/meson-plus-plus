@@ -27,3 +27,11 @@ HIR::IRList lower(const std::string & in) {
 }
 
 } // namespace
+
+TEST(branch_pruning, simple) {
+    auto irlist = lower("x = 7\nif true\n x = 8\nendif\n");
+    bool progress = HIR::Passes::branch_pruning(&irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.instructions.size(), 2);
+}
