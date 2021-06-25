@@ -64,8 +64,9 @@ const std::string Info::system() const {
     switch (kernel) {
         case Kernel::LINUX:
             return "linux";
+        default:
+            assert(false);
     }
-    assert(false);
 }
 
 } // namespace Meson::Machines
