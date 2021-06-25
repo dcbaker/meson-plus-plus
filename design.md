@@ -14,9 +14,9 @@ ld.bd is differant that just ld.bfd directly.
 
 ## organization
 
-AST -> HIR -> backend -> text
+AST -> MIR -> backend -> text
 
-The HIR looks a lot like Meson's state machine, but without being a state
+The MIR looks a lot like Meson's state machine, but without being a state
 machine, it instead loops over the IR, performing some optimizations (At
 least dead code elimination, and probably const+copy propegation and
 folding), and performing lowering passes to convert to the high level

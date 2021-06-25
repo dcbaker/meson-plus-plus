@@ -4,4 +4,4 @@
 subdir('util')
 subdir('meson')
 subdir('frontend')
-subdir('hir')
+subdir('mir')
