@@ -24,3 +24,13 @@ test(
   ),
   protocol : 'gtest',
 )
+
+test(
+  'hir_passes',
+  executable(
+    'hir_passes_test',
+    'passes_test.cpp',
+    dependencies : [idep_frontend, idep_hir, dep_gtest],
+  ),
+  protocol : 'gtest',
+)
