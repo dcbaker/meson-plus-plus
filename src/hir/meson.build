@@ -3,7 +3,7 @@
 
 libhir = static_library(
   'hir',
-  ['hir.cpp', 'ast_to_hir.cpp'],
+  ['hir.cpp', 'passes.cpp', 'ast_to_hir.cpp'],
   include_directories : inc_frontend,
   dependencies : idep_util,
 )
