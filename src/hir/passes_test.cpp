@@ -51,4 +51,12 @@ TEST(branch_pruning, if_false) {
     ASSERT_FALSE(irlist.condition.has_value());
     // Using 3 here allows us to know that we went down the right path
     ASSERT_EQ(irlist.instructions.size(), 3);
+
+    const auto & first = std::get<std::unique_ptr<HIR::Number>>(irlist.instructions.front());
+    ASSERT_EQ(first->value, 7);
+    ASSERT_EQ(first->var.name, "x");
+
+    const auto & last = std::get<std::unique_ptr<HIR::Number>>(irlist.instructions.back());
+    ASSERT_EQ(last->value, 2);
+    ASSERT_EQ(last->var.name, "y");
 }

@@ -17,7 +17,7 @@ bool branch_pruning(IRList * ir) {
 
     const bool & con_v = std::get<std::unique_ptr<Boolean>>(con.condition)->value;
     auto & new_v = con_v ? con.if_true : con.if_false;
-    ir->instructions.splice(ir->instructions.begin(), new_v->instructions);
+    ir->instructions.splice(ir->instructions.end(), new_v->instructions);
     ir->condition = std::move(new_v->condition);
 
     return true;
