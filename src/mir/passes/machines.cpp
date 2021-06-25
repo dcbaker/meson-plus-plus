@@ -71,9 +71,26 @@ bool machine_lower(IRList * ir,
 
         // TODO: need to look into arrays
         // TODO: need to look into dictionaries
-        // TODO: need to look into conditions.
 
         ++it;
+    }
+
+    // Check if we have a condition, and try to lower that as well.
+    // XXX: need a test for this
+    if (ir->condition.has_value()) {
+        auto & con = ir->condition.value();
+        if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(con.condition)) {
+            const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(con.condition);
+            const auto & holder = f->holder.value_or("");
+
+            auto maybe_m = machine_map(holder);
+            if (maybe_m.has_value()) {
+                const auto & info = machines.get(maybe_m.value());
+                MIR::Object new_value = lower_function(holder, f->name, info);
+                con.condition = std::move(new_value);
+                progress = true;
+            }
+        }
     }
 
     return progress;
