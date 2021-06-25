@@ -20,4 +20,4 @@ namespace HIR::Passes {
  */
 bool branch_pruning(IRList *);
 
-}
+} // namespace HIR::Passes

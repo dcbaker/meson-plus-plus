@@ -60,9 +60,14 @@ class Variable {
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(const std::string & _name) : name{_name}, var{} {};
+    FunctionCall(const std::string & _name, std::vector<Object> && _pos)
+        : name{_name}, pos_args{std::move(_pos)}, var{} {};
 
     const std::string name;
+
+    /// Ordered container of positional argument objects
+    std::vector<Object> pos_args;
+
     Variable var;
 };
 

@@ -29,7 +29,14 @@ struct ExpressionLowering {
         }
         auto fname = (*fname_ptr)->value;
 
-        return std::make_unique<FunctionCall>(std::move(fname));
+        // Get the positional arguments
+        std::vector<Object> pos{};
+        for (const auto & i : expr->args->positional) {
+            pos.emplace_back(std::visit(lower, i));
+        }
+
+        // We have to move positional arguments because Object isn't copy-able
+        return std::make_unique<FunctionCall>(fname, std::move(pos));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {

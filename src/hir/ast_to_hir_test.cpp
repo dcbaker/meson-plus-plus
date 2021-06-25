@@ -96,6 +96,24 @@ TEST(ast_to_ir, simple_function) {
 
     const auto & ir = std::get<std::unique_ptr<HIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "has_no_args");
+    const auto & arguments = ir->pos_args;
+    ASSERT_TRUE(arguments.empty());
+}
+
+TEST(ast_to_ir, function_positional_arguments_only) {
+    auto irlist = lower("has_args(1, 2, 3)");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::FunctionCall>>(obj));
+
+    const auto & ir = std::get<std::unique_ptr<HIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "has_args");
+
+    const auto & arguments = ir->pos_args;
+    ASSERT_EQ(arguments.size(), 3);
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(arguments[0])->value, 1);
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(arguments[1])->value, 2);
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(arguments[2])->value, 3);
 }
 
 TEST(ast_to_ir, if_only) {
