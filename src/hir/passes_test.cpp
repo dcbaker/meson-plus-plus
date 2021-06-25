@@ -43,3 +43,12 @@ TEST(branch_pruning, if_else) {
     ASSERT_FALSE(irlist.condition.has_value());
     ASSERT_EQ(irlist.instructions.size(), 2);
 }
+
+TEST(branch_pruning, if_false) {
+    auto irlist = lower("x = 7\nif false\n x = 8\nelse\n x = 9\n y = 2\nendif\n");
+    bool progress = HIR::Passes::branch_pruning(&irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_FALSE(irlist.condition.has_value());
+    // Using 3 here allows us to know that we went down the right path
+    ASSERT_EQ(irlist.instructions.size(), 3);
+}
