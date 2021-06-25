@@ -1,9 +1,28 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Dylan Baker
 
+#include "exceptions.hpp"
 #include "passes.hpp"
 
 namespace MIR::Passes {
+
+namespace {
+
+using namespace Meson::Machines;
+
+std::optional<Machine> machine_map(const std::string & func_name) {
+    if (func_name == "build_machine") {
+        return Meson::Machines::Machine::BUILD;
+    } else if (func_name == "host_machine") {
+        return Meson::Machines::Machine::HOST;
+    } else if (func_name == "target_machine") {
+        return Meson::Machines::Machine::TARGET;
+    } else {
+        return std::nullopt;
+    }
+}
+
+} // namespace
 
 bool machine_lower(IRList * ir,
                    const Meson::Machines::PerMachine<Meson::Machines::Info> & machines) {
@@ -16,19 +35,13 @@ bool machine_lower(IRList * ir,
             const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(i);
             const auto & holder = f->holder.value_or("");
 
-            Meson::Machines::Machine m;
-            if (holder == "build_machine") {
-                m = Meson::Machines::Machine::BUILD;
-            } else if (holder == "host_machine") {
-                m = Meson::Machines::Machine::HOST;
-            } else if (holder == "target_machine") {
-                m = Meson::Machines::Machine::TARGET;
-            } else {
+            auto maybe_m = machine_map(holder);
+            if (!maybe_m.has_value()) {
                 ++it;
                 continue;
             }
 
-            const auto & info = machines.get(m);
+            const auto & info = machines.get(maybe_m.value());
 
             MIR::Object new_value;
             if (f->name == "cpu_family") {
@@ -40,11 +53,12 @@ bool machine_lower(IRList * ir,
             } else if (f->name == "system") {
                 // TODO: it's probably going to be useful to have a helper for this...
                 new_value = MIR::Object{std::make_unique<MIR::String>(info.system())};
+            } else if (f->name == "endian") {
+                new_value = MIR::Object{std::make_unique<MIR::String>(
+                    info.endian == Meson::Machines::Endian::LITTLE ? "little" : "big")};
             } else {
-                ++it;
-                continue;
+                throw Util::Exceptions::MesonException{holder + " has no method " + f->name};
             }
-            // TODO: endian
 
             // Remove the current element, then insert the new element in it's place
             it = ir->instructions.erase(it);
