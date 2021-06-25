@@ -109,7 +109,7 @@ TEST(ast_to_ir, simple_method) {
     const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "method");
     ASSERT_TRUE(ir->holder.has_value());
-    ASSERT_EQ(ir->holder.value()->value, "obj");
+    ASSERT_EQ(ir->holder.value(), "obj");
     ASSERT_TRUE(ir->pos_args.empty());
     ASSERT_TRUE(ir->kw_args.empty());
 }

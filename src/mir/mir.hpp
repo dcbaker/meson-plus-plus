@@ -73,8 +73,8 @@ class FunctionCall {
     /// Unordered container mapping keyword arguments to their values
     std::unordered_map<std::string, Object> kw_args;
 
-    /// Object holding this function, if it's a method.
-    std::optional<std::unique_ptr<Identifier>> holder;
+    /// name of object holding this function, if it's a method.
+    std::optional<std::string> holder;
 
     Variable var;
 };

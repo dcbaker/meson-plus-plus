@@ -97,7 +97,7 @@ struct ExpressionLowering {
         assert(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(method));
 
         auto func = std::move(std::get<std::unique_ptr<MIR::FunctionCall>>(method));
-        func->holder = std::move(std::get<std::unique_ptr<MIR::Identifier>>(holding_obj));
+        func->holder = std::get<std::unique_ptr<MIR::Identifier>>(holding_obj)->value;
 
         return func;
     };
