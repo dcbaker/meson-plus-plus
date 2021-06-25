@@ -116,6 +116,48 @@ TEST(ast_to_ir, function_positional_arguments_only) {
     ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(arguments[2])->value, 3);
 }
 
+TEST(ast_to_ir, function_keyword_arguments_only) {
+    auto irlist = lower("has_args(a : 1, b : '2')");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::FunctionCall>>(obj));
+
+    const auto & ir = std::get<std::unique_ptr<HIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "has_args");
+
+    const auto & arguments = ir->pos_args;
+    ASSERT_TRUE(arguments.empty());
+
+    auto & kwargs = ir->kw_args;
+    ASSERT_EQ(kwargs.size(), 2);
+
+    const auto & kw_a = std::get<std::unique_ptr<HIR::Number>>(kwargs["a"]);
+    ASSERT_EQ(kw_a->value, 1);
+
+    const auto & kw_b = std::get<std::unique_ptr<HIR::String>>(kwargs["b"]);
+    ASSERT_EQ(kw_b->value, "2");
+}
+
+TEST(ast_to_ir, function_both_arguments) {
+    auto irlist = lower("both_args(1, a, a : 1)");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<HIR::FunctionCall>>(obj));
+
+    const auto & ir = std::get<std::unique_ptr<HIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "both_args");
+
+    const auto & arguments = ir->pos_args;
+    ASSERT_EQ(arguments.size(), 2);
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Number>>(arguments[0])->value, 1);
+    ASSERT_EQ(std::get<std::unique_ptr<HIR::Identifier>>(arguments[1])->value, "a");
+
+    auto & kwargs = ir->kw_args;
+    ASSERT_EQ(kwargs.size(), 1);
+    const auto & kw_a = std::get<std::unique_ptr<HIR::Number>>(kwargs["a"]);
+    ASSERT_EQ(kw_a->value, 1);
+}
+
 TEST(ast_to_ir, if_only) {
     auto irlist = lower("if true\n 7\nendif\n");
     ASSERT_TRUE(irlist.condition.has_value());

@@ -24,7 +24,7 @@ struct ExpressionLowering {
         auto fname_id = std::visit(lower, expr->id);
         auto fname_ptr = std::get_if<std::unique_ptr<Identifier>>(&fname_id);
         if (fname_ptr == nullptr) {
-            // Better error message witht the thing being called
+            // TODO: Better error message witht the thing being called
             throw Util::Exceptions::MesonException{"Object is not callable"};
         }
         auto fname = (*fname_ptr)->value;
@@ -35,8 +35,20 @@ struct ExpressionLowering {
             pos.emplace_back(std::visit(lower, i));
         }
 
+        std::unordered_map<std::string, Object> kwargs{};
+        for (const auto & [k, v] : expr->args->keyword) {
+            auto key_obj = std::visit(lower, k);
+            auto key_ptr = std::get_if<std::unique_ptr<HIR::Identifier>>(&key_obj);
+            if (key_ptr == nullptr) {
+                // TODO: better error message
+                throw Util::Exceptions::MesonException{"keyword arguments must be identifiers"};
+            }
+            auto key = (*key_ptr)->value;
+            kwargs[key] = std::visit(lower, v);
+        }
+
         // We have to move positional arguments because Object isn't copy-able
-        return std::make_unique<FunctionCall>(fname, std::move(pos));
+        return std::make_unique<FunctionCall>(fname, std::move(pos), std::move(kwargs));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
