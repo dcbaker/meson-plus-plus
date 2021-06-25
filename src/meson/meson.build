@@ -28,6 +28,11 @@ libmeson = static_library(
   dependencies : [idep_util],
 )
 
+idep_meson = declare_dependency(
+  link_with : libmeson,
+  include_directories : include_directories('.'),
+)
+
 foreach t : ['compiler', 'archiver', 'linker']
   test(
     '@0@ detection'.format(t),

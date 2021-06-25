@@ -20,4 +20,12 @@ namespace MIR::Passes {
  */
 bool branch_pruning(IRList *);
 
+/**
+ * Lower away machine related information.
+ *
+ * This replaces function calls to `host_machine`, `build_machine`, and
+ * `target_machine` methods with their values.
+ */
+bool machine_lower(IRList *);
+
 } // namespace MIR::Passes

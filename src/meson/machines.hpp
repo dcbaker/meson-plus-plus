@@ -58,17 +58,16 @@ class Info {
 template <typename T> class PerMachine {
   public:
     PerMachine() : _build{}, _host{std::nullopt}, _target{std::nullopt} {};
-    PerMachine(T & __build, T & __host, T & __target)
-        : _build{__build}, _host{__host}, _target{__target} {};
-    PerMachine(T & __build, T & __host) : _build{__build}, _host{__host}, _target{std::nullopt} {};
-    PerMachine(T & __build) : _build{__build}, _host{std::nullopt}, _target{std::nullopt} {};
-    PerMachine(T && __build, T && __host, T && __target)
-        : _build{std::move(__build)}, _host{std::move(__host)}, _target{std::move(__target)} {};
-    PerMachine(T && __build, T && __host)
-        : _build{std::move(__build)}, _host{std::move(__host)}, _target{std::move(std::nullopt)} {};
-    PerMachine(T && __build)
-        : _build{std::move(__build)}, _host{std::move(std::nullopt)}, _target{std::move(
-                                                                          std::nullopt)} {};
+    PerMachine(T & _b, T & _h, T & _t) : _build{_b}, _host{_h}, _target{_t} {};
+    PerMachine(T & _b, T & _h) : _build{_b}, _host{_h}, _target{std::nullopt} {};
+    PerMachine(T & _b) : _build{_b}, _host{std::nullopt}, _target{std::nullopt} {};
+    PerMachine(T && _b, T && _h, T && _t)
+        : _build{std::move(_b)}, _host{std::move(_h)}, _target{std::move(_t)} {};
+    PerMachine(T && _b, T && _h)
+        : _build{std::move(_b)}, _host{std::move(_h)}, _target{std::move(std::nullopt)} {};
+    PerMachine(T && _b)
+        : _build{std::move(_b)}, _host{std::move(std::nullopt)}, _target{
+                                                                     std::move(std::nullopt)} {};
     PerMachine(PerMachine<T> && t)
         : _build{std::move(t._build)}, _target{std::move(t._target)}, _host{
                                                                           std::move(t._target)} {};
