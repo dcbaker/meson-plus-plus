@@ -22,6 +22,25 @@ std::optional<Machine> machine_map(const std::string & func_name) {
     }
 }
 
+MIR::Object lower_function(const std::string & holder, const std::string & name,
+                           const Info & info) {
+    if (name == "cpu_family") {
+        // TODO: it's probably going to be useful to have a helper for this...
+        return MIR::Object{std::make_unique<MIR::String>(info.cpu_family)};
+    } else if (name == "cpu") {
+        // TODO: it's probably going to be useful to have a helper for this...
+        return MIR::Object{std::make_unique<MIR::String>(info.cpu)};
+    } else if (name == "system") {
+        // TODO: it's probably going to be useful to have a helper for this...
+        return MIR::Object{std::make_unique<MIR::String>(info.system())};
+    } else if (name == "endian") {
+        return MIR::Object{std::make_unique<MIR::String>(
+            info.endian == Meson::Machines::Endian::LITTLE ? "little" : "big")};
+    } else {
+        throw Util::Exceptions::MesonException{holder + " has no method " + name};
+    }
+}
+
 } // namespace
 
 bool machine_lower(IRList * ir,
@@ -40,25 +59,9 @@ bool machine_lower(IRList * ir,
                 ++it;
                 continue;
             }
-
             const auto & info = machines.get(maybe_m.value());
 
-            MIR::Object new_value;
-            if (f->name == "cpu_family") {
-                // TODO: it's probably going to be useful to have a helper for this...
-                new_value = MIR::Object{std::make_unique<MIR::String>(info.cpu_family)};
-            } else if (f->name == "cpu") {
-                // TODO: it's probably going to be useful to have a helper for this...
-                new_value = MIR::Object{std::make_unique<MIR::String>(info.cpu)};
-            } else if (f->name == "system") {
-                // TODO: it's probably going to be useful to have a helper for this...
-                new_value = MIR::Object{std::make_unique<MIR::String>(info.system())};
-            } else if (f->name == "endian") {
-                new_value = MIR::Object{std::make_unique<MIR::String>(
-                    info.endian == Meson::Machines::Endian::LITTLE ? "little" : "big")};
-            } else {
-                throw Util::Exceptions::MesonException{holder + " has no method " + f->name};
-            }
+            MIR::Object new_value = lower_function(holder, f->name, info);
 
             // Remove the current element, then insert the new element in it's place
             it = ir->instructions.erase(it);
