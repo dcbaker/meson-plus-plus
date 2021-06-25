@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "machines.hpp"
 #include "mir.hpp"
 
 namespace MIR::Passes {
@@ -26,6 +27,6 @@ bool branch_pruning(IRList *);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-bool machine_lower(IRList *);
+bool machine_lower(IRList *, const Meson::Machines::PerMachine<Meson::Machines::Info> &);
 
 } // namespace MIR::Passes

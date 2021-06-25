@@ -13,6 +13,7 @@ inc_mir = include_directories('.')
 idep_mir = declare_dependency(
   link_with : libmir,
   include_directories : inc_mir,
+  dependencies : [idep_meson],
 )
 
 test(

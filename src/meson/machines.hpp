@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <optional>
 #include <string>
 
@@ -80,22 +81,27 @@ template <typename T> class PerMachine {
         return *this;
     }
 
-    T & build() const { return _build; }
-    T & host() const { return _host == std::nullopt ? _build : _host; }
-    T & target() const {
-        if (_target != std::nullopt) {
-            return _target;
-        } else if (_host != std::nullopt) {
-            return _host;
-        } else {
-            return _build;
+    const T build() const { return _build; }
+    const T host() const { return _host.value_or(build()); }
+    const T target() const { return _target.value_or(host()); }
+
+    const T get(const Machine & m) const {
+        switch (m) {
+            case Machine::BUILD:
+                return build();
+            case Machine::HOST:
+                return host();
+            case Machine::TARGET:
+                return target();
+            default:
+                assert(0);
         }
     }
 
   private:
-    T _build;
-    std::optional<T> _host;
-    std::optional<T> _target;
+    const T _build;
+    const std::optional<T> _host;
+    const std::optional<T> _target;
 };
 
 /**

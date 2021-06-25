@@ -60,3 +60,16 @@ TEST(branch_pruning, if_false) {
     ASSERT_EQ(last->value, 2);
     ASSERT_EQ(last->var.name, "y");
 }
+
+TEST(machine_lower, simple) {
+    auto irlist = lower("x = 7\ny = host_machine.cpu_family()");
+    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
+        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
+                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 2);
+    const auto & r = irlist.instructions.back();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(r));
+    ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(r)->value, "x86_64");
+}
