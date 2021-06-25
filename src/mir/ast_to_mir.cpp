@@ -87,6 +87,21 @@ struct ExpressionLowering {
         return dict;
     };
 
+    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
+        // By this point the object should be an id...
+        auto holding_obj = std::move(std::visit(*this, expr->object));
+        assert(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(holding_obj));
+
+        // Meson only allows methods in objects, so we can enforce that this is a function
+        auto method = std::visit(*this, expr->id);
+        assert(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(method));
+
+        auto func = std::move(std::get<std::unique_ptr<MIR::FunctionCall>>(method));
+        func->holder = std::move(std::get<std::unique_ptr<MIR::Identifier>>(holding_obj));
+
+        return func;
+    };
+
     // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
         return std::make_unique<String>("placeholder: add");
@@ -102,9 +117,6 @@ struct ExpressionLowering {
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
         return std::make_unique<String>("placeholder: rel");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
-        return std::make_unique<String>("placeholder: getattr");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
         return std::make_unique<String>("placeholder: tern");

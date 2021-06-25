@@ -100,6 +100,20 @@ TEST(ast_to_ir, simple_function) {
     ASSERT_TRUE(arguments.empty());
 }
 
+TEST(ast_to_ir, simple_method) {
+    auto irlist = lower("obj.method()");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+
+    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "method");
+    ASSERT_TRUE(ir->holder.has_value());
+    ASSERT_EQ(ir->holder.value()->value, "obj");
+    ASSERT_TRUE(ir->pos_args.empty());
+    ASSERT_TRUE(ir->kw_args.empty());
+}
+
 TEST(ast_to_ir, function_positional_arguments_only) {
     auto irlist = lower("has_args(1, 2, 3)");
     ASSERT_EQ(irlist.instructions.size(), 1);

@@ -62,7 +62,8 @@ class FunctionCall {
   public:
     FunctionCall(const std::string & _name, std::vector<Object> && _pos,
                  std::unordered_map<std::string, Object> && _kw)
-        : name{_name}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)}, var{} {};
+        : name{_name}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)}, holder{std::nullopt},
+          var{} {};
 
     const std::string name;
 
@@ -71,6 +72,9 @@ class FunctionCall {
 
     /// Unordered container mapping keyword arguments to their values
     std::unordered_map<std::string, Object> kw_args;
+
+    /// Object holding this function, if it's a method.
+    std::optional<std::unique_ptr<Identifier>> holder;
 
     Variable var;
 };

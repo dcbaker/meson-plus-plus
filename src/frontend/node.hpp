@@ -303,7 +303,9 @@ class GetAttribute {
 
     std::string as_string() const;
 
+    /// Object holding the attribute
     ExpressionV object;
+    /// The attribute to get (really, the method)
     ExpressionV id;
     Location loc;
 };
