@@ -127,22 +127,32 @@ struct ExpressionLowering {
  * Lowers AST statements into MIR objects.
  */
 struct StatementLowering {
-    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+    IRList * operator()(IRList * list,
+                        const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         const ExpressionLowering l{};
         list->instructions.emplace_back(std::visit(l, stmt->expr));
+        return list;
     };
 
-    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+    IRList * operator()(IRList * list,
+                        const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
         const StatementLowering s{};
         const ExpressionLowering l{};
 
+        auto next_block = std::make_shared<IRList>();
+
         assert(list != nullptr);
         auto cur = list;
+        IRList * last_block;
 
         cur->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
         for (const auto & i : stmt->ifblock.block->statements) {
-            std::visit([&](const auto & a) { s(list->condition.value().if_true.get(), a); }, i);
+            last_block = std::visit(
+                [&](const auto & a) { return s(cur->condition.value().if_true.get(), a); }, i);
         }
+        // We shouldn't have a condition here, this is where we wnat to put our jump target
+        assert(!last_block->condition.has_value());
+        last_block->jump = next_block;
 
         // We're building a web-like structure here, so we walk over the flat
         // list of elif conditions + statements, generating a web of IRList
@@ -152,25 +162,34 @@ struct StatementLowering {
                 cur = cur->condition->if_false.get();
                 cur->condition = std::optional<Condition>{std::visit(l, el.condition)};
                 for (const auto & i : el.block->statements) {
-                    std::visit([&](const auto & a) { s(cur->condition.value().if_true.get(), a); },
-                               i);
+                    last_block = std::visit(
+                        [&](const auto & a) { return s(cur->condition.value().if_true.get(), a); },
+                        i);
                 }
+
+                // We shouldn't have a condition here, this is where we wnat to put our jump target
+                assert(!last_block->condition.has_value());
+                last_block->jump = next_block;
             }
         }
 
         if (stmt->eblock.block != nullptr) {
             for (const auto & i : stmt->eblock.block->statements) {
-                std::visit([&](const auto & a) { s(cur->condition.value().if_false.get(), a); }, i);
+                last_block = std::visit(
+                    [&](const auto & a) { return s(cur->condition.value().if_false.get(), a); }, i);
             }
         }
+        // We shouldn't have a condition here, this is where we wnat to put our jump target
+        assert(!last_block->condition.has_value());
+        last_block->jump = next_block;
 
-        // XXX: this is problematic as the next statement will be placed in the
-        // same basic block, even though it should be placed in a new one.
-        // We might need to return a value here so that the caller can know to
-        // start a new basic block...
+        // Return the raw pointer, which is fine because we're not giving the
+        // caller ownership of the pointer, the other basic blocks are the owners.
+        return next_block.get();
     };
 
-    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
+    IRList * operator()(IRList * list,
+                        const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
         const ExpressionLowering l{};
         auto target = std::visit(l, stmt->lhs);
         auto value = std::visit(l, stmt->rhs);
@@ -187,13 +206,21 @@ struct StatementLowering {
         std::visit([&](const auto & t) { t->var.name = (*name_ptr)->value; }, value);
 
         list->instructions.emplace_back(std::move(value));
+        return list;
     };
 
     // XXX: None of this is actually implemented
-    void operator()(IRList * list,
-                    const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {};
-    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {};
-    void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Continue> & stmt) const {};
+    IRList * operator()(IRList * list,
+                        const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
+        return list;
+    };
+    IRList * operator()(IRList * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+        return list;
+    };
+    IRList * operator()(IRList * list,
+                        const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
+        return list;
+    };
 };
 
 } // namespace
@@ -203,10 +230,10 @@ struct StatementLowering {
  */
 IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     IRList bl{};
+    IRList * current_block = &bl;
     const StatementLowering lower{};
-
     for (const auto & i : block->statements) {
-        std::visit([&](const auto & a) { lower(&bl, a); }, i);
+        current_block = std::visit([&](const auto & a) { return lower(current_block, a); }, i);
     }
 
     return bl;
