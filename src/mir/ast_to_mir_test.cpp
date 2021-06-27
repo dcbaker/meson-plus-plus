@@ -186,6 +186,20 @@ TEST(ast_to_ir, if_only) {
     ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
 }
 
+TEST(ast_to_ir, if_else_more) {
+    // Here we're testing that the jupm value of both branches are the same, and
+    // not nullptr
+    auto irlist = lower("if true\nx = 7\nelse\nx = 8\nendif\ny = x");
+    ASSERT_TRUE(irlist.condition.has_value());
+    auto const & con = irlist.condition.value();
+
+    ASSERT_EQ(con.if_true->instructions.size(), 1);
+    ASSERT_EQ(con.if_false->instructions.size(), 1);
+
+    ASSERT_NE(con.if_true->jump, nullptr);
+    ASSERT_EQ(con.if_true->jump, con.if_false->jump);
+}
+
 TEST(ast_to_ir, if_else) {
     auto irlist = lower("if true\n 7\nelse\n8\nendif\n");
     ASSERT_TRUE(irlist.condition.has_value());

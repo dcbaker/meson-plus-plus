@@ -134,6 +134,8 @@ class IRList;
 
 /**
  * A sort of phi-like thing that holds a condition and two branches
+ *
+ * We use shared ptrs as it's possible for the
  */
 class Condition {
   public:
@@ -143,21 +145,46 @@ class Condition {
           // that means more manual tracking for a tiny savings…
           if_false{std::make_unique<IRList>()} {};
 
+    /// An object that is the condition
     Object condition;
-    std::unique_ptr<IRList> if_true;
-    std::unique_ptr<IRList> if_false;
+
+    /// The branch to take if the condition is true
+    std::shared_ptr<IRList> if_true;
+
+    /// The branch to take if the condition is false
+    std::shared_ptr<IRList> if_false;
 };
 
 /**
- * Holds a list of instructions, and optionally a condition
+ * Holds a list of instructions, and optionally a condition or jump point
+ *
+ * Jump is used when the list unconditionally jumps to another basic block, and
+ * thus condition should be nullopt. This is meant for cases such as:
+ *
+ *       / 2 \
+ * 0 - 1 - 3 - 4
+ *
+ *  In this case both 2 and 3 unconditionally continue to 4, but we don't want
+ *  two copies of 4, just one, they both will "jump" to 4.
+ *
+ * On the other hand 1 does not make any unconditional jumps, and it uses the
+ * condition node to set a condition as to whether it goes to 2 or 3.
+ *
+ * TOOD: maybe it's better to use a variant/union?
  *
  */
 class IRList {
   public:
-    IRList() : instructions{}, condition{std::nullopt} {};
+    IRList() : instructions{}, condition{std::nullopt}, jump{nullptr} {};
 
+    /// The instructions in this block
     std::list<Object> instructions;
+
+    /// A phi-like condition that may come at the end of the block
     std::optional<Condition> condition;
+
+    /// a jump to point, used to rejoin branches
+    std::shared_ptr<IRList> jump;
 };
 
 } // namespace MIR

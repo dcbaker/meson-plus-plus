@@ -163,6 +163,11 @@ struct StatementLowering {
                 std::visit([&](const auto & a) { s(cur->condition.value().if_false.get(), a); }, i);
             }
         }
+
+        // XXX: this is problematic as the next statement will be placed in the
+        // same basic block, even though it should be placed in a new one.
+        // We might need to return a value here so that the caller can know to
+        // start a new basic block...
     };
 
     void operator()(IRList * list, const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
