@@ -183,7 +183,7 @@ class BasicBlock {
     /// A phi-like condition that may come at the end of the block
     std::optional<Condition> condition;
 
-    /// a next to point, used to rejoin branches
+    /// The next basic block to go to.
     std::shared_ptr<BasicBlock> next;
 };
 

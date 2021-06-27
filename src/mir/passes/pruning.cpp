@@ -16,9 +16,12 @@ bool branch_pruning(BasicBlock * ir) {
     }
 
     const bool & con_v = std::get<std::unique_ptr<Boolean>>(con.condition)->value;
-    auto & new_v = con_v ? con.if_true : con.if_false;
+    auto new_v = con_v ? con.if_true : con.if_false;
     ir->instructions.splice(ir->instructions.end(), new_v->instructions);
+    // Always do this, as the new_v condition could be empty, and we ant that as
+    // well.
     ir->condition = std::move(new_v->condition);
+    ir->next = new_v->next;
 
     return true;
 };

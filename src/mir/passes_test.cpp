@@ -36,6 +36,15 @@ TEST(branch_pruning, simple) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 }
 
+TEST(branch_pruning, next_block) {
+    auto irlist = lower("x = 7\nif true\n x = 8\nendif\ny = x");
+    bool progress = MIR::Passes::branch_pruning(&irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_NE(irlist.next, nullptr);
+    ASSERT_EQ(irlist.next->instructions.size(), 1);
+}
+
 TEST(branch_pruning, if_else) {
     auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\n");
     bool progress = MIR::Passes::branch_pruning(&irlist);
@@ -59,6 +68,23 @@ TEST(branch_pruning, if_false) {
     const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
     ASSERT_EQ(last->value, 2);
     ASSERT_EQ(last->var.name, "y");
+}
+
+TEST(join_blocks, simple) {
+    auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\ny = x");
+    bool progress = MIR::Passes::branch_pruning(&irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_NE(irlist.next, nullptr);
+
+    ASSERT_EQ(irlist.next->instructions.size(), 1);
+
+    progress = MIR::Passes::join_blocks(&irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist.next, nullptr);
 }
 
 TEST(machine_lower, simple) {

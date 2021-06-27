@@ -22,6 +22,14 @@ namespace MIR::Passes {
 bool branch_pruning(BasicBlock *);
 
 /**
+ * Join basic blocks together
+ *
+ * Specifically for use after branch_pruning, when we have two continguous
+ * blocks with no condition to move between thme
+ */
+bool join_blocks(BasicBlock *);
+
+/**
  * Lower away machine related information.
  *
  * This replaces function calls to `host_machine`, `build_machine`, and
