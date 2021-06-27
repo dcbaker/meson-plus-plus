@@ -43,7 +43,7 @@ MIR::Object lower_function(const std::string & holder, const std::string & name,
 
 } // namespace
 
-bool machine_lower(IRList * ir,
+bool machine_lower(BasicBlock * ir,
                    const Meson::Machines::PerMachine<Meson::Machines::Info> & machines) {
     bool progress = false;
 

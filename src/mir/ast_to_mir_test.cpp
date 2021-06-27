@@ -19,7 +19,7 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     return block;
 }
 
-MIR::IRList lower(const std::string & in) {
+MIR::BasicBlock lower(const std::string & in) {
     auto block = parse(in);
     auto ir = MIR::lower_ast(block);
     return ir;
@@ -198,11 +198,11 @@ TEST(ast_to_ir, if_else_more) {
     ASSERT_EQ(con.if_true->instructions.size(), 1);
     ASSERT_EQ(con.if_false->instructions.size(), 1);
 
-    ASSERT_NE(con.if_true->jump, nullptr);
+    ASSERT_NE(con.if_true->next, nullptr);
     ASSERT_FALSE(con.if_true->condition.has_value());
-    ASSERT_EQ(con.if_true->jump, con.if_false->jump);
+    ASSERT_EQ(con.if_true->next, con.if_false->next);
 
-    ASSERT_EQ(con.if_true->jump->instructions.size(), 1);
+    ASSERT_EQ(con.if_true->next->instructions.size(), 1);
 }
 
 TEST(ast_to_ir, if_else_more2) {
@@ -211,18 +211,18 @@ TEST(ast_to_ir, if_else_more2) {
     ASSERT_TRUE(irlist.condition.has_value());
     auto const & con = irlist.condition.value();
     ASSERT_EQ(con.if_true->instructions.size(), 1);
-    ASSERT_NE(con.if_true->jump, nullptr);
+    ASSERT_NE(con.if_true->next, nullptr);
 
     ASSERT_EQ(con.if_false->instructions.size(), 0);
     ASSERT_TRUE(con.if_false->condition.has_value());
     auto const & con1 = con.if_false->condition.value();
     ASSERT_EQ(con1.if_true->instructions.size(), 1);
-    ASSERT_EQ(con.if_true->jump, con1.if_true->jump);
+    ASSERT_EQ(con.if_true->next, con1.if_true->next);
 
     ASSERT_EQ(con1.if_false->instructions.size(), 1);
     ASSERT_FALSE(con1.if_false->condition.has_value());
     ASSERT_EQ(con1.if_false->instructions.size(), 1);
-    ASSERT_EQ(con.if_true->jump, con1.if_false->jump);
+    ASSERT_EQ(con.if_true->next, con1.if_false->next);
 }
 
 TEST(ast_to_ir, if_else) {

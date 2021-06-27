@@ -130,7 +130,7 @@ class Dict {
     Variable var;
 };
 
-class IRList;
+class BasicBlock;
 
 /**
  * A sort of phi-like thing that holds a condition and two branches
@@ -140,23 +140,23 @@ class IRList;
 class Condition {
   public:
     Condition(Object && o)
-        : condition{std::move(o)}, if_true{std::make_unique<IRList>()},
+        : condition{std::move(o)}, if_true{std::make_unique<BasicBlock>()},
           // We could save a bit of memory here by not initializing if_false, but
           // that means more manual tracking for a tiny savings…
-          if_false{std::make_unique<IRList>()} {};
+          if_false{std::make_unique<BasicBlock>()} {};
 
     /// An object that is the condition
     Object condition;
 
     /// The branch to take if the condition is true
-    std::shared_ptr<IRList> if_true;
+    std::shared_ptr<BasicBlock> if_true;
 
     /// The branch to take if the condition is false
-    std::shared_ptr<IRList> if_false;
+    std::shared_ptr<BasicBlock> if_false;
 };
 
 /**
- * Holds a list of instructions, and optionally a condition or jump point
+ * Holds a list of instructions, and optionally a condition or next point
  *
  * Jump is used when the list unconditionally jumps to another basic block, and
  * thus condition should be nullopt. This is meant for cases such as:
@@ -173,9 +173,9 @@ class Condition {
  * TOOD: maybe it's better to use a variant/union?
  *
  */
-class IRList {
+class BasicBlock {
   public:
-    IRList() : instructions{}, condition{std::nullopt}, jump{nullptr} {};
+    BasicBlock() : instructions{}, condition{std::nullopt}, next{nullptr} {};
 
     /// The instructions in this block
     std::list<Object> instructions;
@@ -183,8 +183,8 @@ class IRList {
     /// A phi-like condition that may come at the end of the block
     std::optional<Condition> condition;
 
-    /// a jump to point, used to rejoin branches
-    std::shared_ptr<IRList> jump;
+    /// a next to point, used to rejoin branches
+    std::shared_ptr<BasicBlock> next;
 };
 
 } // namespace MIR

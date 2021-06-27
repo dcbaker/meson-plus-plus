@@ -20,7 +20,7 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     return block;
 }
 
-MIR::IRList lower(const std::string & in) {
+MIR::BasicBlock lower(const std::string & in) {
     auto block = parse(in);
     auto ir = MIR::lower_ast(block);
     return ir;

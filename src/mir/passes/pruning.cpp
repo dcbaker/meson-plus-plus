@@ -5,7 +5,7 @@
 
 namespace MIR::Passes {
 
-bool branch_pruning(IRList * ir) {
+bool branch_pruning(BasicBlock * ir) {
     if (!ir->condition.has_value()) {
         return false;
     }

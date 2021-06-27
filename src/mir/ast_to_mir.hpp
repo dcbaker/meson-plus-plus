@@ -9,6 +9,6 @@
 namespace MIR {
 
 /// Lower AST to IR
-IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &);
+BasicBlock lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &);
 
 }; // namespace MIR

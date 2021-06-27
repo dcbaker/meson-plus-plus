@@ -19,7 +19,7 @@ namespace MIR::Passes {
  * to trim away dead branches and join the ir lists together so we end up with a
  * single flat list of Objects.
  */
-bool branch_pruning(IRList *);
+bool branch_pruning(BasicBlock *);
 
 /**
  * Lower away machine related information.
@@ -27,6 +27,6 @@ bool branch_pruning(IRList *);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-bool machine_lower(IRList *, const Meson::Machines::PerMachine<Meson::Machines::Info> &);
+bool machine_lower(BasicBlock *, const Meson::Machines::PerMachine<Meson::Machines::Info> &);
 
 } // namespace MIR::Passes

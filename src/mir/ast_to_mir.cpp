@@ -127,35 +127,35 @@ struct ExpressionLowering {
  * Lowers AST statements into MIR objects.
  */
 struct StatementLowering {
-    IRList * operator()(IRList * list,
+    BasicBlock * operator()(BasicBlock * list,
                         const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         const ExpressionLowering l{};
         list->instructions.emplace_back(std::visit(l, stmt->expr));
         return list;
     };
 
-    IRList * operator()(IRList * list,
+    BasicBlock * operator()(BasicBlock * list,
                         const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
         const StatementLowering s{};
         const ExpressionLowering l{};
 
-        auto next_block = std::make_shared<IRList>();
+        auto next_block = std::make_shared<BasicBlock>();
 
         assert(list != nullptr);
         auto cur = list;
-        IRList * last_block;
+        BasicBlock * last_block;
 
         cur->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
         for (const auto & i : stmt->ifblock.block->statements) {
             last_block = std::visit(
                 [&](const auto & a) { return s(cur->condition.value().if_true.get(), a); }, i);
         }
-        // We shouldn't have a condition here, this is where we wnat to put our jump target
+        // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(!last_block->condition.has_value());
-        last_block->jump = next_block;
+        last_block->next = next_block;
 
         // We're building a web-like structure here, so we walk over the flat
-        // list of elif conditions + statements, generating a web of IRList
+        // list of elif conditions + statements, generating a web of BasicBlock
         // objects
         if (!stmt->efblock.empty()) {
             for (const auto & el : stmt->efblock) {
@@ -167,9 +167,9 @@ struct StatementLowering {
                         i);
                 }
 
-                // We shouldn't have a condition here, this is where we wnat to put our jump target
+                // We shouldn't have a condition here, this is where we wnat to put our next target
                 assert(!last_block->condition.has_value());
-                last_block->jump = next_block;
+                last_block->next = next_block;
             }
         }
 
@@ -179,16 +179,16 @@ struct StatementLowering {
                     [&](const auto & a) { return s(cur->condition.value().if_false.get(), a); }, i);
             }
         }
-        // We shouldn't have a condition here, this is where we wnat to put our jump target
+        // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(!last_block->condition.has_value());
-        last_block->jump = next_block;
+        last_block->next = next_block;
 
         // Return the raw pointer, which is fine because we're not giving the
         // caller ownership of the pointer, the other basic blocks are the owners.
         return next_block.get();
     };
 
-    IRList * operator()(IRList * list,
+    BasicBlock * operator()(BasicBlock * list,
                         const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
         const ExpressionLowering l{};
         auto target = std::visit(l, stmt->lhs);
@@ -210,14 +210,14 @@ struct StatementLowering {
     };
 
     // XXX: None of this is actually implemented
-    IRList * operator()(IRList * list,
+    BasicBlock * operator()(BasicBlock * list,
                         const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
         return list;
     };
-    IRList * operator()(IRList * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+    BasicBlock * operator()(BasicBlock * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {
         return list;
     };
-    IRList * operator()(IRList * list,
+    BasicBlock * operator()(BasicBlock * list,
                         const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
         return list;
     };
@@ -228,9 +228,9 @@ struct StatementLowering {
 /**
  * Lower AST representation into MIR.
  */
-IRList lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
-    IRList bl{};
-    IRList * current_block = &bl;
+BasicBlock lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
+    BasicBlock bl{};
+    BasicBlock * current_block = &bl;
     const StatementLowering lower{};
     for (const auto & i : block->statements) {
         current_block = std::visit([&](const auto & a) { return lower(current_block, a); }, i);
