@@ -205,6 +205,26 @@ TEST(ast_to_ir, if_else_more) {
     ASSERT_EQ(con.if_true->jump->instructions.size(), 1);
 }
 
+TEST(ast_to_ir, if_else_more2) {
+    auto irlist = lower("y = 0\nif true\nx = 7\n\nelif false\nx = 9\nelse\nx = 8\nendif\ny = x");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    ASSERT_TRUE(irlist.condition.has_value());
+    auto const & con = irlist.condition.value();
+    ASSERT_EQ(con.if_true->instructions.size(), 1);
+    ASSERT_NE(con.if_true->jump, nullptr);
+
+    ASSERT_EQ(con.if_false->instructions.size(), 0);
+    ASSERT_TRUE(con.if_false->condition.has_value());
+    auto const & con1 = con.if_false->condition.value();
+    ASSERT_EQ(con1.if_true->instructions.size(), 1);
+    ASSERT_EQ(con.if_true->jump, con1.if_true->jump);
+
+    ASSERT_EQ(con1.if_false->instructions.size(), 1);
+    ASSERT_FALSE(con1.if_false->condition.has_value());
+    ASSERT_EQ(con1.if_false->instructions.size(), 1);
+    ASSERT_EQ(con.if_true->jump, con1.if_false->jump);
+}
+
 TEST(ast_to_ir, if_else) {
     auto irlist = lower("if true\n 7\nelse\n8\nendif\n");
     ASSERT_TRUE(irlist.condition.has_value());
