@@ -89,7 +89,7 @@ struct ExpressionLowering {
 
     Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
         // By this point the object should be an id...
-        auto holding_obj = std::move(std::visit(*this, expr->object));
+        auto holding_obj = std::visit(*this, expr->object);
         assert(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(holding_obj));
 
         // Meson only allows methods in objects, so we can enforce that this is a function
