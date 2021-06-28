@@ -80,17 +80,10 @@ bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
     // XXX: need a test for this
     if (block->condition.has_value()) {
         auto & con = block->condition.value();
-        if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(con.condition)) {
-            const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(con.condition);
-            const auto & holder = f->holder.value_or("");
-
-            auto maybe_m = machine_map(holder);
-            if (maybe_m.has_value()) {
-                const auto & info = machines.get(maybe_m.value());
-                MIR::Object new_value = lower_function(holder, f->name, info);
-                con.condition = std::move(new_value);
-                progress = true;
-            }
+        auto new_value = cb(con.condition);
+        if (new_value.has_value()) {
+            con.condition = std::move(new_value.value());
+            progress |= true;
         }
     }
 
