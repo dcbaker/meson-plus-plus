@@ -9,6 +9,7 @@ libmir = static_library(
     'passes/join_blocks.cpp',
     'passes/machines.cpp',
     'passes/pruning.cpp',
+    'passes/walkers.cpp',
   ],
   include_directories : inc_frontend,
   dependencies : [idep_util, idep_meson],

@@ -3,6 +3,7 @@
 
 #include "exceptions.hpp"
 #include "passes.hpp"
+#include "private.hpp"
 
 namespace MIR::Passes {
 
@@ -41,44 +42,33 @@ MIR::Object lower_function(const std::string & holder, const std::string & name,
     }
 }
 
-} // namespace
+using MachineInfo = Meson::Machines::PerMachine<Meson::Machines::Info>;
 
-bool machine_lower(BasicBlock * ir,
-                   const Meson::Machines::PerMachine<Meson::Machines::Info> & machines) {
-    bool progress = false;
+std::optional<Object> lower_functions(const MachineInfo & machines, const Object & obj) {
+    if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj)) {
+        const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+        const auto & holder = f->holder.value_or("");
 
-    auto it = ir->instructions.begin();
-    while (it != ir->instructions.end()) {
-        auto & i = *it;
-        if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(i)) {
-            const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(i);
-            const auto & holder = f->holder.value_or("");
-
-            auto maybe_m = machine_map(holder);
-            if (!maybe_m.has_value()) {
-                ++it;
-                continue;
-            }
+        auto maybe_m = machine_map(holder);
+        if (maybe_m.has_value()) {
             const auto & info = machines.get(maybe_m.value());
 
-            MIR::Object new_value = lower_function(holder, f->name, info);
-
-            // Remove the current element, then insert the new element in it's place
-            it = ir->instructions.erase(it);
-            ir->instructions.insert(it, std::move(new_value));
-            progress = true;
+            return lower_function(holder, f->name, info);
         }
-
-        // TODO: need to look into arrays
-        // TODO: need to look into dictionaries
-
-        ++it;
     }
+    return std::nullopt;
+}
+
+} // namespace
+
+bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
+    bool progress =
+        instruction_walker(block, [&](const Object & o) { return lower_functions(machines, o); });
 
     // Check if we have a condition, and try to lower that as well.
     // XXX: need a test for this
-    if (ir->condition.has_value()) {
-        auto & con = ir->condition.value();
+    if (block->condition.has_value()) {
+        auto & con = block->condition.value();
         if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(con.condition)) {
             const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(con.condition);
             const auto & holder = f->holder.value_or("");
