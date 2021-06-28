@@ -66,15 +66,15 @@ std::optional<Object> lower_functions(const MachineInfo & machines, const Object
 bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
     const auto cb = [&](const Object & o) { return lower_functions(machines, o); };
 
-    bool progress = instruction_walker(block, cb);
-
-    progress |= instruction_filter_walker<std::unique_ptr<Array>>(
-        block, [&](Object & obj) { return array_walker(obj, cb); });
-
-    progress |= instruction_filter_walker<std::unique_ptr<FunctionCall>>(
-        block, [&](Object & obj) { return function_argument_walker(obj, cb); });
-
-    // TODO: look into dictionary elements
+    bool progress = instruction_walker(
+        block,
+        {
+            [&](Object & obj) { return array_walker(obj, cb); }, // look into arrays
+            // look into function arguments
+            [&](Object & obj) { return function_argument_walker(obj, cb); },
+            // TODO: look into dictionary elements
+        },
+        {cb});
 
     // Check if we have a condition, and try to lower that as well.
     if (block->condition.has_value()) {

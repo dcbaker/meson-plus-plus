@@ -13,48 +13,32 @@
 
 namespace MIR::Passes {
 
-using Callback = std::function<std::optional<Object>(const Object &)>;
-using FilterCallback = std::function<bool(Object &)>;
+/// Callback will return a an optional Object, when it does the original object is replaced
+using ReplacementCallback = std::function<std::optional<Object>(const Object &)>;
+
+/// Callback will return a boolean that progress is mode
+using MutationCallback = std::function<bool(Object &)>;
 
 /**
- * Walks each instruction in a basic block, calling the callback on them
- *
- * If the callback returns a value (not std::nullopt), then it will replace the
- * current instruction with that instruction, otherwise it does nothing.
+ * Walks each instruction in a basic block, calling each callback on each instruction
  *
  * Returns true if any changes were made to the block.
  */
-bool instruction_walker(BasicBlock *, const Callback &);
-
-/**
- * Walk each instruction in a basic block, calling the callback on them if they
- * are of the templated type.
- *
- * returns True if any changes were made to the block
- */
-template <typename T>
-bool instruction_filter_walker(BasicBlock * block, const FilterCallback & cb) {
-    bool progress = false;
-
-    for (auto & i : block->instructions) {
-        if (std::holds_alternative<T>(i)) {
-            progress |= cb(i);
-        }
-    }
-
-    return progress;
-}
+bool instruction_walker(BasicBlock *, const std::vector<MutationCallback> &,
+                        const std::vector<ReplacementCallback> &);
+bool instruction_walker(BasicBlock *, const std::vector<MutationCallback> &);
+bool instruction_walker(BasicBlock *, const std::vector<ReplacementCallback> &);
 
 /**
  * Walk each instruction in an array, recursively, calling the callbck on them.
  */
-bool array_walker(Object &, const Callback &);
+bool array_walker(Object &, const ReplacementCallback &);
 
 /**
  * Walk over the arguments (positional and keyword) of a function
  *
  * This will replace the arguments if they are loweed by the callback
  */
-bool function_argument_walker(Object &, const Callback &);
+bool function_argument_walker(Object &, const ReplacementCallback &);
 
 } // namespace MIR::Passes

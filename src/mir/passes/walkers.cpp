@@ -1,8 +1,6 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Dylan Baker
 
-#include <cassert>
-
 #include "exceptions.hpp"
 #include "private.hpp"
 
@@ -10,7 +8,7 @@ namespace MIR::Passes {
 
 namespace {
 
-bool replace_elements(std::vector<Object> & vec, const Callback & cb) {
+bool replace_elements(std::vector<Object> & vec, const ReplacementCallback & cb) {
     bool progress = false;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
         auto rt = cb(*it);
@@ -24,17 +22,30 @@ bool replace_elements(std::vector<Object> & vec, const Callback & cb) {
 
 } // namespace
 
-bool instruction_walker(BasicBlock * block, const Callback & cb) {
+bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> & fc) {
+    return instruction_walker(block, fc, {});
+}
+
+bool instruction_walker(BasicBlock * block, const std::vector<ReplacementCallback> & rc) {
+    return instruction_walker(block, {}, rc);
+}
+
+bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> & fc,
+                        const std::vector<ReplacementCallback> & rc) {
     bool progress = false;
 
     auto it = block->instructions.begin();
     while (it != block->instructions.end()) {
-        auto & i = *it;
-        auto rt = cb(i);
-        if (rt.has_value()) {
-            it = block->instructions.erase(it);
-            block->instructions.insert(it, std::move(rt.value()));
-            progress = true;
+        for (const auto & cb : rc) {
+            auto rt = cb(*it);
+            if (rt.has_value()) {
+                it = block->instructions.erase(it);
+                block->instructions.insert(it, std::move(rt.value()));
+                progress |= true;
+            }
+        }
+        for (const auto & cb : fc) {
+            progress |= cb(*it);
         }
         ++it;
     }
@@ -42,10 +53,12 @@ bool instruction_walker(BasicBlock * block, const Callback & cb) {
     return progress;
 };
 
-bool array_walker(Object & obj, const Callback & cb) {
+bool array_walker(Object & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
-    assert(std::holds_alternative<std::unique_ptr<Array>>(obj));
+    if (!std::holds_alternative<std::unique_ptr<Array>>(obj)) {
+        return progress;
+    }
     auto & arr = std::get<std::unique_ptr<Array>>(obj);
 
     for (auto it = arr->value.begin(); it != arr->value.end(); ++it) {
@@ -63,10 +76,13 @@ bool array_walker(Object & obj, const Callback & cb) {
     return progress;
 }
 
-bool function_argument_walker(Object & obj, const Callback & cb) {
+bool function_argument_walker(Object & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
-    assert(std::holds_alternative<std::unique_ptr<FunctionCall>>(obj));
+    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+        return progress;
+    }
+
     auto & func = std::get<std::unique_ptr<FunctionCall>>(obj);
 
     if (!func->pos_args.empty()) {
