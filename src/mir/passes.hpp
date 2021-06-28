@@ -44,6 +44,6 @@ bool machine_lower(BasicBlock *, const Meson::Machines::PerMachine<Meson::Machin
 bool insert_compilers(
     BasicBlock *,
     const std::unordered_map<Meson::Toolchain::Language,
-                             Meson::Machines::PerMachine<Meson::Toolchain::Toolchain>> &);
+                             Meson::Machines::PerMachine<std::shared_ptr<Meson::Toolchain::Toolchain>>> &);
 
 } // namespace MIR::Passes
