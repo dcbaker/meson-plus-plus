@@ -20,20 +20,9 @@
 #include <variant>
 #include <vector>
 
+#include "toolchains/toolchain.hpp"
+
 namespace MIR {
-
-class Array;
-class Boolean;
-class Dict;
-class FunctionCall;
-class Identifier;
-class Number;
-class String;
-
-using Object =
-    std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
-                 std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
-                 std::unique_ptr<Dict>>;
 
 /**
  * Information about an object when it is stored to a variable
@@ -55,6 +44,32 @@ class Variable {
     /// The version as used by value numbering, 0 means unset
     uint version;
 };
+
+/**
+ * Holds a toolchain
+ *
+ */
+class Compiler {
+  public:
+    Compiler(const std::shared_ptr<Meson::Toolchain::Toolchain> & tc) : toolchain{tc} {};
+
+    const std::shared_ptr<Meson::Toolchain::Toolchain> toolchain;
+
+    Variable var;
+};
+
+class Array;
+class Boolean;
+class Dict;
+class FunctionCall;
+class Identifier;
+class Number;
+class String;
+
+using Object =
+    std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
+                 std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
+                 std::unique_ptr<Dict>, std::unique_ptr<Compiler>>;
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
