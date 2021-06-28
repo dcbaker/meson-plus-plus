@@ -36,14 +36,14 @@ bool join_blocks(BasicBlock *);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-bool machine_lower(BasicBlock *, const Meson::Machines::PerMachine<Meson::Machines::Info> &);
+bool machine_lower(BasicBlock *, const MIR::Machines::PerMachine<MIR::Machines::Info> &);
 
 /**
  * Run complier detection code and replace variables with compiler objects.
  */
-bool insert_compilers(
-    BasicBlock *,
-    const std::unordered_map<Meson::Toolchain::Language,
-                             Meson::Machines::PerMachine<std::shared_ptr<Meson::Toolchain::Toolchain>>> &);
+bool insert_compilers(BasicBlock *,
+                      const std::unordered_map<
+                          MIR::Toolchain::Language,
+                          MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
 
 } // namespace MIR::Passes

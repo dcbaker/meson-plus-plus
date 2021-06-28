@@ -51,9 +51,9 @@ class Variable {
  */
 class Compiler {
   public:
-    Compiler(const std::shared_ptr<Meson::Toolchain::Toolchain> & tc) : toolchain{tc} {};
+    Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc) : toolchain{tc} {};
 
-    const std::shared_ptr<Meson::Toolchain::Toolchain> toolchain;
+    const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
 
     Variable var;
 };

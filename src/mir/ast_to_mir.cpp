@@ -128,14 +128,14 @@ struct ExpressionLowering {
  */
 struct StatementLowering {
     BasicBlock * operator()(BasicBlock * list,
-                        const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+                            const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         const ExpressionLowering l{};
         list->instructions.emplace_back(std::visit(l, stmt->expr));
         return list;
     };
 
     BasicBlock * operator()(BasicBlock * list,
-                        const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+                            const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
         const StatementLowering s{};
         const ExpressionLowering l{};
 
@@ -189,7 +189,7 @@ struct StatementLowering {
     };
 
     BasicBlock * operator()(BasicBlock * list,
-                        const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
+                            const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
         const ExpressionLowering l{};
         auto target = std::visit(l, stmt->lhs);
         auto value = std::visit(l, stmt->rhs);
@@ -211,14 +211,15 @@ struct StatementLowering {
 
     // XXX: None of this is actually implemented
     BasicBlock * operator()(BasicBlock * list,
-                        const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
-        return list;
-    };
-    BasicBlock * operator()(BasicBlock * list, const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+                            const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
         return list;
     };
     BasicBlock * operator()(BasicBlock * list,
-                        const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
+                            const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+        return list;
+    };
+    BasicBlock * operator()(BasicBlock * list,
+                            const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
         return list;
     };
 };

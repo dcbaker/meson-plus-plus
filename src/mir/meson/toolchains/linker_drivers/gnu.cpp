@@ -1,0 +1,10 @@
+// SPDX-license-identifier: Apache-2.0
+// Copyright © 2021 Intel Corporation
+
+#include "toolchains/linker.hpp"
+
+namespace MIR::Toolchain::Linker::Drivers {
+
+RSPFileSupport Gnu::rsp_support() const { return linker.rsp_support(); }
+
+} // namespace MIR::Toolchain::Linker::Drivers

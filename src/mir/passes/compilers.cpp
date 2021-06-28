@@ -11,8 +11,8 @@ namespace MIR::Passes {
 namespace {
 
 using ToolchainMap =
-    std::unordered_map<Meson::Toolchain::Language,
-                       Meson::Machines::PerMachine<std::shared_ptr<Meson::Toolchain::Toolchain>>>;
+    std::unordered_map<MIR::Toolchain::Language,
+                       MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
 
 std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & tc) {
     if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
@@ -31,9 +31,9 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
         return std::nullopt;
     }
 
-    const auto lang = Meson::Toolchain::from_string(std::get<std::unique_ptr<String>>(l)->value);
+    const auto lang = MIR::Toolchain::from_string(std::get<std::unique_ptr<String>>(l)->value);
 
-    Meson::Machines::Machine m;
+    MIR::Machines::Machine m;
     try {
         const auto & n = f->kw_args.at("native");
         // If we haven't lowered this away yet, then we can't reduce this.
@@ -42,9 +42,9 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
         }
         const auto & native = std::get<std::unique_ptr<Boolean>>(n)->value;
 
-        m = native ? Meson::Machines::Machine::BUILD : Meson::Machines::Machine::HOST;
+        m = native ? MIR::Machines::Machine::BUILD : MIR::Machines::Machine::HOST;
     } catch (std::out_of_range &) {
-        m = Meson::Machines::Machine::HOST;
+        m = MIR::Machines::Machine::HOST;
     }
 
     return std::make_unique<Compiler>(tc.at(lang).get(m));

@@ -89,9 +89,9 @@ TEST(join_blocks, simple) {
 
 TEST(machine_lower, simple) {
     auto irlist = lower("x = 7\ny = host_machine.cpu_family()");
-    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
-        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
-                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
+        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                            MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(&irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 2);
@@ -102,9 +102,9 @@ TEST(machine_lower, simple) {
 
 TEST(machine_lower, in_array) {
     auto irlist = lower("x = [host_machine.cpu_family()]");
-    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
-        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
-                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
+        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                            MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(&irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -120,9 +120,9 @@ TEST(machine_lower, in_array) {
 
 TEST(machine_lower, in_function_args) {
     auto irlist = lower("foo(host_machine.endian())");
-    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
-        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
-                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
+        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                            MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(&irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -138,9 +138,9 @@ TEST(machine_lower, in_function_args) {
 
 TEST(machine_lower, in_condtion) {
     auto irlist = lower("if host_machine.cpu_family()\n x = 2\nendif");
-    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
-        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
-                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
+        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                            MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(&irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 0);

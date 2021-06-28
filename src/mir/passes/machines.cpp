@@ -11,15 +11,15 @@ namespace MIR::Passes {
 
 namespace {
 
-using namespace Meson::Machines;
+using namespace MIR::Machines;
 
 std::optional<Machine> machine_map(const std::string & func_name) {
     if (func_name == "build_machine") {
-        return Meson::Machines::Machine::BUILD;
+        return MIR::Machines::Machine::BUILD;
     } else if (func_name == "host_machine") {
-        return Meson::Machines::Machine::HOST;
+        return MIR::Machines::Machine::HOST;
     } else if (func_name == "target_machine") {
-        return Meson::Machines::Machine::TARGET;
+        return MIR::Machines::Machine::TARGET;
     } else {
         return std::nullopt;
     }
@@ -38,13 +38,13 @@ MIR::Object lower_function(const std::string & holder, const std::string & name,
         return MIR::Object{std::make_unique<MIR::String>(info.system())};
     } else if (name == "endian") {
         return MIR::Object{std::make_unique<MIR::String>(
-            info.endian == Meson::Machines::Endian::LITTLE ? "little" : "big")};
+            info.endian == MIR::Machines::Endian::LITTLE ? "little" : "big")};
     } else {
         throw Util::Exceptions::MesonException{holder + " has no method " + name};
     }
 }
 
-using MachineInfo = Meson::Machines::PerMachine<Meson::Machines::Info>;
+using MachineInfo = MIR::Machines::PerMachine<MIR::Machines::Info>;
 
 std::optional<Object> lower_functions(const MachineInfo & machines, const Object & obj) {
     if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj)) {
