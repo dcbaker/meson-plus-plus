@@ -99,3 +99,21 @@ TEST(machine_lower, simple) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(r));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(r)->value, "x86_64");
 }
+
+TEST(machine_lower, in_array) {
+    auto irlist = lower("x = [host_machine.cpu_family()]");
+    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
+        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
+                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & r = irlist.instructions.front();
+
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Array>>(r));
+    const auto & a = std::get<std::unique_ptr<MIR::Array>>(r)->value;
+
+    ASSERT_EQ(a.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(a[0]));
+    ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(a[0])->value, "x86_64");
+}

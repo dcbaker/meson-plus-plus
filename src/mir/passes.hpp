@@ -9,6 +9,7 @@
 
 #include "machines.hpp"
 #include "mir.hpp"
+#include "toolchains/toolchain.hpp"
 
 namespace MIR::Passes {
 
@@ -36,5 +37,13 @@ bool join_blocks(BasicBlock *);
  * `target_machine` methods with their values.
  */
 bool machine_lower(BasicBlock *, const Meson::Machines::PerMachine<Meson::Machines::Info> &);
+
+/**
+ * Run complier detection code and replace variables with compiler objects.
+ */
+bool insert_compilers(
+    BasicBlock *,
+    const std::unordered_map<Meson::Toolchain::Language,
+                             Meson::Machines::PerMachine<Meson::Toolchain::Toolchain>> &);
 
 } // namespace MIR::Passes

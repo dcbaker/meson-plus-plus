@@ -1,6 +1,8 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Dylan Baker
 
+#include <cassert>
+
 #include "exceptions.hpp"
 #include "passes.hpp"
 #include "private.hpp"
@@ -62,8 +64,12 @@ std::optional<Object> lower_functions(const MachineInfo & machines, const Object
 } // namespace
 
 bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
-    bool progress =
-        instruction_walker(block, [&](const Object & o) { return lower_functions(machines, o); });
+    const auto cb = [&](const Object & o) { return lower_functions(machines, o); };
+
+    bool progress = instruction_walker(block, cb);
+
+    progress |= instruction_filter_walker<std::unique_ptr<Array>>(
+        block, [&](Object & obj) { return array_walker(obj, cb); });
 
     // Check if we have a condition, and try to lower that as well.
     // XXX: need a test for this
