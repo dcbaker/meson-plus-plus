@@ -77,7 +77,6 @@ bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
     // TODO: look into dictionary elements
 
     // Check if we have a condition, and try to lower that as well.
-    // XXX: need a test for this
     if (block->condition.has_value()) {
         auto & con = block->condition.value();
         auto new_value = cb(con.condition);

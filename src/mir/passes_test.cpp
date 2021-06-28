@@ -135,3 +135,19 @@ TEST(machine_lower, in_function_args) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(f->pos_args[0]));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(f->pos_args[0])->value, "little");
 }
+
+TEST(machine_lower, in_condtion) {
+    auto irlist = lower("if host_machine.cpu_family()\n x = 2\nendif");
+    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
+        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
+                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 0);
+
+    const auto & con = irlist.condition;
+    ASSERT_TRUE(con.has_value());
+    const auto & obj = con.value().condition;
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(obj));
+    ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(obj)->value, "x86_64");
+}
