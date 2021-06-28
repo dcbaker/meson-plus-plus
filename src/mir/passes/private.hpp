@@ -50,4 +50,11 @@ bool instruction_filter_walker(BasicBlock * block, const FilterCallback & cb) {
  */
 bool array_walker(Object &, const Callback &);
 
+/**
+ * Walk over the arguments (positional and keyword) of a function
+ *
+ * This will replace the arguments if they are loweed by the callback
+ */
+bool function_argument_walker(Object &, const Callback &);
+
 } // namespace MIR::Passes

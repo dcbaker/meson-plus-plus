@@ -117,3 +117,21 @@ TEST(machine_lower, in_array) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(a[0]));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(a[0])->value, "x86_64");
 }
+
+TEST(machine_lower, in_function_args) {
+    auto irlist = lower("foo(host_machine.endian())");
+    auto info = Meson::Machines::PerMachine<Meson::Machines::Info>(
+        Meson::Machines::Info{Meson::Machines::Machine::BUILD, Meson::Machines::Kernel::LINUX,
+                              Meson::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & r = irlist.instructions.front();
+
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(r));
+    const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(r);
+
+    ASSERT_EQ(f->pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(f->pos_args[0]));
+    ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(f->pos_args[0])->value, "little");
+}

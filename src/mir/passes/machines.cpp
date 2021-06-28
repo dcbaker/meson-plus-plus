@@ -71,6 +71,11 @@ bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
     progress |= instruction_filter_walker<std::unique_ptr<Array>>(
         block, [&](Object & obj) { return array_walker(obj, cb); });
 
+    progress |= instruction_filter_walker<std::unique_ptr<FunctionCall>>(
+        block, [&](Object & obj) { return function_argument_walker(obj, cb); });
+
+    // TODO: look into dictionary elements
+
     // Check if we have a condition, and try to lower that as well.
     // XXX: need a test for this
     if (block->condition.has_value()) {
