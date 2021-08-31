@@ -47,7 +47,7 @@ std::unique_ptr<AST::CodeBlock> Driver::parse(std::istream & iss) {
         }
     }
 
-    std::swap(block->statements, new_stmts);
+    block->statements = std::move(new_stmts);
 
     return block;
 };
