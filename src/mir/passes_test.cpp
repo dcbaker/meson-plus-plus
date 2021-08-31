@@ -9,6 +9,9 @@
 #include "driver.hpp"
 #include "mir.hpp"
 #include "passes.hpp"
+#include "toolchains/archiver.hpp"
+#include "toolchains/compilers/cpp/cpp.hpp"
+#include "toolchains/linker.hpp"
 
 namespace {
 
@@ -150,4 +153,29 @@ TEST(machine_lower, in_condtion) {
     const auto & obj = con.value().condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(obj));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(obj)->value, "x86_64");
+}
+
+TEST(insert_compiler, simple) {
+    const std::vector<std::string> init{"null"};
+    auto tc = std::make_shared<MIR::Toolchain::Toolchain>(
+        std::make_unique<MIR::Toolchain::Compiler::CPP::Clang>(init),
+        std::make_unique<MIR::Toolchain::Linker::Drivers::Gnu>(
+            MIR::Toolchain::Linker::GnuBFD{init}),
+        std::make_unique<MIR::Toolchain::Archiver::Gnu>(init));
+    std::unordered_map<MIR::Toolchain::Language,
+                       MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>
+        tc_map{};
+    tc_map[MIR::Toolchain::Language::CPP] =
+        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>{tc};
+
+    auto irlist = lower("x = meson.get_compiler('cpp')");
+    bool progress = MIR::Passes::insert_compilers(&irlist, tc_map);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & e = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Compiler>>(e));
+
+    const auto & c = std::get<std::unique_ptr<MIR::Compiler>>(e);
+    ASSERT_EQ(c->toolchain->compiler->id(), "clang");
 }

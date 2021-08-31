@@ -99,9 +99,9 @@ template <typename T> class PerMachine {
     }
 
   private:
-    const T _build;
-    const std::optional<T> _host;
-    const std::optional<T> _target;
+    T _build;
+    std::optional<T> _host;
+    std::optional<T> _target;
 };
 
 /**

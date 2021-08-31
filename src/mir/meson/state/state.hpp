@@ -20,26 +20,14 @@ class Persistant {
     Persistant() : toolchains{}, machines{Machines::detect_build()} {};
     ~Persistant(){};
 
+    // This must be mutable because of `add_language`
     /// A mapping of language : machine : toolchain
-    /// XXX: this might need a way to make each machine optional
     std::unordered_map<Toolchain::Language, Machines::PerMachine<Toolchain::Toolchain>> toolchains;
 
     /// The information on each machine
     /// XXX: currently only handle host == build configurations, as we don't have
     /// a machine file
     Machines::PerMachine<Machines::Info> machines;
-};
-
-/**
- * Transitive state
- *
- * State that is valid only for a single run of meson++, and must be
- * regenerated each time we start meson
- */
-class Transitive {
-  public:
-    Transitive(){};
-    ~Transitive(){};
 };
 
 } // namespace MIR::State
