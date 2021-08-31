@@ -30,6 +30,13 @@ bool instruction_walker(BasicBlock *, const std::vector<MutationCallback> &);
 bool instruction_walker(BasicBlock *, const std::vector<ReplacementCallback> &);
 
 /**
+ * Walks the isntructions of a basic block calling each callback on Function it fins
+ *
+ * It is the job of each function callback to only act on functions it means to.
+ */
+bool function_walker(BasicBlock *, const ReplacementCallback &);
+
+/**
  * Walk each instruction in an array, recursively, calling the callbck on them.
  */
 bool array_walker(Object &, const ReplacementCallback &);
