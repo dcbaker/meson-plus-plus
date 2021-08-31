@@ -45,19 +45,6 @@ class Variable {
     uint version;
 };
 
-/**
- * Holds a toolchain
- *
- */
-class Compiler {
-  public:
-    Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc) : toolchain{tc} {};
-
-    const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
-
-    Variable var;
-};
-
 class Array;
 class Boolean;
 class Dict;
@@ -65,11 +52,29 @@ class FunctionCall;
 class Identifier;
 class Number;
 class String;
+class Compiler;
 
 using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
                  std::unique_ptr<Dict>, std::unique_ptr<Compiler>>;
+
+/**
+ * Holds a toolchain
+ *
+ * Called compiler as that's what it is in the Meson DSL
+ */
+class Compiler {
+  public:
+    Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc) : toolchain{tc} {};
+
+    const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
+
+    const Object get_id(const std::vector<Object> &,
+                        const std::unordered_map<std::string, Object> &) const;
+
+    Variable var;
+};
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
