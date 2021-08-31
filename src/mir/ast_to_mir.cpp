@@ -88,7 +88,9 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
-        // By this point the object should be an id...
+        // XXX: This is wrong, we can have things like:
+        // meson.get_compiler('c').get_id()
+        // Which this code *cannot* handle here.
         auto holding_obj = std::visit(*this, expr->object);
         assert(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(holding_obj));
 

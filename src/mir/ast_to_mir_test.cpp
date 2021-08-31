@@ -114,6 +114,24 @@ TEST(ast_to_ir, simple_method) {
     ASSERT_TRUE(ir->kw_args.empty());
 }
 
+// TODO: chaning methods doesn't work
+// To be fair it's pretty rare to do this, but it does happen.
+#if 0
+TEST(ast_to_ir, chained_method) {
+    auto irlist = lower("obj.method().chained()");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+
+    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "method");
+    ASSERT_TRUE(ir->holder.has_value());
+    ASSERT_EQ(ir->holder.value(), "obj");
+    ASSERT_TRUE(ir->pos_args.empty());
+    ASSERT_TRUE(ir->kw_args.empty());
+}
+#endif
+
 TEST(ast_to_ir, function_positional_arguments_only) {
     auto irlist = lower("has_args(1, 2, 3)");
     ASSERT_EQ(irlist.instructions.size(), 1);
