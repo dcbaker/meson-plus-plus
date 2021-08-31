@@ -59,10 +59,8 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
 } // namespace
 
 bool insert_compilers(BasicBlock * block, const ToolchainMap & toolchains) {
-    bool progress = instruction_walker(
-        block, {[&](const Object & obj) { return replace_compiler(obj, toolchains); }});
-
-    return progress;
+    auto cb = [&](const Object & obj) { return replace_compiler(obj, toolchains); };
+    return function_walker(block, cb);
 };
 
 } // namespace MIR::Passes
