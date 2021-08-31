@@ -7,6 +7,7 @@
 
 #include "ast_to_mir.hpp"
 #include "driver.hpp"
+#include "exceptions.hpp"
 #include "mir.hpp"
 #include "passes.hpp"
 #include "toolchains/archiver.hpp"
@@ -178,4 +179,18 @@ TEST(insert_compiler, simple) {
 
     const auto & c = std::get<std::unique_ptr<MIR::Compiler>>(e);
     ASSERT_EQ(c->toolchain->compiler->id(), "clang");
+}
+
+TEST(insert_compiler, unknown_language) {
+    std::unordered_map<MIR::Toolchain::Language,
+                       MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>
+        tc_map{};
+
+    auto irlist = lower("x = meson.get_compiler('cpp')");
+    try {
+        (void)MIR::Passes::insert_compilers(&irlist, tc_map);
+        FAIL();
+    } catch (Util::Exceptions::MesonException & e) {
+        ASSERT_EQ(e.message, "No compiler for language");
+    }
 }

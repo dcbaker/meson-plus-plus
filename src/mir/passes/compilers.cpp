@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 
+#include "exceptions.hpp"
 #include "passes.hpp"
 #include "private.hpp"
 
@@ -47,7 +48,12 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
         m = MIR::Machines::Machine::HOST;
     }
 
-    return std::make_unique<Compiler>(tc.at(lang).get(m));
+    try {
+        return std::make_unique<Compiler>(tc.at(lang).get(m));
+    } catch (std::out_of_range &) {
+        // TODO: add a better error message
+        throw Util::Exceptions::MesonException{"No compiler for language"};
+    }
 }
 
 } // namespace
