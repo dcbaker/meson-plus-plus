@@ -18,12 +18,6 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
     }
     const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
 
-    // XXX: I think this can happen if a replacement happens, but I also think
-    // it's a bug
-    if (f.get() == nullptr) {
-        return std::nullopt;
-    }
-
     if (f->holder.value_or("") != "" || f->name != "files") {
         return std::nullopt;
     }
@@ -82,12 +76,6 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
         return std::nullopt;
     }
     const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
-
-    // XXX: I think this can happen if a replacement happens, but I also think
-    // it's a bug
-    if (f.get() == nullptr) {
-        return std::nullopt;
-    }
 
     if (f->holder.value_or("") != "" || f->name != "executable") {
         return std::nullopt;
