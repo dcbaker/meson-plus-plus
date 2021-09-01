@@ -48,7 +48,9 @@ struct ExpressionLowering {
         }
 
         // We have to move positional arguments because Object isn't copy-able
-        return std::make_unique<FunctionCall>(fname, std::move(pos), std::move(kwargs));
+        // TODO: filename is currently absolute, but we need the source dir to make it relative
+        return std::make_unique<FunctionCall>(fname, std::move(pos), std::move(kwargs),
+                                              expr->loc.filename);
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
