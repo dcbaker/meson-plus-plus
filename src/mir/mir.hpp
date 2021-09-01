@@ -46,6 +46,11 @@ class Variable {
     uint version;
 };
 
+/*
+ * Thse objects "Wrap" a lower level object, and provide interfaces for user
+ * defined data. Their main job is to take the user data, validate it, and call
+ * into the lower level objects
+ */
 class Array;
 class Boolean;
 class Dict;
