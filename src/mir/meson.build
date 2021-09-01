@@ -9,6 +9,7 @@ libmir = static_library(
     'ast_to_mir.cpp',
     'mir.cpp',
     'passes/compilers.cpp',
+    'passes/free_functions.cpp',
     'passes/join_blocks.cpp',
     'passes/machines.cpp',
     'passes/pruning.cpp',

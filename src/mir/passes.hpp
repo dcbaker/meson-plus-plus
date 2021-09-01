@@ -46,4 +46,11 @@ bool insert_compilers(BasicBlock *,
                           MIR::Toolchain::Language,
                           MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
 
+/**
+ * Lowering for free functions
+ *
+ * This lowers free standing functions (those not part of an object/namespace).
+ */
+bool lower_free_functions(BasicBlock *);
+
 } // namespace MIR::Passes
