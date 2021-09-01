@@ -24,7 +24,7 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
         return std::nullopt;
     }
 
-    if (f->holder.value_or("") != "" && f->name != "files") {
+    if (f->holder.value_or("") != "" || f->name != "files") {
         return std::nullopt;
     }
 
