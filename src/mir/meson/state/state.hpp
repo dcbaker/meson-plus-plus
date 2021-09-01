@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <unordered_map>
 
 #include "machines.hpp"
@@ -17,7 +18,8 @@ namespace MIR::State {
  */
 class Persistant {
   public:
-    Persistant() : toolchains{}, machines{Machines::detect_build()} {};
+    Persistant(const std::filesystem::path & sr_, const std::filesystem::path & br_)
+        : toolchains{}, machines{Machines::detect_build()}, source_root{sr_}, build_root{br_} {};
     ~Persistant(){};
 
     // This must be mutable because of `add_language`
@@ -28,6 +30,12 @@ class Persistant {
     /// XXX: currently only handle host == build configurations, as we don't have
     /// a machine file
     Machines::PerMachine<Machines::Info> machines;
+
+    /// absolute path to the source tree
+    const std::filesystem::path source_root;
+
+    /// absolute path to the build tree
+    const std::filesystem::path build_root;
 };
 
 } // namespace MIR::State
