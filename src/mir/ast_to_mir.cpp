@@ -18,10 +18,8 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
-        const ExpressionLowering lower{};
-
         // I think that a function can only be an ID, I think
-        auto fname_id = std::visit(lower, expr->id);
+        auto fname_id = std::visit(*this, expr->id);
         auto fname_ptr = std::get_if<std::unique_ptr<Identifier>>(&fname_id);
         if (fname_ptr == nullptr) {
             // TODO: Better error message witht the thing being called
@@ -32,19 +30,19 @@ struct ExpressionLowering {
         // Get the positional arguments
         std::vector<Object> pos{};
         for (const auto & i : expr->args->positional) {
-            pos.emplace_back(std::visit(lower, i));
+            pos.emplace_back(std::visit(*this, i));
         }
 
         std::unordered_map<std::string, Object> kwargs{};
         for (const auto & [k, v] : expr->args->keyword) {
-            auto key_obj = std::visit(lower, k);
+            auto key_obj = std::visit(*this, k);
             auto key_ptr = std::get_if<std::unique_ptr<MIR::Identifier>>(&key_obj);
             if (key_ptr == nullptr) {
                 // TODO: better error message
                 throw Util::Exceptions::MesonException{"keyword arguments must be identifiers"};
             }
             auto key = (*key_ptr)->value;
-            kwargs[key] = std::visit(lower, v);
+            kwargs[key] = std::visit(*this, v);
         }
 
         // We have to move positional arguments because Object isn't copy-able
@@ -66,25 +64,23 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
-        const ExpressionLowering lower{};
         auto arr = std::make_unique<Array>();
         for (const auto & i : expr->elements) {
-            arr->value.emplace_back(std::visit(lower, i));
+            arr->value.emplace_back(std::visit(*this, i));
         }
         return arr;
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
-        const ExpressionLowering lower{};
         auto dict = std::make_unique<Dict>();
         for (const auto & [k, v] : expr->elements) {
-            auto key_obj = std::visit(lower, k);
+            auto key_obj = std::visit(*this, k);
             if (!std::holds_alternative<std::unique_ptr<String>>(key_obj)) {
                 throw Util::Exceptions::InvalidArguments("Dictionary keys must be strintg");
             }
             auto key = std::get<std::unique_ptr<MIR::String>>(key_obj)->value;
 
-            dict->value[key] = std::visit(lower, v);
+            dict->value[key] = std::visit(*this, v);
         }
         return dict;
     };
@@ -140,7 +136,6 @@ struct StatementLowering {
 
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
-        const StatementLowering s{};
         const ExpressionLowering l{};
 
         auto next_block = std::make_shared<BasicBlock>();
@@ -152,7 +147,7 @@ struct StatementLowering {
         cur->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
         for (const auto & i : stmt->ifblock.block->statements) {
             last_block = std::visit(
-                [&](const auto & a) { return s(cur->condition.value().if_true.get(), a); }, i);
+                [&](const auto & a) { return this->operator()(cur->condition.value().if_true.get(), a); }, i);
         }
         // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(!last_block->condition.has_value());
@@ -167,7 +162,7 @@ struct StatementLowering {
                 cur->condition = std::optional<Condition>{std::visit(l, el.condition)};
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
-                        [&](const auto & a) { return s(cur->condition.value().if_true.get(), a); },
+                        [&](const auto & a) { return this->operator()(cur->condition.value().if_true.get(), a); },
                         i);
                 }
 
@@ -180,7 +175,7 @@ struct StatementLowering {
         if (stmt->eblock.block != nullptr) {
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block = std::visit(
-                    [&](const auto & a) { return s(cur->condition.value().if_false.get(), a); }, i);
+                    [&](const auto & a) { return this->operator()(cur->condition.value().if_false.get(), a); }, i);
             }
         }
         // We shouldn't have a condition here, this is where we wnat to put our next target
