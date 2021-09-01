@@ -35,7 +35,7 @@ Endian detect_endian() {
  * Detect the Operating System kernel
  */
 Kernel detect_kernel() {
-#if __linux__
+#if defined(__linux__)
     return Kernel::LINUX;
 #else
 #error("This Kernel is currently unsupported")
@@ -45,9 +45,9 @@ Kernel detect_kernel() {
 // This must be a string unfortunately, as the user is free to se this to a
 // value we don't determine in their machine files.
 std::string detect_cpu_family() {
-#ifdef __x86_64__
+#if defined(__x86_64__)
     return "x86_64";
-#elif __i386__
+#elif defined(__i386__)
     return "x86";
 #else
 #error("this cpu family is not supported")
