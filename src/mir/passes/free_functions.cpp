@@ -18,11 +18,17 @@ std::optional<Object> lower_files(const Object & obj) {
     }
     const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
 
+    // XXX: I think this can happen if a replacement happens, but I also think
+    // it's a bug
+    if (f.get() == nullptr) {
+        return std::nullopt;
+    }
+
     if (f->holder.value_or("") != "" && f->name != "files") {
         return std::nullopt;
     }
 
-    std::vector<Object> files{f->pos_args.size()};
+    std::vector<Object> files{};
     for (const auto & arg_h : f->pos_args) {
         // XXX: do something more realistic here
         // This could be Array<STring> and still be valid.

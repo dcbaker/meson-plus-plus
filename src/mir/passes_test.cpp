@@ -194,3 +194,21 @@ TEST(insert_compiler, unknown_language) {
         ASSERT_EQ(e.message, "No compiler for language");
     }
 }
+
+TEST(files, simple) {
+    auto irlist = lower("x = files('foo.c')");
+    bool progress = MIR::Passes::lower_free_functions(&irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Array>>(r));
+
+    const auto & a = std::get<std::unique_ptr<MIR::Array>>(r)->value;
+    ASSERT_EQ(a.size(), 1);
+
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::File>>(a[0]));
+
+    const auto & f = std::get<std::unique_ptr<MIR::File>>(a[0]);
+    ASSERT_EQ(f->file.get_name(), "foo.c");
+}
