@@ -6,5 +6,6 @@
 namespace MIR::Objects {
 
 const bool File::is_built() const { return built; }
+const std::string File::get_name() const { return name; }
 
 } // namespace MIR::Objects

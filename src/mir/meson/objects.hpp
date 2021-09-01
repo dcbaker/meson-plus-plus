@@ -17,6 +17,7 @@ class File {
   public:
     File(const std::string & name_, const bool & built_) : name{name_}, built{built_} {};
     const bool is_built() const;
+    const std::string get_name() const;
 
   private:
     const std::string name;
