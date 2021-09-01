@@ -21,6 +21,11 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
     }
     const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
 
+    // XXX: this seems like a bug
+    if (f.get() == nullptr) {
+        return std::nullopt;
+    }
+
     if (f->holder.value_or("") != "meson" && f->name != "get_compiler") {
         return std::nullopt;
     }
