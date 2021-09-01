@@ -21,6 +21,7 @@
 #include <variant>
 #include <vector>
 
+#include "objects.hpp"
 #include "toolchains/toolchain.hpp"
 
 namespace MIR {
@@ -59,11 +60,12 @@ class Identifier;
 class Number;
 class String;
 class Compiler;
+class File;
 
 using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
-                 std::unique_ptr<Dict>, std::unique_ptr<Compiler>>;
+                 std::unique_ptr<Dict>, std::unique_ptr<Compiler>, std::unique_ptr<File>>;
 
 /**
  * Holds a toolchain
@@ -78,6 +80,19 @@ class Compiler {
 
     const Object get_id(const std::vector<Object> &,
                         const std::unordered_map<std::string, Object> &) const;
+
+    Variable var;
+};
+
+/**
+ * Holds a File, which is a smart object point to a source
+ *
+ */
+class File {
+  public:
+    File(const Objects::File & f) : file{f} {};
+
+    const Objects::File file;
 
     Variable var;
 };
