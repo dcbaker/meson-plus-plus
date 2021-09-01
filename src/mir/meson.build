@@ -7,6 +7,7 @@ libmir = static_library(
   'mir',
   [
     'ast_to_mir.cpp',
+    'lower.cpp',
     'mir.cpp',
     'passes/compilers.cpp',
     'passes/free_functions.cpp',
