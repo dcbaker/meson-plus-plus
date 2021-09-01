@@ -47,6 +47,15 @@ class Variable {
     uint version;
 };
 
+class Executable {
+  public:
+    Executable(const Objects::Executable & exe_) : value{exe_} {};
+
+    const Objects::Executable value;
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -65,7 +74,8 @@ class File;
 using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
-                 std::unique_ptr<Dict>, std::unique_ptr<Compiler>, std::unique_ptr<File>>;
+                 std::unique_ptr<Dict>, std::unique_ptr<Compiler>, std::unique_ptr<File>,
+                 std::unique_ptr<Executable>>;
 
 /**
  * Holds a toolchain

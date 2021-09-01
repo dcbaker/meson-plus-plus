@@ -220,3 +220,19 @@ TEST(files, simple) {
     const auto & f = std::get<std::unique_ptr<MIR::File>>(a[0]);
     ASSERT_EQ(f->file.get_name(), "foo.c");
 }
+
+TEST(executable, simple) {
+    auto irlist = lower("x = executable('exe', 'source.c')");
+
+    const MIR::State::Persistant pstate{src_root, build_root};
+
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Executable>>(r));
+
+    const auto & e = std::get<std::unique_ptr<MIR::Executable>>(r)->value;
+    ASSERT_EQ(e.name, "exe");
+}

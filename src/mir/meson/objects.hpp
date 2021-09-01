@@ -11,9 +11,14 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace MIR::Objects {
 
+/**
+ * A Meson File, which is a smart object that knows its location relative to the
+ * source and build directories
+ */
 class File {
   public:
     File(const std::string & name_, const bool & built_, const std::filesystem::path & sr_,
@@ -38,6 +43,21 @@ class File {
     const bool built;
     const std::filesystem::path source_root;
     const std::filesystem::path build_root;
+};
+
+/**
+ * A meson Executable target
+ */
+class Executable {
+  public:
+    Executable(const std::string & name_, const std::vector<File> & srcs)
+        : name{name_}, sources{srcs} {};
+
+    /// The name of the target
+    const std::string name;
+
+    /// The sources (as files)
+    const std::vector<File> sources;
 };
 
 } // namespace MIR::Objects
