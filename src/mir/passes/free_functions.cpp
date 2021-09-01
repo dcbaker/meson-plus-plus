@@ -12,7 +12,7 @@ namespace MIR::Passes {
 namespace {
 
 // XXX: we probably need access to the source_root and build_root
-std::optional<Object> lower_files(const Object & obj) {
+std::optional<Object> lower_files(const Object & obj, const State::Persistant & pstate) {
     if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
         return std::nullopt;
     }
@@ -37,7 +37,8 @@ std::optional<Object> lower_files(const Object & obj) {
         }
         auto const & v = std::get<std::unique_ptr<String>>(arg_h);
 
-        files.emplace_back(std::make_unique<File>(Objects::File{v->value, false}));
+        files.emplace_back(std::make_unique<File>(
+            Objects::File{v->value, false, pstate.source_root, pstate.build_root}));
     }
 
     return std::make_unique<Array>(std::move(files));
@@ -48,7 +49,8 @@ std::optional<Object> lower_files(const Object & obj) {
 bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) {
     bool progress = false;
 
-    progress |= function_walker(block, lower_files);
+    progress |=
+        function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); });
 
     return progress;
 }

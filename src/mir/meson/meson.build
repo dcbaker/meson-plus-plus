@@ -46,3 +46,14 @@ foreach t : ['compiler', 'archiver', 'linker']
     protocol : 'gtest',
   )
 endforeach
+
+test(
+  'meson objects',
+  executable(
+    'meson_object_test',
+    'object_tests.cpp',
+    link_with : libmeson,
+    dependencies : dep_gtest,
+  ),
+  protocol : 'gtest',
+)
