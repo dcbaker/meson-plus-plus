@@ -10,16 +10,21 @@
 #include "exceptions.hpp"
 #include "mir.hpp"
 #include "passes.hpp"
+#include "state/state.hpp"
 #include "toolchains/archiver.hpp"
 #include "toolchains/compilers/cpp/cpp.hpp"
 #include "toolchains/linker.hpp"
 
 namespace {
 
+static const std::filesystem::path src_root = "/home/test user/src/test project/";
+static const std::filesystem::path build_root = "/home/test user/src/test project/builddir/";
+
 std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     Frontend::Driver drv{};
     std::istringstream stream{in};
-    drv.name = "test file name";
+    auto src = src_root / "meson.build";
+    drv.name = src;
     auto block = drv.parse(stream);
     return block;
 }
@@ -197,7 +202,10 @@ TEST(insert_compiler, unknown_language) {
 
 TEST(files, simple) {
     auto irlist = lower("x = files('foo.c')");
-    bool progress = MIR::Passes::lower_free_functions(&irlist);
+
+    const MIR::State::Persistant pstate{src_root, build_root};
+
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
 

@@ -45,7 +45,7 @@ std::optional<Object> lower_files(const Object & obj) {
 
 } // namespace
 
-bool lower_free_functions(BasicBlock * block) {
+bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) {
     bool progress = false;
 
     progress |= function_walker(block, lower_files);

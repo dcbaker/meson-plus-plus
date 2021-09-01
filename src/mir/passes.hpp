@@ -9,6 +9,7 @@
 
 #include "machines.hpp"
 #include "mir.hpp"
+#include "state/state.hpp"
 #include "toolchains/toolchain.hpp"
 
 namespace MIR::Passes {
@@ -51,6 +52,6 @@ bool insert_compilers(BasicBlock *,
  *
  * This lowers free standing functions (those not part of an object/namespace).
  */
-bool lower_free_functions(BasicBlock *);
+bool lower_free_functions(BasicBlock *, const State::Persistant &);
 
 } // namespace MIR::Passes
