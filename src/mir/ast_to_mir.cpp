@@ -1,6 +1,8 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
+#include <filesystem>
+
 #include "ast_to_mir.hpp"
 #include "exceptions.hpp"
 
@@ -45,10 +47,12 @@ struct ExpressionLowering {
             kwargs[key] = std::visit(*this, v);
         }
 
+        std::filesystem::path path{expr->loc.filename};
+
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
         return std::make_unique<FunctionCall>(fname, std::move(pos), std::move(kwargs),
-                                              expr->loc.filename);
+                                              path.parent_path());
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
@@ -147,7 +151,10 @@ struct StatementLowering {
         cur->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
         for (const auto & i : stmt->ifblock.block->statements) {
             last_block = std::visit(
-                [&](const auto & a) { return this->operator()(cur->condition.value().if_true.get(), a); }, i);
+                [&](const auto & a) {
+                    return this->operator()(cur->condition.value().if_true.get(), a);
+                },
+                i);
         }
         // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(!last_block->condition.has_value());
@@ -162,7 +169,9 @@ struct StatementLowering {
                 cur->condition = std::optional<Condition>{std::visit(l, el.condition)};
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
-                        [&](const auto & a) { return this->operator()(cur->condition.value().if_true.get(), a); },
+                        [&](const auto & a) {
+                            return this->operator()(cur->condition.value().if_true.get(), a);
+                        },
                         i);
                 }
 
@@ -175,7 +184,10 @@ struct StatementLowering {
         if (stmt->eblock.block != nullptr) {
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block = std::visit(
-                    [&](const auto & a) { return this->operator()(cur->condition.value().if_false.get(), a); }, i);
+                    [&](const auto & a) {
+                        return this->operator()(cur->condition.value().if_false.get(), a);
+                    },
+                    i);
             }
         }
         // We shouldn't have a condition here, this is where we wnat to put our next target

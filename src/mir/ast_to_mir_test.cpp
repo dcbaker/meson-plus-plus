@@ -14,7 +14,7 @@ namespace {
 std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     Frontend::Driver drv{};
     std::istringstream stream{in};
-    drv.name = "test file name";
+    drv.name = "/home/foo/bar/meson.build";
     auto block = drv.parse(stream);
     return block;
 }
@@ -108,6 +108,7 @@ TEST(ast_to_ir, simple_method) {
 
     const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "method");
+    ASSERT_EQ(ir->source_dir, "/home/foo/bar");  // We want to ensure this isn't meson.build
     ASSERT_TRUE(ir->holder.has_value());
     ASSERT_EQ(ir->holder.value(), "obj");
     ASSERT_TRUE(ir->pos_args.empty());

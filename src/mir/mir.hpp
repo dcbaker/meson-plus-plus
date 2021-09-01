@@ -12,6 +12,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <list>
 #include <memory>
 #include <optional>
@@ -81,7 +82,7 @@ class Compiler {
 class FunctionCall {
   public:
     FunctionCall(const std::string & _name, std::vector<Object> && _pos,
-                 std::unordered_map<std::string, Object> && _kw, const std::string & _sd)
+                 std::unordered_map<std::string, Object> && _kw, const std::filesystem::path & _sd)
         : name{_name}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)}, holder{std::nullopt},
           source_dir{_sd}, var{} {};
 
@@ -102,7 +103,7 @@ class FunctionCall {
      * For functions that care (such as file(), and most targets()) this is
      * required to accurately map sources between the source and build dirs.
      */
-    const std::string source_dir;
+    const std::filesystem::path source_dir;
 
     Variable var;
 };
