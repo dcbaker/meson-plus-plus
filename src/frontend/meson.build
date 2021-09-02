@@ -25,12 +25,12 @@ scanner = custom_target(
 # out of thehis bit of code
 _frontend_args = cpp.get_supported_arguments(
   '-Wno-switch-enum',
-)
+ )
 
 libfrontend = static_library(
   'frontend',
   [parser, scanner, 'node.cpp', 'subdir_visitor.cpp', 'driver.cpp'],
-  cpp_args : _frontend_args,
+  cpp_args : [_frontend_args, '-Wno-implicit-fallthrough'],
   dependencies : [dep_fs, idep_util],
 )
 
