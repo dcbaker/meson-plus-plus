@@ -12,7 +12,7 @@ void lower(BasicBlock * block, const State::Persistant & pstate) {
     do {
         progress = false;
         progress |= Passes::machine_lower(block, pstate.machines);
-        // progress |= Passes::insert_compilers(block, pstate.toolchains);
+        progress |= Passes::insert_compilers(block, pstate.toolchains);
         progress |= Passes::lower_free_functions(block, pstate);
         progress |= Passes::branch_pruning(block);
         progress |= Passes::join_blocks(block);

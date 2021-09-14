@@ -24,7 +24,9 @@ class Persistant {
 
     // This must be mutable because of `add_language`
     /// A mapping of language : machine : toolchain
-    std::unordered_map<Toolchain::Language, Machines::PerMachine<Toolchain::Toolchain>> toolchains;
+    std::unordered_map<Toolchain::Language,
+                       Machines::PerMachine<std::shared_ptr<Toolchain::Toolchain>>>
+        toolchains;
 
     /// The information on each machine
     /// XXX: currently only handle host == build configurations, as we don't have
