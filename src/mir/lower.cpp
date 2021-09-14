@@ -9,14 +9,17 @@ namespace MIR {
 
 void lower(BasicBlock * block, const State::Persistant & pstate) {
     bool progress;
+    // clang-format off
     do {
-        progress = false;
-        progress |= Passes::machine_lower(block, pstate.machines);
-        progress |= Passes::insert_compilers(block, pstate.toolchains);
-        progress |= Passes::lower_free_functions(block, pstate);
-        progress |= Passes::branch_pruning(block);
-        progress |= Passes::join_blocks(block);
+        progress = false
+            || Passes::machine_lower(block, pstate.machines)
+            || Passes::insert_compilers(block, pstate.toolchains)
+            || Passes::lower_free_functions(block, pstate)
+            || Passes::branch_pruning(block)
+            || Passes::join_blocks(block)
+            ;
     } while (progress);
+    // clang-format on
 }
 
 } // namespace MIR

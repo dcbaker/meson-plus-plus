@@ -5,3 +5,15 @@ subdir('util')
 subdir('frontend')
 subdir('mir')
 subdir('backends')
+
+executable(
+  'meson++',
+  [
+    'main.cpp',
+  ],
+  dependencies : [
+    idep_frontend,
+    idep_mir,
+  ],
+  install : true,
+)
