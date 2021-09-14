@@ -5,15 +5,10 @@
  * Main ninja backend entry point.
  */
 
-#pragma once
-
-#include "mir.hpp"
+#include "entry.hpp"
 
 namespace Backends::Ninja {
 
-/**
- * Generates a ninja file in the build directory
- */
-void generate(const MIR::BasicBlock * const);
+void generate(const MIR::BasicBlock * const block) {}
 
 } // namespace Backends::Ninja
