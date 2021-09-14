@@ -5,6 +5,10 @@
  * Main Meson++ entrypoint
  */
 
-#include "getopt.h"
+#include "options.hpp"
 
-int main() { return 0; }
+int main(int argc, char * argv[]) {
+    const auto opts = Options::parse_opts(argc, argv);
+
+    return 0;
+}

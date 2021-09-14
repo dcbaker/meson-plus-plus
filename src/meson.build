@@ -10,10 +10,15 @@ executable(
   'meson++',
   [
     'main.cpp',
+    'options.cpp',
+  ],
+  cpp_args : [
+    '-D_GNU_SOURCE',  # for getopt
   ],
   dependencies : [
     idep_frontend,
     idep_mir,
+    idep_util,
   ],
   install : true,
 )
