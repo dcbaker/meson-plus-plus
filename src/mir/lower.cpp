@@ -2,8 +2,6 @@
 // Copyright © 2021 Intel Corporation
 
 #include "lower.hpp"
-#include "passes.hpp"
-#include "state/state.hpp"
 
 namespace MIR {
 

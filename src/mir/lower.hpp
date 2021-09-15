@@ -9,9 +9,10 @@
 #pragma once
 
 #include "passes.hpp"
+#include "state/state.hpp"
 
 namespace MIR {
 
-void lower(BasicBlock *);
+void lower(BasicBlock *, const State::Persistant &);
 
 }
