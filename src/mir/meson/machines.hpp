@@ -98,6 +98,22 @@ template <typename T> class PerMachine {
         }
     }
 
+    void set(const Machine & m, T && new_) {
+        switch (m) {
+            case Machine::BUILD:
+                _build = std::move(new_);
+                break;
+            case Machine::HOST:
+                _host = std::move(new_);
+                break;
+            case Machine::TARGET:
+                _target = std::move(new_);
+                break;
+            default:
+                assert(0);
+        }
+    }
+
   private:
     T _build;
     std::optional<T> _host;
