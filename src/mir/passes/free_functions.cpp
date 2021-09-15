@@ -81,6 +81,7 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
         return std::nullopt;
     }
 
+    // This doesn't handle the listified version corretly
     if (f->pos_args.size() < 2) {
         throw Util::Exceptions::InvalidArguments{"executable requires at least 2 arguments"};
     }
@@ -103,6 +104,35 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
 }
 
 } // namespace
+
+void lower_project(BasicBlock * block, State::Persistant & pstate) {
+    const auto & obj = block->instructions.front();
+
+    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+        throw Util::Exceptions::MesonException{
+            "First non-whitespace, non-comment must be a call to project()"};
+    }
+    const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
+
+    if (f->name != "project") {
+        throw Util::Exceptions::MesonException{
+            "First non-whitespace, non-comment must be a call to project()"};
+    }
+
+    // This doesn't handle the listified version corretly
+    if (f->pos_args.size() < 1) {
+        throw Util::Exceptions::InvalidArguments{"project requires at least 1 argument"};
+    }
+    if (!std::holds_alternative<std::unique_ptr<String>>(f->pos_args[0])) {
+        // TODO: it could also be an identifier pointing to a string
+        throw Util::Exceptions::InvalidArguments{"project first argument must be a string"};
+    }
+    pstate.name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
+
+    // Remove the valid project() call so we don't accidently find it later when
+    // looking for invalid function calls.
+    block->instructions.pop_front();
+}
 
 bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) {
     bool progress = false;

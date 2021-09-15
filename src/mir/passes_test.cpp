@@ -8,6 +8,7 @@
 #include "ast_to_mir.hpp"
 #include "driver.hpp"
 #include "exceptions.hpp"
+#include "lower.hpp"
 #include "mir.hpp"
 #include "passes.hpp"
 #include "state/state.hpp"
@@ -235,4 +236,11 @@ TEST(executable, simple) {
 
     const auto & e = std::get<std::unique_ptr<MIR::Executable>>(r)->value;
     ASSERT_EQ(e.name, "exe");
+}
+
+TEST(project, valid) {
+    auto irlist = lower("project('foo')");
+    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::Passes::lower_project(&irlist, pstate);
+    ASSERT_EQ(pstate.name, "foo");
 }

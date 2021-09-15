@@ -38,6 +38,9 @@ class Persistant {
 
     /// absolute path to the build tree
     const std::filesystem::path build_root;
+
+    /// The name of the project
+    std::string name;
 };
 
 } // namespace MIR::State
