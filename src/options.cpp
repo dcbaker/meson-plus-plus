@@ -7,6 +7,7 @@
 
 #include "exceptions.hpp"
 #include "options.hpp"
+#include "version.hpp"
 
 namespace Options {
 
@@ -14,8 +15,14 @@ namespace {
 
 // clang-format off
 const std::string usage =
-R"EOF(Usage:
+"Meson++ Version " + version::VERSION +
+R"EOF(
+
+Usage:
     meson++ <verb> [verb_options]
+
+Description:
+    Meson++ is an implementation of the Meson build system, written in C++
 
 Verbs:
     Configure:

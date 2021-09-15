@@ -6,11 +6,17 @@ subdir('frontend')
 subdir('mir')
 subdir('backends')
 
+version_hpp = vcs_tag(
+  input : 'version.hpp.in',
+  output : 'version.hpp',
+)
+
 executable(
   'meson++',
   [
     'main.cpp',
     'options.cpp',
+    version_hpp,
   ],
   cpp_args : [
     '-D_GNU_SOURCE',  # for getopt
