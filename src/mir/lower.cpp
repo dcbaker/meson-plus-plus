@@ -5,7 +5,7 @@
 
 namespace MIR {
 
-void lower(BasicBlock * block, const State::Persistant & pstate) {
+void lower(BasicBlock * block, State::Persistant & pstate) {
     bool progress;
     // clang-format off
     do {

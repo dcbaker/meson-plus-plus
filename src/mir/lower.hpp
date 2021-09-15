@@ -13,6 +13,6 @@
 
 namespace MIR {
 
-void lower(BasicBlock *, const State::Persistant &);
+void lower(BasicBlock *, State::Persistant &);
 
 }
