@@ -66,11 +66,14 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
         {NULL},
     };
 
+    // Initialize the sourcedir
+    conf.sourcedir = fs::path{"."};
+
     int c;
-    while ((c = getopt_long(argc, argv, short_opts, long_opts, NULL))) {
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
         switch (c) {
             case 's':
-                conf.sourcedir = optarg;
+                conf.sourcedir = fs::path{optarg};
                 break;
             case 'D': {
                 const std::string d{optarg};
@@ -101,7 +104,7 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
         std::cout << usage << std::endl;
         exit(1);
     }
-    conf.builddir = argv[i++];
+    conf.builddir = fs::path{argv[i++]};
 
     return conf;
 }
