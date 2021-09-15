@@ -10,6 +10,7 @@
 
 #include "ast_to_mir.hpp"
 #include "driver.hpp"
+#include "exceptions.hpp"
 #include "log.hpp"
 #include "lower.hpp"
 #include "options.hpp"
@@ -43,11 +44,18 @@ int main(int argc, char * argv[]) {
 
     int ret = 1;
 
-    switch (opts.verb) {
-        case Options::Verb::CONFIGURE:
-            ret = configure(opts.config);
-            break;
-    };
+    try {
+        switch (opts.verb) {
+            case Options::Verb::CONFIGURE:
+                ret = configure(opts.config);
+                break;
+        };
 
-    return ret;
+        return ret;
+    } catch (Util::Exceptions::MesonException & e) {
+        std::cerr << e.message << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
