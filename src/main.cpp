@@ -8,9 +8,12 @@
 #include <filesystem>
 #include <iostream>
 
+#include "ast_to_mir.hpp"
 #include "driver.hpp"
 #include "log.hpp"
+#include "lower.hpp"
 #include "options.hpp"
+#include "state/state.hpp"
 #include "version.hpp"
 
 namespace fs = std::filesystem;
@@ -25,7 +28,11 @@ static int configure(const Options::ConfigureOptions & opts) {
     Frontend::Driver drv{};
     auto block = drv.parse(opts.sourcedir / "meson.build");
 
-    std::cout << block->as_string() << std::endl;
+    MIR::State::Persistant pstate{opts.sourcedir, opts.builddir};
+
+    // Create IR from the AST, then run our lowering passes on it
+    auto irlist = MIR::lower_ast(block);
+    MIR::lower(&irlist, pstate);
 
     return 0;
 };
