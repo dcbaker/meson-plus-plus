@@ -54,4 +54,26 @@ bool insert_compilers(BasicBlock *,
  */
 bool lower_free_functions(BasicBlock *, const State::Persistant &);
 
+/**
+ * Flatten array arguments to functions.
+ *
+ * If it makes sense, remove the array altogether and replace it with scalars.
+ *
+ * Meson allows for some interesting arrangements of functions, for example
+ * project(['foo'], ['c'])
+ * project(['foo', 'c'])
+ * project(['foo'], 'c')
+ * project('foo', 'c')
+ * project('foo', ['c'])
+ *
+ * Are all semantically identical. Meson handles this with a method that
+ * flattens arguments at call time. The interpreter class reduces the arguments
+ * (except in a few cases), and then the interpreter method deal with an
+ * idealized form of the function arguments.
+ *
+ * Meson++ uses this pass to flatten arguments, building an idealized set of
+ * arguments for each function.
+ */
+bool flatten(BasicBlock *, const State::Persistant &);
+
 } // namespace MIR::Passes

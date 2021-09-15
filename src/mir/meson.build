@@ -10,6 +10,7 @@ libmir = static_library(
     'lower.cpp',
     'mir.cpp',
     'passes/compilers.cpp',
+    'passes/flatten.cpp',
     'passes/free_functions.cpp',
     'passes/join_blocks.cpp',
     'passes/machines.cpp',

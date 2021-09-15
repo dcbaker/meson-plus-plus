@@ -12,6 +12,7 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
         progress = false
             || Passes::machine_lower(block, pstate.machines)
             || Passes::insert_compilers(block, pstate.toolchains)
+            || Passes::flatten(block, pstate)
             || Passes::lower_free_functions(block, pstate)
             || Passes::branch_pruning(block)
             || Passes::join_blocks(block)
