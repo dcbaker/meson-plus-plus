@@ -32,6 +32,7 @@ static int configure(const Options::ConfigureOptions & opts) {
 
     // Create IR from the AST, then run our lowering passes on it
     auto irlist = MIR::lower_ast(block);
+    MIR::Passes::lower_project(&irlist, pstate);
     MIR::lower(&irlist, pstate);
 
     return 0;

@@ -1,9 +1,11 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Dylan Baker
 
+#include <iostream>
 #include <vector>
 
 #include "exceptions.hpp"
+#include "log.hpp"
 #include "passes.hpp"
 #include "private.hpp"
 
@@ -128,6 +130,7 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
         throw Util::Exceptions::InvalidArguments{"project first argument must be a string"};
     }
     pstate.name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
+    std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
     // Remove the valid project() call so we don't accidently find it later when
     // looking for invalid function calls.
