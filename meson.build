@@ -15,6 +15,7 @@ cpp = meson.get_compiler('cpp')
 add_project_arguments(
   cpp.get_supported_arguments(
     '-Werror=switch-enum',
+    '-Werror=implicit-fallthrough',
   ),
   '-D_GNU_SOURCE',
   language : 'cpp',
