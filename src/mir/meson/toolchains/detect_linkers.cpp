@@ -13,6 +13,7 @@
 #include "compiler.hpp"
 #include "linker.hpp"
 #include "process.hpp"
+#include "exceptions.hpp"
 
 namespace MIR::Toolchain::Linker {
 
@@ -26,9 +27,9 @@ std::unique_ptr<Linker> detect_linker_gcc(const std::unique_ptr<Compiler::Compil
     auto command = comp->command;
     command.emplace_back("-Wl,--version");
     auto const & [ret, out, err] = Util::process(command);
-    // TODO: something smarter her
+    // TODO: something smarter here
     if (ret != 0) {
-        throw std::exception{};
+        throw Util::Exceptions::MesonException{"Failed to get linker verison"};
     }
 
     if (out.find("GNU ld") != std::string::npos) {

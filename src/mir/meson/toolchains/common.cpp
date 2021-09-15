@@ -2,6 +2,7 @@
 // Copyright © 2021 Intel Corporation
 
 #include "common.hpp"
+#include "exceptions.hpp"
 
 namespace MIR::Toolchain {
 
@@ -10,7 +11,7 @@ Language from_string(const std::string & str) {
         return Language::CPP;
     }
     // This can happen when an invalid language is passed to the project() function.
-    throw std::exception{};
+    throw Util::Exceptions::MesonException{"No known language \"" + str + "\""};
 };
 
 } // namespace MIR::Toolchain
