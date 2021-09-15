@@ -7,7 +7,15 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
+#include <unordered_map>
+
+namespace {
+
+namespace fs = std::filesystem;
+
+}
 
 namespace Options {
 
@@ -20,7 +28,9 @@ enum class Verb {
  * Options for the configure command
  */
 struct ConfigureOptions {
-    std::string builddir;
+    fs::path builddir;
+    fs::path sourcedir;
+    std::unordered_map<std::string, std::string> options;
 };
 
 /**

@@ -27,6 +27,8 @@ Verbs:
         Options:
             -h, --help
                 Display this message and exit.
+            -D, --define
+                Set a Meson built-in or project option
 
 )EOF";
 // clang-format on
@@ -49,15 +51,35 @@ Verb get_verb(int & argc, const char * const argv[]) {
 ConfigureOptions get_config_options(int argc, char * argv[]) {
     ConfigureOptions conf{};
 
-    static const char * const short_opts = "h";
+    static const char * const short_opts = "hs:D:";
     static const option long_opts[] = {
         {"help", no_argument, NULL, 'h'},
+        {"source_dir", required_argument, NULL, 's'},
+        {"define", required_argument, NULL, 'D'},
         {NULL},
     };
 
     int c;
     while ((c = getopt_long(argc, argv, short_opts, long_opts, NULL))) {
         switch (c) {
+            case 's':
+                conf.sourcedir = optarg;
+                break;
+            case 'D': {
+                const std::string d{optarg};
+                const auto n = d.find("=");
+                if (n == std::string::npos) {
+                    std::cerr << "define options must be in the for `-Dopt=value` or `--define "
+                                 "opt=value`. Option \""
+                              << d << "\" does not have an \"=\"." << std::endl;
+                    exit(1);
+                }
+                auto opt = d.substr(0, n);
+                auto value = d.substr(n + 1, d.size());
+
+                conf.options[opt] = value;
+                break;
+            }
             case 'h':
             default:
                 std::cout << usage << std::endl;
@@ -67,7 +89,7 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
 
     int i = optind;
     if (i >= argc) {
-        std::cerr << "missing required positional argument to 'meson++ configure', <builddir>"
+        std::cerr << "missing required positional argument to 'meson++ configure': <builddir>"
                   << std::endl;
         std::cout << usage << std::endl;
         exit(1);
