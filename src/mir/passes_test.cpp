@@ -244,3 +244,28 @@ TEST(project, valid) {
     MIR::Passes::lower_project(&irlist, pstate);
     ASSERT_EQ(pstate.name, "foo");
 }
+
+TEST(lower, trivial) {
+    auto irlist = lower("project('foo')");
+    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::Passes::lower_project(&irlist, pstate);
+    MIR::lower(&irlist, pstate);
+}
+
+TEST(lower, simple_real) {
+    auto irlist = lower(R"EOF(
+        project('foo', 'c')
+
+        t_files = files(
+            'bar.c',
+        )
+
+        executable(
+            'exe',
+            't_files'
+        )
+    )EOF");
+    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::Passes::lower_project(&irlist, pstate);
+    MIR::lower(&irlist, pstate);
+}
