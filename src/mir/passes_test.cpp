@@ -252,6 +252,7 @@ TEST(lower, trivial) {
     MIR::lower(&irlist, pstate);
 }
 
+#if false
 TEST(lower, simple_real) {
     auto irlist = lower(R"EOF(
         project('foo', 'c')
@@ -262,10 +263,11 @@ TEST(lower, simple_real) {
 
         executable(
             'exe',
-            't_files'
+            t_files,
         )
     )EOF");
     MIR::State::Persistant pstate{src_root, build_root};
     MIR::Passes::lower_project(&irlist, pstate);
     MIR::lower(&irlist, pstate);
 }
+#endif
