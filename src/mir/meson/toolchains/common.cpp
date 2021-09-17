@@ -14,4 +14,14 @@ Language from_string(const std::string & str) {
     throw Util::Exceptions::MesonException{"No known language \"" + str + "\""};
 };
 
+std::string to_string(const Language & l) {
+    switch (l) {
+        case Language::CPP:
+            return "cpp";
+        default:
+            // TODO: unreachable
+            throw Util::Exceptions::MesonException{"This shouldn't be reachable"};
+    }
+}
+
 } // namespace MIR::Toolchain

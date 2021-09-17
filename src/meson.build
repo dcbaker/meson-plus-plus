@@ -25,6 +25,7 @@ executable(
     idep_frontend,
     idep_mir,
     idep_util,
+    idep_ninja,
   ],
   install : true,
 )

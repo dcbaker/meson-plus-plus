@@ -29,4 +29,6 @@ enum class Language {
 
 Language from_string(const std::string &);
 
+std::string to_string(const Language &);
+
 } // namespace MIR::Toolchain

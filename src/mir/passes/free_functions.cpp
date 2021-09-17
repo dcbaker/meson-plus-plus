@@ -100,7 +100,8 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     std::move(f->pos_args.begin() + 1, f->pos_args.end(), std::back_inserter(raw_srcs));
     auto srcs = srclist_to_filelist(raw_srcs, pstate);
 
-    Objects::Executable exe{name, {}};
+    // TODO: machien parameter needs to be set from the native kwarg
+    Objects::Executable exe{name, {}, Machines::Machine::BUILD};
 
     return std::make_unique<Executable>(exe);
 }

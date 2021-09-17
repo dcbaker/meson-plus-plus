@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "machines.hpp"
+
 namespace MIR::Objects {
 
 /**
@@ -50,14 +52,18 @@ class File {
  */
 class Executable {
   public:
-    Executable(const std::string & name_, const std::vector<File> & srcs)
-        : name{name_}, sources{srcs} {};
+    Executable(const std::string & name_, const std::vector<File> & srcs,
+               const Machines::Machine & m)
+        : name{name_}, sources{srcs}, machine{m} {};
 
     /// The name of the target
     const std::string name;
 
     /// The sources (as files)
     const std::vector<File> sources;
+
+    /// Which machine is this executable to be built for?
+    const Machines::Machine machine;
 };
 
 } // namespace MIR::Objects

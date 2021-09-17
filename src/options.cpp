@@ -97,7 +97,8 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
         }
     }
 
-    int i = optind;
+    // ++ here to pass the verb
+    int i = ++optind;
     if (i >= argc) {
         std::cerr << "missing required positional argument to 'meson++ configure': <builddir>"
                   << std::endl;

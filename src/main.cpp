@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "ast_to_mir.hpp"
+#include "backends/ninja/entry.hpp"
 #include "driver.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
@@ -35,6 +36,8 @@ static int configure(const Options::ConfigureOptions & opts) {
     auto irlist = MIR::lower_ast(block);
     MIR::Passes::lower_project(&irlist, pstate);
     MIR::lower(&irlist, pstate);
+
+    Backends::Ninja::generate(&irlist, pstate);
 
     return 0;
 };

@@ -8,3 +8,8 @@ lib_ninja = static_library(
   ],
   dependencies : idep_mir,
 )
+
+idep_ninja = declare_dependency(
+  link_with : lib_ninja,
+  include_directories : include_directories('..'),
+)
