@@ -164,10 +164,11 @@ TEST(machine_lower, in_condtion) {
 
 TEST(insert_compiler, simple) {
     const std::vector<std::string> init{"null"};
+    auto comp = std::make_unique<MIR::Toolchain::Compiler::CPP::Clang>(init);
     auto tc = std::make_shared<MIR::Toolchain::Toolchain>(
-        std::make_unique<MIR::Toolchain::Compiler::CPP::Clang>(init),
-        std::make_unique<MIR::Toolchain::Linker::Drivers::Gnu>(
-            MIR::Toolchain::Linker::GnuBFD{init}),
+        std::move(comp),
+        std::make_unique<MIR::Toolchain::Linker::Drivers::Gnu>(MIR::Toolchain::Linker::GnuBFD{init},
+                                                               comp.get()),
         std::make_unique<MIR::Toolchain::Archiver::Gnu>(init));
     std::unordered_map<MIR::Toolchain::Language,
                        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>

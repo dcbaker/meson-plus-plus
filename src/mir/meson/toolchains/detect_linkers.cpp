@@ -11,9 +11,9 @@
 #include <vector>
 
 #include "compiler.hpp"
+#include "exceptions.hpp"
 #include "linker.hpp"
 #include "process.hpp"
-#include "exceptions.hpp"
 
 namespace MIR::Toolchain::Linker {
 
@@ -33,8 +33,8 @@ std::unique_ptr<Linker> detect_linker_gcc(const std::unique_ptr<Compiler::Compil
     }
 
     if (out.find("GNU ld") != std::string::npos) {
-        auto linker = GnuBFD{command};
-        return std::make_unique<Drivers::Gnu>(linker);
+        GnuBFD linker{command};
+        return std::make_unique<Drivers::Gnu>(linker, comp.get());
     }
     assert(false);
 };

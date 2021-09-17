@@ -45,7 +45,32 @@ void write_compiler_rule(const std::string & lang,
     out << " ${in}" << std::endl;
 
     // Write the description
-    out << "  description = Compiling " << c->language() << " object ${out}" << std::endl;
+    out << "  description = Compiling " << c->language() << " object ${out}" << std::endl
+        << std::endl;
+}
+
+void write_linker_rule(const std::string & lang,
+                       const std::unique_ptr<MIR::Toolchain::Linker::Linker> & c,
+                       std::ofstream & out) {
+
+    // TODO: build or host correctly
+    out << "rule " << lang << "_linker_for_"
+        << "build" << std::endl;
+
+    // Write the command
+    // TODO: write the depfile stuff
+    out << "  command =";
+    for (const auto & c : c->command) {
+        out << " " << c;
+    }
+    out << " ${ARGS}";
+    for (const auto & c : c->output_command("${out}")) {
+        out << " " << c;
+    }
+    out << " ${in} ${LINK_ARGS}" << std::endl;
+
+    // Write the description
+    out << "  description = Linking target ${out}" << std::endl << std::endl;
 }
 
 } // namespace
@@ -76,6 +101,17 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         const auto & lstr = MIR::Toolchain::to_string(l);
         // TODO: should also have a _for_host
         write_compiler_rule(lstr, tc.build()->compiler, out);
+    }
+
+    out << "# Static Linking rules" << std::endl << std::endl;
+    // TODO:
+
+    out << "# Dynamic Linking rules" << std::endl << std::endl;
+
+    for (const auto & [l, tc] : pstate.toolchains) {
+        const auto & lstr = MIR::Toolchain::to_string(l);
+        // TODO: should also have a _for_host
+        write_linker_rule(lstr, tc.build()->linker, out);
     }
 
     out.flush();
