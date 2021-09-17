@@ -6,7 +6,10 @@ lib_ninja = static_library(
   [
     'ninja.cpp',
   ],
-  dependencies : idep_mir,
+  dependencies : [
+    idep_mir,
+    idep_util,
+  ],
 )
 
 idep_ninja = declare_dependency(

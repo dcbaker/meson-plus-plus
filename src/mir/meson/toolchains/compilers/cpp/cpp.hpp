@@ -20,6 +20,8 @@ class Gnu : public Compiler {
     std::string language() const override { return "C++"; };
 
     RSPFileSupport rsp_support() const override;
+    std::vector<std::string> compile_only_command() const override;
+    std::vector<std::string> output_command(const std::string &) const override;
 };
 
 class Clang : public Compiler {
@@ -31,6 +33,8 @@ class Clang : public Compiler {
     std::string language() const override { return "C++"; };
 
     RSPFileSupport rsp_support() const override;
+    std::vector<std::string> compile_only_command() const override;
+    std::vector<std::string> output_command(const std::string &) const override;
 };
 
 } // namespace MIR::Toolchain::Compiler::CPP

@@ -23,7 +23,19 @@ class Compiler {
     virtual ~Compiler(){};
     virtual RSPFileSupport rsp_support() const = 0;
     virtual std::string id() const = 0;
+
+    /// Get the pretty language output
     virtual std::string language() const = 0;
+
+    /// Get the command line arguments to compile only, without linking
+    virtual std::vector<std::string> compile_only_command() const = 0;
+
+    /**
+     * Get the command line arguments to set the output of the compiler
+     *
+     * @param outfile The name of the file to output.
+     */
+    virtual std::vector<std::string> output_command(const std::string & outfile) const = 0;
 
     const std::vector<std::string> command;
 
