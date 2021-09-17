@@ -5,10 +5,12 @@
  * Main ninja backend entry point.
  */
 
+#include <algorithm>
 #include <cerrno>
 #include <filesystem>
 #include <fstream>
 #include <sys/stat.h>
+#include <variant>
 #include <vector>
 
 #include "entry.hpp"
@@ -73,6 +75,19 @@ void write_linker_rule(const std::string & lang,
     out << "  description = Linking target ${out}" << std::endl << std::endl;
 }
 
+std::string escape(const std::string & str) {
+    std::string new_s{};
+    for (const auto & s : str) {
+        if (s == ' ') {
+            new_s.push_back('$');
+            new_s.push_back(s);
+        } else {
+            new_s.push_back(s);
+        }
+    }
+    return new_s;
+}
+
 } // namespace
 
 void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant & pstate) {
@@ -112,6 +127,27 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         const auto & lstr = MIR::Toolchain::to_string(l);
         // TODO: should also have a _for_host
         write_linker_rule(lstr, tc.build()->linker, out);
+    }
+
+    out << "# Phony build target, always out of date\n\n"
+        << "build PHONY: phony\n\n";
+    out << "# Build rules for targets\n\n";
+
+    // This is a completely bullshit approach, as it breaks as soon as you have
+    // a relationship between any targets
+    for (const auto & i : block->instructions) {
+        if (std::holds_alternative<std::unique_ptr<MIR::Executable>>(i)) {
+            // TODO: handle the correct machine
+            const auto & e = std::get<std::unique_ptr<MIR::Executable>>(i)->value;
+            for (const auto & f : e.sources) {
+                // TODO: obj files are a per compiler thing, I think
+                // TODO: get the proper language
+                // TODO: actually set args to something
+                out << "build " << f.get_name() << ".o: "
+                    << "cpp_compiler_for_build " << escape(f.relative_to_build_dir()) << std::endl;
+                out << "  ARGS = " << std::endl;
+            }
+        }
     }
 
     out.flush();
