@@ -62,7 +62,7 @@ void write_linker_rule(const std::string & lang,
     // Write the command
     // TODO: write the depfile stuff
     out << "  command =";
-    for (const auto & c : c->command) {
+    for (const auto & c : c->command()) {
         out << " " << c;
     }
     out << " ${ARGS}";

@@ -37,10 +37,12 @@ class Linker {
      */
     virtual std::vector<std::string> output_command(const std::string & outfile) const = 0;
 
-    const std::vector<std::string> command;
+    /// Get the command for this linker
+    virtual const std::vector<std::string> command() const = 0;
 
   protected:
-    Linker(const std::vector<std::string> & c) : command{c} {};
+    Linker(const std::vector<std::string> & c) : _command{c} {};
+    const std::vector<std::string> _command;
 };
 
 class GnuBFD : public Linker {
@@ -56,6 +58,7 @@ class GnuBFD : public Linker {
     std::vector<std::string> output_command(const std::string & outfile) const final {
         throw std::exception{}; // "Should be unused"
     }
+    const std::vector<std::string> command() const final { return _command; }
 };
 
 namespace Drivers {
@@ -71,6 +74,7 @@ class Gnu : public Linker {
     RSPFileSupport rsp_support() const override final;
     std::string language() const override;
     std::vector<std::string> output_command(const std::string & outfile) const override;
+    const std::vector<std::string> command() const final { return compiler->command; }
 
   private:
     const GnuBFD linker;
