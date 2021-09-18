@@ -6,6 +6,11 @@ There isn't much to see here, and probably won't be, and if there is it won't
 be for a long time. I'm not sure how much of Meson I want to re-implement
 either, maybe just enough for bootstrapping purposes, maybe a lot. Who knows.
 
+## What is the status of Meson++? Can I use it for my project?
+
+Currently, Meson++ is capable of compiling **very** simple C++ binaries with no
+linkage.
+
 ## FAQ
 
 ### Why another Meson implementation?
@@ -34,7 +39,7 @@ motivation, solving the boostrapping issue.
 Given that goal, I really only had two choices: C and C++. I will choose C++
 ever time given those choices. It provides better cross platform interfaces,
 resource management (RAII), and programming features: generics, overloading,
-namespaces, strings that aren't char arrays, etc. 
+namespaces, strings that aren't char arrays, etc.
 
 ## Differences between Meson and Meson++
 
