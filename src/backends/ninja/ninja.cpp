@@ -139,14 +139,25 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         if (std::holds_alternative<std::unique_ptr<MIR::Executable>>(i)) {
             // TODO: handle the correct machine
             const auto & e = std::get<std::unique_ptr<MIR::Executable>>(i)->value;
+            std::vector<std::string> srcs{};
             for (const auto & f : e.sources) {
                 // TODO: obj files are a per compiler thing, I think
                 // TODO: get the proper language
                 // TODO: actually set args to something
-                out << "build " << f.get_name() << ".o: "
-                    << "cpp_compiler_for_build " << escape(f.relative_to_build_dir()) << std::endl;
-                out << "  ARGS = " << std::endl;
+                auto built = escape(f.get_name()) + ".o";
+                srcs.emplace_back(built);
+                out << "build " << built << ": cpp_compiler_for_build "
+                    << escape(f.relative_to_build_dir()) << std::endl;
+                out << "  ARGS = " << std::endl << std::endl;
             }
+
+            // TODO: detect the actual linker to use
+            out << "build " << e.name << ": cpp_linker_for_build";
+            for (const auto & s : srcs) {
+                out << " " << s;
+            }
+            out << "\n";
+            out << "  LINK_ARGS = " << std::endl;
         }
     }
 
