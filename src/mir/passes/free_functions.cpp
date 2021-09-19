@@ -34,7 +34,7 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
         auto const & v = std::get<std::unique_ptr<String>>(arg_h);
 
         files.emplace_back(std::make_unique<File>(
-            Objects::File{v->value, false, pstate.source_root, pstate.build_root}));
+            Objects::File{v->value, f->source_dir, false, pstate.source_root, pstate.build_root}));
     }
 
     return std::make_unique<Array>(std::move(files));
@@ -51,17 +51,21 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
  * arrays it runs into.
  */
 std::vector<Objects::File> srclist_to_filelist(const std::vector<Object> & srclist,
-                                               const State::Persistant & pstate) {
+                                               const State::Persistant & pstate,
+                                               const std::string & subdir) {
     std::vector<Objects::File> filelist{};
     for (const auto & s : srclist) {
         if (std::holds_alternative<std::unique_ptr<String>>(s)) {
             const auto & src = std::get<std::unique_ptr<String>>(s);
             filelist.emplace_back(
-                Objects::File{src->value, false, pstate.source_root, pstate.build_root});
+                Objects::File{src->value, subdir, false, pstate.source_root, pstate.build_root});
         } else if (std::holds_alternative<std::unique_ptr<File>>(s)) {
             filelist.emplace_back(std::get<std::unique_ptr<File>>(s)->file);
         } else if (std::holds_alternative<std::unique_ptr<Array>>(s)) {
-            auto a = srclist_to_filelist(std::get<std::unique_ptr<Array>>(s)->value, pstate);
+            // TODO: this shouldn't be handled here, it should be handled by the flatten lowering
+            // pass
+            auto a =
+                srclist_to_filelist(std::get<std::unique_ptr<Array>>(s)->value, pstate, subdir);
             std::move(a.begin(), a.end(), std::back_inserter(filelist));
         } else {
             // TODO: there are other valid types here, like generator output and custom targets
@@ -98,7 +102,7 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     // and it's easy
     std::vector<Object> raw_srcs{};
     std::move(f->pos_args.begin() + 1, f->pos_args.end(), std::back_inserter(raw_srcs));
-    auto srcs = srclist_to_filelist(raw_srcs, pstate);
+    auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
 
     // TODO: machien parameter needs to be set from the native kwarg
     Objects::Executable exe{name, srcs, Machines::Machine::BUILD};

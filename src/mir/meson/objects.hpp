@@ -15,6 +15,8 @@
 
 #include "machines.hpp"
 
+namespace fs = std::filesystem;
+
 namespace MIR::Objects {
 
 /**
@@ -23,9 +25,9 @@ namespace MIR::Objects {
  */
 class File {
   public:
-    File(const std::string & name_, const bool & built_, const std::filesystem::path & sr_,
-         const std::filesystem::path & br_)
-        : name{name_}, built{built_}, source_root{sr_}, build_root{br_} {};
+    File(const std::string & name_, const fs::path & sdir, const bool & built_,
+         const fs::path & sr_, const fs::path & br_)
+        : name{name_}, subdir{sdir}, built{built_}, source_root{sr_}, build_root{br_} {};
 
     /// Whether this is a built object, or a static one
     const bool is_built() const;
@@ -35,16 +37,17 @@ class File {
     const std::string get_name() const;
 
     /// Get a path for this file relative to the source tree
-    const std::filesystem::path relative_to_source_dir() const;
+    const fs::path relative_to_source_dir() const;
 
     /// Get a path for this file relative to the build treeZ
-    const std::filesystem::path relative_to_build_dir() const;
+    const fs::path relative_to_build_dir() const;
 
   private:
     const std::string name;
+    const fs::path subdir;
     const bool built;
-    const std::filesystem::path source_root;
-    const std::filesystem::path build_root;
+    const fs::path source_root;
+    const fs::path build_root;
 };
 
 /**
