@@ -11,9 +11,12 @@
 
 #include <filesystem>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "arguments.hpp"
 #include "machines.hpp"
+#include "toolchains/toolchain.hpp"
 
 namespace fs = std::filesystem;
 
@@ -66,10 +69,18 @@ class BuildTarget {
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
 
+    /**
+     * Arguments for the target, sorted by langauge
+     *
+     * We sort these by language, as each compiled source will only recieve it's
+     * per-language arguments
+     */
+    const std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> arguments;
+
   protected:
     BuildTarget(const std::string & name_, const std::vector<File> & srcs,
                 const Machines::Machine & m)
-        : name{name_}, sources{srcs}, machine{m} {};
+        : name{name_}, sources{srcs}, machine{m}, arguments{} {};
 };
 
 /**
