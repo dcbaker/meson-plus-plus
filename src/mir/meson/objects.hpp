@@ -51,14 +51,12 @@ class File {
 };
 
 /**
- * A meson Executable target
+ * A Base build Target
+ *
+ * Meant to be shared by other build target classes
  */
-class Executable {
+class BuildTarget {
   public:
-    Executable(const std::string & name_, const std::vector<File> & srcs,
-               const Machines::Machine & m)
-        : name{name_}, sources{srcs}, machine{m} {};
-
     /// The name of the target
     const std::string name;
 
@@ -67,6 +65,21 @@ class Executable {
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
+
+  protected:
+    BuildTarget(const std::string & name_, const std::vector<File> & srcs,
+                const Machines::Machine & m)
+        : name{name_}, sources{srcs}, machine{m} {};
+};
+
+/**
+ * An Executable Target
+ */
+class Executable : public BuildTarget {
+  public:
+    Executable(const std::string & name_, const std::vector<File> & srcs,
+               const Machines::Machine & m)
+        : BuildTarget{name_, srcs, m} {};
 };
 
 } // namespace MIR::Objects
