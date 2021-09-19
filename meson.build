@@ -16,6 +16,7 @@ add_project_arguments(
   cpp.get_supported_arguments(
     '-Werror=switch-enum',
     '-Werror=implicit-fallthrough',
+    '-Werror=return-type',
   ),
   '-D_GNU_SOURCE',
   language : 'cpp',
