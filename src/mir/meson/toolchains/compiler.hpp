@@ -52,6 +52,7 @@ class Compiler {
      */
     virtual std::string specialize_argument(const Arguments::Argument & arg) const = 0;
 
+    /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;
 
   protected:
