@@ -139,6 +139,14 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         if (std::holds_alternative<std::unique_ptr<MIR::Executable>>(i)) {
             // TODO: handle the correct machine
             const auto & e = std::get<std::unique_ptr<MIR::Executable>>(i)->value;
+            std::vector<std::string> cpp_args{};
+            if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
+                const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
+                for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
+                    cpp_args.emplace_back(tc.build()->compiler->specialize_argument(a));
+                }
+            }
+
             std::vector<std::string> srcs{};
             for (const auto & f : e.sources) {
                 // TODO: obj files are a per compiler thing, I think
@@ -149,7 +157,12 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
                 srcs.emplace_back(built);
                 out << "build " << built << ": cpp_compiler_for_build "
                     << escape(f.relative_to_build_dir()) << std::endl;
-                out << "  ARGS = " << std::endl << std::endl;
+                out << "  ARGS =";
+                for (const auto & a : cpp_args) {
+                    out << " " << a;
+                }
+
+                out << std::endl << std::endl;
             }
 
             // TODO: detect the actual linker to use

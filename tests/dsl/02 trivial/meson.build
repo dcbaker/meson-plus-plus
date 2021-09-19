@@ -4,4 +4,4 @@ project(
   version : '1.0',
 )
 
-executable('prog', 'main.cpp')
+executable('prog', 'main.cpp', cpp_args : ['-Duseless'])
