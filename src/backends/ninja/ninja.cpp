@@ -144,7 +144,8 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
                 // TODO: obj files are a per compiler thing, I think
                 // TODO: get the proper language
                 // TODO: actually set args to something
-                auto built = escape(f.get_name()) + ".o";
+                // TODO: do something better for private dirs, we really need the subdir for this
+                auto built = escape(fs::path{e.name + ".p"} / f.get_name()) + ".o";
                 srcs.emplace_back(built);
                 out << "build " << built << ": cpp_compiler_for_build "
                     << escape(f.relative_to_build_dir()) << std::endl;
