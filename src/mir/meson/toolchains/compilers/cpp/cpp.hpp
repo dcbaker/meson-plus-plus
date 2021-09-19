@@ -11,9 +11,14 @@
 
 namespace MIR::Toolchain::Compiler::CPP {
 
-class Gnu : public Compiler {
+class GnuLike : public Compiler {
+  protected:
+    GnuLike(const std::vector<std::string> & c) : Compiler{c} {};
+};
+
+class Gnu : public GnuLike {
   public:
-    Gnu(const std::vector<std::string> & c) : Compiler{c} {};
+    Gnu(const std::vector<std::string> & c) : GnuLike{c} {};
     ~Gnu(){};
 
     std::string id() const override { return "gcc"; };
@@ -24,9 +29,9 @@ class Gnu : public Compiler {
     std::vector<std::string> output_command(const std::string &) const override;
 };
 
-class Clang : public Compiler {
+class Clang : public GnuLike {
   public:
-    Clang(const std::vector<std::string> & c) : Compiler{c} {};
+    Clang(const std::vector<std::string> & c) : GnuLike{c} {};
     ~Clang(){};
 
     std::string id() const override { return "clang"; };
