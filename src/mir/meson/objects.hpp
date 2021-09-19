@@ -22,6 +22,8 @@ namespace fs = std::filesystem;
 
 namespace MIR::Objects {
 
+using ArgMap = std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>;
+
 /**
  * A Meson File, which is a smart object that knows its location relative to the
  * source and build directories
@@ -75,12 +77,12 @@ class BuildTarget {
      * We sort these by language, as each compiled source will only recieve it's
      * per-language arguments
      */
-    const std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> arguments;
+    const ArgMap arguments;
 
   protected:
     BuildTarget(const std::string & name_, const std::vector<File> & srcs,
-                const Machines::Machine & m)
-        : name{name_}, sources{srcs}, machine{m}, arguments{} {};
+                const Machines::Machine & m, const ArgMap & args)
+        : name{name_}, sources{srcs}, machine{m}, arguments{args} {};
 };
 
 /**
@@ -89,8 +91,8 @@ class BuildTarget {
 class Executable : public BuildTarget {
   public:
     Executable(const std::string & name_, const std::vector<File> & srcs,
-               const Machines::Machine & m)
-        : BuildTarget{name_, srcs, m} {};
+               const Machines::Machine & m, const ArgMap & args)
+        : BuildTarget{name_, srcs, m, args} {};
 };
 
 } // namespace MIR::Objects

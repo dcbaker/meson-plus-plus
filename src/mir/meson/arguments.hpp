@@ -38,7 +38,6 @@ enum class Type {
 class Argument {
   public:
     Argument(const std::string & v, const Type & t) : value{v}, type{t} {};
-    virtual ~Argument(){};
 
     /// The value of the argument
     const std::string value;

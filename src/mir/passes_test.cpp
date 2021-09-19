@@ -5,6 +5,7 @@
 #include <sstream>
 #include <variant>
 
+#include "arguments.hpp"
 #include "ast_to_mir.hpp"
 #include "driver.hpp"
 #include "exceptions.hpp"
@@ -13,6 +14,7 @@
 #include "passes.hpp"
 #include "state/state.hpp"
 #include "toolchains/archiver.hpp"
+#include "toolchains/common.hpp"
 #include "toolchains/compilers/cpp/cpp.hpp"
 #include "toolchains/linker.hpp"
 
@@ -224,9 +226,12 @@ TEST(files, simple) {
 }
 
 TEST(executable, simple) {
-    auto irlist = lower("x = executable('exe', 'source.c')");
+    auto irlist = lower("x = executable('exe', 'source.c', cpp_args : ['-Dfoo'])");
 
-    const MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
     bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
     ASSERT_TRUE(progress);
@@ -237,6 +242,14 @@ TEST(executable, simple) {
 
     const auto & e = std::get<std::unique_ptr<MIR::Executable>>(r)->value;
     ASSERT_EQ(e.name, "exe");
+    ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
+
+    const auto & args = e.arguments.at(MIR::Toolchain::Language::CPP);
+    ASSERT_EQ(args.size(), 1);
+
+    const auto & a = args.front();
+    ASSERT_EQ(a.type, MIR::Arguments::Type::DEFINE);
+    ASSERT_EQ(a.value, "foo");
 }
 
 TEST(project, valid) {

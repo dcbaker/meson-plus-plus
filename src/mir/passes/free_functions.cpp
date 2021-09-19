@@ -97,6 +97,30 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     }
     const auto & name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
 
+    std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
+
+    if (f->kw_args.find("cpp_args") != f->kw_args.end()) {
+        const auto & args_obj = f->kw_args["cpp_args"];
+        if (!std::holds_alternative<std::unique_ptr<Array>>(args_obj)) {
+            throw Util::Exceptions::InvalidArguments{
+                "executable cpp_args must be an array of strings"};
+        }
+
+        std::vector<Arguments::Argument> cpp_args{};
+        const auto & raw_args = std::get<std::unique_ptr<Array>>(args_obj)->value;
+        const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
+        for (const auto & ra : raw_args) {
+            if (!std::holds_alternative<std::unique_ptr<String>>(ra)) {
+                throw Util::Exceptions::MesonException{"\"cpp_args\" must be strings"};
+            }
+            // TODO need to lower this
+            const auto & a = std::get<std::unique_ptr<String>>(ra)->value;
+            cpp_args.emplace_back(comp->generalize_argument(a));
+        }
+
+        args[Toolchain::Language::CPP] = std::move(cpp_args);
+    }
+
     // skip the first argument
     // XXX: I don't like mutating pos_args here, but it's working for the moment
     // and it's easy
@@ -105,7 +129,7 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
 
     // TODO: machien parameter needs to be set from the native kwarg
-    Objects::Executable exe{name, srcs, Machines::Machine::BUILD};
+    Objects::Executable exe{name, srcs, Machines::Machine::BUILD, args};
 
     return std::make_unique<Executable>(exe);
 }
