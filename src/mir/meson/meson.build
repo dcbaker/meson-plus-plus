@@ -13,7 +13,7 @@ libmeson = static_library(
   'meson',
   [
     'machines.cpp',
-    'objects.cpp',
+    'objects/file.cpp',
     'toolchains/archivers/gnu.cpp',
     'toolchains/common.cpp',
     'toolchains/compilers/cpp/clang.cpp',
