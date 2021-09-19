@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "arguments.hpp"
 #include "common.hpp"
 #include "machines.hpp"
 
@@ -36,6 +37,20 @@ class Compiler {
      * @param outfile The name of the file to output.
      */
     virtual std::vector<std::string> output_command(const std::string & outfile) const = 0;
+
+    /**
+     * Convert a compiler specific argument into a generic one
+     *
+     * @param arg The Argument to be converted
+     */
+    virtual Arguments::Argument generalize_argument(const std::string &) const = 0;
+
+    /**
+     * Convert a generic argument into a compiler specific one one
+     *
+     * @param arg The Argument to be converted
+     */
+    virtual std::string specialize_argument(const Arguments::Argument & arg) const = 0;
 
     const std::vector<std::string> command;
 

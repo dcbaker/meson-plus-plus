@@ -16,6 +16,8 @@ class GnuLike : public Compiler {
     RSPFileSupport rsp_support() const final;
     std::vector<std::string> compile_only_command() const final;
     std::vector<std::string> output_command(const std::string &) const final;
+    Arguments::Argument generalize_argument(const std::string &) const final;
+    std::string specialize_argument(const Arguments::Argument & arg) const final;
 
   protected:
     GnuLike(const std::vector<std::string> & c) : Compiler{c} {};
