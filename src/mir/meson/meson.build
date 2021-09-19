@@ -18,6 +18,7 @@ libmeson = static_library(
     'toolchains/common.cpp',
     'toolchains/compilers/cpp/clang.cpp',
     'toolchains/compilers/cpp/gnu.cpp',
+    'toolchains/compilers/cpp/gnulike.cpp',
     'toolchains/detect_archivers.cpp',
     'toolchains/detect_compilers.cpp',
     'toolchains/detect_linkers.cpp',

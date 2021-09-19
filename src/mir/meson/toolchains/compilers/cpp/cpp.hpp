@@ -12,6 +12,11 @@
 namespace MIR::Toolchain::Compiler::CPP {
 
 class GnuLike : public Compiler {
+  public:
+    RSPFileSupport rsp_support() const final;
+    std::vector<std::string> compile_only_command() const final;
+    std::vector<std::string> output_command(const std::string &) const final;
+
   protected:
     GnuLike(const std::vector<std::string> & c) : Compiler{c} {};
 };
@@ -23,10 +28,6 @@ class Gnu : public GnuLike {
 
     std::string id() const override { return "gcc"; };
     std::string language() const override { return "C++"; };
-
-    RSPFileSupport rsp_support() const override;
-    std::vector<std::string> compile_only_command() const override;
-    std::vector<std::string> output_command(const std::string &) const override;
 };
 
 class Clang : public GnuLike {
@@ -36,10 +37,6 @@ class Clang : public GnuLike {
 
     std::string id() const override { return "clang"; };
     std::string language() const override { return "C++"; };
-
-    RSPFileSupport rsp_support() const override;
-    std::vector<std::string> compile_only_command() const override;
-    std::vector<std::string> output_command(const std::string &) const override;
 };
 
 } // namespace MIR::Toolchain::Compiler::CPP
