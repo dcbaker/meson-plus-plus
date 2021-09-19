@@ -26,13 +26,24 @@ enum class Type {
 
 /**
  * An abstract argument container
+ *
+ * This allows us to lower arguments given in compiler specific form (either
+ * from a source like pkg-config, or from the build definitions/cli) and keep
+ * them in a platform/compiler agnostic form. Then in the backend the compiler
+ * can lower these from a agnostic form into a specific form.
+ *
+ * This contrasts with Meson's approach of using GCC/Unix style arguments
+ * internally, and converting between them.
  */
 class Argument {
   public:
     Argument(const std::string & v, const Type & t) : value{v}, type{t} {};
     virtual ~Argument(){};
 
+    /// The value of the argument
     const std::string value;
+
+    /// The type of the argument
     const Type type;
 };
 
