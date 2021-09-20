@@ -69,7 +69,7 @@ void write_linker_rule(const std::string & lang,
     for (const auto & c : c->output_command("${out}")) {
         out << " " << c;
     }
-    out << " ${in} ${LINK_ARGS}" << std::endl;
+    out << " ${in} ${ARGS}" << std::endl;
 
     // Write the description
     out << "  description = Linking target ${out}" << std::endl << std::endl;
@@ -128,32 +128,29 @@ class Rule {
 
 void write_build_rule(const Rule & rule, std::ofstream & out) {
     // TODO: get the actual compiler/linker
-    if (rule.type == RuleType::COMPILE) {
-        out << "build " << rule.output << ": "
-            << "cpp_compiler_for_build";
-        for (const auto & o : rule.input) {
-            out << " " << o;
-        }
-        out << "\n";
-
-        out << "  ARGS =";
-        for (const auto & a : rule.arguments) {
-            out << " " << a;
-        }
-    } else if (rule.type == RuleType::LINK) {
-        out << "build " << rule.output << ": "
-            << "cpp_linker_for_build";
-        for (const auto & o : rule.input) {
-            out << " " << o;
-        }
-        out << "\n";
-
-        out << "  LINK_ARGS =";
-        for (const auto & a : rule.arguments) {
-            out << " " << a;
-        }
+    std::string rule_name;
+    switch (rule.type) {
+        case RuleType::COMPILE:
+            rule_name = "cpp_compiler_for_build";
+            break;
+        case RuleType::LINK:
+            rule_name = "cpp_linker_for_build";
+            break;
+        case RuleType::ARCHIVE: // TODO:
+        default:
+            throw std::exception{}; // should be unreachable
     }
 
+    out << "build " << rule.output << ": " << rule_name;
+    for (const auto & o : rule.input) {
+        out << " " << o;
+    }
+    out << "\n";
+
+    out << "  ARGS =";
+    for (const auto & a : rule.arguments) {
+        out << " " << a;
+    }
     out << "\n" << std::endl;
 }
 
