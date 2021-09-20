@@ -101,24 +101,28 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
 
     if (f->kw_args.find("cpp_args") != f->kw_args.end()) {
         const auto & args_obj = f->kw_args["cpp_args"];
-        if (!std::holds_alternative<std::unique_ptr<Array>>(args_obj)) {
+        const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
+        if (std::holds_alternative<std::unique_ptr<String>>(args_obj)) {
+            const auto & v = std::get<std::unique_ptr<String>>(args_obj)->value;
+            args[Toolchain::Language::CPP] =
+                std::vector<Arguments::Argument>{comp->generalize_argument(v)};
+        } else if (std::holds_alternative<std::unique_ptr<Array>>(args_obj)) {
+            std::vector<Arguments::Argument> cpp_args{};
+            const auto & raw_args = std::get<std::unique_ptr<Array>>(args_obj)->value;
+            for (const auto & ra : raw_args) {
+                if (!std::holds_alternative<std::unique_ptr<String>>(ra)) {
+                    throw Util::Exceptions::MesonException{"\"cpp_args\" must be strings"};
+                }
+                // TODO need to lower this
+                const auto & a = std::get<std::unique_ptr<String>>(ra)->value;
+                cpp_args.emplace_back(comp->generalize_argument(a));
+            }
+
+            args[Toolchain::Language::CPP] = std::move(cpp_args);
+        } else {
             throw Util::Exceptions::InvalidArguments{
                 "executable cpp_args must be an array of strings"};
         }
-
-        std::vector<Arguments::Argument> cpp_args{};
-        const auto & raw_args = std::get<std::unique_ptr<Array>>(args_obj)->value;
-        const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
-        for (const auto & ra : raw_args) {
-            if (!std::holds_alternative<std::unique_ptr<String>>(ra)) {
-                throw Util::Exceptions::MesonException{"\"cpp_args\" must be strings"};
-            }
-            // TODO need to lower this
-            const auto & a = std::get<std::unique_ptr<String>>(ra)->value;
-            cpp_args.emplace_back(comp->generalize_argument(a));
-        }
-
-        args[Toolchain::Language::CPP] = std::move(cpp_args);
     }
 
     // skip the first argument
