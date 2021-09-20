@@ -24,7 +24,7 @@ TEST(file, built_relative_to_source) {
 
 TEST(file, built_relative_to_source_subdir) {
     File f{"foo.c", "sub", true, "/home/user/src", "/home/user/src/build"};
-    ASSERT_EQ(f.relative_to_source_dir(), "build/sub/foo.c");
+    ASSERT_EQ(f.relative_to_source_dir(), "../build/sub/foo.c");
 }
 
 TEST(file, static_relative_to_build) {
@@ -34,7 +34,7 @@ TEST(file, static_relative_to_build) {
 
 TEST(file, static_relative_to_build_subdir) {
     File f{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
-    ASSERT_EQ(f.relative_to_build_dir(), "../sub/foo.c");
+    ASSERT_EQ(f.relative_to_build_dir(), "../../sub/foo.c");
 }
 
 TEST(file, static_relative_to_source) {
