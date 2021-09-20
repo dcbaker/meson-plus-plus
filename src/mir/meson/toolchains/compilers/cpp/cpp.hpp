@@ -18,6 +18,7 @@ class GnuLike : public Compiler {
     std::vector<std::string> output_command(const std::string &) const final;
     Arguments::Argument generalize_argument(const std::string &) const final;
     std::string specialize_argument(const Arguments::Argument & arg) const final;
+    std::vector<std::string> always_args() const final;
 
   protected:
     GnuLike(const std::vector<std::string> & c) : Compiler{c} {};

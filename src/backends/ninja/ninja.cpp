@@ -172,14 +172,18 @@ std::vector<Rule> executable_rules(const MIR::Objects::Executable & e,
         // TODO: get the proper language
         // TODO: actually set args to something
         // TODO: do something better for private dirs, we really need the subdir for this
-        rules.emplace_back(Rule{
-            {escape(f.relative_to_build_dir())},
-            escape(fs::path{e.name + ".p"} / f.get_name()) + ".o",
-            RuleType::COMPILE,
-            MIR::Toolchain::Language::CPP,
-            MIR::Machines::Machine::BUILD,
-            cpp_args,
-        });
+        const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
+
+        auto lang_args = cpp_args;
+        auto always_args = tc.build()->compiler->always_args();
+        lang_args.insert(lang_args.end(), always_args.begin(), always_args.end());
+
+        rules.emplace_back(Rule{{escape(f.relative_to_build_dir())},
+                                escape(fs::path{e.name + ".p"} / f.get_name()) + ".o",
+                                RuleType::COMPILE,
+                                MIR::Toolchain::Language::CPP,
+                                MIR::Machines::Machine::BUILD,
+                                lang_args});
     }
 
     std::vector<std::string> final_outs;

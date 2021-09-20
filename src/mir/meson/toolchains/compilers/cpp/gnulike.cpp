@@ -43,4 +43,13 @@ std::string GnuLike::specialize_argument(const Arguments::Argument & arg) const 
     }
 }
 
+std::vector<std::string> GnuLike::always_args() const {
+    std::vector<std::string> args{};
+
+    // TODO: if not darwin
+    args.emplace_back("-D_FILE_OFFSET_BITS=64");
+
+    return args;
+}
+
 } // namespace MIR::Toolchain::Compiler::CPP

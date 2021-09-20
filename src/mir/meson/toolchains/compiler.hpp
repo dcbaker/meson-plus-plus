@@ -31,6 +31,9 @@ class Compiler {
     /// Get the command line arguments to compile only, without linking
     virtual std::vector<std::string> compile_only_command() const = 0;
 
+    /// Arguments that should always be used by this langauge/compiler
+    virtual std::vector<std::string> always_args() const = 0;
+
     /**
      * Get the command line arguments to set the output of the compiler
      *
