@@ -50,17 +50,16 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
  * converting any strings into files, appending files as is, and flattening any
  * arrays it runs into.
  */
-std::vector<Objects::File> srclist_to_filelist(const std::vector<Object> & srclist,
+std::vector<Objects::File> srclist_to_filelist(const std::vector<Object *> & srclist,
                                                const State::Persistant & pstate,
                                                const std::string & subdir) {
     std::vector<Objects::File> filelist{};
     for (const auto & s : srclist) {
-        if (std::holds_alternative<std::unique_ptr<String>>(s)) {
-            const auto & src = std::get<std::unique_ptr<String>>(s);
+        if (const auto src = std::get_if<std::unique_ptr<String>>(s); src != nullptr) {
             filelist.emplace_back(
-                Objects::File{src->value, subdir, false, pstate.source_root, pstate.build_root});
-        } else if (std::holds_alternative<std::unique_ptr<File>>(s)) {
-            filelist.emplace_back(std::get<std::unique_ptr<File>>(s)->file);
+                Objects::File{(*src)->value, subdir, false, pstate.source_root, pstate.build_root});
+        } else if (const auto src = std::get_if<std::unique_ptr<File>>(s); s != nullptr) {
+            filelist.emplace_back((*src)->file);
         } else {
             // TODO: there are other valid types here, like generator output and custom targets
             throw Util::Exceptions::InvalidArguments{
@@ -126,10 +125,10 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     const auto & name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
 
     // skip the first argument
-    // XXX: I don't like mutating pos_args here, but it's working for the moment
-    // and it's easy
-    std::vector<Object> raw_srcs{};
-    std::move(f->pos_args.begin() + 1, f->pos_args.end(), std::back_inserter(raw_srcs));
+    std::vector<Object *> raw_srcs{};
+    for (unsigned i = 1; i < f->pos_args.size(); ++i) {
+        raw_srcs.emplace_back(&f->pos_args[i]);
+    }
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
 
     auto args = target_arguments(f, pstate);
