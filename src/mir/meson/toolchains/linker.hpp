@@ -40,6 +40,9 @@ class Linker {
     /// Get the command for this linker
     virtual const std::vector<std::string> command() const = 0;
 
+    /// Get arguments that should always be used for this linker
+    virtual std::vector<std::string> always_args() const = 0;
+
   protected:
     Linker(const std::vector<std::string> & c) : _command{c} {};
     const std::vector<std::string> _command;
@@ -59,6 +62,7 @@ class GnuBFD : public Linker {
         throw std::exception{}; // "Should be unused"
     }
     const std::vector<std::string> command() const final { return _command; }
+    std::vector<std::string> always_args() const final { return {}; }
 };
 
 namespace Drivers {
@@ -75,6 +79,7 @@ class Gnu : public Linker {
     std::string language() const override;
     std::vector<std::string> output_command(const std::string & outfile) const override;
     const std::vector<std::string> command() const final { return compiler->command; }
+    std::vector<std::string> always_args() const final { return {}; }
 
   private:
     const GnuBFD linker;
