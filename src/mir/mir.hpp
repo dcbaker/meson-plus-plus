@@ -56,6 +56,15 @@ class Executable {
     Variable var;
 };
 
+class StaticLibrary {
+  public:
+    StaticLibrary(const Objects::StaticLibrary & exe_) : value{exe_} {};
+
+    const Objects::StaticLibrary value;
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -75,7 +84,7 @@ using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
                  std::unique_ptr<Dict>, std::unique_ptr<Compiler>, std::unique_ptr<File>,
-                 std::unique_ptr<Executable>>;
+                 std::unique_ptr<Executable>, std::unique_ptr<StaticLibrary>>;
 
 /**
  * Holds a toolchain
@@ -245,7 +254,5 @@ class BasicBlock {
     /// The next basic block to go to.
     std::shared_ptr<BasicBlock> next;
 };
-
-
 
 } // namespace MIR

@@ -139,6 +139,41 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     return std::make_unique<Executable>(exe);
 }
 
+std::optional<Object> lower_static_library(const Object & obj, const State::Persistant & pstate) {
+    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
+
+    if (f->holder.value_or("") != "" || f->name != "static_library") {
+        return std::nullopt;
+    }
+
+    // This doesn't handle the listified version corretly
+    if (f->pos_args.size() < 2) {
+        throw Util::Exceptions::InvalidArguments{"static_library requires at least 2 arguments"};
+    }
+    if (!std::holds_alternative<std::unique_ptr<String>>(f->pos_args[0])) {
+        // TODO: it could also be an identifier pointing to a string
+        throw Util::Exceptions::InvalidArguments{"static_library first argument must be a string"};
+    }
+    const auto & name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
+
+    // skip the first argument
+    std::vector<Object *> raw_srcs{};
+    for (unsigned i = 1; i < f->pos_args.size(); ++i) {
+        raw_srcs.emplace_back(&f->pos_args[i]);
+    }
+    auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
+
+    auto args = target_arguments(f, pstate);
+
+    // TODO: machien parameter needs to be set from the native kwarg
+    Objects::StaticLibrary lib{name, srcs, Machines::Machine::BUILD, args};
+
+    return std::make_unique<StaticLibrary>(lib);
+}
+
 } // namespace
 
 void lower_project(BasicBlock * block, State::Persistant & pstate) {
@@ -205,14 +240,13 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
 }
 
 bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) {
-    bool progress = false;
-
-    progress |=
-        function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); });
-    progress |=
-        function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); });
-
-    return progress;
+    // clang-format off
+    return false
+        || function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); })
+        || function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); })
+        || function_walker(block, [&](const Object & obj) { return lower_static_library(obj, pstate); })
+        ;
+    // clang-format on
 }
 
 } // namespace MIR::Passes

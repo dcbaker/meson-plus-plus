@@ -51,6 +51,27 @@ void write_compiler_rule(const std::string & lang,
         << std::endl;
 }
 
+void write_archiver_rule(const std::string & lang,
+                         const std::unique_ptr<MIR::Toolchain::Archiver::Archiver> & c,
+                         std::ofstream & out) {
+
+    // TODO: build or host correctly
+    out << "rule " << lang << "_archiver_for_"
+        << "build" << std::endl;
+
+    // Write the command
+    // TODO: write the depfile stuff
+    out << "  command =";
+    out << "rm -f ${out} &&";
+    for (const auto & c : c->command()) {
+        out << " " << c;
+    }
+    out << " ${ARGS} ${out} ${in}\n";
+
+    // Write the description
+    out << "  description = Linking Static target ${out}\n" << std::endl;
+}
+
 void write_linker_rule(const std::string & lang,
                        const std::unique_ptr<MIR::Toolchain::Linker::Linker> & c,
                        std::ofstream & out) {
@@ -137,6 +158,8 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
             rule_name = "cpp_linker_for_build";
             break;
         case RuleType::ARCHIVE: // TODO:
+            rule_name = "cpp_archiver_for_build";
+            break;
         default:
             throw std::exception{}; // should be unreachable
     }
@@ -156,7 +179,8 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
 
 template <typename T>
 std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate) {
-    static_assert(std::is_base_of<MIR::Objects::Executable, T>::value,
+    static_assert(std::is_base_of<MIR::Objects::Executable, T>::value ||
+                      std::is_base_of<MIR::Objects::StaticLibrary, T>::value,
                   "Must be derived from a build target");
 
     std::vector<std::string> cpp_args{};
@@ -168,6 +192,7 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     }
 
     std::vector<Rule> rules{};
+    const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
 
     std::vector<std::string> srcs{};
     for (const auto & f : e.sources) {
@@ -175,7 +200,6 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         // TODO: get the proper language
         // TODO: actually set args to something
         // TODO: do something better for private dirs, we really need the subdir for this
-        const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
 
         auto lang_args = cpp_args;
         auto always_args = tc.build()->compiler->always_args();
@@ -194,12 +218,30 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         final_outs.emplace_back(r.output);
     }
 
+    std::string name;
+    RuleType type;
+    std::vector<std::string> link_args{};
+    if constexpr (std::is_base_of<MIR::Objects::StaticLibrary, T>::value) {
+        type = RuleType::ARCHIVE;
+        // TODO: per platform?
+        name = e.name + ".a";
+        // TODO: need to combin with link_arguments from DSL
+        link_args = tc.build()->archiver->always_args();
+    } else {
+        type = RuleType::LINK;
+        name = e.name;
+        link_args = tc.build()->linker->always_args();
+    }
+
+    // TODO: linker/archiver always_args
+
     rules.emplace_back(Rule{
         final_outs,
-        e.name,
-        RuleType::LINK,
+        name,
+        type,
         MIR::Toolchain::Language::CPP,
         MIR::Machines::Machine::BUILD,
+        link_args,
     });
 
     return rules;
@@ -216,6 +258,12 @@ std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
     for (const auto & i : block->instructions) {
         if (const auto x = std::get_if<std::unique_ptr<MIR::Executable>>(&i); x != nullptr) {
             auto r = target_rule((*x)->value, pstate);
+            std::move(r.begin(), r.end(), std::back_inserter(rules));
+            const Rule * const named_rule = &rules.back();
+            rule_map.emplace(named_rule->output, named_rule);
+        }
+        if (std::holds_alternative<std::unique_ptr<MIR::StaticLibrary>>(i)) {
+            auto r = target_rule(std::get<std::unique_ptr<MIR::StaticLibrary>>(i)->value, pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
             const Rule * const named_rule = &rules.back();
             rule_map.emplace(named_rule->output, named_rule);
@@ -256,7 +304,12 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
     }
 
     out << "# Static Linking rules" << std::endl << std::endl;
-    // TODO:
+
+    for (const auto & [l, tc] : pstate.toolchains) {
+        const auto & lstr = MIR::Toolchain::to_string(l);
+        // TODO: should also have a _for_host
+        write_archiver_rule(lstr, tc.build()->archiver, out);
+    }
 
     out << "# Dynamic Linking rules" << std::endl << std::endl;
 
