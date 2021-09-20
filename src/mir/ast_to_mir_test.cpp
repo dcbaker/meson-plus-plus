@@ -21,7 +21,8 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
 
 MIR::BasicBlock lower(const std::string & in) {
     auto block = parse(in);
-    auto ir = MIR::lower_ast(block);
+    const MIR::State::Persistant pstate{"foo/src", "foo/build"};
+    auto ir = MIR::lower_ast(block, pstate);
     return ir;
 }
 
@@ -108,7 +109,7 @@ TEST(ast_to_ir, simple_method) {
 
     const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "method");
-    ASSERT_EQ(ir->source_dir, "/home/foo/bar");  // We want to ensure this isn't meson.build
+    ASSERT_EQ(ir->source_dir, ""); // We want to ensure this isn't meson.build
     ASSERT_TRUE(ir->holder.has_value());
     ASSERT_EQ(ir->holder.value(), "obj");
     ASSERT_TRUE(ir->pos_args.empty());

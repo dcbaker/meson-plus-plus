@@ -34,7 +34,8 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
 
 MIR::BasicBlock lower(const std::string & in) {
     auto block = parse(in);
-    auto ir = MIR::lower_ast(block);
+    const MIR::State::Persistant pstate{src_root, build_root};
+    auto ir = MIR::lower_ast(block, pstate);
     return ir;
 }
 

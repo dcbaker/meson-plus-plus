@@ -33,7 +33,7 @@ static int configure(const Options::ConfigureOptions & opts) {
     MIR::State::Persistant pstate{opts.sourcedir, opts.builddir};
 
     // Create IR from the AST, then run our lowering passes on it
-    auto irlist = MIR::lower_ast(block);
+    auto irlist = MIR::lower_ast(block, pstate);
     MIR::Passes::lower_project(&irlist, pstate);
     MIR::lower(&irlist, pstate);
 

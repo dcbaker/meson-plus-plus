@@ -15,6 +15,10 @@ namespace {
  */
 struct ExpressionLowering {
 
+    ExpressionLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
+
+    const MIR::State::Persistant & pstate;
+
     Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
         return std::make_unique<String>(expr->value);
     };
@@ -51,8 +55,9 @@ struct ExpressionLowering {
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_unique<FunctionCall>(fname, std::move(pos), std::move(kwargs),
-                                              path.parent_path());
+        return std::make_unique<FunctionCall>(
+            fname, std::move(pos), std::move(kwargs),
+            std::filesystem::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
@@ -131,16 +136,21 @@ struct ExpressionLowering {
  * Lowers AST statements into MIR objects.
  */
 struct StatementLowering {
+
+    StatementLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
+
+    const MIR::State::Persistant & pstate;
+
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
-        const ExpressionLowering l{};
+        const ExpressionLowering l{pstate};
         list->instructions.emplace_back(std::visit(l, stmt->expr));
         return list;
     };
 
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
-        const ExpressionLowering l{};
+        const ExpressionLowering l{pstate};
 
         auto next_block = std::make_shared<BasicBlock>();
 
@@ -201,7 +211,7 @@ struct StatementLowering {
 
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
-        const ExpressionLowering l{};
+        const ExpressionLowering l{pstate};
         auto target = std::visit(l, stmt->lhs);
         auto value = std::visit(l, stmt->rhs);
 
@@ -240,10 +250,11 @@ struct StatementLowering {
 /**
  * Lower AST representation into MIR.
  */
-BasicBlock lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
+BasicBlock lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
+                     const MIR::State::Persistant & pstate) {
     BasicBlock bl{};
     BasicBlock * current_block = &bl;
-    const StatementLowering lower{};
+    const StatementLowering lower{pstate};
     for (const auto & i : block->statements) {
         current_block = std::visit([&](const auto & a) { return lower(current_block, a); }, i);
     }
