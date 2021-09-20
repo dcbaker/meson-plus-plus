@@ -61,12 +61,6 @@ std::vector<Objects::File> srclist_to_filelist(const std::vector<Object> & srcli
                 Objects::File{src->value, subdir, false, pstate.source_root, pstate.build_root});
         } else if (std::holds_alternative<std::unique_ptr<File>>(s)) {
             filelist.emplace_back(std::get<std::unique_ptr<File>>(s)->file);
-        } else if (std::holds_alternative<std::unique_ptr<Array>>(s)) {
-            // TODO: this shouldn't be handled here, it should be handled by the flatten lowering
-            // pass
-            auto a =
-                srclist_to_filelist(std::get<std::unique_ptr<Array>>(s)->value, pstate, subdir);
-            std::move(a.begin(), a.end(), std::back_inserter(filelist));
         } else {
             // TODO: there are other valid types here, like generator output and custom targets
             throw Util::Exceptions::InvalidArguments{
