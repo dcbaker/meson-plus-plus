@@ -154,8 +154,11 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
     out << "\n" << std::endl;
 }
 
-std::vector<Rule> executable_rules(const MIR::Objects::Executable & e,
-                                   const MIR::State::Persistant & pstate) {
+template <typename T>
+std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate) {
+    static_assert(std::is_base_of<MIR::Objects::Executable, T>::value,
+                  "Must be derived from a build target");
+
     std::vector<std::string> cpp_args{};
     if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
         const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
@@ -212,7 +215,7 @@ std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
 
     for (const auto & i : block->instructions) {
         if (std::holds_alternative<std::unique_ptr<MIR::Executable>>(i)) {
-            auto r = executable_rules(std::get<std::unique_ptr<MIR::Executable>>(i)->value, pstate);
+            auto r = target_rule(std::get<std::unique_ptr<MIR::Executable>>(i)->value, pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
             const Rule * const named_rule = &rules.back();
             rule_map.emplace(named_rule->output, named_rule);
