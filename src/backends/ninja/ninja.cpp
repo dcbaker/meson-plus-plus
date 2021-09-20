@@ -88,6 +88,139 @@ std::string escape(const std::string & str) {
     return new_s;
 }
 
+enum class RuleType {
+    COMPILE,
+    ARCHIVE,
+    LINK,
+};
+
+/**
+ * A Ninja rule to be generated later
+ */
+class Rule {
+  public:
+    Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
+         const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m)
+        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{} {};
+    Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
+         const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
+         const std::vector<std::string> & args)
+        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args} {};
+
+    /// The input for this rule
+    const std::vector<std::string> input;
+
+    /// The output of this rule
+    const std::string output;
+
+    /// The type of rule this is
+    const RuleType type;
+
+    /// The language of this rule
+    const MIR::Toolchain::Language lang;
+
+    /// The machine of this rule
+    const MIR::Machines::Machine machine;
+
+    /// The arguments for this rule
+    const std::vector<std::string> arguments;
+};
+
+void write_build_rule(const Rule & rule, std::ofstream & out) {
+    // TODO: get the actual compiler/linker
+    if (rule.type == RuleType::COMPILE) {
+        out << "build " << rule.output << ": "
+            << "cpp_compiler_for_build";
+        for (const auto & o : rule.input) {
+            out << " " << o;
+        }
+        out << "\n";
+
+        out << "  ARGS =";
+        for (const auto & a : rule.arguments) {
+            out << " " << a;
+        }
+    } else if (rule.type == RuleType::LINK) {
+        out << "build " << rule.output << ": "
+            << "cpp_linker_for_build";
+        for (const auto & o : rule.input) {
+            out << " " << o;
+        }
+        out << "\n";
+
+        out << "  LINK_ARGS =";
+        for (const auto & a : rule.arguments) {
+            out << " " << a;
+        }
+    }
+
+    out << "\n" << std::endl;
+}
+
+std::vector<Rule> executable_rules(const MIR::Objects::Executable & e,
+                                   const MIR::State::Persistant & pstate) {
+    std::vector<std::string> cpp_args{};
+    if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
+        const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
+        for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
+            cpp_args.emplace_back(tc.build()->compiler->specialize_argument(a));
+        }
+    }
+
+    std::vector<Rule> rules{};
+
+    std::vector<std::string> srcs{};
+    for (const auto & f : e.sources) {
+        // TODO: obj files are a per compiler thing, I think
+        // TODO: get the proper language
+        // TODO: actually set args to something
+        // TODO: do something better for private dirs, we really need the subdir for this
+        rules.emplace_back(Rule{
+            {escape(f.relative_to_build_dir())},
+            escape(fs::path{e.name + ".p"} / f.get_name()) + ".o",
+            RuleType::COMPILE,
+            MIR::Toolchain::Language::CPP,
+            MIR::Machines::Machine::BUILD,
+            cpp_args,
+        });
+    }
+
+    std::vector<std::string> final_outs;
+    for (const auto & r : rules) {
+        final_outs.emplace_back(r.output);
+    }
+
+    rules.emplace_back(Rule{
+        final_outs,
+        e.name,
+        RuleType::LINK,
+        MIR::Toolchain::Language::CPP,
+        MIR::Machines::Machine::BUILD,
+    });
+
+    return rules;
+}
+
+std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
+                               const MIR::State::Persistant & pstate) {
+    // A list of all rules
+    std::vector<Rule> rules{};
+
+    // A mapping of named targets to their rules.
+    std::unordered_map<std::string, const Rule * const> rule_map{};
+
+    for (const auto & i : block->instructions) {
+        if (std::holds_alternative<std::unique_ptr<MIR::Executable>>(i)) {
+            auto r = executable_rules(std::get<std::unique_ptr<MIR::Executable>>(i)->value, pstate);
+            std::move(r.begin(), r.end(), std::back_inserter(rules));
+            const Rule * const named_rule = &rules.back();
+            rule_map.emplace(named_rule->output, named_rule);
+        }
+    }
+
+    return rules;
+}
+
 } // namespace
 
 void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant & pstate) {
@@ -133,46 +266,9 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         << "build PHONY: phony\n\n";
     out << "# Build rules for targets\n\n";
 
-    // This is a completely bullshit approach, as it breaks as soon as you have
-    // a relationship between any targets
-    for (const auto & i : block->instructions) {
-        if (std::holds_alternative<std::unique_ptr<MIR::Executable>>(i)) {
-            // TODO: handle the correct machine
-            const auto & e = std::get<std::unique_ptr<MIR::Executable>>(i)->value;
-            std::vector<std::string> cpp_args{};
-            if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
-                const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
-                for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
-                    cpp_args.emplace_back(tc.build()->compiler->specialize_argument(a));
-                }
-            }
-
-            std::vector<std::string> srcs{};
-            for (const auto & f : e.sources) {
-                // TODO: obj files are a per compiler thing, I think
-                // TODO: get the proper language
-                // TODO: actually set args to something
-                // TODO: do something better for private dirs, we really need the subdir for this
-                auto built = escape(fs::path{e.name + ".p"} / f.get_name()) + ".o";
-                srcs.emplace_back(built);
-                out << "build " << built << ": cpp_compiler_for_build "
-                    << escape(f.relative_to_build_dir()) << std::endl;
-                out << "  ARGS =";
-                for (const auto & a : cpp_args) {
-                    out << " " << a;
-                }
-
-                out << std::endl << std::endl;
-            }
-
-            // TODO: detect the actual linker to use
-            out << "build " << e.name << ": cpp_linker_for_build";
-            for (const auto & s : srcs) {
-                out << " " << s;
-            }
-            out << "\n";
-            out << "  LINK_ARGS = " << std::endl;
-        }
+    const auto & rules = mir_to_rules(block, pstate);
+    for (const auto & r : rules) {
+        write_build_rule(r, out);
     }
 
     out.flush();
