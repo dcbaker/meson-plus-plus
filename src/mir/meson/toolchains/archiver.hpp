@@ -32,6 +32,9 @@ class Archiver {
     virtual std::string id() const = 0;
     virtual std::vector<std::string> command() const = 0;
 
+    /// Arguments that should always be used by this langauge/compiler
+    virtual std::vector<std::string> always_args() const = 0;
+
   protected:
     Archiver(const std::vector<std::string> & c) : _command{c} {};
 
@@ -49,6 +52,7 @@ class Gnu : public Archiver {
     RSPFileSupport rsp_support() const override;
     std::string id() const override { return "gnu"; }
     std::vector<std::string> command() const final;
+    std::vector<std::string> always_args() const final;
 };
 
 /**
