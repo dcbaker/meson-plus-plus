@@ -77,28 +77,11 @@ std::vector<Objects::File> srclist_to_filelist(const std::vector<Object> & srcli
     return filelist;
 }
 
-std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
-
-    if (f->holder.value_or("") != "" || f->name != "executable") {
-        return std::nullopt;
-    }
-
-    // This doesn't handle the listified version corretly
-    if (f->pos_args.size() < 2) {
-        throw Util::Exceptions::InvalidArguments{"executable requires at least 2 arguments"};
-    }
-    if (!std::holds_alternative<std::unique_ptr<String>>(f->pos_args[0])) {
-        // TODO: it could also be an identifier pointing to a string
-        throw Util::Exceptions::InvalidArguments{"executable first argument must be a string"};
-    }
-    const auto & name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
-
+std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
+target_arguments(const std::unique_ptr<FunctionCall> & f, const State::Persistant & pstate) {
     std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
 
+    // TODO: handle more than just cpp, likely using a loop
     if (f->kw_args.find("cpp_args") != f->kw_args.end()) {
         const auto & args_obj = f->kw_args["cpp_args"];
         const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
@@ -125,12 +108,37 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
         }
     }
 
+    return args;
+}
+
+std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
+    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::unique_ptr<FunctionCall>>(obj);
+
+    if (f->holder.value_or("") != "" || f->name != "executable") {
+        return std::nullopt;
+    }
+
+    // This doesn't handle the listified version corretly
+    if (f->pos_args.size() < 2) {
+        throw Util::Exceptions::InvalidArguments{"executable requires at least 2 arguments"};
+    }
+    if (!std::holds_alternative<std::unique_ptr<String>>(f->pos_args[0])) {
+        // TODO: it could also be an identifier pointing to a string
+        throw Util::Exceptions::InvalidArguments{"executable first argument must be a string"};
+    }
+    const auto & name = std::get<std::unique_ptr<String>>(f->pos_args[0])->value;
+
     // skip the first argument
     // XXX: I don't like mutating pos_args here, but it's working for the moment
     // and it's easy
     std::vector<Object> raw_srcs{};
     std::move(f->pos_args.begin() + 1, f->pos_args.end(), std::back_inserter(raw_srcs));
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
+
+    auto args = target_arguments(f, pstate);
 
     // TODO: machien parameter needs to be set from the native kwarg
     Objects::Executable exe{name, srcs, Machines::Machine::BUILD, args};

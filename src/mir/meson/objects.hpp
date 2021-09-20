@@ -95,4 +95,14 @@ class Executable : public BuildTarget {
         : BuildTarget{name_, srcs, m, args} {};
 };
 
+/**
+ * A Static Library
+ */
+class StaticLibrary : public BuildTarget {
+  public:
+    StaticLibrary(const std::string & name_, const std::vector<File> & srcs,
+                  const Machines::Machine & m, const ArgMap & args)
+        : BuildTarget{name_, srcs, m, args} {};
+};
+
 } // namespace MIR::Objects
