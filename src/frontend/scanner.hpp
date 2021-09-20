@@ -24,7 +24,7 @@ class Scanner : public yyFlexLexer {
     virtual int yylex(Frontend::Parser::semantic_type * const lval,
                       Frontend::Parser::location_type * loc);
 
-    const std::string filename;
+    std::string filename;
 
   private:
     /**
