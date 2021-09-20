@@ -7,4 +7,6 @@ namespace MIR::Toolchain::Archiver {
 
 RSPFileSupport Gnu::rsp_support() const { return RSPFileSupport::GCC; };
 
+std::vector<std::string> Gnu::command() const { return _command; };
+
 } // namespace MIR::Toolchain::Archiver

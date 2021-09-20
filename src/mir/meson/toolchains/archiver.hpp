@@ -30,11 +30,12 @@ class Archiver {
      */
     virtual RSPFileSupport rsp_support() const = 0;
     virtual std::string id() const = 0;
+    virtual std::vector<std::string> command() const = 0;
 
   protected:
-    Archiver(const std::vector<std::string> & c) : command{c} {};
+    Archiver(const std::vector<std::string> & c) : _command{c} {};
 
-    const std::vector<std::string> command;
+    const std::vector<std::string> _command;
 };
 
 /**
@@ -47,6 +48,7 @@ class Gnu : public Archiver {
 
     RSPFileSupport rsp_support() const override;
     std::string id() const override { return "gnu"; }
+    std::vector<std::string> command() const final;
 };
 
 /**
