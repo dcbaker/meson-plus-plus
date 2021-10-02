@@ -11,6 +11,8 @@ parser = custom_target(
   command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@'],
 )
 
+locations_hpp = parser[2]
+
 scanner = custom_target(
   'lexer.cpp',
   input : 'lexer.l',

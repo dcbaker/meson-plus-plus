@@ -17,6 +17,7 @@ executable(
     'main.cpp',
     'options.cpp',
     version_hpp,
+    locations_hpp,
   ],
   cpp_args : [
     '-D_GNU_SOURCE',  # for getopt
