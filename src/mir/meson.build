@@ -16,6 +16,7 @@ libmir = static_library(
     'passes/machines.cpp',
     'passes/pruning.cpp',
     'passes/walkers.cpp',
+    locations_hpp,
   ],
   include_directories : inc_frontend,
   dependencies : [idep_util, idep_meson],
@@ -33,7 +34,7 @@ test(
   'ast_to_mir_test',
   executable(
     'ast_to_mir_test',
-    'ast_to_mir_test.cpp',
+    ['ast_to_mir_test.cpp', locations_hpp],
     dependencies : [idep_frontend, idep_mir, dep_gtest],
   ),
   protocol : 'gtest',
@@ -43,7 +44,7 @@ test(
   'mir_passes',
   executable(
     'mir_passes_test',
-    'passes_test.cpp',
+    ['passes_test.cpp', locations_hpp],
     dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
   ),
   protocol : 'gtest',
