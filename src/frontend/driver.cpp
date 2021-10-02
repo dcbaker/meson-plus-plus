@@ -25,7 +25,10 @@ std::unique_ptr<AST::CodeBlock> Driver::parse(std::istream & iss) {
     auto scanner = std::make_unique<Frontend::Scanner>(&iss, name);
     auto parser = std::make_unique<Frontend::Parser>(*scanner, block);
 
-    parser->parse();
+    int res = parser->parse();
+    if (res != 0) {
+        throw std::exception{};
+    }
 
     std::vector<AST::StatementV> new_stmts{};
 

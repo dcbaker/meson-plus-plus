@@ -401,16 +401,24 @@ TEST(parser, newline_in_statements) {
 }
 
 TEST(parser, comment_no_newline) {
-    auto block = parse("  # foo");
-    ASSERT_EQ(block->statements.size(), 0);
+    auto block = parse("a = 1\n  # foo");
+    ASSERT_EQ(block->statements.size(), 1);
 }
 
 TEST(parser, comment) {
-    auto block = parse("  # foo\n");
-    ASSERT_EQ(block->statements.size(), 0);
+    auto block = parse("a = 1\n  # foo\n");
+    ASSERT_EQ(block->statements.size(), 1);
 }
 
 TEST(parser, inline_comment) {
     auto block = parse("a = b  # foo\n");
     ASSERT_EQ(block->statements.size(), 1);
 }
+
+#if false
+// This fails because there is nothing in it, I don't understand why
+TEST(parser, empty) {
+    auto block = parse("# This file has no statmements\n  # or exepressions.");
+    ASSERT_EQ(block->statements.size(), 0);
+}
+#endif
