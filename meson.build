@@ -17,6 +17,7 @@ add_project_arguments(
     '-Werror=switch-enum',
     '-Werror=implicit-fallthrough',
     '-Werror=return-type',
+    '-Werror=unused-result',
   ),
   '-D_GNU_SOURCE',
   language : 'cpp',

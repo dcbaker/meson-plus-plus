@@ -48,7 +48,7 @@ Frontend::AST::AssignOp from_str(const std::string & s) {
 
 %%
 
-[ \t]                           { }
+[ \t]+                          { }
 ^\s*\n                          { loc->lines(); }
 \n                              {
                                     // Newlines are only significant as statement separators
