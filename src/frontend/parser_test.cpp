@@ -25,6 +25,38 @@ TEST(parser, string) {
     ASSERT_EQ(stmt->as_string(), "'foo'");
 }
 
+TEST(parser, escape_in_string) {
+    auto block = parse("'can\\'t'");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'can't'");
+}
+
+TEST(parser, newline_in_string) {
+    auto block = parse("'can\\'t\\nstop'");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'can't\nstop'");
+}
+
+TEST(parser, tab_in_string) {
+    auto block = parse("'\\ttab'");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'\ttab'");
+}
+
+TEST(parser, backslash_in_string) {
+    auto block = parse("'\\\\tab'");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'\\tab'");
+}
+
 TEST(parser, triple_string) {
     auto block = parse("'''foo'''");
     ASSERT_EQ(block->statements.size(), 1);

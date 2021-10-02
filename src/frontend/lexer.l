@@ -38,6 +38,8 @@ Frontend::AST::AssignOp from_str(const std::string & s) {
     }
 }
 
+static std::string strbuffer{};
+
 %}
 
 %option debug
@@ -46,6 +48,7 @@ Frontend::AST::AssignOp from_str(const std::string & s) {
 %option noyywrap
 %option c++
 
+%x STRING_STATE
 %%
 
 [ \t]+                          { }
@@ -71,7 +74,22 @@ break                           { return token::BREAK; }
 continue                        { return token::CONTINUE; }
 [a-zA-Z_][a-zA-Z0-9_]*          { lval->build<std::string>(yytext); return token::IDENTIFIER; }
 [']{3}([']{0,2}([^\\']|\\(.|\n)))*[']{3} { lval->build<std::string>(yytext); return token::TSTRING; }
-'[^']*'                         { lval->build<std::string>(yytext); return token::STRING; }
+\'                              {
+                                    BEGIN(STRING_STATE);
+                                    strbuffer.clear();
+                                    strbuffer.append(yytext);
+                                }
+<STRING_STATE>\\'               { strbuffer.append("'"); }
+<STRING_STATE>\\n               { strbuffer.append("\n"); }
+<STRING_STATE>\\t               { strbuffer.append("\t"); }
+<STRING_STATE>\\\\              { strbuffer.append("\\"); }
+<STRING_STATE>[^']              { strbuffer.append(yytext); }
+<STRING_STATE>\'                {
+                                    strbuffer.append(yytext);
+                                    lval->build<std::string>(strbuffer);
+                                    BEGIN(INITIAL);
+                                    return token::STRING;
+                                }
 0x[0-9a-fA-F]+                  { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }
 0o[0-7]+                        { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }
 [0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::DECIMAL_NUMBER; }
@@ -91,7 +109,7 @@ continue                        { return token::CONTINUE; }
 :                               { return token::COLON; }
 \?                              { return token::QMARK; }
 \.                              { return token::DOT; }
-"#".*\n?                        { }
+\#.*\n?                         { }
 .                               { yyterminate(); }
 
 %%
