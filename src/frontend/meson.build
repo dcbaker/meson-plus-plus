@@ -20,6 +20,10 @@ scanner = custom_target(
   command : [prog_flex, '-o', '@OUTPUT@', '@INPUT@'],
 )
 
+if not meson.get_compiler('cpp').has_header('FlexLexer.h')
+  error('FlexLexer.h header not found, maybe install flex-dev?')
+endif
+
 # Bison generates swtiches tahat don't handle all of their enum values
 # We can't fix that, so we have to ignore it.
 #
