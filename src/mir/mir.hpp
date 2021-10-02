@@ -17,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <sys/types.h>
 #include <unordered_map>
 #include <variant>
 #include <vector>
