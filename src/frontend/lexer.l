@@ -59,6 +59,7 @@ static std::string strbuffer{};
                                     loc->lines();
                                 }
 "#".*                           { }
+\\\n                            { loc-> lines(); }
 \n                              {
                                     // Newlines are only significant as
                                     // statement separators We want to ignore

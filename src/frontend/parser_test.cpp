@@ -402,6 +402,11 @@ TEST(IfStatementParsingTests, back_to_back_if_statments) {
     ASSERT_EQ(block->statements.size(), 2);
 }
 
+TEST(IfStatementParsingTests, backslash) {
+    auto block = parse("if true\\\n  or false\na = 1\nendif\nif false\nb = 2\nendif\n");
+    ASSERT_EQ(block->statements.size(), 2);
+}
+
 TEST(parser, foreach_statement) {
     auto block = parse("foreach x : a\na = b\ntarget()\nendforeach");
     ASSERT_EQ(block->statements.size(), 1);
