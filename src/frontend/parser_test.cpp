@@ -447,6 +447,16 @@ TEST(parser, inline_comment) {
     ASSERT_EQ(block->statements.size(), 1);
 }
 
+TEST(parser, inline_comment2) {
+    auto block = parse("a = b  # foo\nb = 2");
+    ASSERT_EQ(block->statements.size(), 2);
+}
+
+TEST(parser, multiple_newlines) {
+    auto block = parse("a = b\n\n\nb = 2");
+    ASSERT_EQ(block->statements.size(), 2);
+}
+
 #if false
 // This fails because there is nothing in it, I don't understand why
 TEST(parser, empty) {
