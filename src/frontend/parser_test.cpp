@@ -462,6 +462,16 @@ TEST(parser, comment) {
     ASSERT_EQ(block->statements.size(), 1);
 }
 
+TEST(parser, comment2) {
+    auto block = parse("a = 1\n  # foo\nb = 2\n");
+    ASSERT_EQ(block->statements.size(), 2);
+}
+
+TEST(parser, comment_in_if) {
+    auto block = parse("if true\n  # comment\n  a = 2\nendif");
+    ASSERT_EQ(block->statements.size(), 1);
+}
+
 TEST(parser, inline_comment) {
     auto block = parse("a = b  # foo\n");
     ASSERT_EQ(block->statements.size(), 1);
