@@ -505,15 +505,21 @@ class IfStatement {
 class ForeachStatement {
   public:
     ForeachStatement(Identifier && i, ExpressionV && e, std::unique_ptr<CodeBlock> && b)
-        : id{std::move(i)}, expr{std::move(e)}, block{std::move(b)} {};
+        : id{std::move(i)}, id2{std::nullopt}, expr{std::move(e)}, block{std::move(b)} {};
+    ForeachStatement(Identifier && i, Identifier && j, ExpressionV && e,
+                     std::unique_ptr<CodeBlock> && b)
+        : id{std::move(i)}, id2{std::move(j)}, expr{std::move(e)}, block{std::move(b)} {};
     ForeachStatement(ForeachStatement && f) noexcept
-        : id{std::move(f.id)}, expr{std::move(f.expr)}, block{std::move(f.block)} {};
+        : id{std::move(f.id)}, id2{std::move(f.id2)}, expr{std::move(f.expr)}, block{std::move(
+                                                                                   f.block)} {};
     ForeachStatement(const ForeachStatement &) = delete;
     ~ForeachStatement(){};
 
     std::string as_string() const;
 
     Identifier id;
+    // Used only in dictionary iteration
+    std::optional<Identifier> id2;
     ExpressionV expr;
     std::unique_ptr<CodeBlock> block;
 };
