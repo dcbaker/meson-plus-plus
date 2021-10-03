@@ -109,7 +109,7 @@ continue                        { return token::CONTINUE; }
 :                               { return token::COLON; }
 \?                              { return token::QMARK; }
 \.                              { return token::DOT; }
-\#.*\n?                         { }
+\#.*\n?                         { loc->lines(); }
 .                               { yyterminate(); }
 
 %%
