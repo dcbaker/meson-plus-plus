@@ -51,13 +51,20 @@ static std::string strbuffer{};
 %x STRING_STATE
 %%
 
+    /* This is gross, but this is more working around how annoying newlines are in meson */
+^[ \t]*"#".*\n?                 { loc->lines(); }
 [ \t]+                          { }
-^\s*\n                          { loc->lines(); }
+^\s*\n                          {
+                                    // We don't want to return a token, as there was no statement
+                                    loc->lines();
+                                }
+"#".*                           { }
 \n                              {
-                                    // Newlines are only significant as statement separators
-                                    // We want to ignore them inside of braces,
-                                    // as only expressions and not statements
-                                    // are allowed
+                                    // Newlines are only significant as
+                                    // statement separators We want to ignore
+                                    // them inside of braces, as only
+                                    // expressions and not statements are
+                                    // allowed.
                                     loc->lines();
                                     if (!brace()) { return token::NEWLINE; }
                                 }
@@ -109,7 +116,6 @@ continue                        { return token::CONTINUE; }
 :                               { return token::COLON; }
 \?                              { return token::QMARK; }
 \.                              { return token::DOT; }
-\#.*\n?                         { loc->lines(); }
 .                               { yyterminate(); }
 
 %%
