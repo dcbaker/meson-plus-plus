@@ -416,6 +416,13 @@ TEST(parser, foreach_statement_list) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::ForeachStatement>>(stmt));
 }
 
+TEST(parser, foreach_statement_dict) {
+    auto block = parse("foreach k, v : {a : 'b', b : 1}\na = b\ntarget()\nendforeach");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::ForeachStatement>>(stmt));
+}
+
 TEST(parser, break_statement) {
     auto block = parse("break");
     ASSERT_EQ(block->statements.size(), 1);
