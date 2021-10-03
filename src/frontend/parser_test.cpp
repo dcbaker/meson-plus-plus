@@ -307,6 +307,7 @@ INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
                                           std::make_tuple("{a : b, }", "{a : b}"),
                                           std::make_tuple("{a : b}", "{a : b}"),
                                           std::make_tuple("{'a' : 'b'}", "{'a' : 'b'}"),
+                                          std::make_tuple("{'a' : func()}", "{'a' : func()}"),
                                           std::make_tuple("{a : [b]}", "{a : [b]}")));
 // We can't test a multi item dict reliably like this be
 // cause meson dicts are unordered
@@ -403,6 +404,13 @@ TEST(IfStatementParsingTests, back_to_back_if_statments) {
 
 TEST(parser, foreach_statement) {
     auto block = parse("foreach x : a\na = b\ntarget()\nendforeach");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = block->statements[0];
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::ForeachStatement>>(stmt));
+}
+
+TEST(parser, foreach_statement_list) {
+    auto block = parse("foreach x : ['a', 'b']\na = b\ntarget()\nendforeach");
     ASSERT_EQ(block->statements.size(), 1);
     auto const & stmt = block->statements[0];
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::ForeachStatement>>(stmt));
