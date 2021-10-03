@@ -115,6 +115,12 @@ foreach_statement : FOREACH IDENTIFIER ":" expression "\n" statements "\n" ENDFO
                                                             AST::Identifier{$2, @2},
                                                             std::move($4), std::move($6));
                                                     }
+                  | FOREACH IDENTIFIER "," IDENTIFIER ":" expression "\n" statements "\n" ENDFOREACH {
+                                                        $$ = std::make_unique<AST::ForeachStatement>(
+                                                            AST::Identifier{$2, @4},
+                                                            AST::Identifier{$4, @4},
+                                                            std::move($6), std::move($8));
+                                                    }
                   ;
 
 if_statement : if_clause ENDIF                     { $$ = std::make_unique<AST::IfStatement>(std::move($1)); }
