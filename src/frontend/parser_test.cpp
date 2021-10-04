@@ -227,6 +227,15 @@ TEST(parser, unary_not) {
     ASSERT_EQ(block->as_string(), "not true");
 }
 
+TEST(parser, unary_not_not) {
+    auto block = parse("not not true");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<Frontend::AST::UnaryExpression>>(stmt->expr));
+    ASSERT_EQ(block->as_string(), "not not true");
+}
+
 TEST(parser, subscript) {
     auto block = parse("foo[bar + 1]");
     ASSERT_EQ(block->statements.size(), 1);
