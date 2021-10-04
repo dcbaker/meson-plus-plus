@@ -73,6 +73,22 @@ TEST(parser, triple_string_newlines) {
     ASSERT_EQ(stmt->as_string(), "'''\nfoo\n\nbar'''");
 }
 
+TEST(parser, triple_string_escaped_newlines) {
+    auto block = parse("'''\nfoo\n\\nbar'''");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'''\nfoo\n\nbar'''");
+}
+
+TEST(parser, triple_string_escapes) {
+    auto block = parse("'''foo\\t\\\\tab'''");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'''foo\t\\tab'''");
+}
+
 TEST(parser, decminal_number) {
     auto block = parse("77");
     ASSERT_EQ(block->statements.size(), 1);

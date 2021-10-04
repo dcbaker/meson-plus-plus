@@ -50,6 +50,7 @@ static std::string strbuffer{};
 
 %x STRING_STATE
 %x FSTRING_STATE
+%x TSTRING_STATE
 %%
 
     /* This is gross, but this is more working around how annoying newlines are in meson */
@@ -82,7 +83,11 @@ endforeach                      { return token::ENDFOREACH; }
 break                           { return token::BREAK; }
 continue                        { return token::CONTINUE; }
 [a-zA-Z_][a-zA-Z0-9_]*          { lval->build<std::string>(yytext); return token::IDENTIFIER; }
-[']{3}([']{0,2}([^\\']|\\(.|\n)))*[']{3} { lval->build<std::string>(yytext); return token::TSTRING; }
+[']{3}                          {
+                                    BEGIN(TSTRING_STATE);
+                                    strbuffer.clear();
+                                    strbuffer.append(yytext);
+                                }
 \'                              {
                                     BEGIN(STRING_STATE);
                                     strbuffer.clear();
@@ -93,11 +98,12 @@ f'                              {
                                     strbuffer.clear();
                                     strbuffer.append(yytext);
                                 }
-<STRING_STATE,FSTRING_STATE>\\'   { strbuffer.append("'"); }
-<STRING_STATE,FSTRING_STATE>\\n   { strbuffer.append("\n"); }
-<STRING_STATE,FSTRING_STATE>\\t   { strbuffer.append("\t"); }
-<STRING_STATE,FSTRING_STATE>\\\\  { strbuffer.append("\\"); }
+<STRING_STATE,FSTRING_STATE,TSTRING_STATE>\\'   { strbuffer.append("'"); }
+<STRING_STATE,FSTRING_STATE,TSTRING_STATE>\\n   { strbuffer.append("\n"); }
+<STRING_STATE,FSTRING_STATE,TSTRING_STATE>\\t   { strbuffer.append("\t"); }
+<STRING_STATE,FSTRING_STATE,TSTRING_STATE>\\\\  { strbuffer.append("\\"); }
 <STRING_STATE,FSTRING_STATE>[^']  { strbuffer.append(yytext); }
+<TSTRING_STATE>[^''']           { strbuffer.append(yytext); }
 <STRING_STATE>\'                {
                                     strbuffer.append(yytext);
                                     lval->build<std::string>(strbuffer);
@@ -109,6 +115,12 @@ f'                              {
                                     lval->build<std::string>(strbuffer);
                                     BEGIN(INITIAL);
                                     return token::FSTRING;
+                                }
+<TSTRING_STATE>[']{3}           {
+                                    strbuffer.append(yytext);
+                                    lval->build<std::string>(strbuffer);
+                                    BEGIN(INITIAL);
+                                    return token::TSTRING;
                                 }
 0x[0-9a-fA-F]+                  { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }
 0o[0-7]+                        { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }
