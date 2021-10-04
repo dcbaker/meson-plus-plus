@@ -49,6 +49,7 @@ static std::string strbuffer{};
 %option c++
 
 %x STRING_STATE
+%x FSTRING_STATE
 %%
 
     /* This is gross, but this is more working around how annoying newlines are in meson */
@@ -87,16 +88,27 @@ continue                        { return token::CONTINUE; }
                                     strbuffer.clear();
                                     strbuffer.append(yytext);
                                 }
-<STRING_STATE>\\'               { strbuffer.append("'"); }
-<STRING_STATE>\\n               { strbuffer.append("\n"); }
-<STRING_STATE>\\t               { strbuffer.append("\t"); }
-<STRING_STATE>\\\\              { strbuffer.append("\\"); }
-<STRING_STATE>[^']              { strbuffer.append(yytext); }
+f'                              {
+                                    BEGIN(FSTRING_STATE);
+                                    strbuffer.clear();
+                                    strbuffer.append(yytext);
+                                }
+<STRING_STATE,FSTRING_STATE>\\'   { strbuffer.append("'"); }
+<STRING_STATE,FSTRING_STATE>\\n   { strbuffer.append("\n"); }
+<STRING_STATE,FSTRING_STATE>\\t   { strbuffer.append("\t"); }
+<STRING_STATE,FSTRING_STATE>\\\\  { strbuffer.append("\\"); }
+<STRING_STATE,FSTRING_STATE>[^']  { strbuffer.append(yytext); }
 <STRING_STATE>\'                {
                                     strbuffer.append(yytext);
                                     lval->build<std::string>(strbuffer);
                                     BEGIN(INITIAL);
                                     return token::STRING;
+                                }
+<FSTRING_STATE>\'               {
+                                    strbuffer.append(yytext);
+                                    lval->build<std::string>(strbuffer);
+                                    BEGIN(INITIAL);
+                                    return token::FSTRING;
                                 }
 0x[0-9a-fA-F]+                  { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }
 0o[0-7]+                        { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }

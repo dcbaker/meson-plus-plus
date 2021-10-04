@@ -84,10 +84,11 @@ class Boolean {
 
 class String {
   public:
-    String(const std::string & str, const bool & t, const location & l)
-        : value{str}, is_triple{t}, loc{l} {};
+    String(const std::string & str, const bool & t, const bool & f, const location & l)
+        : value{str}, is_triple{t}, is_fstring{f}, loc{l} {};
     String(String && s) noexcept
-        : value{std::move(s.value)}, is_triple{std::move(s.is_triple)}, loc{std::move(s.loc)} {};
+        : value{std::move(s.value)}, is_triple{std::move(s.is_triple)},
+          is_fstring{std::move(s.is_fstring)}, loc{std::move(s.loc)} {};
     String(const String &) = delete;
     ~String(){};
 
@@ -95,6 +96,7 @@ class String {
 
     std::string value;
     bool is_triple;
+    bool is_fstring;
     Location loc;
 };
 
