@@ -116,9 +116,24 @@ TEST(parser, octal_number) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
     ASSERT_EQ(stmt->as_string(), "8");
 }
+TEST(parser, octal_number2) {
+    auto block = parse("0O10");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "8");
+}
 
 TEST(parser, hex_number) {
     auto block = parse("0xf");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "15");
+}
+
+TEST(parser, hex_number2) {
+    auto block = parse("0XF");
     ASSERT_EQ(block->statements.size(), 1);
     auto const & stmt = std::get<0>(block->statements[0]);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
