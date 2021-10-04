@@ -32,3 +32,5 @@ jobs:
         with:
           meson-version: 0.55
           action: build
+      - name: unit tests
+        run : ./run-tests.sh
