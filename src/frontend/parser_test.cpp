@@ -236,6 +236,24 @@ TEST(parser, unary_not_not) {
     ASSERT_EQ(block->as_string(), "not not true");
 }
 
+TEST(parser, not_in_false_positive) {
+    auto block = parse("not int");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<Frontend::AST::UnaryExpression>>(stmt->expr));
+    ASSERT_EQ(block->as_string(), "not int");
+}
+
+TEST(parser, not_func_call) {
+    auto block = parse("not meson.func()");
+    // ASSERT_EQ(block->statements.size(), 1);
+    // auto const & stmt = std::get<0>(block->statements[0]);
+    // ASSERT_TRUE(
+    //     std::holds_alternative<std::unique_ptr<Frontend::AST::UnaryExpression>>(stmt->expr));
+    // ASSERT_EQ(block->as_string(), "not not true");
+}
+
 TEST(parser, subscript) {
     auto block = parse("foo[bar + 1]");
     ASSERT_EQ(block->statements.size(), 1);

@@ -72,7 +72,12 @@ static std::string strbuffer{};
                                     if (!brace()) { return token::NEWLINE; }
                                 }
 (true|false)                    { lval->build<bool>(std::string(yytext) == "true"); return token::BOOL; }
-(>=|==|!=|<=|>|<|and|or|in|not\ in) { lval->build<std::string>(yytext); return token::RELATIONAL; }
+(>=|==|!=|<=|>|<|and|or|in)     { lval->build<std::string>(yytext); return token::RELATIONAL; }
+not\ in\                        {
+                                    std::string str{yytext};
+                                    lval->build<std::string>(str.substr(0, str.size() - 1));
+                                    return token::RELATIONAL;
+                                }
 not                             { return token::NOT; }
 if                              { return token::IF; }
 elif                            { return token::ELIF; }
