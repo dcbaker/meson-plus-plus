@@ -9,7 +9,6 @@
 #include <cerrno>
 #include <filesystem>
 #include <fstream>
-#include <sys/stat.h>
 #include <variant>
 #include <vector>
 
@@ -277,12 +276,21 @@ std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
 
 void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant & pstate) {
     if (!fs::exists(pstate.build_root)) {
-        int ret = mkdir(pstate.build_root.c_str(), 0777);
-        if (ret != 0) {
-            int err = errno;
-            if (err != EEXIST) {
-                throw Util::Exceptions::MesonException{"Could not create build directory"};
-            }
+        std::error_code ec{};
+        fs::create_directory(pstate.build_root, ec);
+        // XXX: actually check the error codes
+        if (ec) {
+            throw Util::Exceptions::MesonException{"Could not create build directory"};
+        }
+
+        ec.clear();
+
+        // TODO: are these permissions really a good idea?
+        fs::permissions(pstate.build_root,
+                        fs::perms::owner_all | fs::perms::group_all | fs::perms::others_all, ec);
+        // XXX: actually check the error codes
+        if (ec) {
+            throw Util::Exceptions::MesonException{"Could not create build directory"};
         }
     }
 
