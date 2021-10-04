@@ -42,7 +42,7 @@
 %define api.value.type variant
 %define parse.assert
 
-%token <std::string>    IDENTIFIER TSTRING STRING RELATIONAL
+%token <std::string>    IDENTIFIER TSTRING STRING FSTRING RELATIONAL
 %token <int64_t>        DECIMAL_NUMBER OCTAL_NUMBER HEX_NUMBER
 %token <bool>           BOOL
 %token <AST::AssignOp>  ASSIGN
@@ -188,8 +188,9 @@ keyword_item : expression ":" expression            { $$ = AST::KeywordPair(std:
 literal : HEX_NUMBER                                { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1, @$)); }
         | DECIMAL_NUMBER                            { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1, @$)); }
         | OCTAL_NUMBER                              { $$ = AST::ExpressionV(std::make_unique<AST::Number>($1, @$)); }
-        | STRING                                    { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(1, $1.size() - 2), false, @$)); }
-        | TSTRING                                   { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(3, $1.size() - 6), true, @$)); }
+        | STRING                                    { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(1, $1.size() - 2), false, false, @$)); }
+        | FSTRING                                   { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(1, $1.size() - 2), false, true, @$)); }
+        | TSTRING                                   { $$ = AST::ExpressionV(std::make_unique<AST::String>($1.substr(3, $1.size() - 6), true, false, @$)); }
         | BOOL                                      { $$ = AST::ExpressionV(std::make_unique<AST::Boolean>($1, @$)); }
         | IDENTIFIER                                { $$ = AST::ExpressionV(std::make_unique<AST::Identifier>($1, @$)); }
         ;

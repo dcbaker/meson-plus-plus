@@ -157,8 +157,11 @@ std::string Boolean::as_string() const { return value ? "true" : "false"; };
 std::string String::as_string() const {
     if (is_triple) {
         return "'''" + value + "'''";
+    } else if (is_fstring) {
+        return "f'" + value + "'";
+    } else {
+        return "'" + value + "'";
     }
-    return "'" + value + "'";
 };
 
 std::string Identifier::as_string() const { return value; };

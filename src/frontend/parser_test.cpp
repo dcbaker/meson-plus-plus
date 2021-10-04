@@ -491,3 +491,8 @@ TEST(parser, empty) {
     auto block = parse("# This file has no statmements\n  # or exepressions.");
     ASSERT_EQ(block->statements.size(), 0);
 }
+
+TEST(parser, fstring) {
+    auto block = parse("f'This is an @fstring@'");
+    ASSERT_EQ(block->statements.size(), 1);
+}
