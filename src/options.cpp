@@ -108,6 +108,12 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
         exit(1);
     }
     conf.builddir = fs::path{argv[i++]};
+    if (i < argc) {
+        // TODO: better error message
+        std::cerr << "Got extra arguments." << std::endl;
+        std::cout << usage << std::endl;
+        exit(1);
+    }
 
     return conf;
 }
