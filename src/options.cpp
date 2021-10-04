@@ -34,6 +34,8 @@ Verbs:
         Options:
             -h, --help
                 Display this message and exit.
+            -s, --source-dir
+                The source directory to configure, defaults to '.'
             -D, --define
                 Set a Meson built-in or project option
 
@@ -61,7 +63,7 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
     static const char * const short_opts = "hs:D:";
     static const option long_opts[] = {
         {"help", no_argument, NULL, 'h'},
-        {"source_dir", required_argument, NULL, 's'},
+        {"source-dir", required_argument, NULL, 's'},
         {"define", required_argument, NULL, 'D'},
         {NULL},
     };
