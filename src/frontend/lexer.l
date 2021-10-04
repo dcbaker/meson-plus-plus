@@ -122,10 +122,10 @@ f'                              {
                                     BEGIN(INITIAL);
                                     return token::TSTRING;
                                 }
-0[xX][0-9a-fA-F]+               { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::HEX_NUMBER; }
-0[oO][0-7]+                     { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::OCTAL_NUMBER; }
-0[bB][0-1]+                     { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 2)); return token::BINARY_NUMBER; }
-[0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::DECIMAL_NUMBER; }
+0[xX][0-9a-fA-F]+               { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::NUMBER; }
+0[oO][0-7]+                     { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::NUMBER; }
+0[bB][0-1]+                     { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 2)); return token::NUMBER; }
+[0-9]+                          { lval->build<int64_t>(std::stoll(yytext)); return token::NUMBER; }
 \-                              { return token::SUB; }
 \+                              { return token::ADD; }
 \*                              { return token::MUL; }
