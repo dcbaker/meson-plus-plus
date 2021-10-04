@@ -94,7 +94,8 @@
 
 %%
 
-program : statements                                { block = std::move($1); }
+program : %empty                                    { block = std::make_unique<AST::CodeBlock>(); }
+        | statements                                { block = std::move($1); }
         | statements "\n"                           { block = std::move($1); }
         ;
 

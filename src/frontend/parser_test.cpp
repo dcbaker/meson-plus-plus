@@ -487,10 +487,7 @@ TEST(parser, multiple_newlines) {
     ASSERT_EQ(block->statements.size(), 2);
 }
 
-#if false
-// This fails because there is nothing in it, I don't understand why
 TEST(parser, empty) {
     auto block = parse("# This file has no statmements\n  # or exepressions.");
     ASSERT_EQ(block->statements.size(), 0);
 }
-#endif
