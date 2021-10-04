@@ -140,6 +140,22 @@ TEST(parser, hex_number2) {
     ASSERT_EQ(stmt->as_string(), "15");
 }
 
+TEST(parser, binary_number) {
+    auto block = parse("0b1101");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "13");
+}
+
+TEST(parser, binary_number2) {
+    auto block = parse("0B1100");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Number>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "12");
+}
+
 TEST(parser, identifier) {
     auto block = parse("foo");
     ASSERT_EQ(block->statements.size(), 1);
