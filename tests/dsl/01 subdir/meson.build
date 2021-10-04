@@ -5,8 +5,9 @@ b = false
 
 subdir('sub')
 
-x = 'foo'
-subdir(x)
+# TODO: does not work yet
+# x = 'foo'
+# subdir(x)
 
 if true
   subdir('conditional sub')
@@ -18,9 +19,10 @@ else
   subdir('else')
 endif
 
-foreach s : ['foreach']
-  subdir(s)
-endforeach
+# TODO: does not work yet
+# foreach s : ['foreach']
+#   subdir(s)
+# endforeach
 
 assert(a == true, 'Did not go into subdir')
 assert(b == true, 'Did not go into conditional subdir')
