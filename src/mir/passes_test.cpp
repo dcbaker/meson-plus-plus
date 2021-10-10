@@ -266,7 +266,8 @@ TEST(insert_compiler, unknown_language) {
         (void)MIR::Passes::insert_compilers(&irlist, tc_map);
         FAIL();
     } catch (Util::Exceptions::MesonException & e) {
-        ASSERT_EQ(e.message, "No compiler for language");
+        std::string m{e.what()};
+        ASSERT_EQ(m, "No compiler for language");
     }
 }
 

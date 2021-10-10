@@ -56,7 +56,7 @@ int main(int argc, char * argv[]) {
 
         return ret;
     } catch (Util::Exceptions::MesonException & e) {
-        std::cerr << e.message << std::endl;
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 

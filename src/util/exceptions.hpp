@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <string>
 
 namespace Util::Exceptions {
@@ -14,12 +15,9 @@ namespace Util::Exceptions {
 /**
  * Base Meson++ Exception type
  */
-class MesonException {
+class MesonException : public std::runtime_error {
   public:
-    MesonException(const std::string & msg) : message{msg} {};
-    virtual ~MesonException(){};
-
-    const std::string message;
+    using std::runtime_error::runtime_error;
 };
 
 /**
@@ -27,8 +25,7 @@ class MesonException {
  */
 class InvalidArguments : public MesonException {
   public:
-    InvalidArguments(const std::string & msg) : MesonException{msg} {};
-    virtual ~InvalidArguments(){};
+    using MesonException::MesonException;
 };
 
 } // namespace Util::Exceptions
