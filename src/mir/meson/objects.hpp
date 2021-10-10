@@ -47,6 +47,12 @@ class File {
     /// Get a path for this file relative to the build treeZ
     const fs::path relative_to_build_dir() const;
 
+    bool operator==(const File &) const;
+    bool operator!=(const File &) const;
+
+    // For gtest
+    friend std::ostream & operator<<(std::ostream & os, const File & f);
+
   private:
     const std::string name;
     const fs::path subdir;
