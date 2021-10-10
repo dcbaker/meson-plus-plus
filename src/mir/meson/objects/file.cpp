@@ -38,4 +38,16 @@ const std::filesystem::path File::relative_to_build_dir() const {
     }
 }
 
+bool File::operator==(const File & f) const {
+    return subdir / name == f.subdir / f.name && built == f.built;
+}
+
+bool File::operator!=(const File & f) const {
+    return subdir / name != f.subdir / f.name || built != f.built;
+}
+
+std::ostream & operator<<(std::ostream & os, const File & f) {
+    return os << (f.is_built() ? f.build_root : f.source_root) / f.subdir / f.get_name();
+}
+
 } // namespace MIR::Objects
