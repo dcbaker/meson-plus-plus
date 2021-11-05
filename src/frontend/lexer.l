@@ -108,7 +108,6 @@ f'                              {
 <STRING_STATE,FSTRING_STATE,TSTRING_STATE>\\t   { strbuffer.append("\t"); }
 <STRING_STATE,FSTRING_STATE,TSTRING_STATE>\\\\  { strbuffer.append("\\"); }
 <STRING_STATE,FSTRING_STATE>[^']  { strbuffer.append(yytext); }
-<TSTRING_STATE>[^''']           { strbuffer.append(yytext); }
 <STRING_STATE>\'                {
                                     strbuffer.append(yytext);
                                     lval->build<std::string>(strbuffer);
@@ -121,12 +120,14 @@ f'                              {
                                     BEGIN(INITIAL);
                                     return token::FSTRING;
                                 }
-<TSTRING_STATE>[']{3}           {
+<TSTRING_STATE>'{3}             {
                                     strbuffer.append(yytext);
                                     lval->build<std::string>(strbuffer);
                                     BEGIN(INITIAL);
                                     return token::TSTRING;
                                 }
+<TSTRING_STATE>.                { strbuffer.append(yytext); }
+<TSTRING_STATE>\n               { strbuffer.append("\n"); }
 0[xX][0-9a-fA-F]+               { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 16)); return token::NUMBER; }
 0[oO][0-7]+                     { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 8)); return token::NUMBER; }
 0[bB][0-1]+                     { lval->build<int64_t>(std::stoll(std::string{yytext}.substr(2), nullptr, 2)); return token::NUMBER; }
