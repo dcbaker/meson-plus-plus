@@ -65,6 +65,14 @@ TEST(parser, triple_string) {
     ASSERT_EQ(stmt->as_string(), "'''foo'''");
 }
 
+TEST(parser, triple_string_single_quote) {
+    auto block = parse("'''can't'''");
+    ASSERT_EQ(block->statements.size(), 1);
+    auto const & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
+    ASSERT_EQ(stmt->as_string(), "'''can't'''");
+}
+
 TEST(parser, triple_string_newlines) {
     auto block = parse("'''\nfoo\n\nbar'''");
     ASSERT_EQ(block->statements.size(), 1);
