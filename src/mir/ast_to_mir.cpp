@@ -150,59 +150,78 @@ struct StatementLowering {
 
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+        assert(list != nullptr);
         const ExpressionLowering l{pstate};
 
+        // This is the block that all exists from the conditional web will flow
+        // back into if they don't exit. I think this is safe even for cases where
+        // The blocks don't really rejoin, as this will just be empty and that's fine.
         auto next_block = std::make_shared<BasicBlock>();
 
-        assert(list != nullptr);
-        auto cur = list;
+        // The last block that was encountered, we need this to add the next block to it.
         BasicBlock * last_block;
 
-        cur->condition = std::optional<Condition>{std::visit(l, stmt->ifblock.condition)};
+        // Get the value of the coindition itself (`if <condition>\n`)
+        assert(list->condition == nullptr);
+        list->condition = std::make_unique<Condition>(std::visit(l, stmt->ifblock.condition));
+
+        auto * cur = list->condition.get();
+
+        // Walk over the statements, adding them to the if_true branch.
         for (const auto & i : stmt->ifblock.block->statements) {
             last_block = std::visit(
                 [&](const auto & a) {
-                    return this->operator()(cur->condition.value().if_true.get(), a);
+                    assert(cur != nullptr);
+                    return this->operator()(cur->if_true.get(), a);
                 },
                 i);
         }
+
         // We shouldn't have a condition here, this is where we wnat to put our next target
-        assert(!last_block->condition.has_value());
+        assert(last_block->condition == nullptr);
+        assert(last_block->next == nullptr);
         last_block->next = next_block;
 
-        // We're building a web-like structure here, so we walk over the flat
-        // list of elif conditions + statements, generating a web of BasicBlock
-        // objects
+        // for each elif branch create a new condition in the `else` of the
+        // Condition, then assign the condition to the `if_true`. Then go down
+        // the `else` of that new block for the next `elif`
         if (!stmt->efblock.empty()) {
             for (const auto & el : stmt->efblock) {
-                cur = cur->condition->if_false.get();
-                cur->condition = std::optional<Condition>{std::visit(l, el.condition)};
+                // cur = cur->condition->if_false = std::make_unique<Condition>();
+                cur->if_false = std::make_unique<Condition>(std::visit(l, el.condition));
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
                         [&](const auto & a) {
-                            return this->operator()(cur->condition.value().if_true.get(), a);
+                            return this->operator()(cur->if_false->if_true.get(), a);
                         },
                         i);
                 }
+                cur = cur->if_false.get();
 
-                // We shouldn't have a condition here, this is where we wnat to put our next target
-                assert(!last_block->condition.has_value());
+                assert(last_block->condition == nullptr);
+                assert(last_block->next == nullptr);
                 last_block->next = next_block;
             }
         }
 
+        // Finally, handle an else block.
         if (stmt->eblock.block != nullptr) {
+            cur->if_false = std::make_unique<Condition>(std::make_unique<MIR::Boolean>(true));
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block = std::visit(
                     [&](const auto & a) {
-                        return this->operator()(cur->condition.value().if_false.get(), a);
+                        return this->operator()(cur->if_false->if_true.get(), a);
                     },
                     i);
             }
+            assert(last_block->condition == nullptr);
+            assert(last_block->next == nullptr);
+            last_block->next = next_block;
         }
-        // We shouldn't have a condition here, this is where we wnat to put our next target
-        assert(!last_block->condition.has_value());
-        last_block->next = next_block;
+
+        // The last leg of the tree should be empty
+        // XXX: or should it point to next, in the event of `if/elif/endif`?
+        assert(last_block->condition == nullptr || last_block->condition->if_false == nullptr);
 
         // Return the raw pointer, which is fine because we're not giving the
         // caller ownership of the pointer, the other basic blocks are the owners.

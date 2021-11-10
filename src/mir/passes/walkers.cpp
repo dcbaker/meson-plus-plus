@@ -44,10 +44,12 @@ bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> 
                 progress |= true;
             }
         }
-        for (const auto & cb : fc) {
-            progress |= cb(*it);
-        }
         ++it;
+    }
+    for (const auto & cb : fc) {
+        for (auto & it : block->instructions) {
+            progress |= cb(it);
+        }
     }
 
     return progress;
@@ -106,11 +108,11 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
         {cb});
 
     // Check if we have a condition, and try to lower that as well.
-    if (block->condition.has_value()) {
-        auto & con = block->condition.value();
-        auto new_value = cb(con.condition);
+    if (block->condition != nullptr) {
+        auto & con = block->condition;
+        auto new_value = cb(con->condition);
         if (new_value.has_value()) {
-            con.condition = std::move(new_value.value());
+            con->condition = std::move(new_value.value());
             progress |= true;
         }
     }

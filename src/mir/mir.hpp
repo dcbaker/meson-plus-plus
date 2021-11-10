@@ -202,17 +202,29 @@ class Dict {
 class BasicBlock;
 
 /**
- * A sort of phi-like thing that holds a condition and two branches
+ * A think that creates A conditional web.
  *
- * We use shared ptrs as it's possible for the
+ * This works such that `if_true` will always point to a Basic block, and
+ * `if_false` will either point to andother Condition or nothing. This means
+ * that our web will always have a form like:
+ *
+ *    O --\
+ *  /      \
+ * O   O --\\
+ *  \ /     \\
+ *   O   O - O
+ *    \ /   /
+ *     O   /
+ *      \ /
+ *       O
+ *
+ * Because the false condition will itself be a condition.
+ *
+ * if_false is initialized to nullptr, and one needs to check for that.
  */
 class Condition {
   public:
-    Condition(Object && o)
-        : condition{std::move(o)}, if_true{std::make_unique<BasicBlock>()},
-          // We could save a bit of memory here by not initializing if_false, but
-          // that means more manual tracking for a tiny savings…
-          if_false{std::make_unique<BasicBlock>()} {};
+    Condition(Object && o);
 
     /// An object that is the condition
     Object condition;
@@ -221,7 +233,7 @@ class Condition {
     std::shared_ptr<BasicBlock> if_true;
 
     /// The branch to take if the condition is false
-    std::shared_ptr<BasicBlock> if_false;
+    std::unique_ptr<Condition> if_false;
 };
 
 /**
@@ -244,13 +256,13 @@ class Condition {
  */
 class BasicBlock {
   public:
-    BasicBlock() : instructions{}, condition{std::nullopt}, next{nullptr} {};
+    BasicBlock() : instructions{}, condition{nullptr}, next{nullptr} {};
 
     /// The instructions in this block
     std::list<Object> instructions;
 
-    /// A phi-like condition that may come at the end of the block
-    std::optional<Condition> condition;
+    /// A conditional output for this block
+    std::unique_ptr<Condition> condition;
 
     /// The next basic block to go to.
     std::shared_ptr<BasicBlock> next;

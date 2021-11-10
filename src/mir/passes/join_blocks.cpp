@@ -7,7 +7,7 @@ namespace MIR::Passes {
 
 bool join_blocks(BasicBlock * block) {
     // If there is a condition we can't join this block to the next one
-    if (block->condition.has_value()) {
+    if (block->condition != nullptr) {
         return false;
     }
 
@@ -19,7 +19,7 @@ bool join_blocks(BasicBlock * block) {
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
     block->instructions.splice(block->instructions.end(), block->next->instructions);
-    if (block->next->condition.has_value()) {
+    if (block->next->condition != nullptr) {
         block->condition = std::move(block->next->condition);
     }
     block->next = block->next->next;

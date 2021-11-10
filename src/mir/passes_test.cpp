@@ -110,44 +110,76 @@ TEST(branch_pruning, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nendif\n");
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
-    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.condition, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & next = irlist.next;
-    ASSERT_FALSE(next->condition.has_value());
+    ASSERT_EQ(next->condition, nullptr);
     ASSERT_EQ(next->instructions.size(), 1);
 }
 
 TEST(branch_pruning, next_block) {
-    auto irlist = lower("x = 7\nif true\n x = 8\nendif\ny = x");
+    auto irlist = lower(R"EOF(
+        x = 7
+        if true
+          x = 8
+        endif
+        y = x
+        )EOF");
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
-    ASSERT_FALSE(irlist.condition.has_value());
-    ASSERT_NE(irlist.next, nullptr);
-    ASSERT_EQ(irlist.next->instructions.size(), 1);
-}
-
-TEST(branch_pruning, if_else) {
-    auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\n");
-    bool progress = MIR::Passes::branch_pruning(&irlist);
-    ASSERT_TRUE(progress);
-    ASSERT_FALSE(irlist.condition.has_value());
     ASSERT_EQ(irlist.instructions.size(), 1);
+    ASSERT_EQ(irlist.condition, nullptr);
+    ASSERT_NE(irlist.next, nullptr);
 
     const auto & next = irlist.next;
-    ASSERT_FALSE(next->condition.has_value());
     ASSERT_EQ(next->instructions.size(), 1);
 }
 
-TEST(branch_pruning, if_false) {
-    auto irlist = lower("x = 7\nif false\n x = 8\nelse\n x = 9\n y = 2\nendif\n");
+TEST(branch_pruning, if_else) {
+    auto irlist = lower(R"EOF(
+        x = 7
+        if true
+          x = 8
+        else
+          x = 9
+        endif
+        )EOF");
     bool progress = MIR::Passes::branch_pruning(&irlist);
+
     ASSERT_TRUE(progress);
-    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.condition, nullptr);
+    ASSERT_NE(irlist.next, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & next = irlist.next;
-    ASSERT_FALSE(next->condition.has_value());
+    ASSERT_EQ(next->condition, nullptr);
+    ASSERT_EQ(next->instructions.size(), 1);
+
+    ASSERT_NE(next->next, nullptr);
+    ASSERT_EQ(next->next->instructions.size(), 0);
+}
+
+TEST(branch_pruning, if_false) {
+    auto irlist = lower(R"EOF(
+        x = 7
+        if false
+          x = 8
+        else
+          x = 9
+          y = 2
+        endif
+        )EOF");
+    bool progress = false;
+    do {
+        progress = MIR::Passes::branch_pruning(&irlist);
+    } while (progress);
+    ASSERT_EQ(irlist.condition, nullptr);
+    ASSERT_NE(irlist.next, nullptr);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & next = irlist.next;
+
     ASSERT_EQ(next->instructions.size(), 2);
 
     const auto & first = std::get<std::unique_ptr<MIR::Number>>(next->instructions.front());
@@ -163,7 +195,7 @@ TEST(join_blocks, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\ny = x");
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
-    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.condition, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
     ASSERT_NE(irlist.next, nullptr);
 
@@ -172,7 +204,7 @@ TEST(join_blocks, simple) {
     do {
         progress = MIR::Passes::join_blocks(&irlist);
     } while (progress);
-    ASSERT_FALSE(irlist.condition.has_value());
+    ASSERT_EQ(irlist.condition, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 3);
     ASSERT_EQ(irlist.next, nullptr);
 }
@@ -236,8 +268,8 @@ TEST(machine_lower, in_condtion) {
     ASSERT_EQ(irlist.instructions.size(), 0);
 
     const auto & con = irlist.condition;
-    ASSERT_TRUE(con.has_value());
-    const auto & obj = con.value().condition;
+    ASSERT_NE(con, nullptr);
+    const auto & obj = con->condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(obj));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(obj)->value, "x86_64");
 }
