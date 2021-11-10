@@ -111,7 +111,11 @@ TEST(branch_pruning, simple) {
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
     ASSERT_FALSE(irlist.condition.has_value());
-    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & next = irlist.next;
+    ASSERT_FALSE(next->condition.has_value());
+    ASSERT_EQ(next->instructions.size(), 1);
 }
 
 TEST(branch_pruning, next_block) {
@@ -128,7 +132,11 @@ TEST(branch_pruning, if_else) {
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
     ASSERT_FALSE(irlist.condition.has_value());
-    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & next = irlist.next;
+    ASSERT_FALSE(next->condition.has_value());
+    ASSERT_EQ(next->instructions.size(), 1);
 }
 
 TEST(branch_pruning, if_false) {
@@ -136,14 +144,17 @@ TEST(branch_pruning, if_false) {
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
     ASSERT_FALSE(irlist.condition.has_value());
-    // Using 3 here allows us to know that we went down the right path
-    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist.instructions.size(), 1);
 
-    const auto & first = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.front());
-    ASSERT_EQ(first->value, 7);
+    const auto & next = irlist.next;
+    ASSERT_FALSE(next->condition.has_value());
+    ASSERT_EQ(next->instructions.size(), 2);
+
+    const auto & first = std::get<std::unique_ptr<MIR::Number>>(next->instructions.front());
+    ASSERT_EQ(first->value, 9);
     ASSERT_EQ(first->var.name, "x");
 
-    const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
+    const auto & last = std::get<std::unique_ptr<MIR::Number>>(next->instructions.back());
     ASSERT_EQ(last->value, 2);
     ASSERT_EQ(last->var.name, "y");
 }
@@ -153,13 +164,14 @@ TEST(join_blocks, simple) {
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
     ASSERT_FALSE(irlist.condition.has_value());
-    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_EQ(irlist.instructions.size(), 1);
     ASSERT_NE(irlist.next, nullptr);
 
     ASSERT_EQ(irlist.next->instructions.size(), 1);
 
-    progress = MIR::Passes::join_blocks(&irlist);
-    ASSERT_TRUE(progress);
+    do {
+        progress = MIR::Passes::join_blocks(&irlist);
+    } while (progress);
     ASSERT_FALSE(irlist.condition.has_value());
     ASSERT_EQ(irlist.instructions.size(), 3);
     ASSERT_EQ(irlist.next, nullptr);
