@@ -15,13 +15,12 @@ bool branch_pruning(BasicBlock * ir) {
         return false;
     }
 
+    // Set the true condition to the true branch, then let join_branches worry
+    // about cleaning up.
     const bool & con_v = std::get<std::unique_ptr<Boolean>>(con.condition)->value;
     auto new_v = con_v ? con.if_true : con.if_false;
-    ir->instructions.splice(ir->instructions.end(), new_v->instructions);
-    // Always do this, as the new_v condition could be empty, and we ant that as
-    // well.
-    ir->condition = std::move(new_v->condition);
-    ir->next = new_v->next;
+    ir->next = new_v;
+    ir->condition = std::nullopt;
 
     return true;
 };
