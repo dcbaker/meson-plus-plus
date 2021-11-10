@@ -26,7 +26,7 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
         return std::nullopt;
     }
 
-    if (f->holder.value_or("") != "meson" && f->name != "get_compiler") {
+    if (f->holder.value_or("") != "meson" || f->name != "get_compiler") {
         return std::nullopt;
     }
 
