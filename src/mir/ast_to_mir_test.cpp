@@ -394,6 +394,63 @@ TEST(ast_to_ir, if_elif_else) {
     }
 }
 
+TEST(ast_to_ir, nested_if) {
+    auto irlist = lower(R"EOF(
+        if true
+            7
+            if false
+                10
+            endif
+        elif false
+            8
+        else
+            9
+        endif
+        22
+    )EOF");
+    ASSERT_NE(irlist.condition, nullptr);
+    auto const & con = irlist.condition;
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+
+    {
+        auto const & if_true = con->if_true->instructions;
+        ASSERT_EQ(if_true.size(), 1);
+        auto const & val = if_true.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+
+        auto const & con2 = con->if_true->condition;
+        ASSERT_NE(con2, nullptr);
+        auto const & val2 = con2->if_true->instructions.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
+        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 10);
+
+        const auto & fin = con2->if_true->next->next;
+        ASSERT_EQ(fin->instructions.size(), 1);
+        auto const & val3 = fin->instructions.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val3));
+        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val3)->value, 22);
+    }
+
+    ASSERT_NE(con->if_false, nullptr);
+    auto const & elcon = con->if_false;
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
+
+    {
+        auto const & if_true = elcon->if_true->instructions;
+        ASSERT_EQ(if_true.size(), 1);
+        auto const & val = if_true.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
+
+        auto const & if_false = elcon->if_false->if_true->instructions;
+        ASSERT_EQ(if_false.size(), 1);
+        auto const & val2 = if_false.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
+        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 9);
+    }
+}
+
 TEST(ast_to_ir, assign) {
     auto irlist = lower("a = 5");
     ASSERT_EQ(irlist.instructions.size(), 1);
