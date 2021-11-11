@@ -206,6 +206,36 @@ TEST(ast_to_ir, if_only) {
     ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
 }
 
+TEST(ast_to_ir, if_branch_join) {
+    auto irlist = lower(R"EOF(
+        if true
+          7
+        endif
+        8
+        )EOF");
+    ASSERT_NE(irlist.condition, nullptr);
+    ASSERT_EQ(irlist.next, nullptr);
+    auto const & con = irlist.condition;
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+
+    auto const & if_true = con->if_true->instructions;
+    ASSERT_EQ(if_true.size(), 1);
+
+    auto const & val = if_true.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
+    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+
+    ASSERT_NE(con->if_false, nullptr);
+
+    auto const & block2 = con->if_false->if_true;
+    ASSERT_NE(block2, nullptr);
+    auto const & val2 = block2->instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
+    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 8);
+
+    ASSERT_EQ(con->if_true->next, block2);
+}
+
 TEST(ast_to_ir, if_else_more) {
     // Here we're testing that the jupm value of both branches are the same, and
     // not nullptr. We should get one instruction in each branch, pluse one

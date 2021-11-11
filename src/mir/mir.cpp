@@ -9,6 +9,9 @@ namespace MIR {
 Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
 
+Condition::Condition(Object && o, std::shared_ptr<BasicBlock> s)
+    : condition{std::move(o)}, if_true{s}, if_false{nullptr} {};
+
 const Object Compiler::get_id(const std::vector<Object> & args,
                               const std::unordered_map<std::string, Object> & kwargs) const {
     if (!args.empty()) {

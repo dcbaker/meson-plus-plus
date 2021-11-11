@@ -225,6 +225,7 @@ class BasicBlock;
 class Condition {
   public:
     Condition(Object && o);
+    Condition(Object && o, std::shared_ptr<BasicBlock> s);
 
     /// An object that is the condition
     Object condition;
