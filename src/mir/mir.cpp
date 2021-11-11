@@ -7,7 +7,7 @@
 namespace MIR {
 
 Condition::Condition(Object && o)
-    : condition{std::move(o)}, if_true{std::make_unique<BasicBlock>()}, if_false{nullptr} {};
+    : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
 
 const Object Compiler::get_id(const std::vector<Object> & args,
                               const std::unordered_map<std::string, Object> & kwargs) const {
