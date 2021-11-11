@@ -217,6 +217,30 @@ struct StatementLowering {
             assert(last_block->condition == nullptr);
             assert(last_block->next == nullptr);
             last_block->next = next_block;
+        } else {
+            /*
+             * Codegen time!
+             * If we're here that means we have the following situation:
+             *   <block 1>
+             *   if condition
+             *     <block 2>
+             *   endif
+             *   <block 3>
+             * Which means that if condition is false, that we need <block 1>
+             * continue to <block 2>. To achieve that we create an else block
+             * which continnues on, ie:
+             *   <block 1>
+             *   if condition
+             *     <block 2>
+             *   else
+             *     <block 3>
+             *   endif
+             *   <block 4>
+             *
+             * By treating all if's as having an else block we simplify our handling considerably.
+             */
+            cur->if_false =
+                std::make_unique<Condition>(std::make_unique<Boolean>(true), next_block);
         }
 
         // The last leg of the tree should be empty
