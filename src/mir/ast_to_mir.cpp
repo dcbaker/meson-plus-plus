@@ -156,6 +156,8 @@ struct StatementLowering {
         // This is the block that all exists from the conditional web will flow
         // back into if they don't exit. I think this is safe even for cases where
         // The blocks don't really rejoin, as this will just be empty and that's fine.
+        //
+        // This has the added bonus of giving us a place to put phi nodes?
         auto next_block = std::make_shared<BasicBlock>();
 
         // The last block that was encountered, we need this to add the next block to it.
