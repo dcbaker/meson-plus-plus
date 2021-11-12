@@ -39,6 +39,26 @@ MIR::BasicBlock lower(const std::string & in) {
     return ir;
 }
 
+inline bool is_bb(const MIR::NextType & next) {
+    return std::holds_alternative<std::shared_ptr<MIR::BasicBlock>>(next);
+}
+
+inline std::shared_ptr<MIR::BasicBlock> get_bb(const MIR::NextType & next) {
+    return std::get<std::shared_ptr<MIR::BasicBlock>>(next);
+}
+
+inline bool is_con(const MIR::NextType & next) {
+    return std::holds_alternative<std::unique_ptr<MIR::Condition>>(next);
+}
+
+inline const std::unique_ptr<MIR::Condition> & get_con(const MIR::NextType & next) {
+    return std::get<std::unique_ptr<MIR::Condition>>(next);
+}
+
+inline bool is_empty(const MIR::NextType & next) {
+    return std::holds_alternative<std::monostate>(next);
+}
+
 } // namespace
 
 TEST(flatten, basic) {
@@ -110,11 +130,11 @@ TEST(branch_pruning, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nendif\n");
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.condition, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
-    const auto & next = irlist.next;
-    ASSERT_EQ(next->condition, nullptr);
+    ASSERT_TRUE(is_bb(irlist.next));
+    const auto & next = get_bb(irlist.next);
+    ASSERT_FALSE(is_con(next->next));
     ASSERT_EQ(next->instructions.size(), 1);
 }
 
@@ -129,10 +149,9 @@ TEST(branch_pruning, next_block) {
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
-    ASSERT_EQ(irlist.condition, nullptr);
-    ASSERT_NE(irlist.next, nullptr);
+    ASSERT_TRUE(is_bb(irlist.next));
 
-    const auto & next = irlist.next;
+    const auto & next = get_bb(irlist.next);
     ASSERT_EQ(next->instructions.size(), 1);
 }
 
@@ -148,16 +167,14 @@ TEST(branch_pruning, if_else) {
     bool progress = MIR::Passes::branch_pruning(&irlist);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.condition, nullptr);
-    ASSERT_NE(irlist.next, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
-    const auto & next = irlist.next;
-    ASSERT_EQ(next->condition, nullptr);
+    ASSERT_TRUE(is_bb(irlist.next));
+    const auto & next = get_bb(irlist.next);
     ASSERT_EQ(next->instructions.size(), 1);
 
-    ASSERT_NE(next->next, nullptr);
-    ASSERT_EQ(next->next->instructions.size(), 0);
+    ASSERT_TRUE(is_bb(next->next));
+    ASSERT_TRUE(get_bb(next->next)->instructions.empty());
 }
 
 TEST(branch_pruning, if_false) {
@@ -174,12 +191,10 @@ TEST(branch_pruning, if_false) {
     do {
         progress = MIR::Passes::branch_pruning(&irlist);
     } while (progress);
-    ASSERT_EQ(irlist.condition, nullptr);
-    ASSERT_NE(irlist.next, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
-    const auto & next = irlist.next;
-
+    ASSERT_TRUE(is_bb(irlist.next));
+    const auto & next = get_bb(irlist.next);
     ASSERT_EQ(next->instructions.size(), 2);
 
     const auto & first = std::get<std::unique_ptr<MIR::Number>>(next->instructions.front());
@@ -195,18 +210,17 @@ TEST(join_blocks, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\ny = x");
     bool progress = MIR::Passes::branch_pruning(&irlist);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.condition, nullptr);
     ASSERT_EQ(irlist.instructions.size(), 1);
-    ASSERT_NE(irlist.next, nullptr);
 
-    ASSERT_EQ(irlist.next->instructions.size(), 1);
+    ASSERT_TRUE(is_bb(irlist.next));
+    const auto & next = get_bb(irlist.next);
+    ASSERT_EQ(next->instructions.size(), 1);
 
     do {
         progress = MIR::Passes::join_blocks(&irlist);
     } while (progress);
-    ASSERT_EQ(irlist.condition, nullptr);
+    ASSERT_TRUE(is_empty(irlist.next));
     ASSERT_EQ(irlist.instructions.size(), 3);
-    ASSERT_EQ(irlist.next, nullptr);
 }
 
 TEST(machine_lower, simple) {
@@ -267,8 +281,8 @@ TEST(machine_lower, in_condtion) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 0);
 
-    const auto & con = irlist.condition;
-    ASSERT_NE(con, nullptr);
+    ASSERT_TRUE(is_con(irlist.next));
+    const auto & con = get_con(irlist.next);
     const auto & obj = con->condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(obj));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::String>>(obj)->value, "x86_64");

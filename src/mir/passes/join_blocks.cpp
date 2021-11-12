@@ -6,23 +6,17 @@
 namespace MIR::Passes {
 
 bool join_blocks(BasicBlock * block) {
-    // If there is a condition we can't join this block to the next one
-    if (block->condition != nullptr) {
+    // If there isn't a next block, then we obviously can't do anything
+    if (!std::holds_alternative<std::shared_ptr<BasicBlock>>(block->next)) {
         return false;
     }
 
-    // If there isn't a next block, then we obviously can't do anything
-    if (block->next == nullptr) {
-        return false;
-    }
+    auto & next = std::get<std::shared_ptr<BasicBlock>>(block->next);
 
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
-    block->instructions.splice(block->instructions.end(), block->next->instructions);
-    if (block->next->condition != nullptr) {
-        block->condition = std::move(block->next->condition);
-    }
-    block->next = block->next->next;
+    block->instructions.splice(block->instructions.end(), next->instructions);
+    block->next = std::move(next->next);
 
     return true;
 }
