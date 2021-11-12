@@ -259,13 +259,24 @@ TEST(ast_to_ir, if_else_more) {
     // Here we're testing that the jupm value of both branches are the same, and
     // not nullptr. We should get one instruction in each branch, pluse one
     // instructino in the before and after blocks.
-    auto irlist = lower("y = 0\nif true\nx = 7\nelse\nx = 8\nendif\ny = x");
+    auto irlist = lower(R"EOF(
+        y = 0
+        if true
+          x = 7
+        else
+          x = 8
+        endif
+        y = x
+        )EOF");
+
     ASSERT_EQ(irlist.instructions.size(), 1);
     ASSERT_TRUE(is_con(irlist.next));
     auto const & con = get_con(irlist.next);
 
     ASSERT_EQ(con->if_true->instructions.size(), 1);
+    ASSERT_TRUE(con->if_true->parents.count(&irlist));
     ASSERT_EQ(con->if_false->instructions.size(), 1);
+    ASSERT_TRUE(con->if_false->parents.count(&irlist));
 
     ASSERT_TRUE(is_bb(con->if_true->next));
     ASSERT_EQ(get_bb(con->if_true->next), get_bb(con->if_false->next));
@@ -499,8 +510,13 @@ TEST(ast_to_ir, nested_if_tail) {
     // block 3 and block 2 should both go to block 4
     ASSERT_EQ(get_bb(con2->if_true->next), con2->if_false);
 
+    const auto & last_block = con1->if_false;
+
     // Block 4 and block 1 should both go to block 5
     ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
+    ASSERT_EQ(last_block->parents.size(), 2);
+    ASSERT_TRUE(last_block->parents.count(con2->if_false.get()));
+    ASSERT_TRUE(last_block->parents.count(&irlist));
 }
 
 TEST(ast_to_ir, nested_if_elif_tail) {
