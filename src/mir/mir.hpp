@@ -16,6 +16,7 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <sys/types.h>
 #include <unordered_map>
@@ -245,14 +246,18 @@ using NextType =
  */
 class BasicBlock {
   public:
-    BasicBlock() : instructions{}, next{std::monostate{}} {};
-    BasicBlock(std::unique_ptr<Condition> && con) : instructions{}, next{std::move(con)} {};
+    BasicBlock() : instructions{}, next{std::monostate{}}, parents{} {};
+    BasicBlock(std::unique_ptr<Condition> && con)
+        : instructions{}, next{std::move(con)}, parents{} {};
 
     /// The instructions in this block
     std::list<Object> instructions;
 
     /// Either nothing, a pointer to another BasicBlock, or a pointer to a Condition
     NextType next;
+
+    /// All potential parents of this block
+    std::set<BasicBlock *> parents;
 };
 
 } // namespace MIR

@@ -13,6 +13,12 @@ bool join_blocks(BasicBlock * block) {
 
     auto & next = std::get<std::shared_ptr<BasicBlock>>(block->next);
 
+    // If the next block has more than one parent we can't join them yet,
+    // otherwise the other parent would end up with a pointer to an empty block
+    if (next->parents.size() > 1) {
+        return false;
+    }
+
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
     block->instructions.splice(block->instructions.end(), next->instructions);
