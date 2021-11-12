@@ -189,16 +189,14 @@ struct StatementLowering {
         // the `else` of that new block for the next `elif`
         if (!stmt->efblock.empty()) {
             for (const auto & el : stmt->efblock) {
-                // cur = cur->condition->if_false = std::make_unique<Condition>();
-                cur->if_false = std::make_unique<Condition>(std::visit(l, el.condition));
+                cur->if_false = std::make_shared<BasicBlock>(
+                    std::make_unique<Condition>(std::visit(l, el.condition)));
+                cur = cur->if_false->condition.get();
+
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
-                        [&](const auto & a) {
-                            return this->operator()(cur->if_false->if_true.get(), a);
-                        },
-                        i);
+                        [&](const auto & a) { return this->operator()(cur->if_true.get(), a); }, i);
                 }
-                cur = cur->if_false.get();
 
                 assert(last_block->condition == nullptr);
                 assert(last_block->next == nullptr);
@@ -208,46 +206,22 @@ struct StatementLowering {
 
         // Finally, handle an else block.
         if (stmt->eblock.block != nullptr) {
-            cur->if_false = std::make_unique<Condition>(std::make_unique<MIR::Boolean>(true));
+            assert(cur->if_false == nullptr);
+            cur->if_false = std::make_shared<BasicBlock>();
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block = std::visit(
-                    [&](const auto & a) {
-                        return this->operator()(cur->if_false->if_true.get(), a);
-                    },
-                    i);
+                    [&](const auto & a) { return this->operator()(cur->if_false.get(), a); }, i);
             }
             assert(last_block->condition == nullptr);
             assert(last_block->next == nullptr);
             last_block->next = next_block;
         } else {
-            /*
-             * Codegen time!
-             * If we're here that means we have the following situation:
-             *   <block 1>
-             *   if condition
-             *     <block 2>
-             *   endif
-             *   <block 3>
-             * Which means that if condition is false, that we need <block 1>
-             * continue to <block 2>. To achieve that we create an else block
-             * which continnues on, ie:
-             *   <block 1>
-             *   if condition
-             *     <block 2>
-             *   else
-             *     <block 3>
-             *   endif
-             *   <block 4>
-             *
-             * By treating all if's as having an else block we simplify our handling considerably.
-             */
-            cur->if_false =
-                std::make_unique<Condition>(std::make_unique<Boolean>(true), next_block);
+            cur->if_false = next_block;
         }
 
         // The last leg of the tree should be empty
         // XXX: or should it point to next, in the event of `if/elif/endif`?
-        assert(last_block->condition == nullptr || last_block->condition->if_false == nullptr);
+        // assert(last_block->condition == nullptr);
 
         // Return the raw pointer, which is fine because we're not giving the
         // caller ownership of the pointer, the other basic blocks are the owners.
