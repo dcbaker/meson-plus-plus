@@ -164,10 +164,10 @@ struct StatementLowering {
         BasicBlock * last_block;
 
         // Get the value of the coindition itself (`if <condition>\n`)
-        assert(list->condition == nullptr);
-        list->condition = std::make_unique<Condition>(std::visit(l, stmt->ifblock.condition));
+        assert(std::holds_alternative<std::monostate>(list->next));
+        list->next = std::make_unique<Condition>(std::visit(l, stmt->ifblock.condition));
 
-        auto * cur = list->condition.get();
+        auto * cur = std::get<std::unique_ptr<Condition>>(list->next).get();
 
         // Walk over the statements, adding them to the if_true branch.
         for (const auto & i : stmt->ifblock.block->statements) {
@@ -180,8 +180,7 @@ struct StatementLowering {
         }
 
         // We shouldn't have a condition here, this is where we wnat to put our next target
-        assert(last_block->condition == nullptr);
-        assert(last_block->next == nullptr);
+        assert(std::holds_alternative<std::monostate>(last_block->next));
         last_block->next = next_block;
 
         // for each elif branch create a new condition in the `else` of the
@@ -191,15 +190,14 @@ struct StatementLowering {
             for (const auto & el : stmt->efblock) {
                 cur->if_false = std::make_shared<BasicBlock>(
                     std::make_unique<Condition>(std::visit(l, el.condition)));
-                cur = cur->if_false->condition.get();
+                cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
 
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
                         [&](const auto & a) { return this->operator()(cur->if_true.get(), a); }, i);
                 }
 
-                assert(last_block->condition == nullptr);
-                assert(last_block->next == nullptr);
+                assert(std::holds_alternative<std::monostate>(last_block->next));
                 last_block->next = next_block;
             }
         }
@@ -212,16 +210,15 @@ struct StatementLowering {
                 last_block = std::visit(
                     [&](const auto & a) { return this->operator()(cur->if_false.get(), a); }, i);
             }
-            assert(last_block->condition == nullptr);
-            assert(last_block->next == nullptr);
+            assert(std::holds_alternative<std::monostate>(last_block->next));
             last_block->next = next_block;
         } else {
+            // If we don't have an else, create a false one by putting hte next
+            // block in it. this means taht if we don't go down any of the
+            // branches that we proceed on correctly
+            assert(cur->if_false == nullptr);
             cur->if_false = next_block;
         }
-
-        // The last leg of the tree should be empty
-        // XXX: or should it point to next, in the event of `if/elif/endif`?
-        // assert(last_block->condition == nullptr);
 
         // Return the raw pointer, which is fine because we're not giving the
         // caller ownership of the pointer, the other basic blocks are the owners.

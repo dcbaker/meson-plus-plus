@@ -237,37 +237,22 @@ class Condition {
     std::shared_ptr<BasicBlock> if_false;
 };
 
+using NextType =
+    std::variant<std::monostate, std::unique_ptr<Condition>, std::shared_ptr<BasicBlock>>;
+
 /**
- * Holds a list of instructions, and optionally a condition or next point
- *
- * Jump is used when the list unconditionally jumps to another basic block, and
- * thus condition should be nullopt. This is meant for cases such as:
- *
- *       / 2 \
- * 0 - 1 - 3 - 4
- *
- *  In this case both 2 and 3 unconditionally continue to 4, but we don't want
- *  two copies of 4, just one, they both will "jump" to 4.
- *
- * On the other hand 1 does not make any unconditional jumps, and it uses the
- * condition node to set a condition as to whether it goes to 2 or 3.
- *
- * TOOD: maybe it's better to use a variant/union?
- *
+ * Holds a list of instructions, and optionally a condition or next block
  */
 class BasicBlock {
   public:
-    BasicBlock() : instructions{}, condition{nullptr}, next{nullptr} {};
-    BasicBlock(std::unique_ptr<Condition> && con) : instructions{}, condition{std::move(con)}, next{nullptr} {};
+    BasicBlock() : instructions{}, next{std::monostate{}} {};
+    BasicBlock(std::unique_ptr<Condition> && con) : instructions{}, next{std::move(con)} {};
 
     /// The instructions in this block
     std::list<Object> instructions;
 
-    /// A conditional output for this block
-    std::unique_ptr<Condition> condition;
-
-    /// The next basic block to go to.
-    std::shared_ptr<BasicBlock> next;
+    /// Either nothing, a pointer to another BasicBlock, or a pointer to a Condition
+    NextType next;
 };
 
 } // namespace MIR

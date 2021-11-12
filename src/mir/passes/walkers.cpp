@@ -108,8 +108,8 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
         {cb});
 
     // Check if we have a condition, and try to lower that as well.
-    if (block->condition != nullptr) {
-        auto & con = block->condition;
+    if (std::holds_alternative<std::unique_ptr<Condition>>(block->next)) {
+        auto & con = std::get<std::unique_ptr<Condition>>(block->next);
         auto new_value = cb(con->condition);
         if (new_value.has_value()) {
             con->condition = std::move(new_value.value());
