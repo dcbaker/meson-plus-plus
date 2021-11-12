@@ -21,11 +21,10 @@ bool branch_pruning(BasicBlock * ir) {
     if (con_v) {
         assert(con->if_true != nullptr);
         ir->next = con->if_true;
-        ir->condition = nullptr;
     } else if (con->if_false != nullptr) {
-        assert(ir->next == nullptr);
-        ir->condition = std::move(con->if_false);
+        ir->next = con->if_false;
     }
+    ir->condition = nullptr;
 
     return true;
 };

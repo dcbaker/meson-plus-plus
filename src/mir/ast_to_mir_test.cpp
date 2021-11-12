@@ -227,7 +227,7 @@ TEST(ast_to_ir, if_branch_join) {
 
     ASSERT_NE(con->if_false, nullptr);
 
-    auto const & block2 = con->if_false->if_true;
+    auto const & block2 = con->if_false;
     ASSERT_NE(block2, nullptr);
     auto const & val2 = block2->instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
@@ -246,45 +246,50 @@ TEST(ast_to_ir, if_else_more) {
     auto const & con = irlist.condition;
 
     ASSERT_EQ(con->if_true->instructions.size(), 1);
-    ASSERT_EQ(con->if_false->if_true->instructions.size(), 1);
+    ASSERT_EQ(con->if_false->instructions.size(), 1);
 
     ASSERT_NE(con->if_true->next, nullptr);
     ASSERT_EQ(con->if_true->condition, nullptr);
-    ASSERT_EQ(con->if_true->next, con->if_false->if_true->next);
+    ASSERT_EQ(con->if_true->next, con->if_false->next);
 
     ASSERT_EQ(con->if_true->next->instructions.size(), 1);
 }
 
-TEST(ast_to_ir, if_else_more2) {
+TEST(ast_to_ir, if_elif_else_more) {
     auto irlist = lower(R"EOF(
-        y = 0
-        if true     # 1
-          x = 7
-        elif false  # 2
-          x = 9
-        else        # 3
-          x = 8
+        y = 0     # 0
+        if true
+          x = 7   # 1
+        elif false
+          x = 9   # 2
+        else
+          x = 8   # 3
         endif
-        y = x
+        y = x     # 4
         )EOF");
+    // block 0
     ASSERT_EQ(irlist.instructions.size(), 1);
     ASSERT_NE(irlist.condition, nullptr);
 
     auto const & con = irlist.condition;
+
+    // block 1
     ASSERT_EQ(con->if_true->instructions.size(), 1);
     ASSERT_NE(con->if_true->next, nullptr);
     ASSERT_EQ(con->if_true->condition, nullptr);
     const auto & out_block = con->if_true->next;
 
-    auto const & con1 = con->if_false;
+    // block 2
+    auto const & con1 = con->if_false->condition;
     ASSERT_EQ(con1->if_true->instructions.size(), 1);
     ASSERT_EQ(con1->if_true->next, out_block);
     ASSERT_EQ(con1->if_true->condition, nullptr);
 
-    auto const & con2 = con1->if_false;
-    ASSERT_EQ(con2->if_true->instructions.size(), 1);
-    ASSERT_EQ(con2->if_true->next, out_block);
-    ASSERT_EQ(con2->if_true->condition, nullptr);
+    // block 3
+    auto const & else_block = con1->if_false;
+    ASSERT_EQ(else_block->instructions.size(), 1);
+    ASSERT_EQ(else_block->next, out_block);
+    ASSERT_EQ(else_block->condition, nullptr);
 }
 
 TEST(ast_to_ir, if_else) {
@@ -299,7 +304,7 @@ TEST(ast_to_ir, if_else) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
     ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
 
-    auto const & if_false = con->if_false->if_true->instructions;
+    auto const & if_false = con->if_false->instructions;
     ASSERT_EQ(if_false.size(), 1);
     auto const & val2 = if_false.front();
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
@@ -329,7 +334,7 @@ TEST(ast_to_ir, if_elif) {
     }
 
     ASSERT_NE(con->if_false, nullptr);
-    auto const & elcon = con->if_false;
+    auto const & elcon = con->if_false->condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
 
     {
@@ -340,7 +345,7 @@ TEST(ast_to_ir, if_elif) {
         ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
     }
 
-    auto const & elcon2 = elcon->if_false;
+    auto const & elcon2 = elcon->if_false->condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon2->condition));
 
     {
@@ -376,7 +381,7 @@ TEST(ast_to_ir, if_elif_else) {
     }
 
     ASSERT_NE(con->if_false, nullptr);
-    auto const & elcon = con->if_false;
+    auto const & elcon = con->if_false->condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
 
     {
@@ -386,7 +391,7 @@ TEST(ast_to_ir, if_elif_else) {
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
         ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
 
-        auto const & if_false = elcon->if_false->if_true->instructions;
+        auto const & if_false = elcon->if_false->instructions;
         ASSERT_EQ(if_false.size(), 1);
         auto const & val2 = if_false.front();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
@@ -433,7 +438,7 @@ TEST(ast_to_ir, nested_if) {
     }
 
     ASSERT_NE(con->if_false, nullptr);
-    auto const & elcon = con->if_false;
+    auto const & elcon = con->if_false->condition;
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
 
     {
@@ -443,7 +448,7 @@ TEST(ast_to_ir, nested_if) {
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
         ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
 
-        auto const & if_false = elcon->if_false->if_true->instructions;
+        auto const & if_false = elcon->if_false->instructions;
         ASSERT_EQ(if_false.size(), 1);
         auto const & val2 = if_false.front();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));

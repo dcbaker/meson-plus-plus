@@ -230,11 +230,11 @@ class Condition {
     /// An object that is the condition
     Object condition;
 
-    /// The branch to take if the condition is true
+    /// The block to go to if the condition is true
     std::shared_ptr<BasicBlock> if_true;
 
-    /// The branch to take if the condition is false
-    std::unique_ptr<Condition> if_false;
+    /// The block to go to if the condition is false
+    std::shared_ptr<BasicBlock> if_false;
 };
 
 /**
@@ -258,6 +258,7 @@ class Condition {
 class BasicBlock {
   public:
     BasicBlock() : instructions{}, condition{nullptr}, next{nullptr} {};
+    BasicBlock(std::unique_ptr<Condition> && con) : instructions{}, condition{std::move(con)}, next{nullptr} {};
 
     /// The instructions in this block
     std::list<Object> instructions;
