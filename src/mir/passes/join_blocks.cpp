@@ -16,7 +16,8 @@ bool join_blocks(BasicBlock * block) {
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
     block->instructions.splice(block->instructions.end(), next->instructions);
-    block->next = std::move(next->next);
+    auto nn = std::move(next->next);
+    block->next = std::move(nn);
 
     return true;
 }

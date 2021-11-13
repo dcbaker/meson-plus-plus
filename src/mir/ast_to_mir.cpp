@@ -143,8 +143,10 @@ struct StatementLowering {
 
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+        assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
         list->instructions.emplace_back(std::visit(l, stmt->expr));
+        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
 
@@ -169,12 +171,14 @@ struct StatementLowering {
 
         auto * cur = std::get<std::unique_ptr<Condition>>(list->next).get();
 
+        last_block = cur->if_true.get();
+
         // Walk over the statements, adding them to the if_true branch.
         for (const auto & i : stmt->ifblock.block->statements) {
             last_block = std::visit(
                 [&](const auto & a) {
                     assert(cur != nullptr);
-                    return this->operator()(cur->if_true.get(), a);
+                    return this->operator()(last_block, a);
                 },
                 i);
         }
@@ -191,10 +195,11 @@ struct StatementLowering {
                 cur->if_false = std::make_shared<BasicBlock>(
                     std::make_unique<Condition>(std::visit(l, el.condition)));
                 cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
+                last_block = cur->if_true.get();
 
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
-                        [&](const auto & a) { return this->operator()(cur->if_true.get(), a); }, i);
+                        [&](const auto & a) { return this->operator()(last_block, a); }, i);
                 }
 
                 assert(std::holds_alternative<std::monostate>(last_block->next));
@@ -206,9 +211,10 @@ struct StatementLowering {
         if (stmt->eblock.block != nullptr) {
             assert(cur->if_false == nullptr);
             cur->if_false = std::make_shared<BasicBlock>();
+            last_block = cur->if_false.get();
             for (const auto & i : stmt->eblock.block->statements) {
-                last_block = std::visit(
-                    [&](const auto & a) { return this->operator()(cur->if_false.get(), a); }, i);
+                last_block =
+                    std::visit([&](const auto & a) { return this->operator()(last_block, a); }, i);
             }
             assert(std::holds_alternative<std::monostate>(last_block->next));
             last_block->next = next_block;
@@ -220,6 +226,7 @@ struct StatementLowering {
             cur->if_false = next_block;
         }
 
+        assert(std::holds_alternative<std::monostate>(next_block->next));
         // Return the raw pointer, which is fine because we're not giving the
         // caller ownership of the pointer, the other basic blocks are the owners.
         return next_block.get();
@@ -227,6 +234,7 @@ struct StatementLowering {
 
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
+        assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
         auto target = std::visit(l, stmt->lhs);
         auto value = std::visit(l, stmt->rhs);
@@ -243,20 +251,24 @@ struct StatementLowering {
         std::visit([&](const auto & t) { t->var.name = (*name_ptr)->value; }, value);
 
         list->instructions.emplace_back(std::move(value));
+        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
 
     // XXX: None of this is actually implemented
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
+        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
     BasicBlock * operator()(BasicBlock * list,
                             const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
+        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
 };
