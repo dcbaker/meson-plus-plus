@@ -475,6 +475,76 @@ TEST(ast_to_ir, nested_if) {
     }
 }
 
+TEST(ast_to_ir, nested_if_tail) {
+    auto irlist = lower(R"EOF(
+        99               # 1
+        if true
+            7            # 2
+            if false
+                10       # 3
+            endif
+            12           # 4
+        endif
+        22               # 5
+    )EOF");
+
+    ASSERT_TRUE(is_con(irlist.next));
+
+    const auto & con1 = get_con(irlist.next);
+    ASSERT_TRUE(is_con(con1->if_true->next));
+
+    const auto & con2 = get_con(con1->if_true->next);
+    ASSERT_TRUE(is_bb(con2->if_true->next));
+
+    // block 3 and block 2 should both go to block 4
+    ASSERT_EQ(get_bb(con2->if_true->next), con2->if_false);
+
+    // Block 4 and block 1 should both go to block 5
+    ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
+}
+
+TEST(ast_to_ir, nested_if_elif_tail) {
+    auto irlist = lower(R"EOF(
+        x = 7      # 0
+        if false
+          x = 8    # 1
+        elif A
+          x = 16   # 2
+        else
+                   # 3
+          if Q
+            y = 7  # 4
+          else
+            y = 9  # 5
+          endif
+                   # 6
+          if X
+            x = 99 # 7
+          endif
+          x = 9    # 8
+        endif
+        y = x
+        z = y      # 9
+        )EOF");
+
+    const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
+
+    // block 2 (elif A)
+    const auto & con2 = get_con(irlist.next)->if_false;
+    ASSERT_EQ(fin, get_bb(get_con(con2->next)->if_true->next));
+
+    // block 3 (else)
+    const auto & con3 = get_con(con2->next)->if_false;
+    ASSERT_TRUE(is_con(con3->next));
+    const auto & con31 = get_con(con3->next);
+    const auto & bb6 = get_bb(con31->if_false->next);
+
+    const auto & con32 = get_con(bb6->next);
+    const auto & bb8 = get_bb(con32->if_false);
+
+    ASSERT_EQ(get_bb(bb8->next), fin);
+}
+
 TEST(ast_to_ir, assign) {
     auto irlist = lower("a = 5");
     ASSERT_EQ(irlist.instructions.size(), 1);
