@@ -76,4 +76,9 @@ bool lower_free_functions(BasicBlock *, const State::Persistant &);
  */
 bool flatten(BasicBlock *, const State::Persistant &);
 
+/**
+ * number each use of a variable
+ */
+bool value_numbering(BasicBlock *, std::unordered_map<std::string, uint32_t> &);
+
 } // namespace MIR::Passes

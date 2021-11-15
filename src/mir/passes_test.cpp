@@ -477,3 +477,47 @@ TEST(lower, simple_real) {
     MIR::lower(&irlist, pstate);
 }
 #endif
+
+TEST(value_numbering, simple) {
+    auto irlist = lower(R"EOF(
+        x = 7
+        x = 8
+        )EOF");
+    std::unordered_map<std::string, uint32_t> data{};
+    MIR::Passes::value_numbering(&irlist, data);
+
+    const auto & first = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.front());
+    ASSERT_EQ(first->var.version, 1);
+
+    const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
+    ASSERT_EQ(last->var.version, 2);
+}
+
+TEST(value_numbering, branching) {
+    auto irlist = lower(R"EOF(
+        x = 7
+        x = 8
+        if true
+            x = 9
+        else
+            x = 10
+        endif
+        )EOF");
+    std::unordered_map<std::string, uint32_t> data{};
+    MIR::Passes::block_walker(
+        &irlist, {[&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); }});
+
+    const auto & first = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.front());
+    ASSERT_EQ(first->var.version, 1);
+
+    const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
+    ASSERT_EQ(last->var.version, 2);
+
+    const auto & bb1 = get_con(irlist.next)->if_true;
+    const auto & bb1_val = std::get<std::unique_ptr<MIR::Number>>(bb1->instructions.front());
+    ASSERT_EQ(bb1_val->var.version, 3);
+
+    const auto & bb2 = get_con(irlist.next)->if_false;
+    const auto & bb2_val = std::get<std::unique_ptr<MIR::Number>>(bb2->instructions.front());
+    ASSERT_EQ(bb2_val->var.version, 4);
+}
