@@ -16,6 +16,7 @@ libmir = static_library(
     'passes/machines.cpp',
     'passes/pruning.cpp',
     'passes/walkers.cpp',
+    'passes/value_numbering.cpp',
     locations_hpp,
   ],
   include_directories : inc_frontend,

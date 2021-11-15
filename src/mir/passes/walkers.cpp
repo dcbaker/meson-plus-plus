@@ -138,9 +138,7 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
             for (const auto & cb : callbacks) {
                 lprogress = cb(current);
             }
-            if (lprogress) {
-                progress = true;
-            }
+            progress |= lprogress;
         }
 
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
