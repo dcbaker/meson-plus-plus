@@ -7,14 +7,17 @@
 namespace MIR {
 
 void lower(BasicBlock * block, State::Persistant & pstate) {
-    bool progress = false;
+    bool progress =
+        Passes::block_walker(block, {[&](BasicBlock * b) {
+                                 return Passes::machine_lower(b, pstate.machines) ||
+                                        Passes::insert_compilers(block, pstate.toolchains);
+                             }});
+
     // clang-format off
     do {
         progress = Passes::block_walker(
             block,
             {
-                [&](BasicBlock * b) { return Passes::machine_lower(b, pstate.machines); },
-                [&](BasicBlock * b) { return Passes::insert_compilers(b, pstate.toolchains); },
                 [&](BasicBlock * b) { return Passes::flatten(b, pstate); },
                 [&](BasicBlock * b) { return Passes::lower_free_functions(b, pstate); },
                 Passes::branch_pruning,
