@@ -19,6 +19,9 @@ using ReplacementCallback = std::function<std::optional<Object>(const Object &)>
 /// Callback will return a boolean that progress is mode
 using MutationCallback = std::function<bool(Object &)>;
 
+/// Callback to pass to a BlockWalker, probably an instruction_walker
+using BlockWalkerCb = std::function<bool(BasicBlock *)>;
+
 /**
  * Walks each instruction in a basic block, calling each callback on each instruction
  *
@@ -47,5 +50,10 @@ bool array_walker(Object &, const ReplacementCallback &);
  * This will replace the arguments if they are loweed by the callback
  */
 bool function_argument_walker(Object &, const ReplacementCallback &);
+
+/**
+ * Walker over all basic blocks starting with the provided one, applying the given callbacks
+ */
+bool block_walker(BasicBlock *, const std::vector<BlockWalkerCb> &);
 
 } // namespace MIR::Passes

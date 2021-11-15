@@ -1,6 +1,9 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Dylan Baker
 
+#include <deque>
+#include <set>
+
 #include "exceptions.hpp"
 #include "private.hpp"
 
@@ -119,5 +122,52 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
 
     return progress;
 };
+
+bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callbacks) {
+    std::deque<std::shared_ptr<BasicBlock>> todo{};
+    std::set<std::shared_ptr<BasicBlock>> visited{};
+    BasicBlock * current = root;
+    bool progress = false;
+
+    while (true) {
+        // It's possible that we need to walk over the same block twice in a
+        // loop because the block has been mutated such that running the same
+        // test on it will result in a different result.
+        bool lprogress = true;
+        while (lprogress) {
+            for (const auto & cb : callbacks) {
+                lprogress = cb(current);
+            }
+            if (lprogress) {
+                progress = true;
+            }
+        }
+
+        if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
+            const auto & con = std::get<std::unique_ptr<Condition>>(current->next);
+            if (!visited.count(con->if_true) && con->if_true != nullptr) {
+                todo.push_front(con->if_true);
+            }
+            if (!visited.count(con->if_false) && con->if_false != nullptr) {
+                todo.push_front(con->if_false);
+            }
+        } else if (std::holds_alternative<std::shared_ptr<BasicBlock>>(current->next)) {
+            auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
+            if (!visited.count(bb) && bb != nullptr) {
+                todo.push_front(bb);
+            }
+        }
+
+        if (todo.empty()) {
+            break;
+        }
+
+        visited.emplace(todo.back());
+        current = todo.back().get();
+        todo.pop_back();
+    }
+
+    return progress;
+}
 
 } // namespace MIR::Passes
