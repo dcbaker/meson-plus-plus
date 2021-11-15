@@ -12,6 +12,7 @@
 #include "lower.hpp"
 #include "mir.hpp"
 #include "passes.hpp"
+#include "passes/private.hpp"
 #include "state/state.hpp"
 #include "toolchains/archiver.hpp"
 #include "toolchains/common.hpp"
@@ -191,10 +192,8 @@ TEST(branch_pruning, if_false) {
           y = 2
         endif
         )EOF");
-    bool progress = false;
-    do {
-        progress = MIR::Passes::branch_pruning(&irlist);
-    } while (progress);
+    bool progress = MIR::Passes::block_walker(&irlist, {MIR::Passes::branch_pruning});
+    ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     ASSERT_TRUE(is_bb(irlist.next));
@@ -220,9 +219,8 @@ TEST(join_blocks, simple) {
     const auto & next = get_bb(irlist.next);
     ASSERT_EQ(next->instructions.size(), 1);
 
-    do {
-        progress = MIR::Passes::join_blocks(&irlist);
-    } while (progress);
+    progress = MIR::Passes::block_walker(&irlist, {MIR::Passes::join_blocks});
+    ASSERT_TRUE(progress);
     ASSERT_TRUE(is_empty(irlist.next));
     ASSERT_EQ(irlist.instructions.size(), 3);
 }
@@ -249,10 +247,11 @@ TEST(join_blocks, nested_if_elif_else) {
         y = x
         z = y
         )EOF");
-    bool progress = MIR::Passes::branch_pruning(&irlist);
-    do {
-        progress = MIR::Passes::join_blocks(&irlist);
-    } while (progress);
+    bool progress = MIR::Passes::block_walker(&irlist, {
+                                                           MIR::Passes::branch_pruning,
+                                                           MIR::Passes::join_blocks,
+                                                       });
+    ASSERT_TRUE(progress);
 
     // Check that the parents of the final block are correct
     const auto & con1 = get_con(irlist.next);
