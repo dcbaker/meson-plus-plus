@@ -31,6 +31,6 @@ jobs:
       - uses: BSFishy/meson-build@v1.0.3
         with:
           meson-version: 0.55
-          action: build
+          action: test
       - name: unit tests
         run : ./run-tests.sh
