@@ -521,3 +521,29 @@ TEST(value_numbering, branching) {
     const auto & bb2_val = std::get<std::unique_ptr<MIR::Number>>(bb2->instructions.front());
     ASSERT_EQ(bb2_val->var.version, 4);
 }
+
+TEST(insert_phi, simple) {
+    auto irlist = lower(R"EOF(
+        if true
+            x = 9
+        else
+            x = 10
+        endif
+        )EOF");
+    std::unordered_map<std::string, uint32_t> data{};
+    MIR::Passes::block_walker(
+        &irlist, {
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
+                     MIR::Passes::insert_phis,
+                 });
+
+    const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
+    ASSERT_EQ(fin->instructions.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(fin->instructions.front()));
+
+    const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(fin->instructions.front());
+    ASSERT_EQ(phi->left, 0);
+    ASSERT_EQ(phi->right, 1);
+    ASSERT_EQ(phi->var.name, "x");
+    ASSERT_EQ(phi->var.version, 0);
+}
