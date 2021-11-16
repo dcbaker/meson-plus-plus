@@ -14,11 +14,6 @@ bool number(Object & obj, std::unordered_map<std::string, uint32_t> & data) {
         return false;
     }
 
-    // We'll visit the same block twice
-    if (var->version > 0) {
-        return false;
-    }
-
     if (data.count(var->name) == 0) {
         data[var->name] = 0;
     }

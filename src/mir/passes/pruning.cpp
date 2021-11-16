@@ -7,7 +7,9 @@
 
 namespace MIR::Passes {
 
-bool branch_pruning(BasicBlock * ir) {
+namespace {
+
+bool branch_pruning_impl(BasicBlock * ir) {
     // If we don't have a condition there's nothing to do
     if (!std::holds_alternative<std::unique_ptr<Condition>>(ir->next)) {
         return false;
@@ -81,5 +83,22 @@ bool branch_pruning(BasicBlock * ir) {
 
     return true;
 };
+
+} // namespace
+
+bool branch_pruning(BasicBlock * block) {
+    bool progress = false;
+    bool lprogress;
+
+    // Run this on the same block as long as it's making progress. We do this so
+    // that if the new next block can also be pruned we do that with few
+    // iterations.
+    do {
+        lprogress = branch_pruning_impl(block);
+        progress |= lprogress;
+    } while (lprogress);
+
+    return progress;
+}
 
 } // namespace MIR::Passes
