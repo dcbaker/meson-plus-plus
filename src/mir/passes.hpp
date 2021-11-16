@@ -81,4 +81,9 @@ bool flatten(BasicBlock *, const State::Persistant &);
  */
 bool value_numbering(BasicBlock *, std::unordered_map<std::string, uint32_t> &);
 
+/**
+ * Insert phi nodes along dominance frontiers
+ */
+bool insert_phis(BasicBlock *);
+
 } // namespace MIR::Passes
