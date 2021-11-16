@@ -133,12 +133,8 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
         // It's possible that we need to walk over the same block twice in a
         // loop because the block has been mutated such that running the same
         // test on it will result in a different result.
-        bool lprogress = true;
-        while (lprogress) {
-            for (const auto & cb : callbacks) {
-                lprogress = cb(current);
-            }
-            progress |= lprogress;
+        for (const auto & cb : callbacks) {
+            progress |= cb(current);
         }
 
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {

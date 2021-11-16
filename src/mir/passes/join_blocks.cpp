@@ -5,7 +5,9 @@
 
 namespace MIR::Passes {
 
-bool join_blocks(BasicBlock * block) {
+namespace {
+
+bool join_blocks_impl(BasicBlock * block) {
     // If there isn't a next block, then we obviously can't do anything
     if (!std::holds_alternative<std::shared_ptr<BasicBlock>>(block->next)) {
         return false;
@@ -26,6 +28,23 @@ bool join_blocks(BasicBlock * block) {
     block->next = std::move(nn);
 
     return true;
+}
+
+} // namespace
+
+bool join_blocks(BasicBlock * block) {
+    bool progress = false;
+    bool lprogress;
+
+    // Run this on the same block as long as it's making progress. We do this so
+    // that if the new next block can also be pruned we do that with few
+    // iterations.
+    do {
+        lprogress = join_blocks_impl(block);
+        progress |= lprogress;
+    } while (lprogress);
+
+    return progress;
 }
 
 } // namespace MIR::Passes
