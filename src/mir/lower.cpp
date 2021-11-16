@@ -19,11 +19,14 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
 
     // clang-format off
     do {
+        value_number_data.clear();
+
         progress = Passes::block_walker(
             block,
             {
                 [&](BasicBlock * b) { return Passes::flatten(b, pstate); },
                 [&](BasicBlock * b) { return Passes::lower_free_functions(b, pstate); },
+                [&](BasicBlock * b) { return Passes::value_numbering(b, value_number_data); },
                 Passes::branch_pruning,
                 Passes::join_blocks,
             }
