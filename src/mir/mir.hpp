@@ -67,6 +67,23 @@ class StaticLibrary {
     Variable var;
 };
 
+/**
+ * A phi node
+ *
+ * A synthetic instruction which represents the point where to possible values
+ * for a variable converge. When one strictly dominates the other then this can
+ * be removed.
+ */
+class Phi {
+  public:
+    Phi() : left{}, right{} {};
+
+    uint32_t left;
+    uint32_t right;
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -86,7 +103,7 @@ using Object =
     std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
                  std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
                  std::unique_ptr<Dict>, std::unique_ptr<Compiler>, std::unique_ptr<File>,
-                 std::unique_ptr<Executable>, std::unique_ptr<StaticLibrary>>;
+                 std::unique_ptr<Executable>, std::unique_ptr<StaticLibrary>, std::unique_ptr<Phi>>;
 
 /**
  * Holds a toolchain
