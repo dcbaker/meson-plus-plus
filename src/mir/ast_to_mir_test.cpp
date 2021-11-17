@@ -571,3 +571,14 @@ TEST(ast_to_ir, assign) {
     ASSERT_EQ(ir->var.name, "a");
     ASSERT_EQ(ir->var.version, 0);
 }
+
+TEST(ast_to_ir, assign_from_id) {
+    auto irlist = lower("a = b");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(obj));
+    const auto & ir = std::get<std::unique_ptr<MIR::Identifier>>(obj);
+    ASSERT_EQ(ir->value, "b");
+    ASSERT_EQ(ir->var.name, "a");
+    ASSERT_EQ(ir->var.version, 0);
+}
