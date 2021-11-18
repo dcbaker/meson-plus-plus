@@ -14,6 +14,13 @@ bool number(Object & obj, std::unordered_map<std::string, uint32_t> & data) {
         return false;
     }
 
+    // We never revalue a number, otherwise we might end up in a situation where
+    // we change the number in the assignment, but then the users point to the
+    // wrong thing
+    if (var->version > 0) {
+        return false;
+    }
+
     if (data.count(var->name) == 0) {
         data[var->name] = 0;
     }
