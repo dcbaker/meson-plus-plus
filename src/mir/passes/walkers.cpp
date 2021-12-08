@@ -23,6 +23,15 @@ bool replace_elements(std::vector<Object> & vec, const ReplacementCallback & cb)
     return progress;
 }
 
+inline bool all_parents_visited(const BasicBlock * block, const std::set<BasicBlock *> visited) {
+    for (const auto p : block->parents) {
+        if (visited.count(p) == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> & fc) {
@@ -157,8 +166,14 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
         }
 
         visited.emplace(current);
-        current = todo.back();
-        todo.pop_back();
+        // Grab the next block, if we haven't visited all of it's parents, then
+        // skip it and come back after we've visited the remaining parent(s).
+        // It's safe to just drop it off the todo stack, as it will be added
+        // back after visiting the next parent.
+        do {
+            current = todo.back();
+            todo.pop_back();
+        } while (!all_parents_visited(current, visited));
     }
 
     return progress;
