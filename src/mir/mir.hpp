@@ -40,13 +40,14 @@ namespace MIR {
 class Variable {
   public:
     Variable() : name{}, version{0} {};
+    Variable(const std::string & n) : name{n}, version{0} {};
 
     explicit operator bool() const;
 
     std::string name;
 
     /// The version as used by value numbering, 0 means unset
-    uint version;
+    uint32_t version;
 };
 
 class Executable {
@@ -77,9 +78,13 @@ class StaticLibrary {
 class Phi {
   public:
     Phi() : left{}, right{} {};
+    Phi(const uint32_t & l, const uint32_t & r, const Variable & v) : left{l}, right{r}, var{v} {};
 
     uint32_t left;
     uint32_t right;
+
+    bool operator==(const Phi & other) const;
+    bool operator<(const Phi & other) const;
 
     Variable var;
 };

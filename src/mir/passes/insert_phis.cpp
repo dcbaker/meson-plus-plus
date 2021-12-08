@@ -10,44 +10,142 @@ namespace {
 /// Does this block have only one parent?
 inline bool is_strictly_dominated(const BasicBlock * block) { return block->parents.size() == 1; }
 
-/// Is this an assignment
-inline auto is_variable = [](const auto & obj) { return obj->var; };
+/// Get a variable from an Object
+inline auto get_variable = [](const auto & obj) { return obj->var; };
+
+/// Allows comparing Phi pointers, using the value comparisons
+struct PhiComparator {
+    bool operator()(const Phi * l, const Phi * r) const { return *l < *r; };
+};
+
+template <typename T> struct reversion_wrapper { T & iterable; };
+
+template <typename T> auto begin(reversion_wrapper<T> w) { return std::rbegin(w.iterable); }
+
+template <typename T> auto end(reversion_wrapper<T> w) { return std::rend(w.iterable); }
+
+template <typename T> reversion_wrapper<T> reverse(T && iterable) { return {iterable}; }
 
 } // namespace
 
-bool insert_phis(BasicBlock * block) {
+/**
+ * If a branch has been pruned, we need to determin if there's phis to fix up
+ * and do so.
+ *
+ * We need to look up the phi nodes to see if any branches have been pruned,
+ * then we need to fix up any phis that point to pruned branches. There are two
+ * cases for this:
+ *
+ *  1. the first phi for a variable, which is going to look like:
+ *      x₄ = ϕ(x₁, x₂)
+ *  2. an additional phi node, which looks like:
+ *      x₄ = ϕ(x₁, x₂)
+ *      x₅ = ϕ(x₃, x₄)
+ *
+ * This needs to be run in any case where the block or any of it's parents have changed
+ */
+bool fixup_phis(BasicBlock * block, ValueTable & values) {
     bool progress = false;
 
+    // In this case we need to remove
+    if (is_strictly_dominated(block)) {
+    }
+
+    return progress;
+}
+
+bool insert_phis(BasicBlock * block, ValueTable & values) {
     // If there is only one path into this block then we don't need to worry
     // about variables, they should already be strictly dominated in the parent
     // blocks.
-    if (is_strictly_dominated(block)) {
+    if (block->parents.empty()) {
+        block->update_variables();
+        return false;
+    } else if (is_strictly_dominated(block)) {
+        const BasicBlock * p = *block->parents.begin();
+        // copy the parents variables from the parent, which means we can see
+        // all possible variables for a parent immediately, we'll overwrite them
+        // later if we insert a phi.
+        block->variables = p->variables;
+        block->update_variables(false);
         return false;
     }
 
-    /**
-     * Given a black who's parent is a condition, we konw that it's convergance
-     * is by definition a dominance frontier
+    /*
+     * Now calculate the phi nodes
      *
-     * we know a block's immediate dominators, as those are the blocks `parents`
+     * We can't rely on all branches defining all variables (we haven't checked
+     * things like, does this branch actually continue?)
+     * https://github.com/dcbaker/meson-plus-plus/issues/57
      *
-     * I have a couple of ideas
+     * So, we need to check each parent for variables, and if they exist in more
+     * than one branch we need to insert a phi node.
      *
-     * 1. walk all of the blocks top down using a block_walker, gather the
-     *    possible values of every variable in a block, then walk back through
-     *    inserting phi nodes from those values.
-     * 2. For each block that is not strictly dominated, walk backwards up the
-     *    graph until we find all possible versions of a variable. we could keep
-     *    a cheat sheet of these values to speed this up
+     * XXX: What happens if a variable is erroniously undefined in a branch?
      */
-
-    // A list of new instructions (phis) to prepend to the instruction list
     std::list<Object> phis{};
 
+    // Find all phis in the block arleady, so we don't re-add them
+    std::set<Phi *, PhiComparator> existing_phis{};
     for (const auto & obj : block->instructions) {
-        if (std::visit(is_variable, obj)) {
+        if (std::holds_alternative<std::unique_ptr<Phi>>(obj)) {
+            existing_phis.emplace(std::get<std::unique_ptr<Phi>>(obj).get());
         }
     }
+
+    // Create a set of all variables in all parents, and one of dominated variables
+    // TODO: we could probably do less rewalking here
+    std::set<std::string> all_vars{};
+    std::set<std::string> dominated{};
+    for (const auto & p : block->parents) {
+        for (const auto & i : p->instructions) {
+            if (auto v = std::visit(get_variable, i)) {
+                if (all_vars.count(v.name)) {
+                    dominated.emplace(v.name);
+                }
+                all_vars.emplace(v.name);
+            }
+        }
+    }
+
+    // For variables that are dominated, create phi nodes. The first value will
+    // be a phi of two parent values, but any additional phis will be either the
+    // previous phi or a parent value.
+    for (const auto & name : dominated) {
+        uint32_t last = 0;
+        for (const auto p : block->parents) {
+            for (const auto & i : reverse(p->instructions)) {
+                if (const auto & var = std::visit(get_variable, i)) {
+                    if (last) {
+                        auto phi = std::make_unique<Phi>(last, var.version, Variable{name});
+                        if (!existing_phis.count(phi.get())) {
+                            // Only set the version if we're actually using this phi
+                            phi->var.version = ++values[name];
+                            last = phi->var.version;
+                            phis.emplace_back(std::move(phi));
+                        }
+                    } else {
+                        last = var.version;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    bool progress = !phis.empty();
+
+    // TODO: set the variable table for this block, just assign all values from
+    // the parents, then set the values from the phis over that.
+
+    if (progress) {
+        block->instructions.splice(block->instructions.begin(), phis);
+    }
+
+    for (const auto & p : block->parents) {
+        p->update_variables();
+    }
+    block->update_variables();
 
     return progress;
 }

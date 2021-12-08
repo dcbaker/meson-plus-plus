@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "machines.hpp"
 #include "mir.hpp"
 #include "state/state.hpp"
@@ -76,14 +78,16 @@ bool lower_free_functions(BasicBlock *, const State::Persistant &);
  */
 bool flatten(BasicBlock *, const State::Persistant &);
 
+using ValueTable = std::unordered_map<std::string, uint32_t>;
+
 /**
  * number each use of a variable
  */
-bool value_numbering(BasicBlock *, std::unordered_map<std::string, uint32_t> &);
+bool value_numbering(BasicBlock *, ValueTable &);
 
 /**
  * Insert phi nodes along dominance frontiers
  */
-bool insert_phis(BasicBlock *);
+bool insert_phis(BasicBlock *, ValueTable &);
 
 } // namespace MIR::Passes
