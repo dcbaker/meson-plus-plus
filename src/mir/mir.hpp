@@ -266,8 +266,6 @@ class BasicBlock {
     BasicBlock();
     BasicBlock(std::unique_ptr<Condition> &&);
 
-    const uint32_t index;
-
     /// The instructions in this block
     std::list<Object> instructions;
 
@@ -276,6 +274,8 @@ class BasicBlock {
 
     /// All potential parents of this block
     std::set<BasicBlock *> parents;
+
+    const uint32_t index;
 };
 
 } // namespace MIR
