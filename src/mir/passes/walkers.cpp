@@ -124,8 +124,8 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
 };
 
 bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callbacks) {
-    std::deque<std::shared_ptr<BasicBlock>> todo{};
-    std::set<std::shared_ptr<BasicBlock>> visited{};
+    std::deque<BasicBlock *> todo{};
+    std::set<BasicBlock *> visited{};
     BasicBlock * current = root;
     bool progress = false;
 
@@ -139,16 +139,16 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
 
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
             const auto & con = std::get<std::unique_ptr<Condition>>(current->next);
-            if (!visited.count(con->if_true) && con->if_true != nullptr) {
-                todo.push_front(con->if_true);
+            if (con->if_true != nullptr && !visited.count(con->if_true.get())) {
+                todo.push_front(con->if_true.get());
             }
-            if (!visited.count(con->if_false) && con->if_false != nullptr) {
-                todo.push_front(con->if_false);
+            if (con->if_false != nullptr && !visited.count(con->if_false.get())) {
+                todo.push_front(con->if_false.get());
             }
         } else if (std::holds_alternative<std::shared_ptr<BasicBlock>>(current->next)) {
             auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
-            if (!visited.count(bb) && bb != nullptr) {
-                todo.push_front(bb);
+            if (bb != nullptr && !visited.count(bb.get())) {
+                todo.push_front(bb.get());
             }
         }
 
@@ -157,7 +157,7 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
         }
 
         visited.emplace(todo.back());
-        current = todo.back().get();
+        current = todo.back();
         todo.pop_back();
     }
 
