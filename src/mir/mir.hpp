@@ -263,9 +263,10 @@ using NextType =
  */
 class BasicBlock {
   public:
-    BasicBlock() : instructions{}, next{std::monostate{}}, parents{} {};
-    BasicBlock(std::unique_ptr<Condition> && con)
-        : instructions{}, next{std::move(con)}, parents{} {};
+    BasicBlock();
+    BasicBlock(std::unique_ptr<Condition> &&);
+
+    const uint32_t index;
 
     /// The instructions in this block
     std::list<Object> instructions;

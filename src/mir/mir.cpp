@@ -6,6 +6,11 @@
 
 namespace MIR {
 
+BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{} {};
+
+BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
+    : instructions{}, next{std::move(con)}, parents{} {};
+
 Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
 
