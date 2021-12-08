@@ -156,7 +156,7 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
             break;
         }
 
-        visited.emplace(todo.back());
+        visited.emplace(current);
         current = todo.back();
         todo.pop_back();
     }
