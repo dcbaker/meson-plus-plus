@@ -12,6 +12,14 @@ static uint32_t bb_index = 0;
 
 }
 
+bool Phi::operator==(const Phi & other) const {
+    return var.name == other.var.name && left == other.left && right == other.right;
+}
+
+bool Phi::operator<(const Phi & other) const {
+    return var.name < other.var.name && left < other.left && right < other.right;
+}
+
 BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
 
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
