@@ -6,10 +6,16 @@
 
 namespace MIR {
 
-BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{} {};
+namespace {
+
+static uint32_t bb_index = 0;
+
+}
+
+BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
 
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
-    : instructions{}, next{std::move(con)}, parents{} {};
+    : instructions{}, next{std::move(con)}, parents{}, index{++bb_index} {};
 
 Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
