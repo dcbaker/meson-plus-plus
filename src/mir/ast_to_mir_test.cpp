@@ -519,6 +519,39 @@ TEST(ast_to_ir, nested_if_tail) {
     ASSERT_TRUE(last_block->parents.count(&irlist));
 }
 
+TEST(ast_to_ir, nested_if_no_tail) {
+    auto irlist = lower(R"EOF(
+        99               # 1
+        if true
+            7            # 2
+            if false
+                10       # 3
+            endif
+            12           # 4
+        endif
+        # 5
+    )EOF");
+
+    ASSERT_TRUE(is_con(irlist.next));
+
+    const auto & con1 = get_con(irlist.next);
+    ASSERT_TRUE(is_con(con1->if_true->next));
+
+    const auto & con2 = get_con(con1->if_true->next);
+    ASSERT_TRUE(is_bb(con2->if_true->next));
+
+    // block 3 and block 2 should both go to block 4
+    ASSERT_EQ(get_bb(con2->if_true->next), con2->if_false);
+
+    const auto & last_block = con1->if_false;
+
+    // Block 4 and block 1 should both go to block 5
+    ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
+    ASSERT_EQ(last_block->parents.size(), 2);
+    ASSERT_TRUE(last_block->parents.count(con2->if_false.get()));
+    ASSERT_TRUE(last_block->parents.count(&irlist));
+}
+
 TEST(ast_to_ir, nested_if_elif_tail) {
     auto irlist = lower(R"EOF(
         x = 7      # 0
