@@ -193,8 +193,27 @@ class Number {
 class Identifier {
   public:
     Identifier(const std::string & s) : value{s}, var{} {};
+    Identifier(const std::string & s, Variable && v) : value{s}, var{std::move(v)} {};
 
+    /// The name of the identifier
     const std::string value;
+
+    /**
+     * The Value numbering version
+     *
+     * This is only relavent in a couple of situations, namely when we've
+     * replaced a phi with an identifer, and we need to be clear which version
+     * this is an alias of:
+     *
+     *      x₄ = x₁
+     *      x₅ = ϕ(x₃, x₄)
+     *
+     * In this case we need to know that x₄ is x₁, and not any other version.
+     * however, x₄ should be promptly cleaned up by a constant folding pass,
+     * removing the need to track this information long term.
+     */
+    uint32_t version;
+
     Variable var;
 };
 
