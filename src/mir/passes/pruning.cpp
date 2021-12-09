@@ -67,13 +67,11 @@ bool branch_pruning_impl(BasicBlock * ir) {
             continue;
         }
 
-        auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
+        auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next).get();
 
         auto parents = bb->parents;
         for (const auto & p : parents) {
-            if (visited.count(p)) {
-                bb->parents.erase(p);
-            } else if (std::count(todo.begin(), todo.end(), p)) {
+            if (visited.count(p) || std::count(todo.begin(), todo.end(), p)) {
                 bb->parents.erase(p);
             }
         }
