@@ -20,10 +20,23 @@ bool Phi::operator<(const Phi & other) const {
     return var.name < other.var.name && left < other.left && right < other.right;
 }
 
-BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
+BasicBlock::BasicBlock()
+    : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index}, variables{} {};
 
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
-    : instructions{}, next{std::move(con)}, parents{}, index{++bb_index} {};
+    : instructions{}, next{std::move(con)}, parents{}, index{++bb_index}, variables{} {};
+
+void BasicBlock::update_variables(bool clear) {
+    if (clear) {
+        variables.clear();
+    }
+
+    for (const auto & obj : instructions) {
+        if (const auto & var = std::visit([](const auto & obj) { return obj->var; }, obj); var) {
+            variables[var.name] = &obj;
+        }
+    }
+}
 
 Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
