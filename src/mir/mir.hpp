@@ -41,6 +41,7 @@ class Variable {
   public:
     Variable() : name{}, version{0} {};
     Variable(const std::string & n) : name{n}, version{0} {};
+    Variable(const std::string & n, const uint32_t & v) : name{n}, version{v} {};
 
     explicit operator bool() const;
 
@@ -197,8 +198,9 @@ class Number {
 
 class Identifier {
   public:
-    Identifier(const std::string & s) : value{s}, var{} {};
-    Identifier(const std::string & s, Variable && v) : value{s}, var{std::move(v)} {};
+    Identifier(const std::string & s) : value{s}, version{}, var{} {};
+    Identifier(const std::string & s, const uint32_t & ver, Variable && v)
+        : value{s}, version{ver}, var{std::move(v)} {};
 
     /// The name of the identifier
     const std::string value;

@@ -89,5 +89,6 @@ bool value_numbering(BasicBlock *, ValueTable &);
  * Insert phi nodes along dominance frontiers
  */
 bool insert_phis(BasicBlock *, ValueTable &);
+void fixup_phis(BasicBlock *);
 
 } // namespace MIR::Passes

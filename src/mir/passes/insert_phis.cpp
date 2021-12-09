@@ -28,32 +28,6 @@ template <typename T> reversion_wrapper<T> reverse(T && iterable) { return {iter
 
 } // namespace
 
-/**
- * If a branch has been pruned, we need to determin if there's phis to fix up
- * and do so.
- *
- * We need to look up the phi nodes to see if any branches have been pruned,
- * then we need to fix up any phis that point to pruned branches. There are two
- * cases for this:
- *
- *  1. the first phi for a variable, which is going to look like:
- *      x₄ = ϕ(x₁, x₂)
- *  2. an additional phi node, which looks like:
- *      x₄ = ϕ(x₁, x₂)
- *      x₅ = ϕ(x₃, x₄)
- *
- * This needs to be run in any case where the block or any of it's parents have changed
- */
-bool fixup_phis(BasicBlock * block, ValueTable & values) {
-    bool progress = false;
-
-    // In this case we need to remove
-    if (is_strictly_dominated(block)) {
-    }
-
-    return progress;
-}
-
 bool insert_phis(BasicBlock * block, ValueTable & values) {
     // If there is only one path into this block then we don't need to worry
     // about variables, they should already be strictly dominated in the parent
