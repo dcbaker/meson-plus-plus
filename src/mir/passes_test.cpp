@@ -225,6 +225,28 @@ TEST(join_blocks, simple) {
     ASSERT_EQ(irlist.instructions.size(), 3);
 }
 
+TEST(join_blocks, nested_if) {
+    auto irlist = lower(R"EOF(
+        x = 7
+        if true
+          if true
+            x = 8
+          else
+            x = 9
+          endif
+        endif
+        )EOF");
+    bool progress = true;
+    while (progress) {
+        progress = MIR::Passes::block_walker(&irlist, {
+                                                          MIR::Passes::branch_pruning,
+                                                          MIR::Passes::join_blocks,
+                                                      });
+    }
+    ASSERT_TRUE(std::holds_alternative<std::monostate>(irlist.next));
+    ASSERT_EQ(irlist.instructions.size(), 2);
+}
+
 TEST(join_blocks, nested_if_elif_else) {
     auto irlist = lower(R"EOF(
         x = 7
