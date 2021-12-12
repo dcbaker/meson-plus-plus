@@ -111,6 +111,7 @@ bool branch_pruning_impl(BasicBlock * ir) {
 
         auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next).get();
 
+        std::set<BasicBlock *> new_parents{};
         for (const auto & p : bb->parents) {
             if (visited.count(p) || std::count(todo.begin(), todo.end(), p)) {
                 for (auto it = bb->instructions.begin(); it != bb->instructions.end(); ++it) {
@@ -121,11 +122,13 @@ bool branch_pruning_impl(BasicBlock * ir) {
                             bb->instructions.emplace(it, std::move(v.value()));
                         }
                     }
-                    p->update_variables();
                 }
-                bb->parents.erase(p);
+            } else {
+                new_parents.emplace(p);
             }
         }
+        bb->parents = new_parents;
+        bb->update_variables();
     }
 
     ir->next = next;
