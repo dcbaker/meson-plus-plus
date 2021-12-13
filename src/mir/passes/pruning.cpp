@@ -35,15 +35,20 @@ std::optional<std::unique_ptr<Identifier>> fixup_phi(const std::unique_ptr<Phi> 
                                                      const BasicBlock * to_prune) {
     if (const auto & pruned_value = to_prune->variables.find(phi->var.name);
         pruned_value != to_prune->variables.end()) {
-        const auto & num =
-            std::visit([](const auto & obj) { return obj->var.version; }, *pruned_value->second);
+        const auto & var =
+            std::visit([](const auto & obj) { return obj->var; }, *pruned_value->second);
         const auto & name = phi->var.name;
+
+        if (var.name != phi->var.name) {
+            return std::nullopt;
+        }
 
         // In this case our phi does point to a value that is about to be
         // deleted, so in that case We'll replace this Phi with an Identifier
         // pointing to the not deleted value
-        if (phi->left == num || phi->right == num) {
-            return std::make_unique<Identifier>(name, phi->right == num ? phi->left : phi->right,
+        if (phi->left == var.version || phi->right == var.version) {
+            return std::make_unique<Identifier>(name,
+                                                phi->right == var.version ? phi->left : phi->right,
                                                 Variable{name, phi->var.version});
         }
     }
