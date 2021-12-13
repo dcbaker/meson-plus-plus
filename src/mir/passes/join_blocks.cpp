@@ -24,6 +24,7 @@ bool join_blocks_impl(BasicBlock * block) {
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
     block->instructions.splice(block->instructions.end(), next->instructions);
+    block->update_variables();
     auto nn = std::move(next->next);
     if (std::holds_alternative<std::shared_ptr<BasicBlock>>(nn)) {
         const auto & b = std::get<std::shared_ptr<BasicBlock>>(nn);
