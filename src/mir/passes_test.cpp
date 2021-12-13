@@ -239,14 +239,14 @@ TEST(branch_pruning, fixup_phi_simple) {
         const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
         ASSERT_EQ(id->value, 9);
         ASSERT_EQ(id->var.name, "x");
-        ASSERT_EQ(id->var.version, 1);
+        ASSERT_EQ(id->var.version, 2);
     }
 
     {
         const auto & id_obj = irlist.instructions.back();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
         const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
-        ASSERT_EQ(id->version, 1);
+        ASSERT_EQ(id->version, 2);
         ASSERT_EQ(id->var.name, "x");
         ASSERT_EQ(id->var.version, 3);
     }
@@ -661,11 +661,11 @@ TEST(value_numbering, branching) {
     const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
     ASSERT_EQ(last->var.version, 2);
 
-    const auto & bb1 = get_con(irlist.next)->if_true;
+    const auto & bb1 = get_con(irlist.next)->if_false;
     const auto & bb1_val = std::get<std::unique_ptr<MIR::Number>>(bb1->instructions.front());
     ASSERT_EQ(bb1_val->var.version, 3);
 
-    const auto & bb2 = get_con(irlist.next)->if_false;
+    const auto & bb2 = get_con(irlist.next)->if_true;
     const auto & bb2_val = std::get<std::unique_ptr<MIR::Number>>(bb2->instructions.front());
     ASSERT_EQ(bb2_val->var.version, 4);
 }
@@ -690,13 +690,13 @@ TEST(value_numbering, three_branch) {
 
     const auto & con2 = get_con(get_con(irlist.next)->if_false->next);
 
-    const auto & bb3 = con2->if_true;
-    const auto & bb3_val = std::get<std::unique_ptr<MIR::Number>>(bb3->instructions.front());
-    ASSERT_EQ(bb3_val->var.version, 2);
-
     const auto & bb2 = con2->if_false;
     const auto & bb2_val = std::get<std::unique_ptr<MIR::Number>>(bb2->instructions.front());
-    ASSERT_EQ(bb2_val->var.version, 3);
+    ASSERT_EQ(bb2_val->var.version, 2);
+
+    const auto & bb3 = con2->if_true;
+    const auto & bb3_val = std::get<std::unique_ptr<MIR::Number>>(bb3->instructions.front());
+    ASSERT_EQ(bb3_val->var.version, 3);
 }
 
 TEST(insert_phi, simple) {
@@ -720,8 +720,8 @@ TEST(insert_phi, simple) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(fin->instructions.front()));
 
     const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(fin->instructions.front());
-    ASSERT_EQ(phi->left, 1);
-    ASSERT_EQ(phi->right, 2);
+    ASSERT_EQ(phi->left, 2);
+    ASSERT_EQ(phi->right, 1);
     ASSERT_EQ(phi->var.name, "x");
     ASSERT_EQ(phi->var.version, 3); // because value_numbering will run again
 }
@@ -752,7 +752,7 @@ TEST(insert_phi, three_branches) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(*it));
     const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(*it);
     ASSERT_EQ(phi->left, 1);
-    ASSERT_EQ(phi->right, 3);
+    ASSERT_EQ(phi->right, 2);
     ASSERT_EQ(phi->var.name, "x");
     ASSERT_EQ(phi->var.version, 4);
 
@@ -761,7 +761,7 @@ TEST(insert_phi, three_branches) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(*it));
     const auto & phi2 = std::get<std::unique_ptr<MIR::Phi>>(*it);
     ASSERT_EQ(phi2->left, 4);
-    ASSERT_EQ(phi2->right, 2);
+    ASSERT_EQ(phi2->right, 3);
     ASSERT_EQ(phi2->var.name, "x");
     ASSERT_EQ(phi2->var.version, 5);
 }
@@ -792,8 +792,8 @@ TEST(insert_phi, nested_branches) {
         const auto & it = fin->instructions.front();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(it));
         const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(it);
-        ASSERT_EQ(phi->left, 3);
-        ASSERT_EQ(phi->right, 2);
+        ASSERT_EQ(phi->left, 2);
+        ASSERT_EQ(phi->right, 3);
         ASSERT_EQ(phi->var.name, "x");
         ASSERT_EQ(phi->var.version, 4);
     }
