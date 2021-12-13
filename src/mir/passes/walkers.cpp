@@ -23,15 +23,6 @@ bool replace_elements(std::vector<Object> & vec, const ReplacementCallback & cb)
     return progress;
 }
 
-inline bool all_parents_visited(const BasicBlock * block, const std::set<BasicBlock *> visited) {
-    for (const auto p : block->parents) {
-        if (visited.count(p) == 0) {
-            return false;
-        }
-    }
-    return true;
-}
-
 } // namespace
 
 bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> & fc) {
@@ -134,7 +125,6 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
 
 bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callbacks) {
     std::deque<BasicBlock *> todo{};
-    std::set<BasicBlock *> visited{};
     BasicBlock * current = root;
     bool progress = false;
 
@@ -148,15 +138,15 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
 
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
             const auto & con = std::get<std::unique_ptr<Condition>>(current->next);
-            if (con->if_true != nullptr && !visited.count(con->if_true.get())) {
-                todo.push_front(con->if_true.get());
-            }
-            if (con->if_false != nullptr && !visited.count(con->if_false.get())) {
+            if (con->if_false != nullptr) {
                 todo.push_front(con->if_false.get());
+            }
+            if (con->if_true != nullptr) {
+                todo.push_front(con->if_true.get());
             }
         } else if (std::holds_alternative<std::shared_ptr<BasicBlock>>(current->next)) {
             auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
-            if (bb != nullptr && !visited.count(bb.get())) {
+            if (bb != nullptr) {
                 todo.push_front(bb.get());
             }
         }
@@ -165,15 +155,12 @@ bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callback
             break;
         }
 
-        visited.emplace(current);
         // Grab the next block, if we haven't visited all of it's parents, then
         // skip it and come back after we've visited the remaining parent(s).
         // It's safe to just drop it off the todo stack, as it will be added
         // back after visiting the next parent.
-        do {
-            current = todo.back();
-            todo.pop_back();
-        } while (!all_parents_visited(current, visited));
+        current = todo.back();
+        todo.pop_back();
     }
 
     return progress;
