@@ -333,6 +333,49 @@ TEST(branch_purning, fixup_phi_nested_branches) {
     }
 
     ASSERT_EQ(irlist.instructions.size(), 4);
+    auto it = irlist.instructions.begin();
+
+    {
+        const auto & id_obj = *it;
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
+        ASSERT_EQ(id->value, 9);
+        ASSERT_EQ(id->var.name, "x");
+        ASSERT_EQ(id->var.version, 1);
+    }
+
+    ++it;
+
+    {
+        const auto & id_obj = *it;
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
+        ASSERT_EQ(id->value, 11);
+        ASSERT_EQ(id->var.name, "x");
+        ASSERT_EQ(id->var.version, 3);
+    }
+
+    ++it;
+
+    {
+        const auto & id_obj = *(++it);
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
+        ASSERT_EQ(id->version, 3);
+        ASSERT_EQ(id->var.name, "x");
+        ASSERT_EQ(id->var.version, 4);
+    }
+
+    ++it;
+
+    {
+        const auto & id_obj = *(++it);
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
+        ASSERT_EQ(id->version, 3);
+        ASSERT_EQ(id->var.name, "x");
+        ASSERT_EQ(id->var.version, 5);
+    }
 }
 
 TEST(join_blocks, simple) {
