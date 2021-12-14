@@ -31,6 +31,15 @@ void BasicBlock::update_variables(bool clear) {
         variables.clear();
     }
 
+    // It's convenient to not have to lookup variables up the tree, and instead
+    // have all variables for a particular path. It's fine that we're
+    // overwritting values here, the'll all be overwritten in the next block anyway.
+    for (const auto & p : parents) {
+        for (const auto & [name, obj] : p->variables) {
+            variables[name] = obj;
+        }
+    }
+
     for (const auto & obj : instructions) {
         if (const auto & var = std::visit([](const auto & obj) { return obj->var; }, obj); var) {
             variables[var.name] = &obj;
