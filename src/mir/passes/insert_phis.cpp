@@ -29,19 +29,13 @@ template <typename T> reversion_wrapper<T> reverse(T && iterable) { return {iter
 } // namespace
 
 bool insert_phis(BasicBlock * block, ValueTable & values) {
+    // TODO: it's kinda a hack that we're doing this here…
+    block->update_variables();
+
     // If there is only one path into this block then we don't need to worry
     // about variables, they should already be strictly dominated in the parent
     // blocks.
-    if (block->parents.empty()) {
-        block->update_variables();
-        return false;
-    } else if (is_strictly_dominated(block)) {
-        const BasicBlock * p = *block->parents.begin();
-        // copy the parents variables from the parent, which means we can see
-        // all possible variables for a parent immediately, we'll overwrite them
-        // later if we insert a phi.
-        block->variables = p->variables;
-        block->update_variables(false);
+    if (block->parents.empty() || is_strictly_dominated(block)) {
         return false;
     }
 
@@ -114,10 +108,6 @@ bool insert_phis(BasicBlock * block, ValueTable & values) {
 
     if (progress) {
         block->instructions.splice(block->instructions.begin(), phis);
-    }
-
-    for (const auto & p : block->parents) {
-        p->update_variables();
     }
     block->update_variables();
 

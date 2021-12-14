@@ -30,12 +30,14 @@ bool join_blocks_impl(BasicBlock * block) {
         const auto & b = std::get<std::shared_ptr<BasicBlock>>(nn);
         b->parents.erase(next.get());
         b->parents.emplace(block);
+        b->update_variables();
     } else if (std::holds_alternative<std::unique_ptr<Condition>>(nn)) {
         const auto & con = std::get<std::unique_ptr<Condition>>(nn);
-        con->if_true->parents.erase(next.get());
-        con->if_true->parents.emplace(block);
-        con->if_false->parents.erase(next.get());
-        con->if_false->parents.emplace(block);
+        for (const auto & c : {con->if_true, con->if_false}) {
+            c->parents.erase(next.get());
+            c->parents.emplace(block);
+            c->update_variables();
+        }
     }
     block->next = std::move(nn);
 
