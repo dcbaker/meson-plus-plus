@@ -42,6 +42,7 @@ class Variable {
     Variable() : name{}, version{0} {};
     Variable(const std::string & n) : name{n}, version{0} {};
     Variable(const std::string & n, const uint32_t & v) : name{n}, version{v} {};
+    Variable(const Variable & v) : name{v.name}, version{v.version} {};
 
     explicit operator bool() const;
 
@@ -308,7 +309,7 @@ class BasicBlock {
     std::unordered_map<std::string, const Object *> variables{};
 
     /// Update the variables in this block
-    void update_variables(bool clear = true);
+    void update_variables();
 };
 
 } // namespace MIR
