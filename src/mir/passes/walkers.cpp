@@ -37,8 +37,7 @@ bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> 
                         const std::vector<ReplacementCallback> & rc) {
     bool progress = false;
 
-    auto it = block->instructions.begin();
-    while (it != block->instructions.end()) {
+    for (auto it = block->instructions.begin(); it != block->instructions.end(); ++it) {
         for (const auto & cb : rc) {
             auto rt = cb(*it);
             if (rt.has_value()) {
@@ -47,7 +46,6 @@ bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> 
                 progress |= true;
             }
         }
-        ++it;
     }
     for (const auto & cb : fc) {
         for (auto & it : block->instructions) {

@@ -26,10 +26,8 @@ BasicBlock::BasicBlock()
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
     : instructions{}, next{std::move(con)}, parents{}, index{++bb_index}, variables{} {};
 
-void BasicBlock::update_variables(bool clear) {
-    if (clear) {
-        variables.clear();
-    }
+void BasicBlock::update_variables() {
+    variables.clear();
 
     // It's convenient to not have to lookup variables up the tree, and instead
     // have all variables for a particular path. It's fine that we're

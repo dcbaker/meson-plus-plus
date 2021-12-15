@@ -2,6 +2,7 @@
 // Copyright © 2021 Dylan Baker
 
 #include "passes.hpp"
+#include "private.hpp"
 
 namespace MIR::Passes {
 
@@ -111,6 +112,64 @@ bool insert_phis(BasicBlock * block, ValueTable & values) {
     }
     block->update_variables();
 
+    return progress;
+}
+
+bool fixup_phis(BasicBlock * block) {
+    bool progress = false;
+    for (auto it = block->instructions.begin(); it != block->instructions.end(); ++it) {
+        if (std::holds_alternative<std::unique_ptr<Phi>>(*it)) {
+            const auto & phi = std::get<std::unique_ptr<Phi>>(*it);
+            bool right, left = false;
+            for (const auto & p : block->parents) {
+                if (auto found = p->variables.find(phi->var.name); found != p->variables.end()) {
+                    const auto & var =
+                        std::visit([](const auto & obj) { return obj->var; }, *found->second);
+                    if (var.version == phi->left) {
+                        left = true;
+                    } else if (var.version == phi->right) {
+                        right = true;
+                    }
+
+                    if (left && right) {
+                        break;
+                    }
+                }
+            }
+
+            if (left ^ right) {
+                progress = true;
+                auto id = std::make_unique<Identifier>(phi->var.name, left ? phi->left : phi->right,
+                                                       Variable{phi->var});
+                it = block->instructions.erase(it);
+                it = block->instructions.emplace(it, std::move(id));
+                continue;
+            }
+
+            // While we are walking the instructions in this block, we know that
+            // if one side was found, then the other is found that the first
+            // found is dead code after the second, so we can ignore it and
+            // treat the second one as the truth
+            for (auto it2 = block->instructions.begin(); it2 != it; ++it2) {
+                const auto & var = std::visit([](const auto & obj) { return obj->var; }, *it2);
+                if (var.name == phi->var.name) {
+                    left = var.version == phi->left;
+                    right = var.version == phi->right;
+                }
+            }
+
+            if (left ^ right) {
+                progress = true;
+                auto id = std::make_unique<Identifier>(phi->var.name, left ? phi->left : phi->right,
+                                                       Variable{phi->var});
+                it = block->instructions.erase(it);
+                it = block->instructions.emplace(it, std::move(id));
+            }
+        }
+    }
+    if (progress) {
+        block->update_variables();
+    }
     return progress;
 }
 
