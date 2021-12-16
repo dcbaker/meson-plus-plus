@@ -46,7 +46,10 @@ test(
   'mir_passes',
   executable(
     'mir_passes_test',
-    ['passes_test.cpp', locations_hpp],
+    [
+      'passes/tests/passes_test.cpp',
+      locations_hpp,
+    ],
     dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
   ),
   protocol : 'gtest',
