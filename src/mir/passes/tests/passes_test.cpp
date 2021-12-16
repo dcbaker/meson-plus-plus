@@ -6,11 +6,7 @@
 #include <variant>
 
 #include "arguments.hpp"
-#include "ast_to_mir.hpp"
-#include "driver.hpp"
 #include "exceptions.hpp"
-#include "lower.hpp"
-#include "mir.hpp"
 #include "passes.hpp"
 #include "passes/private.hpp"
 #include "state/state.hpp"
@@ -19,48 +15,7 @@
 #include "toolchains/compilers/cpp/cpp.hpp"
 #include "toolchains/linker.hpp"
 
-namespace {
-
-static const std::filesystem::path src_root = "/home/test user/src/test project/";
-static const std::filesystem::path build_root = "/home/test user/src/test project/builddir/";
-
-std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
-    Frontend::Driver drv{};
-    std::istringstream stream{in};
-    auto src = src_root / "meson.build";
-    drv.name = src;
-    auto block = drv.parse(stream);
-    return block;
-}
-
-MIR::BasicBlock lower(const std::string & in) {
-    auto block = parse(in);
-    const MIR::State::Persistant pstate{src_root, build_root};
-    auto ir = MIR::lower_ast(block, pstate);
-    return ir;
-}
-
-inline bool is_bb(const MIR::NextType & next) {
-    return std::holds_alternative<std::shared_ptr<MIR::BasicBlock>>(next);
-}
-
-inline std::shared_ptr<MIR::BasicBlock> get_bb(const MIR::NextType & next) {
-    return std::get<std::shared_ptr<MIR::BasicBlock>>(next);
-}
-
-inline bool is_con(const MIR::NextType & next) {
-    return std::holds_alternative<std::unique_ptr<MIR::Condition>>(next);
-}
-
-inline const std::unique_ptr<MIR::Condition> & get_con(const MIR::NextType & next) {
-    return std::get<std::unique_ptr<MIR::Condition>>(next);
-}
-
-inline bool is_empty(const MIR::NextType & next) {
-    return std::holds_alternative<std::monostate>(next);
-}
-
-} // namespace
+#include "test_utils.hpp"
 
 // XXX: For some reaosn putting the fixup phi passes after the branch pruning
 // passes causes them to fail. There's some sort of global state mutation
