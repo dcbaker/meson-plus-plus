@@ -48,6 +48,7 @@ test(
     'mir_passes_test',
     [
       'passes/tests/passes_test.cpp',
+      'passes/tests/test_utils.cpp',
       locations_hpp,
     ],
     dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
