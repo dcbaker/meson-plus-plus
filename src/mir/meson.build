@@ -47,8 +47,17 @@ test(
   executable(
     'mir_passes_test',
     [
-      'passes/tests/passes_test.cpp',
+      'passes/tests/branch_pruning_test.cpp',
+      'passes/tests/fixup_phis_test.cpp',
+      'passes/tests/flatten_test.cpp',
+      'passes/tests/free_functions_test.cpp',
+      'passes/tests/insert_compiler_test.cpp',
+      'passes/tests/insert_phis_test.cpp',
+      'passes/tests/join_blocks_test.cpp',
+      'passes/tests/lower_test.cpp',
+      'passes/tests/machine_lower_test.cpp',
       'passes/tests/test_utils.cpp',
+      'passes/tests/value_numbering_test.cpp',
       locations_hpp,
     ],
     dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
