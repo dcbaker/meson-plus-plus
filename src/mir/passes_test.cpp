@@ -800,7 +800,7 @@ TEST(insert_phi, three_branches) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(*it));
     const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(*it);
     ASSERT_EQ(phi->left, 1);
-    ASSERT_EQ(phi->right, 2);
+    ASSERT_EQ(phi->right, 3);
     ASSERT_EQ(phi->var.name, "x");
     ASSERT_EQ(phi->var.version, 4);
 
@@ -809,7 +809,7 @@ TEST(insert_phi, three_branches) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(*it));
     const auto & phi2 = std::get<std::unique_ptr<MIR::Phi>>(*it);
     ASSERT_EQ(phi2->left, 4);
-    ASSERT_EQ(phi2->right, 3);
+    ASSERT_EQ(phi2->right, 2);
     ASSERT_EQ(phi2->var.name, "x");
     ASSERT_EQ(phi2->var.version, 5);
 }
@@ -840,8 +840,8 @@ TEST(insert_phi, nested_branches) {
         const auto & it = fin->instructions.front();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(it));
         const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(it);
-        ASSERT_EQ(phi->left, 2);
-        ASSERT_EQ(phi->right, 3);
+        ASSERT_EQ(phi->left, 3);
+        ASSERT_EQ(phi->right, 2);
         ASSERT_EQ(phi->var.name, "x");
         ASSERT_EQ(phi->var.version, 4);
     }
@@ -852,8 +852,8 @@ TEST(insert_phi, nested_branches) {
         const auto & it = fin->instructions.front();
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(it));
         const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(it);
-        ASSERT_EQ(phi->left, 4);
-        ASSERT_EQ(phi->right, 1);
+        ASSERT_EQ(phi->left, 1);
+        ASSERT_EQ(phi->right, 4);
         ASSERT_EQ(phi->var.name, "x");
         ASSERT_EQ(phi->var.version, 5);
     }
