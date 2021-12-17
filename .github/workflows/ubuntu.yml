@@ -16,7 +16,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  gcc:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -31,6 +31,24 @@ jobs:
       - uses: BSFishy/meson-build@v1.0.3
         with:
           meson-version: 0.55
+          action: test
+      - name: unit tests
+        run : ./run-tests.sh
+
+  gcc-sanitizer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: apt
+        run: |
+          sudo apt update
+          sudo apt install libfl-dev libgtest-dev
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - uses: BSFishy/meson-build@v1.0.3
+        with:
+          meson-version: 0.55
+          setup_options: -Db_sanitize=address,undefined
           action: test
       - name: unit tests
         run : ./run-tests.sh
