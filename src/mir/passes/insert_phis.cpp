@@ -120,7 +120,8 @@ bool fixup_phis(BasicBlock * block) {
     for (auto it = block->instructions.begin(); it != block->instructions.end(); ++it) {
         if (std::holds_alternative<std::unique_ptr<Phi>>(*it)) {
             const auto & phi = std::get<std::unique_ptr<Phi>>(*it);
-            bool right, left = false;
+            bool right = false;
+            bool left = false;
             for (const auto & p : block->parents) {
                 if (auto found = p->variables.find(phi->var.name); found != p->variables.end()) {
                     const auto & var =
