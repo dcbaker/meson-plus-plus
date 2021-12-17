@@ -30,9 +30,6 @@ template <typename T> reversion_wrapper<T> reverse(T && iterable) { return {iter
 } // namespace
 
 bool insert_phis(BasicBlock * block, ValueTable & values) {
-    // TODO: it's kinda a hack that we're doing this here…
-    block->update_variables();
-
     // If there is only one path into this block then we don't need to worry
     // about variables, they should already be strictly dominated in the parent
     // blocks.
@@ -102,17 +99,12 @@ bool insert_phis(BasicBlock * block, ValueTable & values) {
         }
     }
 
-    bool progress = !phis.empty();
-
-    // TODO: set the variable table for this block, just assign all values from
-    // the parents, then set the values from the phis over that.
-
-    if (progress) {
-        block->instructions.splice(block->instructions.begin(), phis);
+    if (phis.empty()) {
+        return false;
     }
-    block->update_variables();
 
-    return progress;
+    block->instructions.splice(block->instructions.begin(), phis);
+    return true;
 }
 
 bool fixup_phis(BasicBlock * block) {
@@ -123,18 +115,20 @@ bool fixup_phis(BasicBlock * block) {
             bool right = false;
             bool left = false;
             for (const auto & p : block->parents) {
-                if (auto found = p->variables.find(phi->var.name); found != p->variables.end()) {
-                    const auto & var =
-                        std::visit([](const auto & obj) { return obj->var; }, *found->second);
-                    if (var.version == phi->left) {
-                        left = true;
-                    } else if (var.version == phi->right) {
-                        right = true;
+                for (const Object & i : p->instructions) {
+                    const auto & var = std::visit([](const auto & obj) { return obj->var; }, i);
+                    if (var.name == phi->var.name) {
+                        if (var.version == phi->left) {
+                            left = true;
+                            break;
+                        } else if (var.version == phi->right) {
+                            right = true;
+                            break;
+                        }
                     }
-
-                    if (left && right) {
-                        break;
-                    }
+                }
+                if (left && right) {
+                    break;
                 }
             }
 
@@ -167,9 +161,6 @@ bool fixup_phis(BasicBlock * block) {
                 it = block->instructions.emplace(it, std::move(id));
             }
         }
-    }
-    if (progress) {
-        block->update_variables();
     }
     return progress;
 }

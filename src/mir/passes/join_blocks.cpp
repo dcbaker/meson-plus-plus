@@ -24,19 +24,16 @@ bool join_blocks_impl(BasicBlock * block) {
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
     block->instructions.splice(block->instructions.end(), next->instructions);
-    block->update_variables();
     auto nn = std::move(next->next);
     if (std::holds_alternative<std::shared_ptr<BasicBlock>>(nn)) {
         const auto & b = std::get<std::shared_ptr<BasicBlock>>(nn);
         b->parents.erase(next.get());
         b->parents.emplace(block);
-        b->update_variables();
     } else if (std::holds_alternative<std::unique_ptr<Condition>>(nn)) {
         const auto & con = std::get<std::unique_ptr<Condition>>(nn);
         for (const auto & c : {con->if_true, con->if_false}) {
             c->parents.erase(next.get());
             c->parents.emplace(block);
-            c->update_variables();
         }
     }
     block->next = std::move(nn);

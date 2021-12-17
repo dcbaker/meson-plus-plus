@@ -77,11 +77,9 @@ bool branch_pruning_impl(BasicBlock * ir) {
             }
         }
         bb->parents = new_parents;
-        bb->update_variables();
     }
 
     next->parents = {ir};
-    next->update_variables();
     ir->next = next;
 
     return true;
