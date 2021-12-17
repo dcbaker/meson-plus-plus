@@ -20,11 +20,18 @@ bool Phi::operator<(const Phi & other) const {
     return var.name < other.var.name && left < other.left && right < other.right;
 }
 
-BasicBlock::BasicBlock()
-    : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
+BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
 
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
     : instructions{}, next{std::move(con)}, parents{}, index{++bb_index} {};
+
+bool BasicBlock::operator<(const BasicBlock & other) const {
+    return index < other.index;
+}
+
+bool BBComparitor::operator()(const BasicBlock * lhs, const BasicBlock * rhs) const {
+    return *lhs < *rhs;
+}
 
 Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};

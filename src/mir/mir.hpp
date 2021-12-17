@@ -285,6 +285,12 @@ class Condition {
 using NextType =
     std::variant<std::monostate, std::unique_ptr<Condition>, std::shared_ptr<BasicBlock>>;
 
+class BasicBlock;
+
+struct BBComparitor {
+    bool operator()(const BasicBlock * lhs, const BasicBlock * rhs) const;
+};
+
 /**
  * Holds a list of instructions, and optionally a condition or next block
  */
@@ -300,9 +306,11 @@ class BasicBlock {
     NextType next;
 
     /// All potential parents of this block
-    std::set<BasicBlock *> parents;
+    std::set<BasicBlock *, BBComparitor> parents;
 
     const uint32_t index;
+
+    bool operator<(const BasicBlock &) const;
 };
 
 } // namespace MIR
