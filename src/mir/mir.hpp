@@ -303,13 +303,6 @@ class BasicBlock {
     std::set<BasicBlock *> parents;
 
     const uint32_t index;
-
-    /// name : pointer mapping to the *last* definition of a variable in a
-    /// block.
-    std::unordered_map<std::string, const Object *> variables{};
-
-    /// Update the variables in this block
-    void update_variables();
 };
 
 } // namespace MIR

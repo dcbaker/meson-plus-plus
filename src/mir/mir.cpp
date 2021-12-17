@@ -21,29 +21,10 @@ bool Phi::operator<(const Phi & other) const {
 }
 
 BasicBlock::BasicBlock()
-    : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index}, variables{} {};
+    : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
 
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
-    : instructions{}, next{std::move(con)}, parents{}, index{++bb_index}, variables{} {};
-
-void BasicBlock::update_variables() {
-    variables.clear();
-
-    // It's convenient to not have to lookup variables up the tree, and instead
-    // have all variables for a particular path. It's fine that we're
-    // overwritting values here, the'll all be overwritten in the next block anyway.
-    for (const auto & p : parents) {
-        for (const auto & [name, obj] : p->variables) {
-            variables[name] = obj;
-        }
-    }
-
-    for (const auto & obj : instructions) {
-        if (const auto & var = std::visit([](const auto & obj) { return obj->var; }, obj); var) {
-            variables[var.name] = &obj;
-        }
-    }
-}
+    : instructions{}, next{std::move(con)}, parents{}, index{++bb_index} {};
 
 Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
