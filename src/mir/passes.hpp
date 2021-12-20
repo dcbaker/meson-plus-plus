@@ -93,4 +93,8 @@ bool usage_numbering(BasicBlock *, LastSeenTable &);
 bool insert_phis(BasicBlock *, ValueTable &);
 bool fixup_phis(BasicBlock *);
 
+using ReplacementTable = std::map<Variable, Variable>;
+
+bool constant_folding(BasicBlock *, ReplacementTable &);
+
 } // namespace MIR::Passes

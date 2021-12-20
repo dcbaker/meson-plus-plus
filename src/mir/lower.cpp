@@ -18,6 +18,7 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
     // clang-format off
     do {
         std::unordered_map<std::string, uint32_t> value_number_data{};
+        Passes::ReplacementTable rt{};
         Passes::LastSeenTable lst{};
 
         progress = Passes::block_walker(
@@ -31,6 +32,7 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
                 Passes::join_blocks,
                 Passes::fixup_phis,
                 [&](BasicBlock * b) { return Passes::usage_numbering(b, lst); },
+                [&](BasicBlock * b) { return Passes::constant_folding(b, rt); },
             }
         );
     } while (progress);
