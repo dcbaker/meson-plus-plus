@@ -56,7 +56,26 @@ bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> 
     return progress;
 };
 
-bool array_walker(Object & obj, const ReplacementCallback & cb) {
+bool array_walker(Object & obj, const MutationCallback & cb) {
+    bool progress = false;
+
+    if (!std::holds_alternative<std::unique_ptr<Array>>(obj)) {
+        return progress;
+    }
+    auto & arr = std::get<std::unique_ptr<Array>>(obj);
+
+    for (auto & e : arr->value) {
+        if (std::holds_alternative<std::unique_ptr<Array>>(e)) {
+            progress |= array_walker(e, cb);
+        } else {
+            progress |= cb(e);
+        }
+    }
+
+    return progress;
+}
+
+bool array_walker(const Object & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
     if (!std::holds_alternative<std::unique_ptr<Array>>(obj)) {
@@ -79,7 +98,7 @@ bool array_walker(Object & obj, const ReplacementCallback & cb) {
     return progress;
 }
 
-bool function_argument_walker(Object & obj, const ReplacementCallback & cb) {
+bool function_argument_walker(const Object & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
     if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
@@ -90,6 +109,24 @@ bool function_argument_walker(Object & obj, const ReplacementCallback & cb) {
 
     if (!func->pos_args.empty()) {
         progress |= replace_elements(func->pos_args, cb);
+    }
+
+    // TODO: dictionary lowering
+
+    return progress;
+}
+
+bool function_argument_walker(Object & obj, const MutationCallback & cb) {
+    bool progress = false;
+
+    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+        return progress;
+    }
+
+    auto & func = std::get<std::unique_ptr<FunctionCall>>(obj);
+
+    for (auto & e : func->pos_args) {
+        progress |= cb(e);
     }
 
     // TODO: dictionary lowering

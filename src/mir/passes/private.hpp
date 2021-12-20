@@ -42,14 +42,16 @@ bool function_walker(BasicBlock *, const ReplacementCallback &);
 /**
  * Walk each instruction in an array, recursively, calling the callbck on them.
  */
-bool array_walker(Object &, const ReplacementCallback &);
+bool array_walker(const Object &, const ReplacementCallback &);
+bool array_walker(Object &, const MutationCallback &);
 
 /**
  * Walk over the arguments (positional and keyword) of a function
  *
  * This will replace the arguments if they are loweed by the callback
  */
-bool function_argument_walker(Object &, const ReplacementCallback &);
+bool function_argument_walker(const Object &, const ReplacementCallback &);
+bool function_argument_walker(Object &, const MutationCallback &);
 
 /**
  * Walker over all basic blocks starting with the provided one, applying the given callbacks
