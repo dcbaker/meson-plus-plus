@@ -11,6 +11,7 @@ libmir = static_library(
     'mir.cpp',
     'passes/compilers.cpp',
     'passes/constant_folding.cpp',
+    'passes/constant_propogation.cpp',
     'passes/flatten.cpp',
     'passes/free_functions.cpp',
     'passes/insert_phis.cpp',
@@ -50,6 +51,7 @@ test(
     [
       'passes/tests/branch_pruning_test.cpp',
       'passes/tests/const_folding_test.cpp',
+      'passes/tests/constant_propogation_test.cpp',
       'passes/tests/fixup_phis_test.cpp',
       'passes/tests/flatten_test.cpp',
       'passes/tests/free_functions_test.cpp',

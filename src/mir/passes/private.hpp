@@ -14,7 +14,7 @@
 namespace MIR::Passes {
 
 /// Callback will return a an optional Object, when it does the original object is replaced
-using ReplacementCallback = std::function<std::optional<Object>(const Object &)>;
+using ReplacementCallback = std::function<std::optional<Object>(Object &)>;
 
 /// Callback will return a boolean that progress is mode
 using MutationCallback = std::function<bool(Object &)>;

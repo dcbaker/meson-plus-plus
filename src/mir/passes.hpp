@@ -79,7 +79,7 @@ bool lower_free_functions(BasicBlock *, const State::Persistant &);
 bool flatten(BasicBlock *, const State::Persistant &);
 
 using ValueTable = std::unordered_map<std::string, uint32_t>;
-using LastSeenTable = std::map<std::string, uint32_t>;
+using LastSeenTable = std::map<uint32_t, std::map<std::string, uint32_t>>;
 
 /**
  * number each use of a variable
@@ -96,5 +96,12 @@ bool fixup_phis(BasicBlock *);
 using ReplacementTable = std::map<Variable, Variable>;
 
 bool constant_folding(BasicBlock *, ReplacementTable &);
+
+using PropTable = std::map<Variable, Object *>;
+
+/**
+ * push variables out of assignments into their uses
+ */
+bool constant_propogation(BasicBlock *, PropTable &);
 
 } // namespace MIR::Passes
