@@ -43,7 +43,6 @@ bool number_uses(const uint32_t & index, const Object & obj, LastSeenTable & tab
         // assert(table.find(id->value) != table.end());
         // progress |= id->version != table[id->value];
         id->version = table[id->value];
-        table[id->var.name] = id->var.version;
     }
 
     if (const Variable & var = std::visit(get_var, obj); var) {
