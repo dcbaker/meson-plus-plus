@@ -15,11 +15,10 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
                                         Passes::insert_compilers(block, pstate.toolchains);
                              }});
 
-    std::unordered_map<std::string, uint32_t> value_number_data{};
-
     // clang-format off
     do {
-        value_number_data.clear();
+        std::unordered_map<std::string, uint32_t> value_number_data{};
+        Passes::LastSeenTable lst{};
 
         progress = Passes::block_walker(
             block,
@@ -31,6 +30,7 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
                 Passes::fixup_phis,
                 Passes::join_blocks,
                 Passes::fixup_phis,
+                [&](BasicBlock * b) { return Passes::usage_numbering(b, lst); },
             }
         );
     } while (progress);
