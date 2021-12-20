@@ -44,12 +44,14 @@ class Variable {
     Variable(const std::string & n, const uint32_t & v) : name{n}, version{v} {};
     Variable(const Variable & v) : name{v.name}, version{v.version} {};
 
-    explicit operator bool() const;
-
     std::string name;
 
     /// The version as used by value numbering, 0 means unset
     uint32_t version;
+
+    explicit operator bool() const;
+    bool operator<(const Variable &) const;
+    bool operator==(const Variable &) const;
 };
 
 class Executable {

@@ -54,4 +54,12 @@ const Object Compiler::get_id(const std::vector<Object> & args,
 
 Variable::operator bool() const { return !name.empty(); };
 
+bool Variable::operator<(const Variable & other) const {
+    return name < other.name && version < other.version;
+}
+
+bool Variable::operator==(const Variable & other) const {
+    return name == other.name && version == other.version;
+}
+
 } // namespace MIR
