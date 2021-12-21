@@ -169,6 +169,88 @@ TEST(number_uses, with_phi) {
     }
 }
 
+TEST(number_uses, with_phi_no_pruning_in_func_call) {
+    auto irlist = lower(R"EOF(
+        if some_var
+            x = 9
+        else
+            x = 10
+        endif
+        message(x)
+        )EOF");
+    std::unordered_map<std::string, uint32_t> data{};
+    MIR::Passes::LastSeenTable rt{};
+
+    // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
+    // wrong thing
+    MIR::Passes::block_walker(
+        &irlist, {
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+                 });
+
+    const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
+    ASSERT_EQ(fin->instructions.size(), 2);
+
+    {
+        const auto & phi_obj = fin->instructions.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(phi_obj));
+    }
+
+    {
+        const auto & func_obj = fin->instructions.back();
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
+        const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
+
+        ASSERT_TRUE(
+            std::holds_alternative<std::unique_ptr<MIR::Identifier>>(func->pos_args.front()));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(func->pos_args.front());
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 3);
+    }
+}
+
+TEST(number_uses, with_phi_no_pruning) {
+    auto irlist = lower(R"EOF(
+        if some_var
+            x = 9
+        else
+            x = 10
+        endif
+        y = x
+        )EOF");
+    std::unordered_map<std::string, uint32_t> data{};
+    MIR::Passes::LastSeenTable rt{};
+
+    // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
+    // wrong thing
+    MIR::Passes::block_walker(
+        &irlist, {
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+                 });
+
+    const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
+    ASSERT_EQ(fin->instructions.size(), 2);
+
+    {
+        const auto & phi_obj = fin->instructions.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(phi_obj));
+    }
+
+    {
+        const auto & id_obj = fin->instructions.back();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 3);
+        ASSERT_EQ(id->var.name, "y");
+        ASSERT_EQ(id->var.version, 1);
+    }
+}
+
 TEST(number_uses, three_statements) {
     auto irlist = lower(R"EOF(
         x = 9
