@@ -52,8 +52,8 @@ TEST(ast_to_ir, number) {
     auto irlist = lower("7");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(obj));
-    const auto & ir = std::get<std::unique_ptr<MIR::Number>>(obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::Number>>(obj);
     ASSERT_EQ(ir->value, 7);
 }
 
@@ -61,8 +61,8 @@ TEST(ast_to_ir, boolean) {
     auto irlist = lower("true");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(obj));
-    const auto & ir = std::get<std::unique_ptr<MIR::Boolean>>(obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::Boolean>>(obj);
     ASSERT_EQ(ir->value, true);
 }
 
@@ -70,8 +70,8 @@ TEST(ast_to_ir, string) {
     auto irlist = lower("'true'");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::String>>(obj));
-    const auto & ir = std::get<std::unique_ptr<MIR::String>>(obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::String>>(obj);
     ASSERT_EQ(ir->value, "true");
 }
 
@@ -79,21 +79,21 @@ TEST(ast_to_ir, array) {
     auto irlist = lower("['a', 'b', 1, [2]]");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Array>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(obj));
 
-    const auto & arr = std::get<std::unique_ptr<MIR::Array>>(obj);
+    const auto & arr = std::get<std::shared_ptr<MIR::Array>>(obj);
 
-    const auto & arr0 = std::get<std::unique_ptr<MIR::String>>(arr->value[0]);
+    const auto & arr0 = std::get<std::shared_ptr<MIR::String>>(arr->value[0]);
     ASSERT_EQ(arr0->value, "a");
 
-    const auto & arr1 = std::get<std::unique_ptr<MIR::String>>(arr->value[1]);
+    const auto & arr1 = std::get<std::shared_ptr<MIR::String>>(arr->value[1]);
     ASSERT_EQ(arr1->value, "b");
 
-    const auto & arr2 = std::get<std::unique_ptr<MIR::Number>>(arr->value[2]);
+    const auto & arr2 = std::get<std::shared_ptr<MIR::Number>>(arr->value[2]);
     ASSERT_EQ(arr2->value, 1);
 
-    const auto & arr3 = std::get<std::unique_ptr<MIR::Array>>(arr->value[3]);
-    const auto & arr3_1 = std::get<std::unique_ptr<MIR::Number>>(arr3->value[0]);
+    const auto & arr3 = std::get<std::shared_ptr<MIR::Array>>(arr->value[3]);
+    const auto & arr3_1 = std::get<std::shared_ptr<MIR::Number>>(arr3->value[0]);
     ASSERT_EQ(arr3_1->value, 2);
 }
 
@@ -101,11 +101,11 @@ TEST(ast_to_ir, dict) {
     auto irlist = lower("{'str': 1}");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Dict>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dict>>(obj));
 
-    const auto & dict = std::get<std::unique_ptr<MIR::Dict>>(obj);
+    const auto & dict = std::get<std::shared_ptr<MIR::Dict>>(obj);
 
-    const auto & val = std::get<std::unique_ptr<MIR::Number>>(dict->value["str"]);
+    const auto & val = std::get<std::shared_ptr<MIR::Number>>(dict->value["str"]);
     ASSERT_EQ(val->value, 1);
 }
 
@@ -113,9 +113,9 @@ TEST(ast_to_ir, simple_function) {
     auto irlist = lower("has_no_args()");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
 
-    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "has_no_args");
     const auto & arguments = ir->pos_args;
     ASSERT_TRUE(arguments.empty());
@@ -125,9 +125,9 @@ TEST(ast_to_ir, simple_method) {
     auto irlist = lower("obj.method()");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
 
-    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "method");
     ASSERT_EQ(ir->source_dir, ""); // We want to ensure this isn't meson.build
     ASSERT_TRUE(ir->holder.has_value());
@@ -143,9 +143,9 @@ TEST(ast_to_ir, chained_method) {
     auto irlist = lower("obj.method().chained()");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
 
-    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "method");
     ASSERT_TRUE(ir->holder.has_value());
     ASSERT_EQ(ir->holder.value(), "obj");
@@ -158,25 +158,25 @@ TEST(ast_to_ir, function_positional_arguments_only) {
     auto irlist = lower("has_args(1, 2, 3)");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
 
-    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "has_args");
 
     const auto & arguments = ir->pos_args;
     ASSERT_EQ(arguments.size(), 3);
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(arguments[0])->value, 1);
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(arguments[1])->value, 2);
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(arguments[2])->value, 3);
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(arguments[0])->value, 1);
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(arguments[1])->value, 2);
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(arguments[2])->value, 3);
 }
 
 TEST(ast_to_ir, function_keyword_arguments_only) {
     auto irlist = lower("has_args(a : 1, b : '2')");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
 
-    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "has_args");
 
     const auto & arguments = ir->pos_args;
@@ -185,10 +185,10 @@ TEST(ast_to_ir, function_keyword_arguments_only) {
     auto & kwargs = ir->kw_args;
     ASSERT_EQ(kwargs.size(), 2);
 
-    const auto & kw_a = std::get<std::unique_ptr<MIR::Number>>(kwargs["a"]);
+    const auto & kw_a = std::get<std::shared_ptr<MIR::Number>>(kwargs["a"]);
     ASSERT_EQ(kw_a->value, 1);
 
-    const auto & kw_b = std::get<std::unique_ptr<MIR::String>>(kwargs["b"]);
+    const auto & kw_b = std::get<std::shared_ptr<MIR::String>>(kwargs["b"]);
     ASSERT_EQ(kw_b->value, "2");
 }
 
@@ -196,19 +196,19 @@ TEST(ast_to_ir, function_both_arguments) {
     auto irlist = lower("both_args(1, a, a : 1)");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
 
-    const auto & ir = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
     ASSERT_EQ(ir->name, "both_args");
 
     const auto & arguments = ir->pos_args;
     ASSERT_EQ(arguments.size(), 2);
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(arguments[0])->value, 1);
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(arguments[0])->value, 1);
     ASSERT_EQ(std::get<std::unique_ptr<MIR::Identifier>>(arguments[1])->value, "a");
 
     auto & kwargs = ir->kw_args;
     ASSERT_EQ(kwargs.size(), 1);
-    const auto & kw_a = std::get<std::unique_ptr<MIR::Number>>(kwargs["a"]);
+    const auto & kw_a = std::get<std::shared_ptr<MIR::Number>>(kwargs["a"]);
     ASSERT_EQ(kw_a->value, 1);
 }
 
@@ -216,14 +216,14 @@ TEST(ast_to_ir, if_only) {
     auto irlist = lower("if true\n 7\nendif\n");
     ASSERT_TRUE(is_con(irlist.next));
     auto const & con = get_con(irlist.next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(con->condition));
 
     auto const & if_true = con->if_true->instructions;
     ASSERT_EQ(if_true.size(), 1);
 
     auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 7);
 }
 
 TEST(ast_to_ir, if_branch_join) {
@@ -235,22 +235,22 @@ TEST(ast_to_ir, if_branch_join) {
         )EOF");
     ASSERT_TRUE(is_con(irlist.next));
     auto const & con = get_con(irlist.next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(con->condition));
 
     auto const & if_true = con->if_true->instructions;
     ASSERT_EQ(if_true.size(), 1);
 
     auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 7);
 
     ASSERT_NE(con->if_false, nullptr);
 
     auto const & block2 = con->if_false;
     ASSERT_NE(block2, nullptr);
     auto const & val2 = block2->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 8);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val2));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val2)->value, 8);
 
     ASSERT_EQ(get_bb(con->if_true->next), block2);
 }
@@ -323,19 +323,19 @@ TEST(ast_to_ir, if_else) {
     auto irlist = lower("if true\n 7\nelse\n8\nendif\n");
     ASSERT_TRUE(is_con(irlist.next));
     auto const & con = get_con(irlist.next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(con->condition));
 
     auto const & if_true = con->if_true->instructions;
     ASSERT_EQ(if_true.size(), 1);
     auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 7);
 
     auto const & if_false = con->if_false->instructions;
     ASSERT_EQ(if_false.size(), 1);
     auto const & val2 = if_false.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 8);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val2));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val2)->value, 8);
 }
 
 TEST(ast_to_ir, if_elif) {
@@ -350,37 +350,37 @@ TEST(ast_to_ir, if_elif) {
         )EOF");
     ASSERT_TRUE(is_con(irlist.next));
     auto const & con = get_con(irlist.next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(con->condition));
 
     {
         auto const & if_true = con->if_true->instructions;
         ASSERT_EQ(if_true.size(), 1);
         auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 7);
     }
 
     ASSERT_NE(con->if_false, nullptr);
     auto const & elcon = get_con(con->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(elcon->condition));
 
     {
         auto const & if_true = elcon->if_true->instructions;
         ASSERT_EQ(if_true.size(), 1);
         auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 8);
     }
 
     auto const & elcon2 = get_con(elcon->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon2->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(elcon2->condition));
 
     {
         auto const & if_true = elcon2->if_true->instructions;
         ASSERT_EQ(if_true.size(), 1);
         auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 9);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 9);
     }
 }
 
@@ -400,34 +400,34 @@ TEST(ast_to_ir, if_elif_else) {
     // block 0
     ASSERT_TRUE(is_con(irlist.next));
     auto const & con = get_con(irlist.next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(con->condition));
 
     // block 1
     {
         auto const & if_true = con->if_true->instructions;
         ASSERT_EQ(if_true.size(), 1);
         auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 7);
     }
 
     ASSERT_NE(con->if_false, nullptr);
     auto const & elcon = get_con(con->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(elcon->condition));
 
     // /block 2
     auto const & if_true = elcon->if_true->instructions;
     ASSERT_EQ(if_true.size(), 1);
     auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 8);
 
     // blcok 3
     auto const & if_false = elcon->if_false->instructions;
     ASSERT_EQ(if_false.size(), 1);
     auto const & val2 = if_false.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
-    ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 9);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val2));
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val2)->value, 9);
 }
 
 TEST(ast_to_ir, nested_if) {
@@ -446,43 +446,43 @@ TEST(ast_to_ir, nested_if) {
     )EOF");
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Condition>>(irlist.next));
     auto const & con = std::get<std::unique_ptr<MIR::Condition>>(irlist.next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(con->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(con->condition));
 
     {
         auto const & if_true = con->if_true->instructions;
         ASSERT_EQ(if_true.size(), 1);
         auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 7);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 7);
 
         auto const & con2 = get_con(con->if_true->next);
         auto const & val2 = con2->if_true->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 10);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val2));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val2)->value, 10);
 
         const auto & fin = get_bb(get_bb(con2->if_true->next)->next);
         ASSERT_EQ(fin->instructions.size(), 1);
         auto const & val3 = fin->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val3));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val3)->value, 22);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val3));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val3)->value, 22);
     }
 
     ASSERT_NE(con->if_false, nullptr);
     auto const & elcon = get_con(con->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Boolean>>(elcon->condition));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(elcon->condition));
 
     {
         auto const & if_true = elcon->if_true->instructions;
         ASSERT_EQ(if_true.size(), 1);
         auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val)->value, 8);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val)->value, 8);
 
         auto const & if_false = elcon->if_false->instructions;
         ASSERT_EQ(if_false.size(), 1);
         auto const & val2 = if_false.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(val2));
-        ASSERT_EQ(std::get<std::unique_ptr<MIR::Number>>(val2)->value, 9);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(val2));
+        ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(val2)->value, 9);
     }
 }
 
@@ -598,8 +598,8 @@ TEST(ast_to_ir, assign) {
     auto irlist = lower("a = 5");
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(obj));
-    const auto & ir = std::get<std::unique_ptr<MIR::Number>>(obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::Number>>(obj);
     ASSERT_EQ(ir->value, 5);
     ASSERT_EQ(ir->var.name, "a");
     ASSERT_EQ(ir->var.version, 0);

@@ -20,7 +20,7 @@ struct ExpressionLowering {
     const MIR::State::Persistant & pstate;
 
     Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
-        return std::make_unique<String>(expr->value);
+        return std::make_shared<String>(expr->value);
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
@@ -42,7 +42,7 @@ struct ExpressionLowering {
         std::unordered_map<std::string, Object> kwargs{};
         for (const auto & [k, v] : expr->args->keyword) {
             auto key_obj = std::visit(*this, k);
-            auto key_ptr = std::get_if<std::unique_ptr<MIR::Identifier>>(&key_obj);
+            auto key_ptr = std::get_if<std::unique_ptr<Identifier>>(&key_obj);
             if (key_ptr == nullptr) {
                 // TODO: better error message
                 throw Util::Exceptions::MesonException{"keyword arguments must be identifiers"};
@@ -55,17 +55,17 @@ struct ExpressionLowering {
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_unique<FunctionCall>(
+        return std::make_shared<FunctionCall>(
             fname, std::move(pos), std::move(kwargs),
             std::filesystem::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
-        return std::make_unique<Boolean>(expr->value);
+        return std::make_shared<Boolean>(expr->value);
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
-        return std::make_unique<Number>(expr->value);
+        return std::make_shared<Number>(expr->value);
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
@@ -73,7 +73,7 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
-        auto arr = std::make_unique<Array>();
+        auto arr = std::make_shared<Array>();
         for (const auto & i : expr->elements) {
             arr->value.emplace_back(std::visit(*this, i));
         }
@@ -81,13 +81,13 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
-        auto dict = std::make_unique<Dict>();
+        auto dict = std::make_shared<Dict>();
         for (const auto & [k, v] : expr->elements) {
             auto key_obj = std::visit(*this, k);
-            if (!std::holds_alternative<std::unique_ptr<String>>(key_obj)) {
+            if (!std::holds_alternative<std::shared_ptr<String>>(key_obj)) {
                 throw Util::Exceptions::InvalidArguments("Dictionary keys must be strintg");
             }
-            auto key = std::get<std::unique_ptr<MIR::String>>(key_obj)->value;
+            auto key = std::get<std::shared_ptr<MIR::String>>(key_obj)->value;
 
             dict->value[key] = std::visit(*this, v);
         }
@@ -103,9 +103,9 @@ struct ExpressionLowering {
 
         // Meson only allows methods in objects, so we can enforce that this is a function
         auto method = std::visit(*this, expr->id);
-        assert(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(method));
+        assert(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(method));
 
-        auto func = std::move(std::get<std::unique_ptr<MIR::FunctionCall>>(method));
+        auto func = std::move(std::get<std::shared_ptr<MIR::FunctionCall>>(method));
         func->holder = std::get<std::unique_ptr<MIR::Identifier>>(holding_obj)->value;
 
         return func;
@@ -113,22 +113,22 @@ struct ExpressionLowering {
 
     // XXX: all of thse are lies to get things compiling
     Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
-        return std::make_unique<String>("placeholder: add");
+        return std::make_shared<String>("placeholder: add");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
-        return std::make_unique<String>("placeholder: mul");
+        return std::make_shared<String>("placeholder: mul");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
-        return std::make_unique<String>("placeholder: unary");
+        return std::make_shared<String>("placeholder: unary");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
-        return std::make_unique<String>("placeholder: subscript");
+        return std::make_shared<String>("placeholder: subscript");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
-        return std::make_unique<String>("placeholder: rel");
+        return std::make_shared<String>("placeholder: rel");
     };
     Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
-        return std::make_unique<String>("placeholder: tern");
+        return std::make_shared<String>("placeholder: tern");
     };
 };
 

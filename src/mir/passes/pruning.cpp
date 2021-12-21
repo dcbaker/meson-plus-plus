@@ -18,7 +18,7 @@ bool branch_pruning_impl(BasicBlock * ir) {
     // If the condition expression hasn't been reduced to a boolean then there's
     // nothing to do yet.
     auto & con = std::get<std::unique_ptr<Condition>>(ir->next);
-    if (!std::holds_alternative<std::unique_ptr<Boolean>>(con->condition)) {
+    if (!std::holds_alternative<std::shared_ptr<Boolean>>(con->condition)) {
         return false;
     }
 
@@ -28,7 +28,7 @@ bool branch_pruning_impl(BasicBlock * ir) {
     // If the true branch is the one we want, move the next and condition to our
     // next and condition, otherwise move the `else` branch to be the main condition, and
     // continue
-    const bool & con_v = std::get<std::unique_ptr<Boolean>>(con->condition)->value;
+    const bool & con_v = std::get<std::shared_ptr<Boolean>>(con->condition)->value;
     std::shared_ptr<BasicBlock> next;
     if (con_v) {
         assert(con->if_true != nullptr);

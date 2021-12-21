@@ -24,14 +24,14 @@ TEST(files, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Array>>(r));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(r));
 
-    const auto & a = std::get<std::unique_ptr<MIR::Array>>(r)->value;
+    const auto & a = std::get<std::shared_ptr<MIR::Array>>(r)->value;
     ASSERT_EQ(a.size(), 1);
 
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::File>>(a[0]));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::File>>(a[0]));
 
-    const auto & f = std::get<std::unique_ptr<MIR::File>>(a[0]);
+    const auto & f = std::get<std::shared_ptr<MIR::File>>(a[0]);
     ASSERT_EQ(f->file.get_name(), "foo.c");
 }
 
@@ -48,9 +48,9 @@ TEST(executable, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Executable>>(r));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Executable>>(r));
 
-    const auto & e = std::get<std::unique_ptr<MIR::Executable>>(r)->value;
+    const auto & e = std::get<std::shared_ptr<MIR::Executable>>(r)->value;
     ASSERT_EQ(e.name, "exe");
     ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
 
@@ -75,9 +75,9 @@ TEST(static_library, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::StaticLibrary>>(r));
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(r));
 
-    const auto & e = std::get<std::unique_ptr<MIR::StaticLibrary>>(r)->value;
+    const auto & e = std::get<std::shared_ptr<MIR::StaticLibrary>>(r)->value;
     ASSERT_EQ(e.name, "exe");
     ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
 

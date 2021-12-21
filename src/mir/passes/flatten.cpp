@@ -10,10 +10,10 @@ namespace MIR::Passes {
 namespace {
 
 /// Recursively call this to flatten nested arrays to function calls
-void do_flatten(const std::unique_ptr<Array> & arr, std::vector<Object> & newarr) {
+void do_flatten(const std::shared_ptr<Array> & arr, std::vector<Object> & newarr) {
     for (auto & e : arr->value) {
-        if (std::holds_alternative<std::unique_ptr<Array>>(e)) {
-            do_flatten(std::get<std::unique_ptr<Array>>(e), newarr);
+        if (std::holds_alternative<std::shared_ptr<Array>>(e)) {
+            do_flatten(std::get<std::shared_ptr<Array>>(e), newarr);
         } else {
             newarr.emplace_back(std::move(e));
         }
@@ -24,11 +24,11 @@ void do_flatten(const std::unique_ptr<Array> & arr, std::vector<Object> & newarr
  * Flatten arrays when passed as arguments to functions.
  */
 std::optional<Object> flatten_cb(const Object & obj) {
-    if (!std::holds_alternative<std::unique_ptr<Array>>(obj)) {
+    if (!std::holds_alternative<std::shared_ptr<Array>>(obj)) {
         return std::nullopt;
     }
 
-    const auto & arr = std::get<std::unique_ptr<Array>>(obj);
+    const auto & arr = std::get<std::shared_ptr<Array>>(obj);
     std::vector<Object> newarr{};
     do_flatten(arr, newarr);
 

@@ -109,10 +109,10 @@ class Compiler;
 class File;
 
 using Object =
-    std::variant<std::unique_ptr<FunctionCall>, std::unique_ptr<String>, std::unique_ptr<Boolean>,
-                 std::unique_ptr<Number>, std::unique_ptr<Identifier>, std::unique_ptr<Array>,
-                 std::unique_ptr<Dict>, std::unique_ptr<Compiler>, std::unique_ptr<File>,
-                 std::unique_ptr<Executable>, std::unique_ptr<StaticLibrary>, std::unique_ptr<Phi>>;
+    std::variant<std::shared_ptr<FunctionCall>, std::shared_ptr<String>, std::shared_ptr<Boolean>,
+                 std::shared_ptr<Number>, std::unique_ptr<Identifier>, std::shared_ptr<Array>,
+                 std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
+                 std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>>;
 
 /**
  * Holds a toolchain

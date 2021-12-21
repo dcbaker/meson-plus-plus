@@ -29,15 +29,15 @@ MIR::Object lower_function(const std::string & holder, const std::string & name,
                            const Info & info) {
     if (name == "cpu_family") {
         // TODO: it's probably going to be useful to have a helper for this...
-        return MIR::Object{std::make_unique<MIR::String>(info.cpu_family)};
+        return MIR::Object{std::make_shared<MIR::String>(info.cpu_family)};
     } else if (name == "cpu") {
         // TODO: it's probably going to be useful to have a helper for this...
-        return MIR::Object{std::make_unique<MIR::String>(info.cpu)};
+        return MIR::Object{std::make_shared<MIR::String>(info.cpu)};
     } else if (name == "system") {
         // TODO: it's probably going to be useful to have a helper for this...
-        return MIR::Object{std::make_unique<MIR::String>(info.system())};
+        return MIR::Object{std::make_shared<MIR::String>(info.system())};
     } else if (name == "endian") {
-        return MIR::Object{std::make_unique<MIR::String>(
+        return MIR::Object{std::make_shared<MIR::String>(
             info.endian == MIR::Machines::Endian::LITTLE ? "little" : "big")};
     } else {
         throw Util::Exceptions::MesonException{holder + " has no method " + name};
@@ -47,8 +47,8 @@ MIR::Object lower_function(const std::string & holder, const std::string & name,
 using MachineInfo = MIR::Machines::PerMachine<MIR::Machines::Info>;
 
 std::optional<Object> lower_functions(const MachineInfo & machines, const Object & obj) {
-    if (std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(obj)) {
-        const auto & f = std::get<std::unique_ptr<MIR::FunctionCall>>(obj);
+    if (std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj)) {
+        const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
         const auto & holder = f->holder.value_or("");
 
         auto maybe_m = machine_map(holder);
