@@ -30,8 +30,8 @@ TEST(constant_folding, simple) {
     ASSERT_EQ(irlist.instructions.size(), 3);
 
     const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::unique_ptr<MIR::FunctionCall>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
+    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
     ASSERT_EQ(func->pos_args.size(), 1);
 
     const auto & arg_obj = func->pos_args.front();
@@ -72,8 +72,8 @@ TEST(constant_folding, with_phi) {
                  });
 
     const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::unique_ptr<MIR::FunctionCall>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
+    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
     ASSERT_EQ(func->pos_args.size(), 1);
 
     const auto & arg_obj = func->pos_args.front();
@@ -104,8 +104,8 @@ TEST(constant_folding, three_statements) {
                  });
 
     const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::unique_ptr<MIR::FunctionCall>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
+    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
     ASSERT_EQ(func->pos_args.size(), 1);
 
     const auto & arg_obj = func->pos_args.front();
@@ -136,8 +136,8 @@ TEST(constant_folding, redefined_value) {
                  });
 
     const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::unique_ptr<MIR::FunctionCall>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
+    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
     ASSERT_EQ(func->pos_args.size(), 1);
 
     const auto & arg_obj = func->pos_args.front();
@@ -167,8 +167,8 @@ TEST(constant_folding, in_array) {
                  });
 
     const auto & array_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Array>>(array_obj));
-    const auto & array = std::get<std::unique_ptr<MIR::Array>>(array_obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(array_obj));
+    const auto & array = std::get<std::shared_ptr<MIR::Array>>(array_obj);
     ASSERT_EQ(array->value.size(), 1);
 
     const auto & arg_obj = array->value.front();

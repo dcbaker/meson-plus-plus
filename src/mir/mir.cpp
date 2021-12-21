@@ -25,9 +25,7 @@ BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{}, in
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
     : instructions{}, next{std::move(con)}, parents{}, index{++bb_index} {};
 
-bool BasicBlock::operator<(const BasicBlock & other) const {
-    return index < other.index;
-}
+bool BasicBlock::operator<(const BasicBlock & other) const { return index < other.index; }
 
 bool BBComparitor::operator()(const BasicBlock * lhs, const BasicBlock * rhs) const {
     return *lhs < *rhs;
@@ -49,7 +47,7 @@ const Object Compiler::get_id(const std::vector<Object> & args,
         throw Util::Exceptions::InvalidArguments("compiler.get_id(): takes no keyword arguments");
     }
 
-    return std::make_unique<String>(toolchain->compiler->id());
+    return std::make_shared<String>(toolchain->compiler->id());
 };
 
 Variable::operator bool() const { return !name.empty(); };

@@ -17,10 +17,10 @@ TEST(value_numbering, simple) {
     std::unordered_map<std::string, uint32_t> data{};
     MIR::Passes::value_numbering(&irlist, data);
 
-    const auto & first = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.front());
+    const auto & first = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.front());
     ASSERT_EQ(first->var.version, 1);
 
-    const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
+    const auto & last = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.back());
     ASSERT_EQ(last->var.version, 2);
 }
 
@@ -38,18 +38,18 @@ TEST(value_numbering, branching) {
     MIR::Passes::block_walker(
         &irlist, {[&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); }});
 
-    const auto & first = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.front());
+    const auto & first = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.front());
     ASSERT_EQ(first->var.version, 1);
 
-    const auto & last = std::get<std::unique_ptr<MIR::Number>>(irlist.instructions.back());
+    const auto & last = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.back());
     ASSERT_EQ(last->var.version, 2);
 
     const auto & bb1 = get_con(irlist.next)->if_false;
-    const auto & bb1_val = std::get<std::unique_ptr<MIR::Number>>(bb1->instructions.front());
+    const auto & bb1_val = std::get<std::shared_ptr<MIR::Number>>(bb1->instructions.front());
     ASSERT_EQ(bb1_val->var.version, 3);
 
     const auto & bb2 = get_con(irlist.next)->if_true;
-    const auto & bb2_val = std::get<std::unique_ptr<MIR::Number>>(bb2->instructions.front());
+    const auto & bb2_val = std::get<std::shared_ptr<MIR::Number>>(bb2->instructions.front());
     ASSERT_EQ(bb2_val->var.version, 4);
 }
 
@@ -68,20 +68,19 @@ TEST(value_numbering, three_branch) {
         &irlist, {[&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); }});
 
     const auto & bb1 = get_con(irlist.next)->if_true;
-    const auto & bb1_val = std::get<std::unique_ptr<MIR::Number>>(bb1->instructions.front());
+    const auto & bb1_val = std::get<std::shared_ptr<MIR::Number>>(bb1->instructions.front());
     ASSERT_EQ(bb1_val->var.version, 1);
 
     const auto & con2 = get_con(get_con(irlist.next)->if_false->next);
 
     const auto & bb2 = con2->if_false;
-    const auto & bb2_val = std::get<std::unique_ptr<MIR::Number>>(bb2->instructions.front());
+    const auto & bb2_val = std::get<std::shared_ptr<MIR::Number>>(bb2->instructions.front());
     ASSERT_EQ(bb2_val->var.version, 2);
 
     const auto & bb3 = con2->if_true;
-    const auto & bb3_val = std::get<std::unique_ptr<MIR::Number>>(bb3->instructions.front());
+    const auto & bb3_val = std::get<std::shared_ptr<MIR::Number>>(bb3->instructions.front());
     ASSERT_EQ(bb3_val->var.version, 3);
 }
-
 
 TEST(number_uses, simple) {
     auto irlist = lower(R"EOF(
@@ -103,8 +102,8 @@ TEST(number_uses, simple) {
 
     {
         const auto & num_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(num_obj));
-        const auto & num = std::get<std::unique_ptr<MIR::Number>>(num_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
+        const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
         ASSERT_EQ(num->value, 9);
         ASSERT_EQ(num->var.name, "x");
         ASSERT_EQ(num->var.version, 1);
@@ -152,8 +151,8 @@ TEST(number_uses, with_phi) {
 
     {
         const auto & num_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(num_obj));
-        const auto & num = std::get<std::unique_ptr<MIR::Number>>(num_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
+        const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
         ASSERT_EQ(num->value, 9);
         ASSERT_EQ(num->var.name, "x");
         ASSERT_EQ(num->var.version, 2);
@@ -250,8 +249,8 @@ TEST(number_uses, in_array) {
 
     {
         const auto & num_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(num_obj));
-        const auto & num = std::get<std::unique_ptr<MIR::Number>>(num_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
+        const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
         ASSERT_EQ(num->value, 10);
         ASSERT_EQ(num->var.name, "x");
         ASSERT_EQ(num->var.version, 1);
@@ -259,8 +258,8 @@ TEST(number_uses, in_array) {
 
     {
         const auto & arr_obj = irlist.instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Array>>(arr_obj));
-        const auto & arr = std::get<std::unique_ptr<MIR::Array>>(arr_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(arr_obj));
+        const auto & arr = std::get<std::shared_ptr<MIR::Array>>(arr_obj);
 
         ASSERT_EQ(arr->value.size(), 1);
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arr->value[0]));

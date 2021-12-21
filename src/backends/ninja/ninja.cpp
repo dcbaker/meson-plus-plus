@@ -255,14 +255,14 @@ std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
     std::unordered_map<std::string, const Rule * const> rule_map{};
 
     for (const auto & i : block->instructions) {
-        if (const auto x = std::get_if<std::unique_ptr<MIR::Executable>>(&i); x != nullptr) {
+        if (const auto x = std::get_if<std::shared_ptr<MIR::Executable>>(&i); x != nullptr) {
             auto r = target_rule((*x)->value, pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
             const Rule * const named_rule = &rules.back();
             rule_map.emplace(named_rule->output, named_rule);
         }
-        if (std::holds_alternative<std::unique_ptr<MIR::StaticLibrary>>(i)) {
-            auto r = target_rule(std::get<std::unique_ptr<MIR::StaticLibrary>>(i)->value, pstate);
+        if (std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(i)) {
+            auto r = target_rule(std::get<std::shared_ptr<MIR::StaticLibrary>>(i)->value, pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
             const Rule * const named_rule = &rules.back();
             rule_map.emplace(named_rule->output, named_rule);

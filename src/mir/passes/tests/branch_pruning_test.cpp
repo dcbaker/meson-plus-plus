@@ -81,11 +81,11 @@ TEST(branch_pruning, if_false) {
     const auto & next = get_bb(irlist.next);
     ASSERT_EQ(next->instructions.size(), 2);
 
-    const auto & first = std::get<std::unique_ptr<MIR::Number>>(next->instructions.front());
+    const auto & first = std::get<std::shared_ptr<MIR::Number>>(next->instructions.front());
     ASSERT_EQ(first->value, 9);
     ASSERT_EQ(first->var.name, "x");
 
-    const auto & last = std::get<std::unique_ptr<MIR::Number>>(next->instructions.back());
+    const auto & last = std::get<std::shared_ptr<MIR::Number>>(next->instructions.back());
     ASSERT_EQ(last->value, 2);
     ASSERT_EQ(last->var.name, "y");
 }

@@ -59,13 +59,13 @@ bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> 
 bool array_walker(Object & obj, const MutationCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::unique_ptr<Array>>(obj)) {
+    if (!std::holds_alternative<std::shared_ptr<Array>>(obj)) {
         return progress;
     }
-    auto & arr = std::get<std::unique_ptr<Array>>(obj);
+    auto & arr = std::get<std::shared_ptr<Array>>(obj);
 
     for (auto & e : arr->value) {
-        if (std::holds_alternative<std::unique_ptr<Array>>(e)) {
+        if (std::holds_alternative<std::shared_ptr<Array>>(e)) {
             progress |= array_walker(e, cb);
         } else {
             progress |= cb(e);
@@ -78,13 +78,13 @@ bool array_walker(Object & obj, const MutationCallback & cb) {
 bool array_walker(const Object & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::unique_ptr<Array>>(obj)) {
+    if (!std::holds_alternative<std::shared_ptr<Array>>(obj)) {
         return progress;
     }
-    auto & arr = std::get<std::unique_ptr<Array>>(obj);
+    auto & arr = std::get<std::shared_ptr<Array>>(obj);
 
     for (auto it = arr->value.begin(); it != arr->value.end(); ++it) {
-        if (std::holds_alternative<std::unique_ptr<Array>>(*it)) {
+        if (std::holds_alternative<std::shared_ptr<Array>>(*it)) {
             progress |= array_walker(*it, cb);
         } else {
             auto rt = cb(*it);
@@ -101,11 +101,11 @@ bool array_walker(const Object & obj, const ReplacementCallback & cb) {
 bool function_argument_walker(const Object & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
         return progress;
     }
 
-    auto & func = std::get<std::unique_ptr<FunctionCall>>(obj);
+    auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
 
     if (!func->pos_args.empty()) {
         progress |= replace_elements(func->pos_args, cb);
@@ -119,11 +119,11 @@ bool function_argument_walker(const Object & obj, const ReplacementCallback & cb
 bool function_argument_walker(Object & obj, const MutationCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::unique_ptr<FunctionCall>>(obj)) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
         return progress;
     }
 
-    auto & func = std::get<std::unique_ptr<FunctionCall>>(obj);
+    auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
 
     for (auto & e : func->pos_args) {
         progress |= cb(e);

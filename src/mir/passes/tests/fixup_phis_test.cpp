@@ -35,8 +35,8 @@ TEST(fixup_phi, simple) {
 
     {
         const auto & id_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::shared_ptr<MIR::Number>>(id_obj);
         ASSERT_EQ(id->value, 9);
         ASSERT_EQ(id->var.name, "x");
         ASSERT_EQ(id->var.version, 2);
@@ -81,8 +81,8 @@ TEST(fixup_phi, three_branches) {
 
     {
         const auto & id_obj = *it;
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::shared_ptr<MIR::Number>>(id_obj);
         ASSERT_EQ(id->value, 9);
         ASSERT_EQ(id->var.name, "x");
         ASSERT_EQ(id->var.version, 1);
@@ -138,8 +138,8 @@ TEST(fixup_phi, nested_branches) {
 
     {
         const auto & id_obj = *it;
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::shared_ptr<MIR::Number>>(id_obj);
         ASSERT_EQ(id->value, 9);
         ASSERT_EQ(id->var.name, "x");
         ASSERT_EQ(id->var.version, 1);
@@ -149,8 +149,8 @@ TEST(fixup_phi, nested_branches) {
 
     {
         const auto & id_obj = *it;
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Number>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Number>>(id_obj);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::shared_ptr<MIR::Number>>(id_obj);
         ASSERT_EQ(id->value, 11);
         ASSERT_EQ(id->var.name, "x");
         ASSERT_EQ(id->var.version, 3);
