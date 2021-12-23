@@ -68,9 +68,9 @@ bool usage_numbering(BasicBlock * block, LastSeenTable & table) {
 
     return instruction_walker(block,
                               {
-                                  number,
                                   [&](Object & o) { return function_argument_walker(o, number); },
                                   [&](Object & o) { return array_walker(o, number); },
+                                  number,
                               });
 }
 
