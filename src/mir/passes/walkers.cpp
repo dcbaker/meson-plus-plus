@@ -109,7 +109,14 @@ bool function_argument_walker(const Object & obj, const ReplacementCallback & cb
         progress |= replace_elements(func->pos_args, cb);
     }
 
-    // TODO: dictionary lowering
+    if (!func->kw_args.empty()) {
+        for (auto & [_, v] : func->kw_args) {
+            if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
+                auto & value = std::get<std::shared_ptr<Array>>(v)->value;
+                progress |= replace_elements(value, cb);
+            }
+        }
+    }
 
     return progress;
 }
