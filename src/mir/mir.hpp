@@ -56,7 +56,8 @@ class Variable {
 
 class Executable {
   public:
-    Executable(const Objects::Executable & exe_) : value{exe_} {};
+    Executable(const Objects::Executable & exe_) : value{exe_}, var{} {};
+    Executable(const Objects::Executable & exe_, const Variable & v) : value{exe_}, var{v} {};
 
     const Objects::Executable value;
 
@@ -65,7 +66,8 @@ class Executable {
 
 class StaticLibrary {
   public:
-    StaticLibrary(const Objects::StaticLibrary & exe_) : value{exe_} {};
+    StaticLibrary(const Objects::StaticLibrary & exe_) : value{exe_}, var{} {};
+    StaticLibrary(const Objects::StaticLibrary & exe_, const Variable & v) : value{exe_}, var{v} {};
 
     const Objects::StaticLibrary value;
 

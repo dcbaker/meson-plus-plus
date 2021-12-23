@@ -104,6 +104,62 @@ target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistan
     return args;
 }
 
+std::vector<Objects::StaticLinkage>
+target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
+    std::vector<Objects::StaticLinkage> s_link{};
+    if (const auto & raw_slink = kwargs.find("link_with"); raw_slink != kwargs.end()) {
+        if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(raw_slink->second)) {
+            s_link.emplace_back(Objects::StaticLinkage{
+                Objects::StaticLinkMode::NORMAL,
+                &std::get<std::shared_ptr<StaticLibrary>>(raw_slink->second)->value});
+        } else if (std::holds_alternative<std::shared_ptr<Array>>(raw_slink->second)) {
+            const auto & list = std::get<std::shared_ptr<Array>>(raw_slink->second)->value;
+            for (const auto & a : list) {
+                if (std::get<std::shared_ptr<StaticLibrary>>(a)) {
+                    s_link.emplace_back(Objects::StaticLinkage{
+                        Objects::StaticLinkMode::NORMAL,
+                        &std::get<std::shared_ptr<StaticLibrary>>(a)->value});
+                } else {
+                    // TODO: real error here
+                    throw std::exception{};
+                }
+            }
+        } else {
+            // TODO: real error here
+            throw std::exception{};
+        }
+    }
+
+    return s_link;
+}
+
+bool all_args_reduced(const std::vector<Object> & pos_args,
+                      const std::unordered_map<std::string, Object> & kw_args) {
+    for (const auto & p : pos_args) {
+        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
+            return false;
+        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
+            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
+                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
+                    return false;
+                }
+            }
+        }
+    }
+    for (const auto & [_, p] : kw_args) {
+        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
+            return false;
+        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
+            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
+                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
     if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
         return std::nullopt;
@@ -112,12 +168,15 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
 
     if (f->holder.value_or("") != "" || f->name != "executable") {
         return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
     }
 
     // This doesn't handle the listified version corretly
     if (f->pos_args.size() < 2) {
         throw Util::Exceptions::InvalidArguments{"executable requires at least 2 arguments"};
     }
+
     if (!std::holds_alternative<std::shared_ptr<String>>(f->pos_args[0])) {
         // TODO: it could also be an identifier pointing to a string
         throw Util::Exceptions::InvalidArguments{"executable first argument must be a string"};
@@ -130,13 +189,13 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
         raw_srcs.emplace_back(&f->pos_args[i]);
     }
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
-
     auto args = target_arguments(f, pstate);
+    auto slink = target_kwargs(f->kw_args);
 
     // TODO: machien parameter needs to be set from the native kwarg
-    Objects::Executable exe{name, srcs, Machines::Machine::BUILD, args};
+    Objects::Executable exe{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink};
 
-    return std::make_shared<Executable>(exe);
+    return std::make_shared<Executable>(exe, f->var);
 }
 
 std::optional<Object> lower_static_library(const Object & obj, const State::Persistant & pstate) {
@@ -146,6 +205,8 @@ std::optional<Object> lower_static_library(const Object & obj, const State::Pers
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
     if (f->holder.value_or("") != "" || f->name != "static_library") {
+        return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;
     }
 
@@ -165,13 +226,13 @@ std::optional<Object> lower_static_library(const Object & obj, const State::Pers
         raw_srcs.emplace_back(&f->pos_args[i]);
     }
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
-
     auto args = target_arguments(f, pstate);
+    auto slink = target_kwargs(f->kw_args);
 
     // TODO: machien parameter needs to be set from the native kwarg
-    Objects::StaticLibrary lib{name, srcs, Machines::Machine::BUILD, args};
+    Objects::StaticLibrary lib{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink};
 
-    return std::make_shared<StaticLibrary>(lib);
+    return std::make_shared<StaticLibrary>(lib, f->var);
 }
 
 } // namespace

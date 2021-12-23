@@ -110,10 +110,12 @@ bool function_argument_walker(const Object & obj, const ReplacementCallback & cb
     }
 
     if (!func->kw_args.empty()) {
-        for (auto & [_, v] : func->kw_args) {
+        for (auto & [n, v] : func->kw_args) {
             if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
-                auto & value = std::get<std::shared_ptr<Array>>(v)->value;
-                progress |= replace_elements(value, cb);
+                progress |= array_walker(v, cb);
+            } else if (std::optional<Object> o = cb(v); o.has_value()) {
+                func->kw_args[n] = std::move(o.value());
+                progress = true;
             }
         }
     }
@@ -132,9 +134,15 @@ bool function_argument_walker(Object & obj, const MutationCallback & cb) {
 
     for (auto & e : func->pos_args) {
         progress |= cb(e);
+        progress |= array_walker(e, cb);
     }
 
-    // TODO: dictionary lowering
+    if (!func->kw_args.empty()) {
+        for (auto & [_, v] : func->kw_args) {
+            progress |= cb(v);
+            progress |= array_walker(v, cb);
+        }
+    }
 
     return progress;
 }
