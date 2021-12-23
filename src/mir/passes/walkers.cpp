@@ -42,14 +42,12 @@ bool instruction_walker(BasicBlock * block, const std::vector<MutationCallback> 
             auto rt = cb(*it);
             if (rt.has_value()) {
                 it = block->instructions.erase(it);
-                block->instructions.insert(it, std::move(rt.value()));
+                it = block->instructions.insert(it, std::move(rt.value()));
                 progress |= true;
             }
         }
-    }
-    for (const auto & cb : fc) {
-        for (auto & it : block->instructions) {
-            progress |= cb(it);
+        for (const auto & cb : fc) {
+            progress |= cb(*it);
         }
     }
 
