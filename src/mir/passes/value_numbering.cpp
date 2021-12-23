@@ -40,9 +40,9 @@ bool number_uses(const uint32_t & index, const Object & obj, LastSeenTable & tab
 
     if (std::holds_alternative<std::unique_ptr<Identifier>>(obj)) {
         const auto & id = std::get<std::unique_ptr<Identifier>>(obj);
-        // assert(table.find(id->value) != table.end());
-        // progress |= id->version != table[id->value];
-        id->version = table[id->value];
+        if (const auto & v = table.find(id->value); v != table.end()) {
+            id->version = v->second;
+        }
     }
 
     if (const Variable & var = std::visit(get_var, obj); var) {
