@@ -314,7 +314,8 @@ TEST(number_uses, redefined_value) {
 TEST(number_uses, in_array) {
     auto irlist = lower(R"EOF(
         x = 10
-        y = [x]
+        y = x
+        y = [y]
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
     MIR::Passes::LastSeenTable rt{};
@@ -327,7 +328,7 @@ TEST(number_uses, in_array) {
                      [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
-    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_EQ(irlist.instructions.size(), 3);
 
     {
         const auto & num_obj = irlist.instructions.front();
@@ -347,7 +348,7 @@ TEST(number_uses, in_array) {
         ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arr->value[0]));
         const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(arr->value[0]);
 
-        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->value, "y");
         ASSERT_EQ(id->version, 1);
     }
 }
