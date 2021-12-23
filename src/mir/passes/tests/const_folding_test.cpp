@@ -71,16 +71,46 @@ TEST(constant_folding, with_phi) {
                      [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
                  });
 
-    const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
-    ASSERT_EQ(func->pos_args.size(), 1);
+    auto it = irlist.instructions.begin();
 
-    const auto & arg_obj = func->pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arg_obj));
-    const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(arg_obj);
-    ASSERT_EQ(id->value, "x");
-    ASSERT_EQ(id->version, 2);
+    const auto & num_obj = *(it);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
+    const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
+    ASSERT_EQ(num->value, 9);
+    ASSERT_EQ(num->var.version, 2);
+    ASSERT_EQ(num->var.name, "x");
+
+    // This was the Phi
+    const auto & phi_obj = *(++it);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(phi_obj));
+    const auto & phi = std::get<std::unique_ptr<MIR::Identifier>>(phi_obj);
+    ASSERT_EQ(phi->value, "x");
+    ASSERT_EQ(phi->version, 2);
+    ASSERT_EQ(phi->var.name, "x");
+    ASSERT_EQ(phi->var.version, 3);
+
+    {
+        const auto & id_obj = *(++it);
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 2);
+        ASSERT_EQ(id->var.name, "y");
+        ASSERT_EQ(id->var.version, 1);
+    }
+
+    {
+        const auto & func_obj = *(++it);
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
+        const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
+        ASSERT_EQ(func->pos_args.size(), 1);
+
+        const auto & arg_obj = func->pos_args.front();
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arg_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(arg_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 2);
+    }
 }
 
 TEST(constant_folding, three_statements) {
@@ -166,14 +196,38 @@ TEST(constant_folding, in_array) {
                      [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rpt); },
                  });
 
-    const auto & array_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(array_obj));
-    const auto & array = std::get<std::shared_ptr<MIR::Array>>(array_obj);
-    ASSERT_EQ(array->value.size(), 1);
+    auto it = irlist.instructions.begin();
+    {
+        const auto & id_obj = *it;
+        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(id_obj));
+        const auto & id = std::get<std::shared_ptr<MIR::Number>>(id_obj);
+        ASSERT_EQ(id->var.name, "x");
+        ASSERT_EQ(id->var.version, 1);
+    }
 
-    const auto & arg_obj = array->value.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arg_obj));
-    const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(arg_obj);
-    ASSERT_EQ(id->value, "x");
-    ASSERT_EQ(id->version, 1);
+    {
+        const auto & id_obj = *(++it);
+        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
+        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 1);
+    }
+}
+
+TEST(variable, less_than) {
+    {
+        const MIR::Variable v1{"name", 1};
+        const MIR::Variable v2{"name", 2};
+        ASSERT_LT(v1, v2);
+    }
+    {
+        const MIR::Variable v1{"name", 1};
+        const MIR::Variable v2{"name", 2};
+        ASSERT_FALSE(v2 < v1);
+    }
+    {
+        const MIR::Variable v1{"a", 1};
+        const MIR::Variable v2{"b", 1};
+        ASSERT_LT(v1, v2);
+    }
 }
