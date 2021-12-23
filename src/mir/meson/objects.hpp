@@ -11,6 +11,7 @@
 
 #include <filesystem>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -61,6 +62,15 @@ class File {
     const fs::path build_root;
 };
 
+enum class StaticLinkMode {
+    NORMAL,
+    WHOLE,
+};
+
+class StaticLibrary;
+
+using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary *>;
+
 /**
  * A Base build Target
  *
@@ -77,6 +87,9 @@ class BuildTarget {
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
 
+    /// Where is this Target defined
+    const std::string subdir;
+
     /**
      * Arguments for the target, sorted by langauge
      *
@@ -85,10 +98,15 @@ class BuildTarget {
      */
     const ArgMap arguments;
 
+    /// static targets to link with
+    const std::vector<StaticLinkage> link_static{};
+
   protected:
     BuildTarget(const std::string & name_, const std::vector<File> & srcs,
-                const Machines::Machine & m, const ArgMap & args)
-        : name{name_}, sources{srcs}, machine{m}, arguments{args} {};
+                const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+                const std::vector<StaticLinkage> s_link)
+        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args}, link_static{
+                                                                                     s_link} {};
 };
 
 /**
@@ -97,8 +115,11 @@ class BuildTarget {
 class Executable : public BuildTarget {
   public:
     Executable(const std::string & name_, const std::vector<File> & srcs,
-               const Machines::Machine & m, const ArgMap & args)
-        : BuildTarget{name_, srcs, m, args} {};
+               const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+               const std::vector<StaticLinkage> s_link)
+        : BuildTarget{name_, srcs, m, sdir, args, s_link} {};
+
+    std::string output() const { return name; }
 };
 
 /**
@@ -107,8 +128,11 @@ class Executable : public BuildTarget {
 class StaticLibrary : public BuildTarget {
   public:
     StaticLibrary(const std::string & name_, const std::vector<File> & srcs,
-                  const Machines::Machine & m, const ArgMap & args)
-        : BuildTarget{name_, srcs, m, args} {};
+                  const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+                  const std::vector<StaticLinkage> s_link)
+        : BuildTarget{name_, srcs, m, sdir, args, s_link} {};
+
+    std::string output() const { return name + ".a"; }
 };
 
 } // namespace MIR::Objects

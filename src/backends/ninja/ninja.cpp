@@ -193,6 +193,11 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     std::vector<Rule> rules{};
     const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
 
+    // These are the same on each iteration
+    const auto & always_args = tc.build()->compiler->always_args();
+    const auto & incs =
+        tc.build()->compiler->include_directories(e.subdir, pstate.source_root, pstate.build_root);
+
     std::vector<std::string> srcs{};
     for (const auto & f : e.sources) {
         // TODO: obj files are a per compiler thing, I think
@@ -201,8 +206,10 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         // TODO: do something better for private dirs, we really need the subdir for this
 
         auto lang_args = cpp_args;
-        auto always_args = tc.build()->compiler->always_args();
         lang_args.insert(lang_args.end(), always_args.begin(), always_args.end());
+
+        // TODO: there's a keyword argument to control this...
+        lang_args.insert(lang_args.end(), incs.begin(), incs.end());
 
         rules.emplace_back(Rule{{escape(f.relative_to_build_dir())},
                                 escape(fs::path{e.name + ".p"} / f.get_name()) + ".o",
@@ -216,6 +223,9 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     for (const auto & r : rules) {
         final_outs.emplace_back(r.output);
     }
+    for (const auto & [_, l] : e.link_static) {
+        final_outs.emplace_back(l->output());
+    }
 
     std::string name;
     RuleType type;
@@ -223,12 +233,12 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     if constexpr (std::is_base_of<MIR::Objects::StaticLibrary, T>::value) {
         type = RuleType::ARCHIVE;
         // TODO: per platform?
-        name = e.name + ".a";
+        name = e.output();
         // TODO: need to combin with link_arguments from DSL
         link_args = tc.build()->archiver->always_args();
     } else {
         type = RuleType::LINK;
-        name = e.name;
+        name = e.output();
         link_args = tc.build()->linker->always_args();
     }
 
