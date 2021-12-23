@@ -15,18 +15,27 @@ const auto get_var = [](const auto & o) { return o->var; };
 std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable & table) {
     if (std::holds_alternative<std::unique_ptr<Identifier>>(obj)) {
         auto & id = std::get<std::unique_ptr<Identifier>>(obj);
-        Variable new_var{id->value, id->version};
-        // If this is an assignment populate the table
-        if (const Variable & var = std::visit(get_var, obj)) {
-            // If we are aliasing an already aliased varaiable replace that immediately
-            if (const auto & var2 = table.find(new_var); var2 != table.end()) {
-                table[var] = var2->second;
-            } else {
-                table[var] = new_var;
+        const Variable new_var{id->value, id->version};
+
+        if (const auto & found = table.find(new_var); found != table.end()) {
+            /* If the id is already in the table we want to map the alias
+             * directly such as:
+             *
+             *     x₁ = 7
+             *     y₁ = x₁
+             *     z₁ = y₁
+             *
+             * In this caswe we konw that z₁ == x₁, and we want to just go ahead
+             * and optimize that.
+             */
+
+            if (id->var) {
+                table[id->var] = Variable{found->second.name, found->second.version};
             }
-        } else if (const auto & found = table.find(new_var); found != table.end()) {
             return std::make_unique<Identifier>(found->second.name, found->second.version,
                                                 Variable{id->var});
+        } else if (id->var) {
+            table[id->var] = new_var;
         }
     }
     return std::nullopt;
@@ -38,13 +47,14 @@ bool constant_folding(BasicBlock * block, ReplacementTable & table) {
     bool progress = false;
 
     const auto fold = [&](const Object & o) { return constant_folding_impl(o, table); };
-    progress |=
-        instruction_walker(block,
-                           {
-                               [&](const Object & o) { return array_walker(o, fold); },
-                               [&](const Object & o) { return function_argument_walker(o, fold); },
-                           },
-                           {fold});
+    progress |= instruction_walker(block, {
+                                              fold,
+                                          });
+    progress |= instruction_walker(
+        block, {
+                   [&](const Object & o) { return array_walker(o, fold); },
+                   [&](const Object & o) { return function_argument_walker(o, fold); },
+               });
 
     return progress;
 }
