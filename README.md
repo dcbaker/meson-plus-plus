@@ -8,8 +8,8 @@ either, maybe just enough for bootstrapping purposes, maybe a lot. Who knows.
 
 ## What is the status of Meson++? Can I use it for my project?
 
-Currently, Meson++ is capable of compiling **very** simple C++ binaries with no
-linkage.
+Currently, Meson++ is capable of compiling **very** simple C++ executables 
+and static archives, with limited linkage.
 
 ## FAQ
 
