@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -15,6 +16,8 @@
 #include "machines.hpp"
 
 namespace MIR::Toolchain::Compiler {
+
+namespace fs = std::filesystem;
 
 /**
  * Abstract base for all Compilers.
@@ -55,12 +58,23 @@ class Compiler {
      */
     virtual std::string specialize_argument(const Arguments::Argument & arg) const = 0;
 
+    /**
+     * Create include arguments for a build and source directory
+     *
+     * @param dir The directory to be included
+     * @param sdir the source directory root
+     * @param bdir the build directory root
+     */
+    virtual std::vector<std::string> include_directories(const std::string & dir,
+                                                         const fs::path & sdir,
+                                                         const fs::path & bdir) const = 0;
+
     /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;
 
   protected:
     Compiler(const std::vector<std::string> & c) : command{c} {};
-};
+}; // namespace std::filesystemclassCompiler
 
 std::unique_ptr<Compiler> detect_compiler(const Language &, const Machines::Machine &,
                                           const std::vector<std::string> & bins = {});
