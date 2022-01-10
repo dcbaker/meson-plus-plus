@@ -17,6 +17,7 @@
 
 #include "arguments.hpp"
 #include "machines.hpp"
+#include "state/state.hpp"
 #include "toolchains/toolchain.hpp"
 
 namespace fs = std::filesystem;
@@ -60,6 +61,20 @@ class File {
     const bool built;
     const fs::path source_root;
     const fs::path build_root;
+};
+
+class IncludeDirectories {
+  public:
+    IncludeDirectories();
+    IncludeDirectories(const std::vector<std::string> &, const bool &);
+
+    /// Create a list of string arguments from this
+    std::vector<std::string> as_strings(const Toolchain::Compiler::Compiler &,
+                                        const State::Persistant &) const;
+
+  private:
+    const std::vector<std::string> directories;
+    const bool is_system;
 };
 
 enum class StaticLinkMode {
@@ -129,8 +144,9 @@ class StaticLibrary : public BuildTarget {
   public:
     StaticLibrary(const std::string & name_, const std::vector<File> & srcs,
                   const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-                  const std::vector<StaticLinkage> s_link)
-        : BuildTarget{name_, srcs, m, sdir, args, s_link} {};
+                  const std::vector<StaticLinkage> s_link,
+                  const std::vector<IncludeDirectories> & inc)
+        : BuildTarget{name_, srcs, m, sdir, args, s_link, inc} {};
 
     std::string output() const { return name + ".a"; }
 };
