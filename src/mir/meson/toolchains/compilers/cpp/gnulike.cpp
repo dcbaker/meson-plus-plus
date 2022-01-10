@@ -52,4 +52,17 @@ std::vector<std::string> GnuLike::always_args() const {
     return args;
 }
 
+std::vector<std::string> GnuLike::include_directories(const std::string & dir,
+                                                      const fs::path & sdir,
+                                                      const fs::path & bdir) const {
+    std::vector<std::string> args{};
+
+    args.emplace_back("-I");
+    args.emplace_back("'" + std::string{sdir / dir} + "'");
+    args.emplace_back("-I");
+    args.emplace_back("'" + std::string{bdir / dir} + "'");
+
+    return args;
+};
+
 } // namespace MIR::Toolchain::Compiler::CPP
