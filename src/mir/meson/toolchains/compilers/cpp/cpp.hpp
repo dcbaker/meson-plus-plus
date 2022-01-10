@@ -24,7 +24,8 @@ class GnuLike : public Compiler {
     std::string specialize_argument(const Arguments::Argument & arg) const final;
     std::vector<std::string> always_args() const final;
     std::vector<std::string> include_directories(const std::string & dir, const fs::path & sdir,
-                                                 const fs::path & bdir) const final;
+                                                 const fs::path & bdir,
+                                                 bool is_system = false) const final;
 
   protected:
     GnuLike(const std::vector<std::string> & c) : Compiler{c} {};

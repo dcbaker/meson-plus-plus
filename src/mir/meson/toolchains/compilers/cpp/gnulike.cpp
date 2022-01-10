@@ -53,13 +53,15 @@ std::vector<std::string> GnuLike::always_args() const {
 }
 
 std::vector<std::string> GnuLike::include_directories(const std::string & dir,
-                                                      const fs::path & sdir,
-                                                      const fs::path & bdir) const {
+                                                      const fs::path & sdir, const fs::path & bdir,
+                                                      bool is_system) const {
     std::vector<std::string> args{};
 
-    args.emplace_back("-I");
+    const std::string inc_arg = is_system ? "-isystem" : "-I";
+
+    args.emplace_back(inc_arg);
     args.emplace_back("'" + std::string{sdir / dir} + "'");
-    args.emplace_back("-I");
+    args.emplace_back(inc_arg);
     args.emplace_back("'" + std::string{bdir / dir} + "'");
 
     return args;

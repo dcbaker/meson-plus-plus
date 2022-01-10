@@ -67,7 +67,8 @@ class Compiler {
      */
     virtual std::vector<std::string> include_directories(const std::string & dir,
                                                          const fs::path & sdir,
-                                                         const fs::path & bdir) const = 0;
+                                                         const fs::path & bdir,
+                                                         bool is_system = false) const = 0;
 
     /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;
