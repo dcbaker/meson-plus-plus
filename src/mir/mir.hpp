@@ -95,6 +95,16 @@ class Phi {
     Variable var;
 };
 
+class IncludeDirectories {
+  public:
+    IncludeDirectories() : value{}, var{} {};
+    IncludeDirectories(const Objects::IncludeDirectories & inc) : value{inc}, var{} {};
+
+    const Objects::IncludeDirectories value;
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -114,7 +124,8 @@ using Object =
     std::variant<std::shared_ptr<FunctionCall>, std::shared_ptr<String>, std::shared_ptr<Boolean>,
                  std::shared_ptr<Number>, std::unique_ptr<Identifier>, std::shared_ptr<Array>,
                  std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
-                 std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>>;
+                 std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
+                 std::shared_ptr<IncludeDirectories>>;
 
 /**
  * Holds a toolchain
