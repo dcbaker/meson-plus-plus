@@ -191,9 +191,15 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
     auto args = target_arguments(f, pstate);
     auto slink = target_kwargs(f->kw_args);
+    auto raw_inc = extract_array_keyword_argument<std::shared_ptr<IncludeDirectories>>(
+        f->kw_args, "include_directories", true);
+    std::vector<Objects::IncludeDirectories> inc{};
+    for (const auto & i : raw_inc) {
+        inc.emplace_back(i->value);
+    }
 
     // TODO: machien parameter needs to be set from the native kwarg
-    Objects::Executable exe{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink};
+    Objects::Executable exe{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink, inc};
 
     return std::make_shared<Executable>(exe, f->var);
 }
@@ -228,9 +234,16 @@ std::optional<Object> lower_static_library(const Object & obj, const State::Pers
     auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
     auto args = target_arguments(f, pstate);
     auto slink = target_kwargs(f->kw_args);
+    auto raw_inc = extract_array_keyword_argument<std::shared_ptr<IncludeDirectories>>(
+        f->kw_args, "include_directories", true);
+    std::vector<Objects::IncludeDirectories> inc{};
+    for (const auto & i : raw_inc) {
+        inc.emplace_back(i->value);
+    }
 
     // TODO: machien parameter needs to be set from the native kwarg
-    Objects::StaticLibrary lib{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink};
+    Objects::StaticLibrary lib{name,  srcs, Machines::Machine::BUILD, f->source_dir, args,
+                               slink, inc};
 
     return std::make_shared<StaticLibrary>(lib, f->var);
 }
