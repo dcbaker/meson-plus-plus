@@ -70,7 +70,7 @@ std::vector<Objects::File> srclist_to_filelist(const std::vector<Object *> & src
     return filelist;
 }
 
-std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
+inline std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
 target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistant & pstate) {
     std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
 
@@ -83,7 +83,7 @@ target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistan
     return args;
 }
 
-std::vector<Objects::StaticLinkage>
+inline std::vector<Objects::StaticLinkage>
 target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
     std::vector<Objects::StaticLinkage> s_link{};
     auto raw_args =
