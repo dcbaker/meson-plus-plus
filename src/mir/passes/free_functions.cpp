@@ -235,6 +235,37 @@ std::optional<Object> lower_static_library(const Object & obj, const State::Pers
     return std::make_shared<StaticLibrary>(lib, f->var);
 }
 
+std::optional<Object> lower_include_dirs(const Object & obj, const State::Persistant & pstate) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f->holder.value_or("") != "" || f->name != "include_directories") {
+        return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
+    }
+
+    for (const auto & a : f->pos_args) {
+        if (!std::holds_alternative<std::shared_ptr<String>>(a)) {
+            throw Util::Exceptions::InvalidArguments{
+                "include_directories: all positional arguments must be strings"};
+        }
+    }
+    // TODO: I need a better way to get keyword arguments...
+
+    std::vector<std::string> dirs{};
+    for (const auto & a : f->pos_args) {
+        dirs.emplace_back(std::get<std::shared_ptr<String>>(a)->value);
+    }
+
+    // TODO: is_system
+    Objects::IncludeDirectories incs{dirs, false};
+
+    return std::make_shared<IncludeDirectories>(incs);
+}
+
 } // namespace
 
 void lower_project(BasicBlock * block, State::Persistant & pstate) {
@@ -304,6 +335,7 @@ bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) 
     // clang-format off
     return false
         || function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); })
+        || function_walker(block, [&](const Object & obj) { return lower_include_dirs(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_static_library(obj, pstate); })
         ;
