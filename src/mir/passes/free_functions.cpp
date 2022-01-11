@@ -253,15 +253,16 @@ std::optional<Object> lower_include_dirs(const Object & obj, const State::Persis
                 "include_directories: all positional arguments must be strings"};
         }
     }
-    // TODO: I need a better way to get keyword arguments...
 
     std::vector<std::string> dirs{};
     for (const auto & a : f->pos_args) {
         dirs.emplace_back(std::get<std::shared_ptr<String>>(a)->value);
     }
 
-    // TODO: is_system
-    Objects::IncludeDirectories incs{dirs, false};
+    auto is_system = extract_keyword_argument<std::shared_ptr<Boolean>>(f->kw_args, "is_system")
+                         .value_or(std::make_shared<Boolean>(false));
+
+    Objects::IncludeDirectories incs{dirs, is_system->value};
 
     return std::make_shared<IncludeDirectories>(incs);
 }
