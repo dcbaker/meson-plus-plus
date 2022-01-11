@@ -195,8 +195,17 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
 
     // These are the same on each iteration
     const auto & always_args = tc.build()->compiler->always_args();
-    const auto & incs =
-        tc.build()->compiler->include_directories(e.subdir, pstate.source_root, pstate.build_root);
+    std::vector<std::string> incs{};
+    for (const auto & i : tc.build()->compiler->include_directories(e.subdir, pstate.source_root,
+                                                                    pstate.build_root)) {
+        incs.emplace_back(escape(i));
+    }
+    for (const auto & i : e.include_directories) {
+        const auto & ias = i.as_strings(*tc.build()->compiler, pstate);
+        for (const auto & a : ias) {
+            incs.emplace_back(escape(a));
+        }
+    }
 
     std::vector<std::string> srcs{};
     for (const auto & f : e.sources) {
