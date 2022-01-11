@@ -116,12 +116,16 @@ class BuildTarget {
     /// static targets to link with
     const std::vector<StaticLinkage> link_static{};
 
+    /// Include Directory objects
+    const std::vector<IncludeDirectories> include_directories{};
+
   protected:
     BuildTarget(const std::string & name_, const std::vector<File> & srcs,
                 const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-                const std::vector<StaticLinkage> s_link)
-        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args}, link_static{
-                                                                                     s_link} {};
+                const std::vector<StaticLinkage> s_link,
+                const std::vector<IncludeDirectories> & inc)
+        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
+          link_static{s_link}, include_directories{inc} {};
 };
 
 /**
@@ -131,8 +135,8 @@ class Executable : public BuildTarget {
   public:
     Executable(const std::string & name_, const std::vector<File> & srcs,
                const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-               const std::vector<StaticLinkage> s_link)
-        : BuildTarget{name_, srcs, m, sdir, args, s_link} {};
+               const std::vector<StaticLinkage> s_link, const std::vector<IncludeDirectories> & inc)
+        : BuildTarget{name_, srcs, m, sdir, args, s_link, inc} {};
 
     std::string output() const { return name; }
 };
