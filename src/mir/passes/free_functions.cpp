@@ -291,6 +291,7 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
         throw Util::Exceptions::InvalidArguments{"project first argument must be a string"};
     }
     pstate.name = std::get<std::shared_ptr<String>>(f->pos_args[0])->value;
+    // TODO: I don't want this in here, I'd rather have this all done in the backend, I think
     std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
     // The rest of the poisitional arguments are languages
