@@ -160,13 +160,24 @@ bool all_args_reduced(const std::vector<Object> & pos_args,
     return true;
 }
 
-std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
+template <typename T>
+std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
+                                                     const State::Persistant & pstate) {
     if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
         return std::nullopt;
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" || f->name != "executable") {
+    std::string f_name;
+    if constexpr (std::is_same<T, Executable>::value) {
+        f_name = "executable";
+    } else if constexpr (std::is_same<T, StaticLibrary>::value) {
+        f_name = "static_library";
+    } else {
+        assert(false);
+    }
+
+    if (f->holder.value_or("") != "" || f->name != f_name) {
         return std::nullopt;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;
@@ -174,12 +185,12 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
 
     // This doesn't handle the listified version corretly
     if (f->pos_args.size() < 2) {
-        throw Util::Exceptions::InvalidArguments{"executable requires at least 2 arguments"};
+        throw Util::Exceptions::InvalidArguments{f->name + " requires at least 2 arguments"};
     }
 
     if (!std::holds_alternative<std::shared_ptr<String>>(f->pos_args[0])) {
         // TODO: it could also be an identifier pointing to a string
-        throw Util::Exceptions::InvalidArguments{"executable first argument must be a string"};
+        throw Util::Exceptions::InvalidArguments{f->name + " first argument must be a string"};
     }
     const auto & name = std::get<std::shared_ptr<String>>(f->pos_args[0])->value;
 
@@ -199,53 +210,25 @@ std::optional<Object> lower_executable(const Object & obj, const State::Persista
     }
 
     // TODO: machien parameter needs to be set from the native kwarg
-    Objects::Executable exe{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink, inc};
+    if constexpr (std::is_same<T, Executable>::value) {
+        Objects::Executable held{name,  srcs, Machines::Machine::BUILD, f->source_dir, args,
+                                 slink, inc};
+        return std::make_shared<T>(held, f->var);
+    } else if constexpr (std::is_same<T, StaticLibrary>::value) {
+        Objects::StaticLibrary held{name,  srcs, Machines::Machine::BUILD, f->source_dir, args,
+                                    slink, inc};
+        return std::make_shared<T>(held, f->var);
+    } else {
+        assert(false);
+    }
+}
 
-    return std::make_shared<Executable>(exe, f->var);
+std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
+    return lower_build_target<Executable>(obj, pstate);
 }
 
 std::optional<Object> lower_static_library(const Object & obj, const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.value_or("") != "" || f->name != "static_library") {
-        return std::nullopt;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
-        return std::nullopt;
-    }
-
-    // This doesn't handle the listified version corretly
-    if (f->pos_args.size() < 2) {
-        throw Util::Exceptions::InvalidArguments{"static_library requires at least 2 arguments"};
-    }
-    if (!std::holds_alternative<std::shared_ptr<String>>(f->pos_args[0])) {
-        // TODO: it could also be an identifier pointing to a string
-        throw Util::Exceptions::InvalidArguments{"static_library first argument must be a string"};
-    }
-    const auto & name = std::get<std::shared_ptr<String>>(f->pos_args[0])->value;
-
-    // skip the first argument
-    std::vector<Object *> raw_srcs{};
-    for (unsigned i = 1; i < f->pos_args.size(); ++i) {
-        raw_srcs.emplace_back(&f->pos_args[i]);
-    }
-    auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
-    auto args = target_arguments(f, pstate);
-    auto slink = target_kwargs(f->kw_args);
-    auto raw_inc = extract_array_keyword_argument<std::shared_ptr<IncludeDirectories>>(
-        f->kw_args, "include_directories", true);
-    std::vector<Objects::IncludeDirectories> inc{};
-    for (const auto & i : raw_inc) {
-        inc.emplace_back(i->value);
-    }
-
-    // TODO: machien parameter needs to be set from the native kwarg
-    Objects::StaticLibrary lib{name,  srcs, Machines::Machine::BUILD, f->source_dir, args,
-                               slink, inc};
-
-    return std::make_shared<StaticLibrary>(lib, f->var);
+    return lower_build_target<StaticLibrary>(obj, pstate);
 }
 
 std::optional<Object> lower_include_dirs(const Object & obj, const State::Persistant & pstate) {
