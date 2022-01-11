@@ -58,4 +58,48 @@ bool function_argument_walker(Object &, const MutationCallback &);
  */
 bool block_walker(BasicBlock *, const std::vector<BlockWalkerCb> &);
 
+template <typename T> std::optional<T> extract_positional_argument(const Object & arg) {
+    if (std::holds_alternative<T>(arg)) {
+        return std::get<T>(arg);
+    }
+    return std::nullopt;
+}
+
+template <typename T>
+std::optional<T> extract_keyword_argument(const std::unordered_map<std::string, Object> & kwargs,
+                                          const std::string & name, const bool & as_list = false) {
+    auto found = kwargs.find(name);
+    if (found == kwargs.end()) {
+        return std::nullopt;
+    } else if (!std::holds_alternative<T>(found->second)) {
+        // XXX: this is just going to ignore invalid arguments…
+        return std::nullopt;
+    }
+    return std::get<T>(found->second);
+}
+
+template <typename T>
+std::vector<T>
+extract_array_keyword_argument(const std::unordered_map<std::string, Object> & kwargs,
+                               const std::string & name, const bool & as_list = false) {
+    auto found = kwargs.find(name);
+    if (found == kwargs.end()) {
+        return {};
+    } else if (std::holds_alternative<T>(found->second)) {
+        return {std::vector<T>{std::get<T>(found->second)}};
+    } else if (std::holds_alternative<std::shared_ptr<Array>>(found->second)) {
+        std::vector<T> ret{};
+        for (const auto & a : std::get<std::shared_ptr<Array>>(found->second)->value) {
+            auto arg = extract_positional_argument<T>(a);
+            // XXX: also ignores invalid arguments
+            if (arg) {
+                ret.emplace_back(arg.value());
+            }
+        }
+        return ret;
+    }
+    // XXX: This ignores invalid arguments
+    return {};
+}
+
 } // namespace MIR::Passes
