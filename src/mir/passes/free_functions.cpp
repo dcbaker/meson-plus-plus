@@ -74,31 +74,10 @@ std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
 target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistant & pstate) {
     std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
 
-    // TODO: handle more than just cpp, likely using a loop
-    if (f->kw_args.find("cpp_args") != f->kw_args.end()) {
-        const auto & args_obj = f->kw_args["cpp_args"];
-        const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
-        if (std::holds_alternative<std::shared_ptr<String>>(args_obj)) {
-            const auto & v = std::get<std::shared_ptr<String>>(args_obj)->value;
-            args[Toolchain::Language::CPP] =
-                std::vector<Arguments::Argument>{comp->generalize_argument(v)};
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(args_obj)) {
-            std::vector<Arguments::Argument> cpp_args{};
-            const auto & raw_args = std::get<std::shared_ptr<Array>>(args_obj)->value;
-            for (const auto & ra : raw_args) {
-                if (!std::holds_alternative<std::shared_ptr<String>>(ra)) {
-                    throw Util::Exceptions::MesonException{"\"cpp_args\" must be strings"};
-                }
-                // TODO need to lower this
-                const auto & a = std::get<std::shared_ptr<String>>(ra)->value;
-                cpp_args.emplace_back(comp->generalize_argument(a));
-            }
-
-            args[Toolchain::Language::CPP] = std::move(cpp_args);
-        } else {
-            throw Util::Exceptions::InvalidArguments{
-                "executable cpp_args must be an array of strings"};
-        }
+    const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
+    auto raw_args = extract_array_keyword_argument<std::shared_ptr<String>>(f->kw_args, "cpp_args");
+    for (const auto & ra : raw_args) {
+        args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra->value));
     }
 
     return args;
@@ -107,27 +86,10 @@ target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistan
 std::vector<Objects::StaticLinkage>
 target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
     std::vector<Objects::StaticLinkage> s_link{};
-    if (const auto & raw_slink = kwargs.find("link_with"); raw_slink != kwargs.end()) {
-        if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(raw_slink->second)) {
-            s_link.emplace_back(Objects::StaticLinkage{
-                Objects::StaticLinkMode::NORMAL,
-                &std::get<std::shared_ptr<StaticLibrary>>(raw_slink->second)->value});
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(raw_slink->second)) {
-            const auto & list = std::get<std::shared_ptr<Array>>(raw_slink->second)->value;
-            for (const auto & a : list) {
-                if (std::get<std::shared_ptr<StaticLibrary>>(a)) {
-                    s_link.emplace_back(Objects::StaticLinkage{
-                        Objects::StaticLinkMode::NORMAL,
-                        &std::get<std::shared_ptr<StaticLibrary>>(a)->value});
-                } else {
-                    // TODO: real error here
-                    throw std::exception{};
-                }
-            }
-        } else {
-            // TODO: real error here
-            throw std::exception{};
-        }
+    auto raw_args =
+        extract_array_keyword_argument<std::shared_ptr<StaticLibrary>>(kwargs, "link_with");
+    for (const auto & s : raw_args) {
+        s_link.emplace_back(Objects::StaticLinkage{Objects::StaticLinkMode::NORMAL, &s->value});
     }
 
     return s_link;
