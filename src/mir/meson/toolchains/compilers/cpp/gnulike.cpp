@@ -5,6 +5,8 @@
 
 namespace MIR::Toolchain::Compiler::CPP {
 
+namespace fs = std::filesystem;
+
 RSPFileSupport GnuLike::rsp_support() const { return RSPFileSupport::GCC; };
 std::vector<std::string> GnuLike::output_command(const std::string & output) const {
     return {"-o", output};
@@ -60,9 +62,10 @@ std::vector<std::string> GnuLike::include_directories(const std::string & dir,
     const std::string inc_arg = is_system ? "-isystem" : "-I";
 
     args.emplace_back(inc_arg);
-    args.emplace_back("'" + std::string{sdir / dir} + "'");
+    // Needs to be relative to build dir
+    args.emplace_back("'" + std::string{fs::relative(sdir / dir, bdir)} + "'");
     args.emplace_back(inc_arg);
-    args.emplace_back("'" + std::string{bdir / dir} + "'");
+    args.emplace_back("'" + dir + "'");
 
     return args;
 };
