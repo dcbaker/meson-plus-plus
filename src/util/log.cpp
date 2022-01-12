@@ -17,6 +17,8 @@ std::string green(const std::string & s) { return "\033[32m" + s + RESET; };
 
 std::string red(const std::string & s) { return "\033[31m" + s + RESET; };
 
+std::string yellow(const std::string & s) { return "\033[33m" + s + RESET; };
+
 std::string bold(const std::string & s) { return "\033[1m" + s + RESET; };
 
 } // namespace Util::Log
