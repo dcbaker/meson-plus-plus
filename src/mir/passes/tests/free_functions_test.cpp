@@ -95,3 +95,35 @@ TEST(project, valid) {
     MIR::Passes::lower_project(&irlist, pstate);
     ASSERT_EQ(pstate.name, "foo");
 }
+
+TEST(messages, simple) {
+    auto irlist = lower("message('foo')");
+    MIR::State::Persistant pstate{src_root, build_root};
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(r));
+
+    const auto & m = std::get<std::unique_ptr<MIR::Message>>(r);
+    ASSERT_EQ(m->level, MIR::MessageLevel::MESSAGE);
+    ASSERT_EQ(m->message, "foo");
+}
+
+TEST(messages, two_args) {
+    auto irlist = lower("warning('foo', 'bar')");
+    MIR::State::Persistant pstate{src_root, build_root};
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(r));
+
+    const auto & m = std::get<std::unique_ptr<MIR::Message>>(r);
+    ASSERT_EQ(m->level, MIR::MessageLevel::WARN);
+    ASSERT_EQ(m->message, "foo bar");
+}
