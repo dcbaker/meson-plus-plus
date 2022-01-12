@@ -48,9 +48,7 @@ class Persistant {
      * These are stored int [str: path] format, an actual representation has to
      * be built when getting a value from the cache.
      */
-    Machines::PerMachine<
-        std::unordered_map<std::string, std::tuple<fs::path, std::vector<std::string>>>>
-        programs;
+    Machines::PerMachine<std::unordered_map<std::string, fs::path>> programs;
 };
 
 } // namespace MIR::State
