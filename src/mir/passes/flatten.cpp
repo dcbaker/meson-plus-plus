@@ -32,7 +32,7 @@ std::optional<Object> flatten_cb(const Object & obj) {
     std::vector<Object> newarr{};
     do_flatten(arr, newarr);
 
-    return std::make_unique<Array>(std::move(newarr));
+    return std::make_shared<Array>(std::move(newarr));
 }
 
 } // namespace
