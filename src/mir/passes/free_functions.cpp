@@ -225,6 +225,44 @@ std::optional<Object> lower_include_dirs(const Object & obj, const State::Persis
     return std::make_shared<IncludeDirectories>(incs);
 }
 
+std::optional<Object> lower_messages(const Object & obj) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f->holder.value_or("") != "" ||
+        (f->name != "message" && f->name != "warning" && f->name != "error")) {
+        return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
+    }
+
+    MessageLevel level;
+    if (f->name == "message") {
+        level = MessageLevel::MESSAGE;
+    } else if (f->name == "warning") {
+        level = MessageLevel::WARN;
+    } else if (f->name == "error") {
+        level = MessageLevel::ERROR;
+    }
+
+    // TODO: Meson accepts anything as a message bascially, without flattening.
+    // Currently, Meson++ flattens everything so I'm only going to allow strings for the moment.
+    auto args =
+        extract_variadic_arguments<std::shared_ptr<String>>(f->pos_args.begin(), f->pos_args.end());
+
+    std::string message{};
+    for (const auto & a : args) {
+        if (!message.empty()) {
+            message.append(" ");
+        }
+        message.append(a->value);
+    }
+
+    return std::make_unique<Message>(level, message);
+}
+
 } // namespace
 
 void lower_project(BasicBlock * block, State::Persistant & pstate) {
@@ -294,6 +332,7 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
 bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) {
     // clang-format off
     return false
+        || function_walker(block, lower_messages)
         || function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_include_dirs(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); })
