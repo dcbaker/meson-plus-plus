@@ -104,4 +104,16 @@ using PropTable = std::map<Variable, Object *>;
  */
 bool constant_propogation(BasicBlock *, PropTable &);
 
+/**
+ * Do work that can be more optimally handled in threads.
+ *
+ * Examples of this are:
+ *  - dependencies
+ *  - find_programs
+ *  - compiler checks
+ *
+ * These can be done in parallel, using the cache
+ */
+bool threaded_lowering(BasicBlock *, State::Persistant & pstate);
+
 } // namespace MIR::Passes

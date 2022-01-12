@@ -18,12 +18,13 @@ libmir = static_library(
     'passes/join_blocks.cpp',
     'passes/machines.cpp',
     'passes/pruning.cpp',
+    'passes/threaded.cpp',
     'passes/value_numbering.cpp',
     'passes/walkers.cpp',
     locations_hpp,
   ],
   include_directories : inc_frontend,
-  dependencies : [idep_util, idep_meson],
+  dependencies : [idep_util, idep_meson, dependency('threads')],
 )
 
 inc_mir = include_directories('.')
