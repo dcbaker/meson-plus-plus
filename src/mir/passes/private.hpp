@@ -62,7 +62,22 @@ template <typename T> std::optional<T> extract_positional_argument(const Object 
     if (std::holds_alternative<T>(arg)) {
         return std::get<T>(arg);
     }
+    // TODO: this ignores invalid arguments
     return std::nullopt;
+}
+
+template <typename T>
+std::vector<T> extract_variadic_arguments(std::vector<Object>::iterator start,
+                                          std::vector<Object>::iterator end) {
+    std::vector<T> nobjs{};
+    for (; start != end; start++) {
+        // TODO: this is going to ignore invalid arghuments
+        std::optional<T> arg = extract_positional_argument<T>(*start);
+        if (arg) {
+            nobjs.emplace_back(arg.value());
+        }
+    }
+    return nobjs;
 }
 
 template <typename T>
