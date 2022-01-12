@@ -125,6 +125,22 @@ class Message {
     Variable var;
 };
 
+class Program {
+  public:
+    Program(const std::string & n, const Machines::Machine & m, const fs::path & p)
+        : name{n}, for_machine{m}, path{p} {};
+    Program(const std::string & n, const Machines::Machine & m, const fs::path & p, const Variable & v)
+        : name{n}, for_machine{m}, path{p}, var{v} {};
+
+    const std::string name;
+    const Machines::Machine for_machine;
+    const fs::path path;
+
+    bool found() const { return path != ""; }
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -145,7 +161,8 @@ using Object =
                  std::shared_ptr<Number>, std::unique_ptr<Identifier>, std::shared_ptr<Array>,
                  std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
                  std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
-                 std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>>;
+                 std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>,
+                 std::shared_ptr<Program>>;
 
 /**
  * Holds a toolchain
