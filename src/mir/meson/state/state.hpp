@@ -9,6 +9,8 @@
 #include "machines.hpp"
 #include "toolchains/toolchain.hpp"
 
+namespace fs = std::filesystem;
+
 namespace MIR::State {
 
 /**
@@ -39,6 +41,16 @@ class Persistant {
 
     /// The name of the project
     std::string name;
+
+    /**
+     * Programs found by the `find_program` function. These are cached across re-runs
+     *
+     * These are stored int [str: path] format, an actual representation has to
+     * be built when getting a value from the cache.
+     */
+    Machines::PerMachine<
+        std::unordered_map<std::string, std::tuple<fs::path, std::vector<std::string>>>>
+        programs;
 };
 
 } // namespace MIR::State
