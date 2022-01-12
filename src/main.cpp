@@ -20,6 +20,35 @@
 
 namespace fs = std::filesystem;
 
+namespace {
+
+void emit_messages(MIR::BasicBlock & block) {
+    static std::vector<MIR::MessageLevel> levels{MIR::MessageLevel::MESSAGE,
+                                                 MIR::MessageLevel::WARN, MIR::MessageLevel::ERROR};
+
+    for (const auto & level : levels) {
+        if (level == MIR::MessageLevel::MESSAGE) {
+            std::cout << Util::Log::bold("User Messages:") << std::endl;
+        } else if (level == MIR::MessageLevel::WARN) {
+            std::cout << Util::Log::yellow("Warnings:") << std::endl;
+        } else if (level == MIR::MessageLevel::ERROR) {
+            std::cout << Util::Log::red("Errors:") << std::endl;
+        } else if (level == MIR::MessageLevel::DEBUG) {
+            std::cout << Util::Log::bold("Debug information:") << std::endl;
+        }
+        for (const auto & i : block.instructions) {
+            if (std::holds_alternative<std::unique_ptr<MIR::Message>>(i)) {
+                const auto & m = std::get<std::unique_ptr<MIR::Message>>(i);
+                if (m->level == level) {
+                    std::cout << Util::Log::bold(" *  ") << m->message << std::endl;
+                }
+            }
+        }
+    }
+}
+
+} // namespace
+
 static int configure(const Options::ConfigureOptions & opts) {
     std::cout << Util::Log::bold("The Meson++ build system") << std::endl
               << "Version: " << version::VERSION << std::endl
@@ -36,6 +65,8 @@ static int configure(const Options::ConfigureOptions & opts) {
     auto irlist = MIR::lower_ast(block, pstate);
     MIR::Passes::lower_project(&irlist, pstate);
     MIR::lower(&irlist, pstate);
+
+    emit_messages(irlist);
 
     Backends::Ninja::generate(&irlist, pstate);
 
