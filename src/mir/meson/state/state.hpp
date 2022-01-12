@@ -18,9 +18,7 @@ namespace MIR::State {
  */
 class Persistant {
   public:
-    Persistant(const std::filesystem::path & sr_, const std::filesystem::path & br_)
-        : toolchains{}, machines{Machines::detect_build()}, source_root{sr_}, build_root{br_} {};
-    ~Persistant(){};
+    Persistant(const std::filesystem::path &, const std::filesystem::path &);
 
     // This must be mutable because of `add_language`
     /// A mapping of language : machine : toolchain
