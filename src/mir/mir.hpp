@@ -105,6 +105,26 @@ class IncludeDirectories {
     Variable var;
 };
 
+enum class MessageLevel {
+    DEBUG,
+    MESSAGE,
+    WARN,
+    ERROR,
+};
+
+class Message {
+  public:
+    Message(const MessageLevel & l, const std::string & m) : level{l}, message{m} {};
+
+    /// What level or kind of message this is
+    const MessageLevel level;
+
+    /// The message itself
+    const std::string message;
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -125,7 +145,7 @@ using Object =
                  std::shared_ptr<Number>, std::unique_ptr<Identifier>, std::shared_ptr<Array>,
                  std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
                  std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
-                 std::shared_ptr<IncludeDirectories>>;
+                 std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>>;
 
 /**
  * Holds a toolchain
