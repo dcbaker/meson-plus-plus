@@ -38,6 +38,7 @@ bool instruction_walker(BasicBlock *, const std::vector<ReplacementCallback> &);
  * It is the job of each function callback to only act on functions it means to.
  */
 bool function_walker(BasicBlock *, const ReplacementCallback &);
+bool function_walker(BasicBlock *, const MutationCallback &);
 
 /**
  * Walk each instruction in an array, recursively, calling the callbck on them.

@@ -171,6 +171,18 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
     return progress;
 };
 
+bool function_walker(BasicBlock * block, const MutationCallback & cb) {
+    bool progress = instruction_walker(block, {cb}, {});
+
+    // Check if we have a condition, and try to lower that as well.
+    if (std::holds_alternative<std::unique_ptr<Condition>>(block->next)) {
+        auto & con = std::get<std::unique_ptr<Condition>>(block->next);
+        progress |= cb(con->condition);
+    }
+
+    return progress;
+};
+
 bool block_walker(BasicBlock * root, const std::vector<BlockWalkerCb> & callbacks) {
     std::deque<BasicBlock *> todo{};
     BasicBlock * current = root;
