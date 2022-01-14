@@ -43,6 +43,14 @@ bool number_uses(const uint32_t & index, const Object & obj, LastSeenTable & tab
         if (const auto & v = table.find(id->value); v != table.end()) {
             id->version = v->second;
         }
+    } else if (std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        const auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
+        if (func->holder) {
+            const auto & id = std::get<std::unique_ptr<Identifier>>(func->holder.value());
+            if (const auto & v = table.find(id->value); v != table.end()) {
+                id->version = v->second;
+            }
+        }
     }
 
     if (const Variable & var = std::visit(get_var, obj); var) {
