@@ -236,6 +236,38 @@ std::optional<Object> lower_messages(const Object & obj) {
     return std::make_unique<Message>(level, message);
 }
 
+std::optional<Object> lower_assert(const Object & obj) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f->holder.value_or("") != "" || f->name != "assert") {
+        return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
+    }
+
+    if (f->pos_args.size() < 1 || f->pos_args.size() > 2) {
+        throw Util::Exceptions::InvalidArguments("assert: takes 1 or 2 arguments, got " +
+                                                 f->pos_args.size());
+    }
+
+    const auto & value = extract_positional_argument<std::shared_ptr<Boolean>>(f->pos_args[0]);
+
+    if (value.value()) {
+        // TODO: maye have an assert level of message?
+        // TODO, how to get the original values of this?
+        const auto & message = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[1]);
+        return std::make_unique<Message>(MessageLevel::ERROR,
+                                         "Assertion failed: " +
+                                             message.value_or(std::make_shared<String>(""))->value);
+    }
+
+    // TODO: it would be better to
+    return std::make_unique<Empty>();
+}
+
 bool holds_reduced(const Object & obj);
 
 bool holds_reduced_array(const Object & obj) {
@@ -360,6 +392,7 @@ bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) 
     // clang-format off
     return false
         || function_walker(block, lower_messages)
+        || function_walker(block, lower_assert)
         || function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_include_dirs(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); })

@@ -141,6 +141,13 @@ class Program {
     Variable var;
 };
 
+class Empty {
+  public:
+    Empty(){};
+
+    Variable var;
+};
+
 /*
  * Thse objects "Wrap" a lower level object, and provide interfaces for user
  * defined data. Their main job is to take the user data, validate it, and call
@@ -162,7 +169,7 @@ using Object =
                  std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
                  std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
                  std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>,
-                 std::shared_ptr<Program>>;
+                 std::shared_ptr<Program>, std::unique_ptr<Empty>>;
 
 /**
  * Holds a toolchain
