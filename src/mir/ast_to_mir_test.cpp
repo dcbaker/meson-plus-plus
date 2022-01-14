@@ -131,7 +131,7 @@ TEST(ast_to_ir, simple_method) {
     ASSERT_EQ(ir->name, "method");
     ASSERT_EQ(ir->source_dir, ""); // We want to ensure this isn't meson.build
     ASSERT_TRUE(ir->holder.has_value());
-    ASSERT_EQ(ir->holder.value(), "obj");
+    // ASSERT_EQ(ir->holder.value(), MIR::Identifier{"obj"});
     ASSERT_TRUE(ir->pos_args.empty());
     ASSERT_TRUE(ir->kw_args.empty());
 }

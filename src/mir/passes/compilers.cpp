@@ -11,6 +11,16 @@ namespace MIR::Passes {
 
 namespace {
 
+inline bool valid_holder(const std::optional<Object> & holder) {
+    if (!holder) {
+        return false;
+    } else if (!std::holds_alternative<std::unique_ptr<Identifier>>(holder.value())) {
+        return false;
+    } else {
+        return std::get<std::unique_ptr<Identifier>>(holder.value())->value == "meson";
+    }
+}
+
 using ToolchainMap =
     std::unordered_map<MIR::Toolchain::Language,
                        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
@@ -26,7 +36,7 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
         return std::nullopt;
     }
 
-    if (f->holder.value_or("") != "meson" || f->name != "get_compiler") {
+    if (!(valid_holder(f->holder) && f->name == "get_compiler")) {
         return std::nullopt;
     }
 

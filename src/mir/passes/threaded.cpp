@@ -77,7 +77,7 @@ bool search_find_program(const Object & obj, State::Persistant & pstate, FindLis
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" || f->name != "find_program") {
+    if (f->holder.has_value() || f->name != "find_program") {
         return false;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return false;
@@ -148,7 +148,7 @@ std::optional<Object> replace_find_program(const Object & obj, State::Persistant
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" || f->name != "find_program") {
+    if (f->holder.has_value() || f->name != "find_program") {
         return std::nullopt;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;

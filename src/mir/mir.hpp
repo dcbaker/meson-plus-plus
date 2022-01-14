@@ -218,8 +218,8 @@ class FunctionCall {
     /// Unordered container mapping keyword arguments to their values
     std::unordered_map<std::string, Object> kw_args;
 
-    /// name of object holding this function, if it's a method.
-    std::optional<std::string> holder;
+    /// reference to object holding this function, if it's a method.
+    std::optional<Object> holder;
 
     /**
      * The directory this was called form.
