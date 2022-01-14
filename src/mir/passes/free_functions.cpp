@@ -95,33 +95,6 @@ target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
     return s_link;
 }
 
-bool all_args_reduced(const std::vector<Object> & pos_args,
-                      const std::unordered_map<std::string, Object> & kw_args) {
-    for (const auto & p : pos_args) {
-        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
-            return false;
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
-            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
-                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
-                    return false;
-                }
-            }
-        }
-    }
-    for (const auto & [_, p] : kw_args) {
-        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
-            return false;
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
-            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
-                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
 template <typename T>
 std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
                                                      const State::Persistant & pstate) {
@@ -264,6 +237,33 @@ std::optional<Object> lower_messages(const Object & obj) {
 }
 
 } // namespace
+
+bool all_args_reduced(const std::vector<Object> & pos_args,
+                      const std::unordered_map<std::string, Object> & kw_args) {
+    for (const auto & p : pos_args) {
+        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
+            return false;
+        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
+            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
+                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
+                    return false;
+                }
+            }
+        }
+    }
+    for (const auto & [_, p] : kw_args) {
+        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
+            return false;
+        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
+            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
+                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
 
 void lower_project(BasicBlock * block, State::Persistant & pstate) {
     const auto & obj = block->instructions.front();

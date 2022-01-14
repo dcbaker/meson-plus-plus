@@ -59,6 +59,10 @@ bool function_argument_walker(Object &, const MutationCallback &);
  */
 bool block_walker(BasicBlock *, const std::vector<BlockWalkerCb> &);
 
+/// Check if all of the arguments have been reduced from ids
+bool all_args_reduced(const std::vector<Object> & pos_args,
+                      const std::unordered_map<std::string, Object> & kw_args);
+
 template <typename T> std::optional<T> extract_positional_argument(const Object & arg) {
     if (std::holds_alternative<T>(arg)) {
         return std::get<T>(arg);
