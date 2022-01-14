@@ -82,8 +82,30 @@ template <typename T> class PerMachine {
     }
 
     const T build() const { return _build; }
+
+    T & build() { return _build; }
+
     const T host() const { return _host.value_or(build()); }
+
+    T & host() {
+        if (_host) {
+            return _host.value();
+        } else {
+            return _build;
+        }
+    }
+
     const T target() const { return _target.value_or(host()); }
+
+    T & target() {
+        if (_target) {
+            return _target.value();
+        } else if (_host) {
+            return _host.value();
+        } else {
+            return _build;
+        }
+    }
 
     const T get(const Machine & m) const {
         switch (m) {
