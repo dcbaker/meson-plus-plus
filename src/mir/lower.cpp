@@ -35,6 +35,7 @@ void lower(BasicBlock * block, State::Persistant & pstate) {
                 [&](BasicBlock * b) { return Passes::constant_folding(b, rt); },
                 [&](BasicBlock * b) { return Passes::constant_propogation(b, pt); },
                 [&](BasicBlock * b) { return Passes::threaded_lowering(b, pstate); },
+                [&](BasicBlock * b) { return Passes::lower_program_objects(*b, pstate); },
             });
     } while (progress);
     // clang-format on

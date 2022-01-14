@@ -116,4 +116,9 @@ bool constant_propogation(BasicBlock *, PropTable &);
  */
 bool threaded_lowering(BasicBlock *, State::Persistant & pstate);
 
+/**
+ * Lower Program objects and their methods
+ */
+bool lower_program_objects(BasicBlock &, State::Persistant & pstate);
+
 } // namespace MIR::Passes
