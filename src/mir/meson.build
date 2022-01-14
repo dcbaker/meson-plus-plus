@@ -17,6 +17,7 @@ libmir = static_library(
     'passes/insert_phis.cpp',
     'passes/join_blocks.cpp',
     'passes/machines.cpp',
+    'passes/program_objects.cpp',
     'passes/pruning.cpp',
     'passes/threaded.cpp',
     'passes/value_numbering.cpp',
