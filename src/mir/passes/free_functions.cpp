@@ -236,30 +236,56 @@ std::optional<Object> lower_messages(const Object & obj) {
     return std::make_unique<Message>(level, message);
 }
 
+bool holds_reduced(const Object & obj);
+
+bool holds_reduced_array(const Object & obj) {
+    if (std::holds_alternative<std::shared_ptr<Array>>(obj)) {
+        for (const auto & a : std::get<std::shared_ptr<Array>>(obj)->value) {
+            if (!holds_reduced(a)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+bool holds_reduced_dict(const Object & obj) {
+    if (std::holds_alternative<std::shared_ptr<Dict>>(obj)) {
+        for (const auto & [_, a] : std::get<std::shared_ptr<Dict>>(obj)->value) {
+            if (!holds_reduced(a)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+bool holds_reduced(const Object & obj) {
+    return (std::holds_alternative<std::shared_ptr<String>>(obj) ||
+            std::holds_alternative<std::shared_ptr<Boolean>>(obj) ||
+            std::holds_alternative<std::shared_ptr<Number>>(obj) ||
+            std::holds_alternative<std::shared_ptr<File>>(obj) ||
+            std::holds_alternative<std::shared_ptr<Executable>>(obj) ||
+            std::holds_alternative<std::shared_ptr<StaticLibrary>>(obj) ||
+            std::holds_alternative<std::shared_ptr<IncludeDirectories>>(obj) ||
+            std::holds_alternative<std::unique_ptr<Message>>(obj) || holds_reduced_array(obj) ||
+            holds_reduced_dict(obj));
+}
+
 } // namespace
 
 bool all_args_reduced(const std::vector<Object> & pos_args,
                       const std::unordered_map<std::string, Object> & kw_args) {
     for (const auto & p : pos_args) {
-        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
+        if (!holds_reduced(p)) {
             return false;
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
-            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
-                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
-                    return false;
-                }
-            }
         }
     }
     for (const auto & [_, p] : kw_args) {
-        if (std::holds_alternative<std::unique_ptr<Identifier>>(p)) {
+        if (!holds_reduced(p)) {
             return false;
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(p)) {
-            for (const auto & a : std::get<std::shared_ptr<Array>>(p)->value) {
-                if (std::holds_alternative<std::unique_ptr<Identifier>>(a)) {
-                    return false;
-                }
-            }
         }
     }
     return true;
