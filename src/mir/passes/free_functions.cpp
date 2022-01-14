@@ -20,7 +20,7 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" || f->name != "files") {
+    if (f->holder.has_value() || f->name != "files") {
         return std::nullopt;
     }
 
@@ -112,7 +112,7 @@ std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
         assert(false);
     }
 
-    if (f->holder.value_or("") != "" || f->name != f_name) {
+    if (f->holder.has_value() || f->name != f_name) {
         return std::nullopt;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;
@@ -172,7 +172,7 @@ std::optional<Object> lower_include_dirs(const Object & obj, const State::Persis
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" || f->name != "include_directories") {
+    if (f->holder.has_value() || f->name != "include_directories") {
         return std::nullopt;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;
@@ -204,7 +204,7 @@ std::optional<Object> lower_messages(const Object & obj) {
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" ||
+    if (f->holder.has_value() ||
         (f->name != "message" && f->name != "warning" && f->name != "error")) {
         return std::nullopt;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
@@ -242,7 +242,7 @@ std::optional<Object> lower_assert(const Object & obj) {
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.value_or("") != "" || f->name != "assert") {
+    if (f->holder.has_value() || f->name != "assert") {
         return std::nullopt;
     } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;

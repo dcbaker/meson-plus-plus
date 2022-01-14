@@ -49,13 +49,15 @@ using MachineInfo = MIR::Machines::PerMachine<MIR::Machines::Info>;
 std::optional<Object> lower_functions(const MachineInfo & machines, const Object & obj) {
     if (std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj)) {
         const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
-        const auto & holder = f->holder.value_or("");
+        if (f->holder && std::holds_alternative<std::unique_ptr<Identifier>>(f->holder.value())) {
+            const auto & holder = std::get<std::unique_ptr<Identifier>>(f->holder.value())->value;
 
-        auto maybe_m = machine_map(holder);
-        if (maybe_m.has_value()) {
-            const auto & info = machines.get(maybe_m.value());
+            auto maybe_m = machine_map(holder);
+            if (maybe_m.has_value()) {
+                const auto & info = machines.get(maybe_m.value());
 
-            return lower_function(holder, f->name, info);
+                return lower_function(holder, f->name, info);
+            }
         }
     }
     return std::nullopt;
