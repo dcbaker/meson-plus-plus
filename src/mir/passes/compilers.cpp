@@ -47,7 +47,7 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
         return std::nullopt;
     }
 
-    const auto lang = MIR::Toolchain::from_string(std::get<std::shared_ptr<String>>(l)->value);
+    const auto & lang = MIR::Toolchain::from_string(std::get<std::shared_ptr<String>>(l)->value);
 
     MIR::Machines::Machine m;
     try {
