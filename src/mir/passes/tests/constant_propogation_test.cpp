@@ -5,6 +5,7 @@
 
 #include "passes.hpp"
 #include "passes/private.hpp"
+#include "state/state.hpp"
 
 #include "test_utils.hpp"
 
@@ -132,4 +133,40 @@ TEST(constant_propogation, array) {
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(arg_obj));
     const auto & str = std::get<std::shared_ptr<MIR::String>>(arg_obj);
     ASSERT_EQ(str->value, "true");
+}
+
+TEST(constant_propogation, method_holder) {
+    auto irlist = lower(R"EOF(
+        x = find_program('sh')
+        x.found()
+        )EOF");
+    MIR::Passes::LastSeenTable lst{};
+    MIR::Passes::ReplacementTable rt{};
+    MIR::Passes::PropTable pt{};
+    MIR::Passes::ValueTable vt{};
+    MIR::State::Persistant pstate{"foo", "bar"};
+
+    MIR::Passes::block_walker(
+        &irlist, {
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::threaded_lowering(b, pstate); },
+                 });
+    bool progress = MIR::Passes::block_walker(
+        &irlist, {
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
+                 });
+
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 2);
+
+    const auto & front = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Program>>(front));
+
+    const auto & back = irlist.instructions.back();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(back));
+
+    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(back);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Program>>(f->holder.value()));
 }
