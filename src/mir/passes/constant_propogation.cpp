@@ -24,40 +24,45 @@ bool identifier_to_object_mapper(Object & obj, PropTable & table) {
     return false;
 }
 
+std::optional<Object> get_value(const Identifier & id, const PropTable & table) {
+    const Variable var{id.value, id.version};
+    if (const auto & val = table.find(var); val != table.end()) {
+        auto & v = *val->second;
+        if (std::holds_alternative<std::shared_ptr<Number>>(v)) {
+            return std::get<std::shared_ptr<Number>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<String>>(v)) {
+            return std::get<std::shared_ptr<String>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<Boolean>>(v)) {
+            return std::get<std::shared_ptr<Boolean>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
+            return std::get<std::shared_ptr<Array>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<Dict>>(v)) {
+            return std::get<std::shared_ptr<Dict>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<Compiler>>(v)) {
+            return std::get<std::shared_ptr<Compiler>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<File>>(v)) {
+            return std::get<std::shared_ptr<File>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<Executable>>(v)) {
+            return std::get<std::shared_ptr<Executable>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(v)) {
+            return std::get<std::shared_ptr<StaticLibrary>>(v);
+#ifndef NDEBUG
+        } else if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
+                     std::holds_alternative<std::unique_ptr<Identifier>>(v) &&
+                     std::holds_alternative<std::shared_ptr<FunctionCall>>(v))) {
+            throw Util::Exceptions::MesonException(
+                "Missing MIR type, this is an implementation bug");
+#endif
+        }
+    }
+    return std::nullopt;
+}
+
 std::optional<Object> constant_propogation_impl(const Object & obj, const PropTable & table) {
     if (std::holds_alternative<std::unique_ptr<Identifier>>(obj)) {
         const auto & id = std::get<std::unique_ptr<Identifier>>(obj);
         if (!id->var) {
-            const Variable var{id->value, id->version};
-            if (const auto & val = table.find(var); val != table.end()) {
-                auto & v = *val->second;
-                if (std::holds_alternative<std::shared_ptr<Number>>(v)) {
-                    return std::get<std::shared_ptr<Number>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<String>>(v)) {
-                    return std::get<std::shared_ptr<String>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<Boolean>>(v)) {
-                    return std::get<std::shared_ptr<Boolean>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
-                    return std::get<std::shared_ptr<Array>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<Dict>>(v)) {
-                    return std::get<std::shared_ptr<Dict>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<Compiler>>(v)) {
-                    return std::get<std::shared_ptr<Compiler>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<File>>(v)) {
-                    return std::get<std::shared_ptr<File>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<Executable>>(v)) {
-                    return std::get<std::shared_ptr<Executable>>(v);
-                } else if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(v)) {
-                    return std::get<std::shared_ptr<StaticLibrary>>(v);
-#ifndef NDEBUG
-                } else if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
-                             std::holds_alternative<std::unique_ptr<Identifier>>(v) &&
-                             std::holds_alternative<std::shared_ptr<FunctionCall>>(v))) {
-                    throw Util::Exceptions::MesonException(
-                        "Missing MIR type, this is an implementation bug");
-#endif
-                }
-            }
+            return get_value(*id, table);
         }
     }
 
