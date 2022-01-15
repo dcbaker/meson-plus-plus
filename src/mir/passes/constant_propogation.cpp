@@ -69,6 +69,23 @@ std::optional<Object> constant_propogation_impl(const Object & obj, const PropTa
     return std::nullopt;
 }
 
+bool constant_propogation_holder_impl(const Object & obj, const PropTable & table) {
+    bool progress = false;
+
+    if (std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        const auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
+        if (func->holder) {
+            const auto & id = std::get<std::unique_ptr<Identifier>>(func->holder.value());
+            auto v = get_value(*id, table);
+            if (v) {
+                func->holder = std::move(v);
+            }
+        }
+    }
+
+    return progress;
+}
+
 } // namespace
 
 bool constant_propogation(BasicBlock * block, PropTable & table) {
@@ -86,6 +103,7 @@ bool constant_propogation(BasicBlock * block, PropTable & table) {
         {
             [&](const Object & obj) { return array_walker(obj, prop); },
             [&](const Object & obj) { return function_argument_walker(obj, prop); },
+            [&](const Object & obj) { return constant_propogation_holder_impl(obj, table); },
         },
         {
             prop,
