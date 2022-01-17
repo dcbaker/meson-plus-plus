@@ -46,9 +46,15 @@ std::optional<Object> get_value(const Identifier & id, const PropTable & table) 
             return std::get<std::shared_ptr<Executable>>(v);
         } else if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(v)) {
             return std::get<std::shared_ptr<StaticLibrary>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<Program>>(v)) {
+            return std::get<std::shared_ptr<Program>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<IncludeDirectories>>(v)) {
+            return std::get<std::shared_ptr<IncludeDirectories>>(v);
 #ifndef NDEBUG
         } else if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
                      std::holds_alternative<std::unique_ptr<Identifier>>(v) &&
+                     std::holds_alternative<std::unique_ptr<Empty>>(v) &&
+                     std::holds_alternative<std::unique_ptr<Message>>(v) &&
                      std::holds_alternative<std::shared_ptr<FunctionCall>>(v))) {
             throw Util::Exceptions::MesonException(
                 "Missing MIR type, this is an implementation bug");
