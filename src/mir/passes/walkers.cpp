@@ -151,9 +151,9 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
     bool progress = instruction_walker(
         block,
         {
-            [&](Object & obj) { return array_walker(obj, cb); }, // look into arrays
+            [&](const Object & obj) { return array_walker(obj, cb); }, // look into arrays
             // look into function arguments
-            [&](Object & obj) { return function_argument_walker(obj, cb); },
+            [&](const Object & obj) { return function_argument_walker(obj, cb); },
             // TODO: look into dictionary elements
         },
         {cb});
@@ -172,7 +172,16 @@ bool function_walker(BasicBlock * block, const ReplacementCallback & cb) {
 };
 
 bool function_walker(BasicBlock * block, const MutationCallback & cb) {
-    bool progress = instruction_walker(block, {cb}, {});
+    bool progress = instruction_walker(
+        block,
+        {
+            [&](Object & obj) { return array_walker(obj, cb); }, // look into arrays
+            // look into function arguments
+            [&](Object & obj) { return function_argument_walker(obj, cb); },
+            // TODO: look into dictionary elements
+            cb,
+        },
+        {});
 
     // Check if we have a condition, and try to lower that as well.
     if (std::holds_alternative<std::unique_ptr<Condition>>(block->next)) {

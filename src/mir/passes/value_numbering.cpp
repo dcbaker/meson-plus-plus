@@ -63,7 +63,7 @@ bool number_uses(const uint32_t & index, const Object & obj, LastSeenTable & tab
 } // namespace
 
 bool value_numbering(BasicBlock * block, std::unordered_map<std::string, uint32_t> & data) {
-    return instruction_walker(block, {[&](Object & obj) { return number(obj, data); }});
+    return function_walker(block, {[&](Object & obj) { return number(obj, data); }});
 }
 
 bool usage_numbering(BasicBlock * block, LastSeenTable & table) {
@@ -74,12 +74,7 @@ bool usage_numbering(BasicBlock * block, LastSeenTable & table) {
         table[block->index].merge(table[p->index]);
     }
 
-    return instruction_walker(block,
-                              {
-                                  [&](Object & o) { return function_argument_walker(o, number); },
-                                  [&](Object & o) { return array_walker(o, number); },
-                                  number,
-                              });
+    return function_walker(block, number);
 }
 
 } // namespace MIR::Passes

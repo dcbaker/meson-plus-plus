@@ -44,19 +44,8 @@ std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable
 } // namespace
 
 bool constant_folding(BasicBlock * block, ReplacementTable & table) {
-    bool progress = false;
-
-    const auto fold = [&](const Object & o) { return constant_folding_impl(o, table); };
-    progress |= instruction_walker(block, {
-                                              fold,
-                                          });
-    progress |= instruction_walker(
-        block, {
-                   [&](const Object & o) { return array_walker(o, fold); },
-                   [&](const Object & o) { return function_argument_walker(o, fold); },
-               });
-
-    return progress;
+    return function_walker(block,
+                           {[&](const Object & o) { return constant_folding_impl(o, table); }});
 }
 
 } // namespace MIR::Passes

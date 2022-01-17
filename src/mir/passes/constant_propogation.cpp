@@ -75,7 +75,7 @@ std::optional<Object> constant_propogation_impl(const Object & obj, const PropTa
     return std::nullopt;
 }
 
-bool constant_propogation_holder_impl(const Object & obj, const PropTable & table) {
+bool constant_propogation_holder_impl(Object & obj, const PropTable & table) {
     bool progress = false;
 
     if (std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
@@ -96,6 +96,9 @@ bool constant_propogation_holder_impl(const Object & obj, const PropTable & tabl
 
 bool constant_propogation(BasicBlock * block, PropTable & table) {
     const auto & prop = [&](const Object & obj) { return constant_propogation_impl(obj, table); };
+    const auto & prop_h = [&](Object & obj) {
+        return constant_propogation_holder_impl(obj, table);
+    };
 
     // We have to break this into two walkers because we need to run this furst,
     // then the replacement
@@ -108,8 +111,10 @@ bool constant_propogation(BasicBlock * block, PropTable & table) {
         block,
         {
             [&](const Object & obj) { return array_walker(obj, prop); },
+            [&](Object & obj) { return array_walker(obj, prop_h); },
             [&](const Object & obj) { return function_argument_walker(obj, prop); },
-            [&](const Object & obj) { return constant_propogation_holder_impl(obj, table); },
+            [&](Object & obj) { return function_argument_walker(obj, prop_h); },
+            prop_h,
         },
         {
             prop,
