@@ -22,9 +22,10 @@ namespace fs = std::filesystem;
 
 namespace {
 
-void emit_messages(MIR::BasicBlock & block) {
+bool emit_messages(MIR::BasicBlock & block) {
     static std::vector<MIR::MessageLevel> levels{MIR::MessageLevel::MESSAGE,
                                                  MIR::MessageLevel::WARN, MIR::MessageLevel::ERROR};
+    bool errors = false;
 
     for (const auto & level : levels) {
         if (level == MIR::MessageLevel::MESSAGE) {
@@ -42,9 +43,13 @@ void emit_messages(MIR::BasicBlock & block) {
                 if (m->level == level) {
                     std::cout << Util::Log::bold(" *  ") << m->message << std::endl;
                 }
+                if (m->level == MIR::MessageLevel::ERROR) {
+                    errors = true;
+                }
             }
         }
     }
+    return errors;
 }
 
 } // namespace
@@ -66,7 +71,10 @@ static int configure(const Options::ConfigureOptions & opts) {
     MIR::Passes::lower_project(&irlist, pstate);
     MIR::lower(&irlist, pstate);
 
-    emit_messages(irlist);
+    const bool errors = emit_messages(irlist);
+    if (errors) {
+        throw Util::Exceptions::MesonException("Configure failed with errors.");
+    }
 
     Backends::Ninja::generate(&irlist, pstate);
 
@@ -84,12 +92,9 @@ int main(int argc, char * argv[]) {
                 ret = configure(opts.config);
                 break;
         };
-
-        return ret;
     } catch (Util::Exceptions::MesonException & e) {
         std::cerr << e.what() << std::endl;
-        return 1;
     }
 
-    return 0;
+    return ret;
 }
