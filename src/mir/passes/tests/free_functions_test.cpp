@@ -127,3 +127,54 @@ TEST(messages, two_args) {
     ASSERT_EQ(m->level, MIR::MessageLevel::WARN);
     ASSERT_EQ(m->message, "foo bar");
 }
+
+TEST(assert, simple) {
+    auto irlist = lower("assert(false)");
+    MIR::State::Persistant pstate{src_root, build_root};
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(r));
+
+    const auto & m = std::get<std::unique_ptr<MIR::Message>>(r);
+    ASSERT_EQ(m->level, MIR::MessageLevel::ERROR);
+    ASSERT_EQ(m->message, "Assertion failed: ");
+}
+
+TEST(find_program, found) {
+    auto irlist = lower(R"EOF(
+        x = find_program('sh')
+        x.found()
+    )EOF");
+    MIR::Passes::ValueTable vt{};
+    MIR::Passes::LastSeenTable lt{};
+    MIR::Passes::PropTable pt{};
+    MIR::Passes::ReplacementTable rt{};
+    MIR::State::Persistant pstate{src_root, build_root};
+
+    MIR::Passes::block_walker(
+        &irlist, {
+                     [&](MIR::BasicBlock * b) { return MIR::Passes::threaded_lowering(b, pstate); },
+                 });
+    bool progress = MIR::Passes::block_walker(
+        &irlist,
+        {
+            [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
+            [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lt); },
+            [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
+            [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
+            [&](MIR::BasicBlock * b) { return MIR::Passes::lower_program_objects(*b, pstate); },
+        });
+
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 2);
+
+    const auto & r = irlist.instructions.back();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(r));
+
+    const auto & m = std::get<std::shared_ptr<MIR::Boolean>>(r);
+    ASSERT_EQ(m->value, true);
+}
