@@ -255,7 +255,7 @@ std::optional<Object> lower_assert(const Object & obj) {
 
     const auto & value = extract_positional_argument<std::shared_ptr<Boolean>>(f->pos_args[0]);
 
-    if (value.value()) {
+    if (!value.value()->value) {
         // TODO: maye have an assert level of message?
         // TODO, how to get the original values of this?
         const auto & message = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[1]);
