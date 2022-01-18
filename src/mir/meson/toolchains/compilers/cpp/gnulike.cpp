@@ -14,6 +14,7 @@ std::vector<std::string> GnuLike::output_command(const std::string & output) con
 std::vector<std::string> GnuLike::compile_only_command() const { return {"-c"}; }
 
 Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const {
+    // XXX: this can't handle things like "-I foo"...
     if (arg.substr(0, 2) == "-L") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH);
     } else if (arg.substr(0, 2) == "-D") {
@@ -21,7 +22,11 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
     } else if (arg.substr(0, 2) == "-l") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK);
     } else if (arg.substr(0, 2) == "-I") {
-        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE);
+        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
+                                   Arguments::IncludeType::BASE);
+    } else if (arg.substr(0, 8) == "-isystem") {
+        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
+                                   Arguments::IncludeType::SYSTEM);
     } else if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
         return Arguments::Argument(arg, Arguments::Type::LINK);
     } else if (arg.substr(arg.length() - 2, arg.length()) == ".so") {
@@ -41,7 +46,14 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
         case Arguments::Type::LINK_SEARCH:
             return {"-L", arg.value};
         case Arguments::Type::INCLUDE:
-            return {"-I", arg.value};
+            switch (arg.inc_type) {
+                case Arguments::IncludeType::BASE:
+                    return {"-I", arg.value};
+                case Arguments::IncludeType::SYSTEM:
+                    return {"-isystem", arg.value};
+                default:
+                    throw std::exception{}; // Should be unreachable
+            }
         case Arguments::Type::RAW:
             return {arg.value};
         default:
