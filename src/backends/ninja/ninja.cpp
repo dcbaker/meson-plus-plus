@@ -186,7 +186,8 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
         const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
         for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
-            cpp_args.emplace_back(tc.build()->compiler->specialize_argument(a));
+            const auto & args = tc.build()->compiler->specialize_argument(a);
+            cpp_args.insert(cpp_args.end(), args.begin(), args.end());
         }
     }
 

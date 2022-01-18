@@ -32,18 +32,18 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
     }
 }
 
-std::string GnuLike::specialize_argument(const Arguments::Argument & arg) const {
+std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument & arg) const {
     switch (arg.type) {
         case Arguments::Type::DEFINE:
-            return "-D" + arg.value;
+            return {"-D", arg.value};
         case Arguments::Type::LINK:
-            return "-l" + arg.value;
+            return {"-l", arg.value};
         case Arguments::Type::LINK_SEARCH:
-            return "-L" + arg.value;
+            return {"-L", arg.value};
         case Arguments::Type::INCLUDE:
-            return "-I" + arg.value;
+            return {"-I", arg.value};
         case Arguments::Type::RAW:
-            return arg.value;
+            return {arg.value};
         default:
             throw std::exception{}; // Should be unreachable
     }
