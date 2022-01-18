@@ -31,6 +31,19 @@ enum class Type {
 };
 
 /**
+ * Specialized include types
+ *
+ * Used to specify exactly what kind of include this is
+ */
+enum class IncludeType {
+    /// a standard include, such as -Ifoo
+    BASE,
+
+    /// A system type include, such as -isystem foo
+    SYSTEM,
+};
+
+/**
  * An abstract argument container
  *
  * This allows us to lower arguments given in compiler specific form (either
@@ -43,13 +56,19 @@ enum class Type {
  */
 class Argument {
   public:
-    Argument(const std::string & v, const Type & t) : value{v}, type{t} {};
+    Argument(const std::string & v, const Type & t)
+        : value{v}, type{t}, inc_type{IncludeType::BASE} {};
+    Argument(const std::string & v, const Type & t, const IncludeType & i)
+        : value{v}, type{t}, inc_type{i} {};
 
     /// The value of the argument
     const std::string value;
 
     /// The type of the argument
     const Type type;
+
+    /// Include type specialization
+    const IncludeType inc_type;
 };
 
 } // namespace MIR::Arguments
