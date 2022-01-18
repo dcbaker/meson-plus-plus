@@ -139,19 +139,21 @@ std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
     auto slink = target_kwargs(f->kw_args);
     auto raw_inc = extract_array_keyword_argument<std::shared_ptr<IncludeDirectories>>(
         f->kw_args, "include_directories", true);
-    std::vector<Objects::IncludeDirectories> inc{};
     for (const auto & i : raw_inc) {
-        inc.emplace_back(i->value);
+        for (const auto & d : i->directories) {
+            args[Toolchain::Language::CPP].emplace_back(Arguments::Argument{
+                d, Arguments::Type::INCLUDE,
+                i->is_system ? Arguments::IncludeType::SYSTEM : Arguments::IncludeType::BASE});
+        }
     }
 
-    // TODO: machien parameter needs to be set from the native kwarg
+    // TODO: machine parameter needs to be set from the native kwarg
     if constexpr (std::is_same<T, Executable>::value) {
-        Objects::Executable held{name,  srcs, Machines::Machine::BUILD, f->source_dir, args,
-                                 slink, inc};
+        Objects::Executable held{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink};
         return std::make_shared<T>(held, f->var);
     } else if constexpr (std::is_same<T, StaticLibrary>::value) {
-        Objects::StaticLibrary held{name,  srcs, Machines::Machine::BUILD, f->source_dir, args,
-                                    slink, inc};
+        Objects::StaticLibrary held{name,          srcs, Machines::Machine::BUILD,
+                                    f->source_dir, args, slink};
         return std::make_shared<T>(held, f->var);
     } else {
         assert(false);
@@ -193,9 +195,7 @@ std::optional<Object> lower_include_dirs(const Object & obj, const State::Persis
     auto is_system = extract_keyword_argument<std::shared_ptr<Boolean>>(f->kw_args, "is_system")
                          .value_or(std::make_shared<Boolean>(false));
 
-    Objects::IncludeDirectories incs{dirs, is_system->value};
-
-    return std::make_shared<IncludeDirectories>(incs);
+    return std::make_shared<IncludeDirectories>(dirs, is_system->value, f->var);
 }
 
 std::optional<Object> lower_messages(const Object & obj) {
