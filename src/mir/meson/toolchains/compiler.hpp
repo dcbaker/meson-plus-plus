@@ -56,7 +56,7 @@ class Compiler {
      *
      * @param arg The Argument to be converted
      */
-    virtual std::string specialize_argument(const Arguments::Argument & arg) const = 0;
+    virtual std::vector<std::string> specialize_argument(const Arguments::Argument & arg) const = 0;
 
     /**
      * Create include arguments for a build and source directory
