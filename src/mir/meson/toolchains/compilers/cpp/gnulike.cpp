@@ -20,6 +20,8 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::DEFINE);
     } else if (arg.substr(0, 2) == "-l") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK);
+    } else if (arg.substr(0, 2) == "-I") {
+        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE);
     } else if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
         return Arguments::Argument(arg, Arguments::Type::LINK);
     } else if (arg.substr(arg.length() - 2, arg.length()) == ".so") {
@@ -38,6 +40,8 @@ std::string GnuLike::specialize_argument(const Arguments::Argument & arg) const 
             return "-l" + arg.value;
         case Arguments::Type::LINK_SEARCH:
             return "-L" + arg.value;
+        case Arguments::Type::INCLUDE:
+            return "-I" + arg.value;
         case Arguments::Type::RAW:
             return arg.value;
         default:
