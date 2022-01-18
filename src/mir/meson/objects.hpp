@@ -63,26 +63,12 @@ class File {
     const fs::path build_root;
 };
 
-class IncludeDirectories {
-  public:
-    IncludeDirectories();
-    IncludeDirectories(const std::vector<std::string> &, const bool &);
-
-    /// Create a list of string arguments from this
-    std::vector<std::string> as_strings(const Toolchain::Compiler::Compiler &,
-                                        const State::Persistant &) const;
-
-  private:
-    const std::vector<std::string> directories;
-    const bool is_system;
-};
+class StaticLibrary;
 
 enum class StaticLinkMode {
     NORMAL,
     WHOLE,
 };
-
-class StaticLibrary;
 
 using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary *>;
 
@@ -116,16 +102,12 @@ class BuildTarget {
     /// static targets to link with
     const std::vector<StaticLinkage> link_static{};
 
-    /// Include Directory objects
-    const std::vector<IncludeDirectories> include_directories{};
-
   protected:
     BuildTarget(const std::string & name_, const std::vector<File> & srcs,
                 const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-                const std::vector<StaticLinkage> s_link,
-                const std::vector<IncludeDirectories> & inc)
-        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
-          link_static{s_link}, include_directories{inc} {};
+                const std::vector<StaticLinkage> s_link)
+        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args}, link_static{
+                                                                                     s_link} {};
 };
 
 /**
@@ -135,8 +117,8 @@ class Executable : public BuildTarget {
   public:
     Executable(const std::string & name_, const std::vector<File> & srcs,
                const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-               const std::vector<StaticLinkage> s_link, const std::vector<IncludeDirectories> & inc)
-        : BuildTarget{name_, srcs, m, sdir, args, s_link, inc} {};
+               const std::vector<StaticLinkage> s_link)
+        : BuildTarget{name_, srcs, m, sdir, args, s_link} {};
 
     std::string output() const { return name; }
 };
@@ -148,9 +130,8 @@ class StaticLibrary : public BuildTarget {
   public:
     StaticLibrary(const std::string & name_, const std::vector<File> & srcs,
                   const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-                  const std::vector<StaticLinkage> s_link,
-                  const std::vector<IncludeDirectories> & inc)
-        : BuildTarget{name_, srcs, m, sdir, args, s_link, inc} {};
+                  const std::vector<StaticLinkage> s_link)
+        : BuildTarget{name_, srcs, m, sdir, args, s_link} {};
 
     std::string output() const { return name + ".a"; }
 };

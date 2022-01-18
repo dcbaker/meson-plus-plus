@@ -21,11 +21,10 @@ class GnuLike : public Compiler {
     std::vector<std::string> compile_only_command() const final;
     std::vector<std::string> output_command(const std::string &) const final;
     Arguments::Argument generalize_argument(const std::string &) const final;
-    std::vector<std::string> specialize_argument(const Arguments::Argument & arg) const final;
+    std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
+                                                 const fs::path & src_dir,
+                                                 const fs::path & build_dir) const final;
     std::vector<std::string> always_args() const final;
-    std::vector<std::string> include_directories(const std::string & dir, const fs::path & sdir,
-                                                 const fs::path & bdir,
-                                                 bool is_system = false) const final;
 
   protected:
     GnuLike(const std::vector<std::string> & c) : Compiler{c} {};

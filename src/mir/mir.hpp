@@ -97,10 +97,11 @@ class Phi {
 
 class IncludeDirectories {
   public:
-    IncludeDirectories() : value{}, var{} {};
-    IncludeDirectories(const Objects::IncludeDirectories & inc) : value{inc}, var{} {};
+    IncludeDirectories(const std::vector<std::string> & d, const bool & s, const Variable & v)
+        : directories{d}, is_system{s}, var{v} {};
 
-    const Objects::IncludeDirectories value;
+    const std::vector<std::string> directories;
+    const bool is_system;
 
     Variable var;
 };
@@ -129,7 +130,8 @@ class Program {
   public:
     Program(const std::string & n, const Machines::Machine & m, const fs::path & p)
         : name{n}, for_machine{m}, path{p} {};
-    Program(const std::string & n, const Machines::Machine & m, const fs::path & p, const Variable & v)
+    Program(const std::string & n, const Machines::Machine & m, const fs::path & p,
+            const Variable & v)
         : name{n}, for_machine{m}, path{p}, var{v} {};
 
     const std::string name;

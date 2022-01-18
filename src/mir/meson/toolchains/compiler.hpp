@@ -56,19 +56,9 @@ class Compiler {
      *
      * @param arg The Argument to be converted
      */
-    virtual std::vector<std::string> specialize_argument(const Arguments::Argument & arg) const = 0;
-
-    /**
-     * Create include arguments for a build and source directory
-     *
-     * @param dir The directory to be included
-     * @param sdir the source directory root
-     * @param bdir the build directory root
-     */
-    virtual std::vector<std::string> include_directories(const std::string & dir,
-                                                         const fs::path & sdir,
-                                                         const fs::path & bdir,
-                                                         bool is_system = false) const = 0;
+    virtual std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
+                                                         const fs::path & src_dir,
+                                                         const fs::path & build_dir) const = 0;
 
     /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;

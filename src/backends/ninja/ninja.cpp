@@ -186,8 +186,11 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
         const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
         for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
-            const auto & args = tc.build()->compiler->specialize_argument(a);
-            cpp_args.insert(cpp_args.end(), args.begin(), args.end());
+            const auto & args =
+                tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
+            for (const auto & arg : args) {
+                cpp_args.emplace_back(escape(arg));
+            }
         }
     }
 
@@ -196,16 +199,13 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
 
     // These are the same on each iteration
     const auto & always_args = tc.build()->compiler->always_args();
-    std::vector<std::string> incs{};
-    for (const auto & i : tc.build()->compiler->include_directories(e.subdir, pstate.source_root,
-                                                                    pstate.build_root)) {
-        incs.emplace_back(escape(i));
-    }
-    for (const auto & i : e.include_directories) {
-        const auto & ias = i.as_strings(*tc.build()->compiler, pstate);
-        for (const auto & a : ias) {
-            incs.emplace_back(escape(a));
-        }
+
+    // TODO: there's a keyword argument to control this
+    auto lincs = tc.build()->compiler->specialize_argument(
+        MIR::Arguments::Argument(e.subdir, MIR::Arguments::Type::INCLUDE), pstate.source_root,
+        pstate.build_root);
+    for (const auto & arg : lincs) {
+        cpp_args.emplace_back(escape(arg));
     }
 
     std::vector<std::string> srcs{};
@@ -217,9 +217,6 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
 
         auto lang_args = cpp_args;
         lang_args.insert(lang_args.end(), always_args.begin(), always_args.end());
-
-        // TODO: there's a keyword argument to control this...
-        lang_args.insert(lang_args.end(), incs.begin(), incs.end());
 
         rules.emplace_back(Rule{{escape(f.relative_to_build_dir())},
                                 escape(fs::path{e.name + ".p"} / f.get_name()) + ".o",
