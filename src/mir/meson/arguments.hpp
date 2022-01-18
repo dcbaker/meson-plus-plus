@@ -16,10 +16,16 @@ namespace MIR::Arguments {
 enum class Type {
     /// A Pre-processor define (ex, -D...)
     DEFINE,
+
     /// A library to link with (Ex, -lfoo or /path/to/foo.a)
     LINK,
+
     /// A path to search for libraries (ex, -L...)
     LINK_SEARCH,
+
+    /// An Include Directory, further specified by the specialization type
+    INCLUDE,
+
     /// An argument we don't know how to classify, proxy it along
     RAW,
 };
