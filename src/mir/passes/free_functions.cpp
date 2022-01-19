@@ -242,7 +242,7 @@ std::optional<Object> lower_assert(const Object & obj) {
 
     if (f->pos_args.size() < 1 || f->pos_args.size() > 2) {
         throw Util::Exceptions::InvalidArguments("assert: takes 1 or 2 arguments, got " +
-                                                 f->pos_args.size());
+                                                 std::to_string(f->pos_args.size()));
     }
 
     const auto & value = extract_positional_argument<std::shared_ptr<Boolean>>(f->pos_args[0]);
