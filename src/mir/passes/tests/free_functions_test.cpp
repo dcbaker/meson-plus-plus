@@ -32,7 +32,7 @@ TEST(files, simple) {
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::File>>(a[0]));
 
     const auto & f = std::get<std::shared_ptr<MIR::File>>(a[0]);
-    ASSERT_EQ(f->file.get_name(), "foo.c");
+    ASSERT_EQ(f->get_name(), "foo.c");
 }
 
 TEST(executable, simple) {
@@ -50,7 +50,7 @@ TEST(executable, simple) {
     const auto & r = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Executable>>(r));
 
-    const auto & e = std::get<std::shared_ptr<MIR::Executable>>(r)->value;
+    const auto & e = *std::get<std::shared_ptr<MIR::Executable>>(r);
     ASSERT_EQ(e.name, "exe");
     ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
 
@@ -77,7 +77,7 @@ TEST(static_library, simple) {
     const auto & r = irlist.instructions.front();
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(r));
 
-    const auto & e = std::get<std::shared_ptr<MIR::StaticLibrary>>(r)->value;
+    const auto & e = *std::get<std::shared_ptr<MIR::StaticLibrary>>(r);
     ASSERT_EQ(e.name, "exe");
     ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
 
@@ -177,4 +177,66 @@ TEST(find_program, found) {
 
     const auto & m = std::get<std::shared_ptr<MIR::Boolean>>(r);
     ASSERT_EQ(m->value, true);
+}
+
+TEST(file, built_relative_to_build) {
+    MIR::File f{"foo.c", "", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_build_dir(), "foo.c");
+}
+
+TEST(file, built_relative_to_build_subdir) {
+    MIR::File f{"foo.c", "sub", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_build_dir(), "sub/foo.c");
+}
+
+TEST(file, built_relative_to_source) {
+    MIR::File f{"foo.c", "", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_source_dir(), "build/foo.c");
+}
+
+TEST(file, built_relative_to_source_subdir) {
+    MIR::File f{"foo.c", "sub", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_source_dir(), "../build/sub/foo.c");
+}
+
+TEST(file, static_relative_to_build) {
+    MIR::File f{"foo.c", "", false, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_build_dir(), "../foo.c");
+}
+
+TEST(file, static_relative_to_build_subdir) {
+    MIR::File f{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_build_dir(), "../../sub/foo.c");
+}
+
+TEST(file, static_relative_to_source) {
+    MIR::File f{"foo.c", "", false, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_source_dir(), "foo.c");
+}
+
+TEST(file, static_relative_to_source_subdir) {
+    MIR::File f{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f.relative_to_source_dir(), "sub/foo.c");
+}
+
+TEST(file, equal) {
+    MIR::File f{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
+    MIR::File g{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(f, g);
+
+    MIR::File h{"sub/foo.c", "", false, "/home/user/src", "/home/user/src/build"};
+    MIR::File i{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
+    ASSERT_EQ(h, i);
+}
+
+TEST(file, not_equal) {
+    MIR::File f{"foo.c", "sub", false, "/home/user/src", "/home/user/src/build"};
+    MIR::File g{"foo.c", "sub", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_NE(f, g);
+
+    MIR::File h{"foo.c", "sub2", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_NE(f, h);
+
+    MIR::File i{"foO.c", "sub", true, "/home/user/src", "/home/user/src/build"};
+    ASSERT_NE(f, i);
 }

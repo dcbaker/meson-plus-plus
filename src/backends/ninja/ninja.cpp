@@ -178,8 +178,8 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
 
 template <typename T>
 std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate) {
-    static_assert(std::is_base_of<MIR::Objects::Executable, T>::value ||
-                      std::is_base_of<MIR::Objects::StaticLibrary, T>::value,
+    static_assert(std::is_base_of<MIR::Executable, T>::value ||
+                      std::is_base_of<MIR::StaticLibrary, T>::value,
                   "Must be derived from a build target");
 
     std::vector<std::string> cpp_args{};
@@ -237,7 +237,7 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     std::string name;
     RuleType type;
     std::vector<std::string> link_args{};
-    if constexpr (std::is_base_of<MIR::Objects::StaticLibrary, T>::value) {
+    if constexpr (std::is_base_of<MIR::StaticLibrary, T>::value) {
         type = RuleType::ARCHIVE;
         // TODO: per platform?
         name = e.output();
@@ -272,14 +272,13 @@ std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
     std::unordered_map<std::string, const Rule * const> rule_map{};
 
     for (const auto & i : block->instructions) {
-        if (const auto x = std::get_if<std::shared_ptr<MIR::Executable>>(&i); x != nullptr) {
-            auto r = target_rule((*x)->value, pstate);
+        if (std::holds_alternative<std::shared_ptr<MIR::Executable>>(i)) {
+            auto r = target_rule(*std::get<std::shared_ptr<MIR::Executable>>(i), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
             const Rule * const named_rule = &rules.back();
             rule_map.emplace(named_rule->output, named_rule);
-        }
-        if (std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(i)) {
-            auto r = target_rule(std::get<std::shared_ptr<MIR::StaticLibrary>>(i)->value, pstate);
+        } else if (std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(i)) {
+            auto r = target_rule(*std::get<std::shared_ptr<MIR::StaticLibrary>>(i), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
             const Rule * const named_rule = &rules.back();
             rule_map.emplace(named_rule->output, named_rule);

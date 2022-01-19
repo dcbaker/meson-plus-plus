@@ -23,8 +23,9 @@
 #include <variant>
 #include <vector>
 
-#include "objects.hpp"
 #include "toolchains/toolchain.hpp"
+
+namespace fs = std::filesystem;
 
 namespace MIR {
 
@@ -54,24 +55,128 @@ class Variable {
     bool operator==(const Variable &) const;
 };
 
-class Executable {
+/**
+ * Holds a File, which is a smart object point to a source
+ *
+ */
+class File {
   public:
-    Executable(const Objects::Executable & exe_) : value{exe_}, var{} {};
-    Executable(const Objects::Executable & exe_, const Variable & v) : value{exe_}, var{v} {};
+    File(const std::string & name_, const fs::path & sdir, const bool & built_,
+         const fs::path & sr_, const fs::path & br_)
+        : name{name_}, subdir{sdir}, built{built_}, source_root{sr_}, build_root{br_}, var{} {};
+    File(const std::string & name_, const fs::path & sdir, const bool & built_,
+         const fs::path & sr_, const fs::path & br_, const Variable & v)
+        : name{name_}, subdir{sdir}, built{built_}, source_root{sr_}, build_root{br_}, var{v} {};
 
-    const Objects::Executable value;
+    /// Whether this is a built object, or a static one
+    const bool is_built() const;
+
+    /// Get the name of the of the file, relative to the src dir if it's static,
+    /// or the build dir if it's built
+    std::string get_name() const;
+
+    /// Get a path for this file relative to the source tree
+    fs::path relative_to_source_dir() const;
+
+    /// Get a path for this file relative to the build treeZ
+    fs::path relative_to_build_dir() const;
+
+    bool operator==(const File &) const;
+    bool operator!=(const File &) const;
+
+    // For gtest
+    friend std::ostream & operator<<(std::ostream & os, const File & f);
+
+    const std::string name;
+    const fs::path subdir;
+    const bool built;
+    const fs::path source_root;
+    const fs::path build_root;
 
     Variable var;
 };
 
-class StaticLibrary {
-  public:
-    StaticLibrary(const Objects::StaticLibrary & exe_) : value{exe_}, var{} {};
-    StaticLibrary(const Objects::StaticLibrary & exe_, const Variable & v) : value{exe_}, var{v} {};
+using ArgMap = std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>;
 
-    const Objects::StaticLibrary value;
+enum class StaticLinkMode {
+    NORMAL,
+    WHOLE,
+};
+
+class StaticLibrary;
+
+using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary *>;
+
+class Executable {
+  public:
+    Executable(const std::string & name_, const std::vector<File> & srcs,
+               const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+               const std::vector<StaticLinkage> s_link, const Variable & v)
+        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
+          link_static{s_link}, var{v} {};
+
+    /// The name of the target
+    const std::string name;
+
+    /// The sources (as files)
+    const std::vector<File> sources;
+
+    /// Which machine is this executable to be built for?
+    const Machines::Machine machine;
+
+    /// Where is this Target defined
+    const std::string subdir;
+
+    /**
+     * Arguments for the target, sorted by langauge
+     *
+     * We sort these by language, as each compiled source will only recieve it's
+     * per-language arguments
+     */
+    const ArgMap arguments;
+
+    /// static targets to link with
+    const std::vector<StaticLinkage> link_static{};
 
     Variable var;
+
+    std::string output() const { return name; }
+};
+
+class StaticLibrary {
+  public:
+    StaticLibrary(const std::string & name_, const std::vector<File> & srcs,
+                  const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+                  const std::vector<StaticLinkage> s_link, const Variable & v)
+        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
+          link_static{s_link}, var{v} {};
+
+    /// The name of the target
+    const std::string name;
+
+    /// The sources (as files)
+    const std::vector<File> sources;
+
+    /// Which machine is this executable to be built for?
+    const Machines::Machine machine;
+
+    /// Where is this Target defined
+    const std::string subdir;
+
+    /**
+     * Arguments for the target, sorted by langauge
+     *
+     * We sort these by language, as each compiled source will only recieve it's
+     * per-language arguments
+     */
+    const ArgMap arguments;
+
+    /// static targets to link with
+    const std::vector<StaticLinkage> link_static{};
+
+    Variable var;
+
+    std::string output() const { return name + ".a"; }
 };
 
 /**
@@ -163,7 +268,6 @@ class Identifier;
 class Number;
 class String;
 class Compiler;
-class File;
 
 using Object =
     std::variant<std::shared_ptr<FunctionCall>, std::shared_ptr<String>, std::shared_ptr<Boolean>,
@@ -186,19 +290,6 @@ class Compiler {
 
     const Object get_id(const std::vector<Object> &,
                         const std::unordered_map<std::string, Object> &) const;
-
-    Variable var;
-};
-
-/**
- * Holds a File, which is a smart object point to a source
- *
- */
-class File {
-  public:
-    File(const Objects::File & f) : file{f} {};
-
-    const Objects::File file;
 
     Variable var;
 };
