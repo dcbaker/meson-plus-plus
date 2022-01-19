@@ -60,20 +60,22 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
  * converting any strings into files, appending files as is, and flattening any
  * arrays it runs into.
  */
-std::vector<File> srclist_to_filelist(const std::vector<Object *> & srclist,
-                                      const State::Persistant & pstate,
-                                      const std::string & subdir) {
-    std::vector<File> filelist{};
+std::vector<Source> srclist_to_filelist(const std::vector<Object *> & srclist,
+                                        const State::Persistant & pstate,
+                                        const std::string & subdir) {
+    std::vector<Source> filelist{};
     for (const auto & s : srclist) {
         if (const auto src = std::get_if<std::shared_ptr<String>>(s); src != nullptr) {
-            filelist.emplace_back(
-                File{(*src)->value, subdir, false, pstate.source_root, pstate.build_root});
+            filelist.emplace_back(std::make_shared<File>((*src)->value, subdir, false,
+                                                         pstate.source_root, pstate.build_root));
         } else if (const auto src = std::get_if<std::shared_ptr<File>>(s); s != nullptr) {
-            filelist.emplace_back(**src);
+            filelist.emplace_back(*src);
+        } else if (const auto src = std::get_if<std::shared_ptr<CustomTarget>>(s); s != nullptr) {
+            filelist.emplace_back(*src);
         } else {
             // TODO: there are other valid types here, like generator output and custom targets
             throw Util::Exceptions::InvalidArguments{
-                "'executable' sources must be strings or files."};
+                "'executable' sources must be strings, files, or custom_target objects."};
         }
     }
 
