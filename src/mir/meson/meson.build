@@ -13,7 +13,6 @@ libmeson = static_library(
   'meson',
   [
     'machines.cpp',
-    'objects/file.cpp',
     'state/state.cpp',
     'toolchains/archivers/gnu.cpp',
     'toolchains/common.cpp',
@@ -53,7 +52,6 @@ test(
   'meson objects',
   executable(
     'meson_object_test',
-    'object_tests.cpp',
     link_with : libmeson,
     dependencies : dep_gtest,
   ),

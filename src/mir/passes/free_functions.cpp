@@ -33,8 +33,8 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
         }
         auto const & v = std::get<std::shared_ptr<String>>(arg_h);
 
-        files.emplace_back(std::make_shared<File>(
-            Objects::File{v->value, f->source_dir, false, pstate.source_root, pstate.build_root}));
+        files.emplace_back(std::make_shared<File>(v->value, f->source_dir, false,
+                                                  pstate.source_root, pstate.build_root));
     }
 
     return std::make_shared<Array>(std::move(files));
@@ -50,16 +50,16 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
  * converting any strings into files, appending files as is, and flattening any
  * arrays it runs into.
  */
-std::vector<Objects::File> srclist_to_filelist(const std::vector<Object *> & srclist,
-                                               const State::Persistant & pstate,
-                                               const std::string & subdir) {
-    std::vector<Objects::File> filelist{};
+std::vector<File> srclist_to_filelist(const std::vector<Object *> & srclist,
+                                      const State::Persistant & pstate,
+                                      const std::string & subdir) {
+    std::vector<File> filelist{};
     for (const auto & s : srclist) {
         if (const auto src = std::get_if<std::shared_ptr<String>>(s); src != nullptr) {
             filelist.emplace_back(
-                Objects::File{(*src)->value, subdir, false, pstate.source_root, pstate.build_root});
+                File{(*src)->value, subdir, false, pstate.source_root, pstate.build_root});
         } else if (const auto src = std::get_if<std::shared_ptr<File>>(s); s != nullptr) {
-            filelist.emplace_back((*src)->file);
+            filelist.emplace_back(**src);
         } else {
             // TODO: there are other valid types here, like generator output and custom targets
             throw Util::Exceptions::InvalidArguments{
@@ -83,13 +83,13 @@ target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistan
     return args;
 }
 
-inline std::vector<Objects::StaticLinkage>
+inline std::vector<StaticLinkage>
 target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
-    std::vector<Objects::StaticLinkage> s_link{};
+    std::vector<StaticLinkage> s_link{};
     auto raw_args =
         extract_array_keyword_argument<std::shared_ptr<StaticLibrary>>(kwargs, "link_with");
     for (const auto & s : raw_args) {
-        s_link.emplace_back(Objects::StaticLinkage{Objects::StaticLinkMode::NORMAL, &s->value});
+        s_link.emplace_back(StaticLinkage{StaticLinkMode::NORMAL, s.get()});
     }
 
     return s_link;
@@ -148,16 +148,8 @@ std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
     }
 
     // TODO: machine parameter needs to be set from the native kwarg
-    if constexpr (std::is_same<T, Executable>::value) {
-        Objects::Executable held{name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink};
-        return std::make_shared<T>(held, f->var);
-    } else if constexpr (std::is_same<T, StaticLibrary>::value) {
-        Objects::StaticLibrary held{name,          srcs, Machines::Machine::BUILD,
-                                    f->source_dir, args, slink};
-        return std::make_shared<T>(held, f->var);
-    } else {
-        assert(false);
-    }
+    return std::make_shared<T>(name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink,
+                               f->var);
 }
 
 std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
