@@ -96,6 +96,11 @@ class File {
     Variable var;
 };
 
+class CustomTarget;
+
+/// Input sources for most targets
+using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>>;
+
 class CustomTarget {
   public:
     CustomTarget(const std::string & n, const std::vector<Source> & i, const std::vector<File> & o,
@@ -121,10 +126,11 @@ enum class StaticLinkMode {
 class StaticLibrary;
 
 using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary *>;
+using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>>;
 
 class Executable {
   public:
-    Executable(const std::string & name_, const std::vector<File> & srcs,
+    Executable(const std::string & name_, const std::vector<Source> & srcs,
                const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
                const std::vector<StaticLinkage> s_link, const Variable & v)
         : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
@@ -134,7 +140,7 @@ class Executable {
     const std::string name;
 
     /// The sources (as files)
-    const std::vector<File> sources;
+    const std::vector<Source> sources;
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
@@ -160,7 +166,7 @@ class Executable {
 
 class StaticLibrary {
   public:
-    StaticLibrary(const std::string & name_, const std::vector<File> & srcs,
+    StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
                   const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
                   const std::vector<StaticLinkage> s_link, const Variable & v)
         : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
@@ -170,7 +176,7 @@ class StaticLibrary {
     const std::string name;
 
     /// The sources (as files)
-    const std::vector<File> sources;
+    const std::vector<Source> sources;
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
@@ -290,7 +296,7 @@ using Object =
                  std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
                  std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
                  std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>,
-                 std::shared_ptr<Program>, std::unique_ptr<Empty>>;
+                 std::shared_ptr<Program>, std::unique_ptr<Empty>, std::shared_ptr<CustomTarget>>;
 
 /**
  * Holds a toolchain

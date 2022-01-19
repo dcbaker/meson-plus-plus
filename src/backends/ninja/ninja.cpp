@@ -222,8 +222,11 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         auto lang_args = cpp_args;
         lang_args.insert(lang_args.end(), always_args.begin(), always_args.end());
 
-        rules.emplace_back(Rule{{escape(f.relative_to_build_dir())},
-                                escape(fs::path{e.name + ".p"} / f.get_name()) + ".o",
+        // XXX: yeah...
+        const auto & ff = *std::get<std::shared_ptr<MIR::File>>(f);
+
+        rules.emplace_back(Rule{{escape(ff.relative_to_build_dir())},
+                                escape(fs::path{e.name + ".p"} / ff.get_name()) + ".o",
                                 RuleType::COMPILE,
                                 MIR::Toolchain::Language::CPP,
                                 MIR::Machines::Machine::BUILD,
