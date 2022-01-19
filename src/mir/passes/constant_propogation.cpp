@@ -50,6 +50,8 @@ std::optional<Object> get_value(const Identifier & id, const PropTable & table) 
             return std::get<std::shared_ptr<Program>>(v);
         } else if (std::holds_alternative<std::shared_ptr<IncludeDirectories>>(v)) {
             return std::get<std::shared_ptr<IncludeDirectories>>(v);
+        } else if (std::holds_alternative<std::shared_ptr<CustomTarget>>(v)) {
+            return std::get<std::shared_ptr<CustomTarget>>(v);
 #ifndef NDEBUG
         } else if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
                      std::holds_alternative<std::unique_ptr<Identifier>>(v) &&

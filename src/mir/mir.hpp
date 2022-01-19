@@ -96,6 +96,21 @@ class File {
     Variable var;
 };
 
+class CustomTarget {
+  public:
+    CustomTarget(const std::string & n, const std::vector<Source> & i, const std::vector<File> & o,
+                 const std::vector<std::string> & c, const fs::path & s, const Variable & v)
+        : name{n}, inputs{i}, outputs{o}, command{c}, subdir{s}, var{v} {};
+
+    const std::string name;
+    const std::vector<Source> inputs;
+    const std::vector<File> outputs;
+    const std::vector<std::string> command;
+    const fs::path subdir;
+
+    Variable var;
+};
+
 using ArgMap = std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>;
 
 enum class StaticLinkMode {
