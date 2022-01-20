@@ -240,3 +240,31 @@ TEST(file, not_equal) {
     MIR::File i{"foO.c", "sub", true, "/home/user/src", "/home/user/src/build"};
     ASSERT_NE(f, i);
 }
+
+TEST(not, simple) {
+    auto irlist = lower("not false");
+    const MIR::State::Persistant pstate{src_root, build_root};
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.back();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(r));
+
+    const auto & m = std::get<std::shared_ptr<MIR::Boolean>>(r);
+    ASSERT_EQ(m->value, true);
+}
+
+TEST(neg, simple) {
+    auto irlist = lower("-5");
+    const MIR::State::Persistant pstate{src_root, build_root};
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.back();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(r));
+
+    const auto & m = std::get<std::shared_ptr<MIR::Number>>(r);
+    ASSERT_EQ(m->value, -5);
+}

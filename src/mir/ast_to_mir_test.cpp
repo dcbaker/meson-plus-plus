@@ -626,6 +626,15 @@ TEST(ast_to_ir, not_simple) {
     ASSERT_EQ(std::get<std::shared_ptr<MIR::Boolean>>(ir->pos_args[0])->value, true);
 }
 
+TEST(ast_to_ir, not_method) {
+    auto irlist = lower("not x.method()");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(ir->pos_args[0]));
+}
+
 TEST(ast_to_ir, neg_simple) {
     auto irlist = lower("-5");
     ASSERT_EQ(irlist.instructions.size(), 1);

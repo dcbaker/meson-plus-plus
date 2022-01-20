@@ -12,5 +12,4 @@ x = find_program('sh')
 assert(x.found(), 'sh was not found?')
 
 y = find_program('not found', required : false)
-# disabled because it casues the test runner to fail
-#assert(y.found(), '"not found" was not found?')
+assert(not y.found(), '"not found" was found?')
