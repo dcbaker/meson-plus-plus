@@ -119,9 +119,31 @@ struct ExpressionLowering {
     Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
         return std::make_shared<String>("placeholder: mul");
     };
+
     Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
-        return std::make_shared<String>("placeholder: unary");
+        std::string name;
+        switch (expr->op) {
+            case Frontend::AST::UnaryOp::NOT:
+                name = "unary_not";
+                break;
+            case Frontend::AST::UnaryOp::NEG:
+                name = "unary_neg";
+                break;
+            default:
+                throw std::exception{}; // Should be unreachable
+        }
+
+        std::filesystem::path path{expr->loc.filename};
+        std::vector<Object> pos{};
+        pos.emplace_back(std::visit(*this, expr->rhs));
+
+        // We have to move positional arguments because Object isn't copy-able
+        // TODO: filename is currently absolute, but we need the source dir to make it relative
+        return std::make_shared<FunctionCall>(
+            name, std::move(pos), std::unordered_map<std::string, Object>{},
+            std::filesystem::relative(path.parent_path(), pstate.build_root));
     };
+
     Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
         return std::make_shared<String>("placeholder: subscript");
     };
