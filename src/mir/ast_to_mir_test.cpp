@@ -615,3 +615,23 @@ TEST(ast_to_ir, assign_from_id) {
     ASSERT_EQ(ir->var.name, "a");
     ASSERT_EQ(ir->var.version, 0);
 }
+
+TEST(ast_to_ir, not_simple) {
+    auto irlist = lower("not true");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "unary_not");
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Boolean>>(ir->pos_args[0])->value, true);
+}
+
+TEST(ast_to_ir, neg_simple) {
+    auto irlist = lower("-5");
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & obj = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj));
+    const auto & ir = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
+    ASSERT_EQ(ir->name, "unary_neg");
+    ASSERT_EQ(std::get<std::shared_ptr<MIR::Number>>(ir->pos_args[0])->value, 5);
+}
