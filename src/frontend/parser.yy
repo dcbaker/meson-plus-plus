@@ -81,6 +81,7 @@
 %nterm <std::vector<AST::ElifBlock>>                elif_clause in_elif_clause
 %nterm <AST::IfBlock>                               if_clause
 
+%right                  NOT
 %left                   "-" "+"
 %left                   "*" "/" "%"
 %left                   "."
@@ -90,7 +91,6 @@
 %nonassoc               "?" ":"
 %nonassoc               IF ELIF ELSE ENDIF
 %right                  UMINUS      // Negation
-%right                  NOT
 
 %%
 
