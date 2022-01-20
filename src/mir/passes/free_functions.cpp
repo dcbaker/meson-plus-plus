@@ -260,6 +260,52 @@ std::optional<Object> lower_assert(const Object & obj) {
     return std::make_unique<Empty>();
 }
 
+std::optional<Object> lower_not(const Object & obj) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f->holder.has_value() || f->name != "unary_not") {
+        return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
+    }
+
+    // TODO: is this code actually reachable?
+    if (f->pos_args.size() != 1) {
+        throw Util::Exceptions::InvalidArguments("not: takes 1 argument, got " +
+                                                 std::to_string(f->pos_args.size()));
+    }
+
+    const auto & value = extract_positional_argument<std::shared_ptr<Boolean>>(f->pos_args[0]);
+
+    return std::make_shared<Boolean>(!value.value()->value);
+}
+
+std::optional<Object> lower_neg(const Object & obj) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f->holder.has_value() || f->name != "unary_neg") {
+        return std::nullopt;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
+    }
+
+    // TODO: is this code actually reachable?
+    if (f->pos_args.size() != 1) {
+        throw Util::Exceptions::InvalidArguments("neg: takes 1 argument, got " +
+                                                 std::to_string(f->pos_args.size()));
+    }
+
+    const auto & value = extract_positional_argument<std::shared_ptr<Number>>(f->pos_args[0]);
+
+    return std::make_shared<Number>(-value.value()->value);
+}
+
 bool holds_reduced(const Object & obj);
 
 bool holds_reduced_array(const Object & obj) {
@@ -385,6 +431,8 @@ bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) 
     return false
         || function_walker(block, lower_messages)
         || function_walker(block, lower_assert)
+        || function_walker(block, lower_not)
+        || function_walker(block, lower_neg)
         || function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_include_dirs(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); })
