@@ -48,7 +48,7 @@ jobs:
       - uses: BSFishy/meson-build@v1.0.3
         with:
           meson-version: 0.55
-          setup_options: -Db_sanitize=address,undefined
+          setup-options: -Db_sanitize=address,undefined
           action: test
       - name: unit tests
         run : ./run-tests.sh
