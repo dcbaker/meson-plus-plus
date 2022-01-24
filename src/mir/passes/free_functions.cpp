@@ -13,14 +13,24 @@ namespace MIR::Passes {
 
 namespace {
 
-// XXX: we probably need access to the source_root and build_root
-std::optional<Object> lower_files(const Object & obj, const State::Persistant & pstate) {
+inline std::shared_ptr<FunctionCall> get_func_call(const Object & obj, const std::string & name) {
     if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
+        return nullptr;
     }
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->holder.has_value() || f->name != "files") {
+    if (f->holder.has_value() || f->name != name) {
+        return nullptr;
+    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return nullptr;
+    }
+    return f;
+}
+
+// XXX: we probably need access to the source_root and build_root
+std::optional<Object> lower_files(const Object & obj, const State::Persistant & pstate) {
+    const auto & f = get_func_call(obj, "files");
+    if (f == nullptr) {
         return std::nullopt;
     }
 
@@ -161,14 +171,8 @@ std::optional<Object> lower_static_library(const Object & obj, const State::Pers
 }
 
 std::optional<Object> lower_include_dirs(const Object & obj, const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.has_value() || f->name != "include_directories") {
-        return std::nullopt;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+    const auto & f = get_func_call(obj, "include_directories");
+    if (f == nullptr) {
         return std::nullopt;
     }
 
@@ -229,14 +233,8 @@ std::optional<Object> lower_messages(const Object & obj) {
 }
 
 std::optional<Object> lower_assert(const Object & obj) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.has_value() || f->name != "assert") {
-        return std::nullopt;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+    const auto & f = get_func_call(obj, "assert");
+    if (f == nullptr) {
         return std::nullopt;
     }
 
@@ -262,14 +260,8 @@ std::optional<Object> lower_assert(const Object & obj) {
 }
 
 std::optional<Object> lower_not(const Object & obj) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.has_value() || f->name != "unary_not") {
-        return std::nullopt;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+    const auto & f = get_func_call(obj, "unary_not");
+    if (f == nullptr) {
         return std::nullopt;
     }
 
@@ -285,14 +277,8 @@ std::optional<Object> lower_not(const Object & obj) {
 }
 
 std::optional<Object> lower_neg(const Object & obj) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.has_value() || f->name != "unary_neg") {
-        return std::nullopt;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+    const auto & f = get_func_call(obj, "unary_neg");
+    if (f == nullptr) {
         return std::nullopt;
     }
 
