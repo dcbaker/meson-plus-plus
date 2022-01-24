@@ -350,9 +350,14 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         write_linker_rule(lstr, tc.build()->linker, out);
     }
 
+    out << "rule custom_command\n"
+        << "  command = $COMMAND\n"
+        << "  description = $DESC\n"
+        << "  restat = 1\n\n";
+
     out << "# Phony build target, always out of date\n\n"
-        << "build PHONY: phony\n\n";
-    out << "# Build rules for targets\n\n";
+        << "build PHONY: phony\n\n"
+        << "# Build rules for targets\n\n";
 
     const auto & rules = mir_to_rules(block, pstate);
     for (const auto & r : rules) {
