@@ -252,7 +252,8 @@ std::optional<Object> lower_assert(const Object & obj) {
         // TODO, how to get the original values of this?
         std::string message = "";
         if (f->pos_args.size() == 2) {
-            message = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[1]).value()->value;
+            message =
+                extract_positional_argument<std::shared_ptr<String>>(f->pos_args[1]).value()->value;
         }
         return std::make_unique<Message>(MessageLevel::ERROR, "Assertion failed: " + message);
     }
@@ -293,6 +294,143 @@ std::optional<Object> lower_neg(const Object & obj) {
     const auto & value = extract_positional_argument<std::shared_ptr<Number>>(f->pos_args[0]);
 
     return std::make_shared<Number>(-value.value()->value);
+}
+
+Source extract_source(const Object & obj, const fs::path & current_source_dir,
+                      const State::Persistant & pstate) {
+    if (std::holds_alternative<std::shared_ptr<CustomTarget>>(obj)) {
+        return std::get<std::shared_ptr<CustomTarget>>(obj);
+    } else if (std::holds_alternative<std::shared_ptr<File>>(obj)) {
+        return std::get<std::shared_ptr<File>>(obj);
+    } else if (std::holds_alternative<std::shared_ptr<String>>(obj)) {
+        const auto & str = *std::get<std::shared_ptr<String>>(obj);
+        return std::make_shared<File>(str.value, current_source_dir, false, pstate.source_root,
+                                      pstate.build_root);
+    } else {
+        // TODO: better error
+        throw Util::Exceptions::InvalidArguments("custom_target: 'input' keyword argument must "
+                                                 "be 'custom_target', 'string', or 'file'");
+    }
+}
+
+std::vector<Source> extract_source_inputs(const std::unordered_map<std::string, Object> & kws,
+                                          const std::string & name,
+                                          const fs::path & current_source_dir,
+                                          const State::Persistant & pstate) {
+    const auto & obj = kws.find(name);
+    if (obj == kws.end()) {
+        return {};
+    }
+
+    std::vector<Source> srcs{};
+    if (std::holds_alternative<std::shared_ptr<Array>>(obj->second)) {
+        for (const auto & o : std::get<std::shared_ptr<Array>>(obj->second)->value) {
+            srcs.emplace_back(extract_source(o, current_source_dir, pstate));
+        }
+    } else {
+        srcs.emplace_back(extract_source(obj->second, current_source_dir, pstate));
+    }
+
+    return srcs;
+}
+
+std::vector<std::string> extract_ct_command(const Object & obj, const std::vector<Source> & inputs,
+                                            const std::vector<File> & outputs) {
+
+    if (std::holds_alternative<std::shared_ptr<String>>(obj)) {
+        // TODO: in c++20 these can be constexpr
+        static const auto output_size = std::string{"@OUTPUT"}.size();
+        static const auto input_size = std::string{"@INPUT"}.size();
+
+        const auto & v = std::get<std::shared_ptr<String>>(obj)->value;
+        if (v == "@OUTPUT@") {
+            std::vector<std::string> outs{};
+            for (const auto & o : outputs) {
+                outs.emplace_back(o.relative_to_build_dir());
+            }
+            return outs;
+        } else if (v.substr(0, output_size) == "@OUTPUT") {
+            const auto & index = std::stoul(v.substr(output_size, v.size() - 1));
+            return {outputs[index].relative_to_build_dir()};
+        } else if (v == "@INPUT@") {
+            std::vector<std::string> ins{};
+            for (const auto & o : inputs) {
+                if (std::holds_alternative<std::shared_ptr<File>>(o)) {
+                    ins.emplace_back(std::get<std::shared_ptr<File>>(o)->relative_to_build_dir());
+                } else {
+                    const auto & t = *std::get<std::shared_ptr<CustomTarget>>(o);
+                    for (const auto & o2 : t.outputs) {
+                        ins.emplace_back(o2.relative_to_build_dir());
+                    }
+                }
+            }
+            return ins;
+        } else if (v.substr(0, input_size) == "@INPUT") {
+            const auto & index = std::stoul(v.substr(input_size, v.size() - 1));
+            const Source s = inputs[index];
+            if (std::holds_alternative<std::shared_ptr<File>>(s)) {
+                return {std::get<std::shared_ptr<File>>(s)->relative_to_build_dir()};
+            } else {
+                std::vector<std::string> outs{};
+                const auto & t = *std::get<std::shared_ptr<CustomTarget>>(s);
+                // TODO: get the right index
+            }
+        } else {
+            return {v};
+        }
+    } else if (std::holds_alternative<std::shared_ptr<File>>(obj)) {
+        return {std::get<std::shared_ptr<File>>(obj)->relative_to_build_dir()};
+    } else if (std::holds_alternative<std::shared_ptr<Program>>(obj)) {
+        return {std::get<std::shared_ptr<Program>>(obj)->path};
+    }
+    throw Util::Exceptions::InvalidArguments(
+        "custom_target: 'commands' must be strings, files, or find_program objects");
+}
+
+std::vector<std::string> extract_ct_command(const std::unordered_map<std::string, Object> & kws,
+                                            const std::vector<Source> & inputs,
+                                            const std::vector<File> & outputs) {
+    const auto & cmd_obj = kws.find("command");
+    if (cmd_obj == kws.end()) {
+        throw Util::Exceptions::MesonException("custom_target: missing required kwarg 'command'");
+    }
+
+    std::vector<std::string> command{};
+    if (std::holds_alternative<std::shared_ptr<Array>>(cmd_obj->second)) {
+        for (const auto & o : std::get<std::shared_ptr<Array>>(cmd_obj->second)->value) {
+            const auto & e = extract_ct_command(o, inputs, outputs);
+            command.insert(command.end(), e.begin(), e.end());
+        }
+    } else {
+        const auto & e = extract_ct_command(cmd_obj->second, inputs, outputs);
+        command.insert(command.end(), e.begin(), e.end());
+    }
+
+    return command;
+}
+
+std::optional<Object> lower_custom_target(const Object & obj, const State::Persistant & pstate) {
+    const auto & f = get_func_call(obj, "custom_target");
+    if (f == nullptr) {
+        return std::nullopt;
+    }
+
+    const auto & inputs = extract_source_inputs(f->kw_args, "input", f->source_dir, pstate);
+
+    std::vector<File> outputs{};
+    for (const auto & a :
+         extract_array_keyword_argument<std::shared_ptr<String>>(f->kw_args, "output")) {
+        outputs.emplace_back(
+            File{a->value, f->source_dir, true, pstate.source_root, pstate.build_root});
+    }
+
+    const auto & raw_name = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[0]);
+    const std::string & name = raw_name ? raw_name.value()->value : outputs[0].name;
+
+    // TODO: output and input substitution
+    const auto & command = extract_ct_command(f->kw_args, inputs, outputs);
+
+    return std::make_shared<CustomTarget>(name, inputs, outputs, command, f->source_dir, f->var);
 }
 
 bool holds_reduced(const Object & obj);
@@ -430,6 +568,7 @@ bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) 
         || function_walker(block, [&](const Object & obj) { return lower_include_dirs(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_executable(obj, pstate); })
         || function_walker(block, [&](const Object & obj) { return lower_static_library(obj, pstate); })
+        || function_walker(block, [&](const Object & obj) { return lower_custom_target(obj, pstate); })
         ;
     // clang-format on
 }

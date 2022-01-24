@@ -206,3 +206,21 @@ TEST(neg, simple) {
     const auto & m = std::get<std::shared_ptr<MIR::Number>>(r);
     ASSERT_EQ(m->value, -5);
 }
+
+TEST(custom_target, simple) {
+    auto irlist =
+        lower("custom_target('foo', input : 'bar.in', output : 'bar.cpp', command : 'thing')");
+
+    const MIR::State::Persistant pstate{src_root, build_root};
+
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(r));
+
+    const auto & ct = *std::get<std::shared_ptr<MIR::CustomTarget>>(r);
+    ASSERT_EQ(ct.name, "foo");
+    ASSERT_EQ(ct.command, std::vector<std::string>{"thing"});
+}
