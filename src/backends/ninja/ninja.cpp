@@ -95,15 +95,20 @@ void write_linker_rule(const std::string & lang,
     out << "  description = Linking target ${out}" << std::endl << std::endl;
 }
 
-std::string escape(const std::string & str) {
+std::string escape(const std::string & str, const bool & quote = false) {
     std::string new_s{};
+    bool needs_quote = false;
     for (const auto & s : str) {
         if (s == ' ') {
             new_s.push_back('$');
             new_s.push_back(s);
+            needs_quote = true;
         } else {
             new_s.push_back(s);
         }
+    }
+    if (quote && needs_quote) {
+        new_s = "'" + new_s + "'";
     }
     return new_s;
 }
@@ -112,6 +117,7 @@ enum class RuleType {
     COMPILE,
     ARCHIVE,
     LINK,
+    CUSTOM,
 };
 
 /**
@@ -126,6 +132,9 @@ class Rule {
          const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
          const std::vector<std::string> & args)
         : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args} {};
+    Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
+         const RuleType & r, const std::vector<std::string> & a)
+        : input{in}, output{out}, type{r}, lang{}, machine{}, arguments{a} {};
 
     /// The input for this rule
     const std::vector<std::string> input;
@@ -156,8 +165,11 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
         case RuleType::LINK:
             rule_name = "cpp_linker_for_build";
             break;
-        case RuleType::ARCHIVE: // TODO:
+        case RuleType::ARCHIVE:
             rule_name = "cpp_archiver_for_build";
+            break;
+        case RuleType::CUSTOM:
+            rule_name = "custom_command";
             break;
         default:
             throw std::exception{}; // should be unreachable
@@ -175,9 +187,15 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
 
     out << "  ARGS =";
     for (const auto & a : rule.arguments) {
-        out << " " << a;
+        out << " " << escape(a, true);
     }
-    out << "\n" << std::endl;
+    out << "\n";
+
+    if (rule.type == RuleType::CUSTOM) {
+        out << "  DESCRIPTION = " << escape("generating ") << escape(rule.output[0])
+            << escape(" with ") << escape(rule.arguments[0]) << "\n";
+    }
+    out << std::endl;
 }
 
 template <typename T>
@@ -193,7 +211,7 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
             const auto & args =
                 tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
             for (const auto & arg : args) {
-                cpp_args.emplace_back(escape(arg));
+                cpp_args.emplace_back(arg);
             }
         }
     }
@@ -209,7 +227,7 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         MIR::Arguments::Argument(e.subdir, MIR::Arguments::Type::INCLUDE), pstate.source_root,
         pstate.build_root);
     for (const auto & arg : lincs) {
-        cpp_args.emplace_back(escape(arg));
+        cpp_args.emplace_back(arg);
     }
 
     std::vector<std::string> srcs{};
@@ -270,25 +288,45 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
     return rules;
 }
 
+template <>
+std::vector<Rule> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
+                                                 const MIR::State::Persistant & pstate) {
+    std::vector<std::string> outs{};
+    for (const auto & o : e.outputs) {
+        outs.emplace_back(o.relative_to_build_dir());
+    }
+
+    std::vector<std::string> ins{};
+    for (const auto & i : e.inputs) {
+        if (std::holds_alternative<std::shared_ptr<MIR::File>>(i)) {
+            const auto & f = *std::get<std::shared_ptr<MIR::File>>(i);
+            ins.emplace_back(f.relative_to_build_dir());
+        } else {
+            const auto & c = *std::get<std::shared_ptr<MIR::CustomTarget>>(i);
+            for (const auto & f : c.outputs) {
+                ins.emplace_back(f.relative_to_build_dir());
+            }
+        }
+    }
+
+    return {Rule{ins, outs, RuleType::CUSTOM, e.command}};
+}
+
 std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
                                const MIR::State::Persistant & pstate) {
     // A list of all rules
     std::vector<Rule> rules{};
 
-    // A mapping of named targets to their rules.
-    std::unordered_map<std::string, const Rule * const> rule_map{};
-
     for (const auto & i : block->instructions) {
         if (std::holds_alternative<std::shared_ptr<MIR::Executable>>(i)) {
             auto r = target_rule(*std::get<std::shared_ptr<MIR::Executable>>(i), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
-            const Rule * const named_rule = &rules.back();
-            rule_map.emplace(named_rule->output, named_rule);
         } else if (std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(i)) {
             auto r = target_rule(*std::get<std::shared_ptr<MIR::StaticLibrary>>(i), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
-            const Rule * const named_rule = &rules.back();
-            rule_map.emplace(named_rule->output, named_rule);
+        } else if (std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(i)) {
+            auto r = target_rule(*std::get<std::shared_ptr<MIR::CustomTarget>>(i), pstate);
+            std::move(r.begin(), r.end(), std::back_inserter(rules));
         }
     }
 
@@ -351,8 +389,8 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
     }
 
     out << "rule custom_command\n"
-        << "  command = $COMMAND\n"
-        << "  description = $DESC\n"
+        << "  command = $ARGS\n"
+        << "  description = $DESCRIPTION\n"
         << "  restat = 1\n\n";
 
     out << "# Phony build target, always out of date\n\n"
