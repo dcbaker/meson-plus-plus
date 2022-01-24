@@ -119,8 +119,8 @@ enum class RuleType {
  */
 class Rule {
   public:
-    Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
-         const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m)
+    Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
+         const RuleType & r, const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m)
         : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{} {};
     Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
          const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
@@ -131,7 +131,7 @@ class Rule {
     const std::vector<std::string> input;
 
     /// The output of this rule
-    const std::string output;
+    const std::vector<std::string> output;
 
     /// The type of rule this is
     const RuleType type;
@@ -163,7 +163,11 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
             throw std::exception{}; // should be unreachable
     }
 
-    out << "build " << rule.output << ": " << rule_name;
+    out << "build";
+    for (const auto & o : rule.output) {
+        out << " " << o;
+    }
+    out << ": " << rule_name;
     for (const auto & o : rule.input) {
         out << " " << o;
     }
@@ -228,7 +232,7 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
 
     std::vector<std::string> final_outs;
     for (const auto & r : rules) {
-        final_outs.emplace_back(r.output);
+        final_outs.insert(final_outs.end(), r.output.begin(), r.output.end());
     }
     for (const auto & [_, l] : e.link_static) {
         final_outs.emplace_back(l->output());
