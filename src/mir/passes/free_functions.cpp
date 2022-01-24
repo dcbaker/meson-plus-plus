@@ -250,10 +250,11 @@ std::optional<Object> lower_assert(const Object & obj) {
     if (!value.value()->value) {
         // TODO: maye have an assert level of message?
         // TODO, how to get the original values of this?
-        const auto & message = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[1]);
-        return std::make_unique<Message>(MessageLevel::ERROR,
-                                         "Assertion failed: " +
-                                             message.value_or(std::make_shared<String>(""))->value);
+        std::string message = "";
+        if (f->pos_args.size() == 2) {
+            message = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[1]).value()->value;
+        }
+        return std::make_unique<Message>(MessageLevel::ERROR, "Assertion failed: " + message);
     }
 
     // TODO: it would be better to
