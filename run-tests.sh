@@ -3,6 +3,8 @@
 # Quick and dirty script to run tests over a few directories
 # This is absolutely *not* a long term solution
 
+ret=0
+
 for x in tests/*/*/; do
     echo -n "Testing: ${x}"
     tdir=`mktemp -d`
@@ -10,15 +12,17 @@ for x in tests/*/*/; do
     if [ $? != 0 ]; then
         echo " - FAILED"
         rm -rf "${tdir}"
-        exit 1
+        ret=1
+        continue
     fi
     ninja -C "${tdir}" 1>/dev/null
     if [ $? != 0 ]; then
         echo " - FAILED"
         rm -rf "${tdir}"
-        exit 1
+        ret=1
+        continue
     fi
     echo " - SUCCESS"
 done
 
-exit 0
+exit $ret
