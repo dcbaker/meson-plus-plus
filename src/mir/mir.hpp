@@ -128,7 +128,7 @@ using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>
 class Executable {
   public:
     Executable(const std::string & name_, const std::vector<Source> & srcs,
-               const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+               const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
                const std::vector<StaticLinkage> s_link, const Variable & v);
 
     /// The name of the target
@@ -141,7 +141,7 @@ class Executable {
     const Machines::Machine machine;
 
     /// Where is this Target defined
-    const std::string subdir;
+    const fs::path subdir;
 
     /**
      * Arguments for the target, sorted by langauge
@@ -162,7 +162,7 @@ class Executable {
 class StaticLibrary {
   public:
     StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
-                  const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+                  const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
                   const std::vector<StaticLinkage> s_link, const Variable & v);
 
     /// The name of the target
@@ -175,7 +175,7 @@ class StaticLibrary {
     const Machines::Machine machine;
 
     /// Where is this Target defined
-    const std::string subdir;
+    const fs::path subdir;
 
     /**
      * Arguments for the target, sorted by langauge
