@@ -343,6 +343,7 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
         static const auto input_size = std::string{"@INPUT"}.size();
 
         const auto & v = std::get<std::shared_ptr<String>>(obj)->value;
+        // TODO: indexed input and output arguments
         if (v == "@OUTPUT@") {
             std::vector<std::string> outs{};
             for (const auto & o : outputs) {

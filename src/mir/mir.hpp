@@ -40,10 +40,10 @@ namespace MIR {
  */
 class Variable {
   public:
-    Variable() : name{}, version{0} {};
-    Variable(const std::string & n) : name{n}, version{0} {};
-    Variable(const std::string & n, const uint32_t & v) : name{n}, version{v} {};
-    Variable(const Variable & v) : name{v.name}, version{v.version} {};
+    Variable();
+    Variable(const std::string & n);
+    Variable(const std::string & n, const uint32_t & v);
+    Variable(const Variable & v);
 
     std::string name;
 
@@ -62,11 +62,9 @@ class Variable {
 class File {
   public:
     File(const std::string & name_, const fs::path & sdir, const bool & built_,
-         const fs::path & sr_, const fs::path & br_)
-        : name{name_}, subdir{sdir}, built{built_}, source_root{sr_}, build_root{br_}, var{} {};
+         const fs::path & sr_, const fs::path & br_);
     File(const std::string & name_, const fs::path & sdir, const bool & built_,
-         const fs::path & sr_, const fs::path & br_, const Variable & v)
-        : name{name_}, subdir{sdir}, built{built_}, source_root{sr_}, build_root{br_}, var{v} {};
+         const fs::path & sr_, const fs::path & br_, const Variable & v);
 
     /// Whether this is a built object, or a static one
     const bool is_built() const;
@@ -104,8 +102,7 @@ using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>
 class CustomTarget {
   public:
     CustomTarget(const std::string & n, const std::vector<Source> & i, const std::vector<File> & o,
-                 const std::vector<std::string> & c, const fs::path & s, const Variable & v)
-        : name{n}, inputs{i}, outputs{o}, command{c}, subdir{s}, var{v} {};
+                 const std::vector<std::string> & c, const fs::path & s, const Variable & v);
 
     const std::string name;
     const std::vector<Source> inputs;
@@ -132,9 +129,7 @@ class Executable {
   public:
     Executable(const std::string & name_, const std::vector<Source> & srcs,
                const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-               const std::vector<StaticLinkage> s_link, const Variable & v)
-        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
-          link_static{s_link}, var{v} {};
+               const std::vector<StaticLinkage> s_link, const Variable & v);
 
     /// The name of the target
     const std::string name;
@@ -161,16 +156,14 @@ class Executable {
 
     Variable var;
 
-    std::string output() const { return name; }
+    std::string output() const;
 };
 
 class StaticLibrary {
   public:
     StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
                   const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
-                  const std::vector<StaticLinkage> s_link, const Variable & v)
-        : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
-          link_static{s_link}, var{v} {};
+                  const std::vector<StaticLinkage> s_link, const Variable & v);
 
     /// The name of the target
     const std::string name;
@@ -197,7 +190,7 @@ class StaticLibrary {
 
     Variable var;
 
-    std::string output() const { return name + ".a"; }
+    std::string output() const;
 };
 
 /**
@@ -209,8 +202,8 @@ class StaticLibrary {
  */
 class Phi {
   public:
-    Phi() : left{}, right{} {};
-    Phi(const uint32_t & l, const uint32_t & r, const Variable & v) : left{l}, right{r}, var{v} {};
+    Phi();
+    Phi(const uint32_t & l, const uint32_t & r, const Variable & v);
 
     uint32_t left;
     uint32_t right;
@@ -223,8 +216,7 @@ class Phi {
 
 class IncludeDirectories {
   public:
-    IncludeDirectories(const std::vector<std::string> & d, const bool & s, const Variable & v)
-        : directories{d}, is_system{s}, var{v} {};
+    IncludeDirectories(const std::vector<std::string> & d, const bool & s, const Variable & v);
 
     const std::vector<std::string> directories;
     const bool is_system;
@@ -241,7 +233,7 @@ enum class MessageLevel {
 
 class Message {
   public:
-    Message(const MessageLevel & l, const std::string & m) : level{l}, message{m} {};
+    Message(const MessageLevel & l, const std::string & m);
 
     /// What level or kind of message this is
     const MessageLevel level;
@@ -254,17 +246,15 @@ class Message {
 
 class Program {
   public:
-    Program(const std::string & n, const Machines::Machine & m, const fs::path & p)
-        : name{n}, for_machine{m}, path{p} {};
+    Program(const std::string & n, const Machines::Machine & m, const fs::path & p);
     Program(const std::string & n, const Machines::Machine & m, const fs::path & p,
-            const Variable & v)
-        : name{n}, for_machine{m}, path{p}, var{v} {};
+            const Variable & v);
 
     const std::string name;
     const Machines::Machine for_machine;
     const fs::path path;
 
-    bool found() const { return path != ""; }
+    bool found() const;
 
     Variable var;
 };
@@ -305,7 +295,7 @@ using Object =
  */
 class Compiler {
   public:
-    Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc) : toolchain{tc} {};
+    Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc);
 
     const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
 
@@ -320,9 +310,7 @@ class Compiler {
 class FunctionCall {
   public:
     FunctionCall(const std::string & _name, std::vector<Object> && _pos,
-                 std::unordered_map<std::string, Object> && _kw, const std::filesystem::path & _sd)
-        : name{_name}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)}, holder{std::nullopt},
-          source_dir{_sd}, var{} {};
+                 std::unordered_map<std::string, Object> && _kw, const std::filesystem::path & _sd);
 
     const std::string name;
 
@@ -348,7 +336,7 @@ class FunctionCall {
 
 class String {
   public:
-    String(const std::string & f) : value{f}, var{} {};
+    String(const std::string & f);
 
     const std::string value;
     Variable var;
@@ -356,7 +344,7 @@ class String {
 
 class Boolean {
   public:
-    Boolean(const bool & f) : value{f}, var{} {};
+    Boolean(const bool & f);
 
     const bool value;
     Variable var;
@@ -364,7 +352,7 @@ class Boolean {
 
 class Number {
   public:
-    Number(const int64_t & f) : value{f}, var{} {};
+    Number(const int64_t & f);
 
     const int64_t value;
     Variable var;
@@ -372,9 +360,8 @@ class Number {
 
 class Identifier {
   public:
-    Identifier(const std::string & s) : value{s}, version{}, var{} {};
-    Identifier(const std::string & s, const uint32_t & ver, Variable && v)
-        : value{s}, version{ver}, var{std::move(v)} {};
+    Identifier(const std::string & s);
+    Identifier(const std::string & s, const uint32_t & ver, Variable && v);
 
     /// The name of the identifier
     const std::string value;
@@ -400,8 +387,8 @@ class Identifier {
 
 class Array {
   public:
-    Array() : value{}, var{} {};
-    Array(std::vector<Object> && a) : value{std::move(a)} {};
+    Array();
+    Array(std::vector<Object> && a);
 
     std::vector<Object> value;
     Variable var;
@@ -409,7 +396,7 @@ class Array {
 
 class Dict {
   public:
-    Dict() : value{}, var{} {};
+    Dict();
 
     // TODO: the key is allowed to be a string or an expression that evaluates
     // to a string, we need to enforce that somewhere.
