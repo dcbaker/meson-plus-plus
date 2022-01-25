@@ -12,6 +12,25 @@ namespace MIR {
 
 namespace {
 
+/// Get just the subdir, without the source_root
+fs::path get_subdir(const fs::path & full_path, const State::Persistant & pstate) {
+    // This works for our case, but is probably wrong in a generic sense
+    auto itr = full_path.begin();
+    for (const auto & seg : pstate.source_root) {
+        if (*itr == seg) {
+            ++itr;
+        } else {
+            break;
+        }
+    }
+
+    fs::path fin = *itr;
+    while (++itr != full_path.end()) {
+        fin = fin / *itr;
+    }
+    return fin;
+}
+
 /**
  * Lowers AST expressions into MIR objects.
  */
@@ -53,13 +72,12 @@ struct ExpressionLowering {
             kwargs[key] = std::visit(*this, v);
         }
 
-        fs::path path{expr->loc.filename};
+        fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_shared<FunctionCall>(
-            fname, std::move(pos), std::move(kwargs),
-            fs::relative(path.parent_path(), pstate.build_root));
+        return std::make_shared<FunctionCall>(fname, std::move(pos), std::move(kwargs),
+                                              fs::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
@@ -135,15 +153,15 @@ struct ExpressionLowering {
                 throw std::exception{}; // Should be unreachable
         }
 
-        fs::path path{expr->loc.filename};
+        fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
         std::vector<Object> pos{};
         pos.emplace_back(std::visit(*this, expr->rhs));
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_shared<FunctionCall>(
-            name, std::move(pos), std::unordered_map<std::string, Object>{},
-            fs::relative(path.parent_path(), pstate.build_root));
+        return std::make_shared<FunctionCall>(name, std::move(pos),
+                                              std::unordered_map<std::string, Object>{},
+                                              fs::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
