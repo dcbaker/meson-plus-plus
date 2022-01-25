@@ -6,6 +6,8 @@
 #include "ast_to_mir.hpp"
 #include "exceptions.hpp"
 
+namespace fs = std::filesystem;
+
 namespace MIR {
 
 namespace {
@@ -51,13 +53,13 @@ struct ExpressionLowering {
             kwargs[key] = std::visit(*this, v);
         }
 
-        std::filesystem::path path{expr->loc.filename};
+        fs::path path{expr->loc.filename};
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
         return std::make_shared<FunctionCall>(
             fname, std::move(pos), std::move(kwargs),
-            std::filesystem::relative(path.parent_path(), pstate.build_root));
+            fs::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
@@ -133,7 +135,7 @@ struct ExpressionLowering {
                 throw std::exception{}; // Should be unreachable
         }
 
-        std::filesystem::path path{expr->loc.filename};
+        fs::path path{expr->loc.filename};
         std::vector<Object> pos{};
         pos.emplace_back(std::visit(*this, expr->rhs));
 
@@ -141,7 +143,7 @@ struct ExpressionLowering {
         // TODO: filename is currently absolute, but we need the source dir to make it relative
         return std::make_shared<FunctionCall>(
             name, std::move(pos), std::unordered_map<std::string, Object>{},
-            std::filesystem::relative(path.parent_path(), pstate.build_root));
+            fs::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
