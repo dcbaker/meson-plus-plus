@@ -67,7 +67,7 @@ std::string File::get_name() const { return name; }
 std::filesystem::path File::relative_to_source_dir() const {
     if (built) {
         std::error_code ec{};
-        auto p = std::filesystem::relative(build_root / subdir / name, source_root / subdir, ec);
+        auto p = fs::relative(build_root / subdir / name, source_root / subdir, ec);
         if (ec) {
             // TODO: better error handling
             throw Util::Exceptions::MesonException{"Failed to create relative path"};
@@ -81,7 +81,7 @@ std::filesystem::path File::relative_to_source_dir() const {
 std::filesystem::path File::relative_to_build_dir() const {
     if (!built) {
         std::error_code ec{};
-        auto p = std::filesystem::relative(source_root / subdir / name, build_root / subdir, ec);
+        auto p = fs::relative(source_root / subdir / name, build_root / subdir, ec);
         if (ec) {
             // TODO: better error handling
             throw Util::Exceptions::MesonException{"Failed to create relative path"};
