@@ -122,7 +122,7 @@ std::ostream & operator<<(std::ostream & os, const File & f) {
 }
 
 Executable::Executable(const std::string & name_, const std::vector<Source> & srcs,
-                       const Machines::Machine & m, const std::string & sdir, const ArgMap & args,
+                       const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
                        const std::vector<StaticLinkage> s_link, const Variable & v)
     : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
       link_static{s_link}, var{v} {};
@@ -130,7 +130,7 @@ Executable::Executable(const std::string & name_, const std::vector<Source> & sr
 std::string Executable::output() const { return name; }
 
 StaticLibrary::StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
-                             const Machines::Machine & m, const std::string & sdir,
+                             const Machines::Machine & m, const fs::path & sdir,
                              const ArgMap & args, const std::vector<StaticLinkage> s_link,
                              const Variable & v)
     : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
