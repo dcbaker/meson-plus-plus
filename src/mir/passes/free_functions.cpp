@@ -300,6 +300,8 @@ bool holds_reduced_array(const Object & obj) {
         for (const auto & a : std::get<std::shared_ptr<Array>>(obj)->value) {
             if (!holds_reduced(a)) {
                 return false;
+            } else if (std::holds_alternative<std::shared_ptr<Array>>(a)) {
+                return false;
             }
         }
         return true;
