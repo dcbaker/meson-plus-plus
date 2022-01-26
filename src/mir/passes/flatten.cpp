@@ -29,6 +29,19 @@ std::optional<Object> flatten_cb(const Object & obj) {
     }
 
     const auto & arr = std::get<std::shared_ptr<Array>>(obj);
+
+    // If there is nothing to flatten, don't go mutation anything
+    bool has_array = false;
+    for (const auto & e : arr->value) {
+        has_array = std::holds_alternative<std::shared_ptr<Array>>(e);
+        if (has_array) {
+            break;
+        }
+    }
+    if (!has_array) {
+        return std::nullopt;
+    }
+
     std::vector<Object> newarr{};
     do_flatten(arr, newarr);
 
@@ -39,10 +52,7 @@ std::optional<Object> flatten_cb(const Object & obj) {
 
 bool flatten(BasicBlock * block, const State::Persistant & pstate) {
     // TODO: we need to skip this for message, error, and warning
-    bool progress = instruction_walker(
-        block, {[&](Object & obj) { return function_argument_walker(obj, flatten_cb); }});
-
-    return progress;
+    return function_walker(block, flatten_cb);
 }
 
 } // namespace MIR::Passes

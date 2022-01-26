@@ -36,7 +36,7 @@ TEST(flatten, already_flat) {
     MIR::State::Persistant pstate{src_root, build_root};
     bool progress = MIR::Passes::flatten(&irlist, pstate);
 
-    ASSERT_TRUE(progress);
+    ASSERT_FALSE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
@@ -72,4 +72,20 @@ TEST(flatten, mixed_args) {
     const auto & arr = std::get<std::shared_ptr<MIR::Array>>(arg)->value;
 
     ASSERT_EQ(arr.size(), 2);
+}
+
+TEST(flatten, keyword_mixed) {
+    auto irlist = lower("func(arg : ['foo', ['bar', ['foobar']]])");
+    MIR::State::Persistant pstate{src_root, build_root};
+    bool progress = MIR::Passes::flatten(&irlist, pstate);
+
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(r));
+    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(r);
+    const auto & arr = *std::get<std::shared_ptr<MIR::Array>>(f->kw_args.at("arg"));
+    ASSERT_EQ(arr.value.size(), 3);
 }

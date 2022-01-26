@@ -113,9 +113,12 @@ bool function_argument_walker(const Object & obj, const ReplacementCallback & cb
         for (auto & [n, v] : func->kw_args) {
             if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
                 progress |= array_walker(v, cb);
-            } else if (std::optional<Object> o = cb(v); o.has_value()) {
+            }
+            // If the callback can act on arrays (like flatten can), we need to
+            // call the cb on the array, and on the array elements
+            if (std::optional<Object> o = cb(v); o.has_value()) {
                 func->kw_args[n] = std::move(o.value());
-                progress = true;
+                progress |= true;
             }
         }
     }
