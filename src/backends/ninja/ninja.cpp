@@ -127,14 +127,16 @@ class Rule {
   public:
     Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
          const RuleType & r, const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{} {};
+        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{}, deps{},
+          order_deps{} {};
     Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
          const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
          const std::vector<std::string> & args)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args} {};
+        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{},
+          order_deps{} {};
     Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
          const RuleType & r, const std::vector<std::string> & a)
-        : input{in}, output{out}, type{r}, lang{}, machine{}, arguments{a} {};
+        : input{in}, output{out}, type{r}, lang{}, machine{}, arguments{a}, deps{}, order_deps{} {};
 
     /// The input for this rule
     const std::vector<std::string> input;
@@ -153,6 +155,12 @@ class Rule {
 
     /// The arguments for this rule
     const std::vector<std::string> arguments;
+
+    /// Order only inputs
+    const std::vector<std::string> deps;
+
+    /// Order only inputs
+    const std::vector<std::string> order_deps;
 };
 
 void write_build_rule(const Rule & rule, std::ofstream & out) {
