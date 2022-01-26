@@ -85,8 +85,14 @@ std::vector<Source> srclist_to_filelist(const std::vector<Object *> & srclist,
 inline std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
 target_arguments(const std::shared_ptr<FunctionCall> & f, const State::Persistant & pstate) {
     std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
+    const auto & comp_at = pstate.toolchains.find(Toolchain::Language::CPP);
+    if (comp_at == pstate.toolchains.end()) {
+        // TODO: better error message
+        throw Util::Exceptions::MesonException(
+            "Tried to build a C++ target without a C++ toolchain.");
+    }
 
-    const auto & comp = pstate.toolchains.at(Toolchain::Language::CPP).build()->compiler;
+    const auto & comp = comp_at->second.build()->compiler;
     auto raw_args = extract_array_keyword_argument<std::shared_ptr<String>>(f->kw_args, "cpp_args");
     for (const auto & ra : raw_args) {
         args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra->value));
