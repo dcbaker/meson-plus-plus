@@ -88,4 +88,15 @@ std::vector<std::string> GnuLike::always_args() const {
     return args;
 }
 
+CanCompileType GnuLike::supports_file(const std::string & name) const {
+    const auto ext = fs::path{name}.extension();
+    if (ext == ".cpp" || ext == ".c++") {
+        return CanCompileType::SOURCE;
+    } else if (ext == ".hpp" || ext == ".h++" || ext == ".h") {
+        return CanCompileType::DEPENDS;
+    } else {
+        return CanCompileType::NONE;
+    }
+}
+
 } // namespace MIR::Toolchain::Compiler::CPP
