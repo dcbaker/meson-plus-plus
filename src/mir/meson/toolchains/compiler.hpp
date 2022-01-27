@@ -19,6 +19,22 @@ namespace MIR::Toolchain::Compiler {
 
 namespace fs = std::filesystem;
 
+/// Whether or not this compiler supports the given type
+enum class CanCompileType {
+    /// This is a source for this language
+    SOURCE,
+
+    /**
+     * This is a depends only source for this language
+     *
+     * For example, this is a header or include type (such as .h, .hpp, or .inc)
+     */
+    DEPENDS,
+
+    /// This compiler does not suppor this type at all
+    NONE,
+};
+
 /**
  * Abstract base for all Compilers.
  */
@@ -59,6 +75,9 @@ class Compiler {
     virtual std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
                                                          const fs::path & src_dir,
                                                          const fs::path & build_dir) const = 0;
+
+    /// Whether this compiler/language supports a given source type
+    virtual CanCompileType supports_file(const std::string &) const = 0;
 
     /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;
