@@ -14,6 +14,7 @@
 
 #include "entry.hpp"
 #include "exceptions.hpp"
+#include "fir/fir.hpp"
 #include "toolchains/compiler.hpp"
 
 namespace fs = std::filesystem;
@@ -113,76 +114,20 @@ std::string escape(const std::string & str, const bool & quote = false) {
     return new_s;
 }
 
-enum class RuleType {
-    COMPILE,
-    ARCHIVE,
-    LINK,
-    CUSTOM,
-};
-
-/**
- * A Ninja rule to be generated later
- */
-class Rule {
-  public:
-    Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
-         const RuleType & r, const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{}, deps{},
-          order_deps{} {};
-    Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
-         const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
-         const std::vector<std::string> & args)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{},
-          order_deps{} {};
-    Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
-         const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
-         const std::vector<std::string> & args, const std::vector<std::string> & d,
-         const std::vector<std::string> & o)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{d},
-          order_deps{o} {};
-    Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
-         const RuleType & r, const std::vector<std::string> & a)
-        : input{in}, output{out}, type{r}, lang{}, machine{}, arguments{a}, deps{}, order_deps{} {};
-
-    /// The input for this rule
-    const std::vector<std::string> input;
-
-    /// The output of this rule
-    const std::vector<std::string> output;
-
-    /// The type of rule this is
-    const RuleType type;
-
-    /// The language of this rule
-    const MIR::Toolchain::Language lang;
-
-    /// The machine of this rule
-    const MIR::Machines::Machine machine;
-
-    /// The arguments for this rule
-    const std::vector<std::string> arguments;
-
-    /// Order only inputs
-    const std::vector<std::string> deps;
-
-    /// Order only inputs
-    const std::vector<std::string> order_deps;
-};
-
-void write_build_rule(const Rule & rule, std::ofstream & out) {
+void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
     // TODO: get the actual compiler/linker
     std::string rule_name;
     switch (rule.type) {
-        case RuleType::COMPILE:
+        case FIR::TargetType::COMPILE:
             rule_name = "cpp_compiler_for_build";
             break;
-        case RuleType::LINK:
+        case FIR::TargetType::LINK:
             rule_name = "cpp_linker_for_build";
             break;
-        case RuleType::ARCHIVE:
+        case FIR::TargetType::ARCHIVE:
             rule_name = "cpp_archiver_for_build";
             break;
-        case RuleType::CUSTOM:
+        case FIR::TargetType::CUSTOM:
             rule_name = "custom_command";
             break;
         default:
@@ -220,183 +165,11 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
     }
     out << "\n";
 
-    if (rule.type == RuleType::CUSTOM) {
+    if (rule.type == FIR::TargetType::CUSTOM) {
         out << "  DESCRIPTION = " << escape("generating ") << escape(rule.output[0])
             << escape(" with ") << escape(rule.arguments[0]) << "\n";
     }
     out << std::endl;
-}
-
-template <typename T>
-std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate) {
-    static_assert(std::is_base_of<MIR::Executable, T>::value ||
-                      std::is_base_of<MIR::StaticLibrary, T>::value,
-                  "Must be derived from a build target");
-
-    std::vector<std::string> cpp_args{};
-    if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
-        const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
-        for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
-            const auto & args =
-                tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
-            for (const auto & arg : args) {
-                cpp_args.emplace_back(arg);
-            }
-        }
-    }
-
-    std::vector<Rule> rules{};
-    const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
-
-    // These are the same on each iteration
-    const auto & always_args = tc.build()->compiler->always_args();
-
-    // TODO: there's a keyword argument to control this
-    auto lincs = tc.build()->compiler->specialize_argument(
-        MIR::Arguments::Argument(e.subdir, MIR::Arguments::Type::INCLUDE), pstate.source_root,
-        pstate.build_root);
-    for (const auto & arg : lincs) {
-        cpp_args.emplace_back(arg);
-    }
-
-    std::vector<std::string> order_deps{};
-    for (const auto & f : e.sources) {
-        if (std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(f)) {
-            const auto & t = *std::get<std::shared_ptr<MIR::CustomTarget>>(f);
-            for (const auto & ff : t.outputs) {
-                if (tc.build()->compiler->supports_file(ff.get_name()) ==
-                    MIR::Toolchain::Compiler::CanCompileType::DEPENDS) {
-                    order_deps.emplace_back(ff.relative_to_build_dir());
-                }
-            }
-        }
-    }
-
-    std::vector<std::string> srcs{};
-    for (const auto & f : e.sources) {
-        // TODO: obj files are a per compiler thing, I think
-        // TODO: get the proper language
-        // TODO: actually set args to something
-        // TODO: do something better for private dirs, we really need the subdir for this
-
-        auto lang_args = cpp_args;
-        lang_args.insert(lang_args.end(), always_args.begin(), always_args.end());
-
-        // FIXME: without depfile support, we can't really treat order only deps
-        // correctly, and instead we have to treat them as full deps for correct
-        // behavior. This should be fixed.
-        if (std::holds_alternative<std::shared_ptr<MIR::File>>(f)) {
-            const auto & ff = *std::get<std::shared_ptr<MIR::File>>(f);
-            if (tc.build()->compiler->supports_file(ff.get_name()) ==
-                MIR::Toolchain::Compiler::CanCompileType::SOURCE) {
-                rules.emplace_back(Rule{{ff.relative_to_build_dir()},
-                                        std::string{fs::path{e.name + ".p"} / ff.get_name()} + ".o",
-                                        RuleType::COMPILE,
-                                        MIR::Toolchain::Language::CPP,
-                                        MIR::Machines::Machine::BUILD,
-                                        lang_args,
-                                        {},
-                                        order_deps});
-            }
-        } else {
-            const auto & t = *std::get<std::shared_ptr<MIR::CustomTarget>>(f);
-            for (const auto & ff : t.outputs) {
-                if (tc.build()->compiler->supports_file(ff.get_name()) ==
-                    MIR::Toolchain::Compiler::CanCompileType::SOURCE) {
-                    rules.emplace_back(
-                        Rule{{ff.relative_to_build_dir()},
-                             std::string{fs::path{e.name + ".p"} / ff.get_name()} + ".o",
-                             RuleType::COMPILE,
-                             MIR::Toolchain::Language::CPP,
-                             MIR::Machines::Machine::BUILD,
-                             lang_args,
-                             {ff.relative_to_build_dir()},
-                             order_deps});
-                }
-            }
-        }
-    }
-
-    std::vector<std::string> final_outs;
-    for (const auto & r : rules) {
-        final_outs.insert(final_outs.end(), r.output.begin(), r.output.end());
-    }
-    for (const auto & [_, l] : e.link_static) {
-        final_outs.emplace_back(l->output());
-    }
-
-    std::string name;
-    RuleType type;
-    std::vector<std::string> link_args{};
-    if constexpr (std::is_base_of<MIR::StaticLibrary, T>::value) {
-        type = RuleType::ARCHIVE;
-        // TODO: per platform?
-        name = e.output();
-        // TODO: need to combin with link_arguments from DSL
-        link_args = tc.build()->archiver->always_args();
-    } else {
-        type = RuleType::LINK;
-        name = e.output();
-        link_args = tc.build()->linker->always_args();
-    }
-
-    // TODO: linker/archiver always_args
-
-    rules.emplace_back(Rule{
-        final_outs,
-        name,
-        type,
-        MIR::Toolchain::Language::CPP,
-        MIR::Machines::Machine::BUILD,
-        link_args,
-    });
-
-    return rules;
-}
-
-template <>
-std::vector<Rule> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
-                                                 const MIR::State::Persistant & pstate) {
-    std::vector<std::string> outs{};
-    for (const auto & o : e.outputs) {
-        outs.emplace_back(o.relative_to_build_dir());
-    }
-
-    std::vector<std::string> ins{};
-    for (const auto & i : e.inputs) {
-        if (std::holds_alternative<std::shared_ptr<MIR::File>>(i)) {
-            const auto & f = *std::get<std::shared_ptr<MIR::File>>(i);
-            ins.emplace_back(f.relative_to_build_dir());
-        } else {
-            const auto & c = *std::get<std::shared_ptr<MIR::CustomTarget>>(i);
-            for (const auto & f : c.outputs) {
-                ins.emplace_back(f.relative_to_build_dir());
-            }
-        }
-    }
-
-    return {Rule{ins, outs, RuleType::CUSTOM, e.command}};
-}
-
-std::vector<Rule> mir_to_rules(const MIR::BasicBlock * const block,
-                               const MIR::State::Persistant & pstate) {
-    // A list of all rules
-    std::vector<Rule> rules{};
-
-    for (const auto & i : block->instructions) {
-        if (std::holds_alternative<std::shared_ptr<MIR::Executable>>(i)) {
-            auto r = target_rule(*std::get<std::shared_ptr<MIR::Executable>>(i), pstate);
-            std::move(r.begin(), r.end(), std::back_inserter(rules));
-        } else if (std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(i)) {
-            auto r = target_rule(*std::get<std::shared_ptr<MIR::StaticLibrary>>(i), pstate);
-            std::move(r.begin(), r.end(), std::back_inserter(rules));
-        } else if (std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(i)) {
-            auto r = target_rule(*std::get<std::shared_ptr<MIR::CustomTarget>>(i), pstate);
-            std::move(r.begin(), r.end(), std::back_inserter(rules));
-        }
-    }
-
-    return rules;
 }
 
 } // namespace
@@ -463,7 +236,7 @@ void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant 
         << "build PHONY: phony\n\n"
         << "# Build rules for targets\n\n";
 
-    const auto & rules = mir_to_rules(block, pstate);
+    const auto & rules = FIR::mir_to_fir(block, pstate);
     for (const auto & r : rules) {
         write_build_rule(r, out);
     }
