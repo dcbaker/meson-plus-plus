@@ -60,26 +60,21 @@ std::optional<Object> lower_files(const Object & obj, const State::Persistant & 
  * converting any strings into files, appending files as is, and flattening any
  * arrays it runs into.
  */
-std::vector<Source> srclist_to_filelist(const std::vector<Object *> & srclist,
-                                        const State::Persistant & pstate,
-                                        const std::string & subdir) {
-    std::vector<Source> filelist{};
-    for (const auto & s : srclist) {
-        if (const auto src = std::get_if<std::shared_ptr<String>>(s); src != nullptr) {
-            filelist.emplace_back(std::make_shared<File>((*src)->value, subdir, false,
-                                                         pstate.source_root, pstate.build_root));
-        } else if (const auto src = std::get_if<std::shared_ptr<File>>(s); s != nullptr) {
-            filelist.emplace_back(*src);
-        } else if (const auto src = std::get_if<std::shared_ptr<CustomTarget>>(s); s != nullptr) {
-            filelist.emplace_back(*src);
-        } else {
-            // TODO: there are other valid types here, like generator output and custom targets
-            throw Util::Exceptions::InvalidArguments{
-                "'executable' sources must be strings, files, or custom_target objects."};
-        }
+Source src_to_file(const Object & raw_src, const State::Persistant & pstate,
+                   const std::string & subdir) {
+    if (std::holds_alternative<std::shared_ptr<String>>(raw_src)) {
+        const auto & src = *std::get<std::shared_ptr<String>>(raw_src);
+        return std::make_shared<File>(src.value, subdir, false, pstate.source_root,
+                                      pstate.build_root);
+    } else if (std::holds_alternative<std::shared_ptr<File>>(raw_src)) {
+        return std::get<std::shared_ptr<File>>(raw_src);
+    } else if (std::holds_alternative<std::shared_ptr<CustomTarget>>(raw_src)) {
+        return std::get<std::shared_ptr<CustomTarget>>(raw_src);
+    } else {
+        // TODO: there are other valid types here, like generator output and custom targets
+        throw Util::Exceptions::InvalidArguments{
+            "'executable' sources must be strings, files, or custom_target objects."};
     }
-
-    return filelist;
 }
 
 inline std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
@@ -141,18 +136,18 @@ std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
         throw Util::Exceptions::InvalidArguments{f->name + " requires at least 2 arguments"};
     }
 
-    if (!std::holds_alternative<std::shared_ptr<String>>(f->pos_args[0])) {
-        // TODO: it could also be an identifier pointing to a string
+    auto pos_itr = f->pos_args.begin();
+
+    const auto & name = extract_positional_argument<std::shared_ptr<String>>(*pos_itr++);
+    if (!name) {
         throw Util::Exceptions::InvalidArguments{f->name + " first argument must be a string"};
     }
-    const auto & name = std::get<std::shared_ptr<String>>(f->pos_args[0])->value;
 
     // skip the first argument
-    std::vector<Object *> raw_srcs{};
-    for (unsigned i = 1; i < f->pos_args.size(); ++i) {
-        raw_srcs.emplace_back(&f->pos_args[i]);
+    std::vector<Source> srcs{};
+    for (; pos_itr != f->pos_args.end(); ++pos_itr) {
+        srcs.emplace_back(src_to_file(*pos_itr, pstate, f->source_dir));
     }
-    auto srcs = srclist_to_filelist(raw_srcs, pstate, f->source_dir);
     auto args = target_arguments(f, pstate);
     auto slink = target_kwargs(f->kw_args);
     auto raw_inc = extract_array_keyword_argument<std::shared_ptr<IncludeDirectories>>(
@@ -166,8 +161,8 @@ std::optional<std::shared_ptr<T>> lower_build_target(const Object & obj,
     }
 
     // TODO: machine parameter needs to be set from the native kwarg
-    return std::make_shared<T>(name, srcs, Machines::Machine::BUILD, f->source_dir, args, slink,
-                               f->var);
+    return std::make_shared<T>(name.value()->value, srcs, Machines::Machine::BUILD, f->source_dir,
+                               args, slink, f->var);
 }
 
 std::optional<Object> lower_executable(const Object & obj, const State::Persistant & pstate) {
