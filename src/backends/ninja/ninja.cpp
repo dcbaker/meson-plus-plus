@@ -134,6 +134,12 @@ class Rule {
          const std::vector<std::string> & args)
         : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{},
           order_deps{} {};
+    Rule(const std::vector<std::string> & in, const std::string & out, const RuleType & r,
+         const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
+         const std::vector<std::string> & args, const std::vector<std::string> & d,
+         const std::vector<std::string> & o)
+        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{d},
+          order_deps{o} {};
     Rule(const std::vector<std::string> & in, const std::vector<std::string> & out,
          const RuleType & r, const std::vector<std::string> & a)
         : input{in}, output{out}, type{r}, lang{}, machine{}, arguments{a}, deps{}, order_deps{} {};
@@ -185,12 +191,27 @@ void write_build_rule(const Rule & rule, std::ofstream & out) {
 
     out << "build";
     for (const auto & o : rule.output) {
-        out << " " << o;
+        out << " " << escape(o);
     }
     out << ": " << rule_name;
     for (const auto & o : rule.input) {
-        out << " " << o;
+        out << " " << escape(o);
     }
+
+    if (!rule.deps.empty()) {
+        out << " |";
+        for (const auto & d : rule.deps) {
+            out << " " << escape(d);
+        }
+    }
+
+    if (!rule.order_deps.empty()) {
+        out << " ||";
+        for (const auto & d : rule.order_deps) {
+            out << " " << escape(d);
+        }
+    }
+
     out << "\n";
 
     out << "  ARGS =";
@@ -238,6 +259,19 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         cpp_args.emplace_back(arg);
     }
 
+    std::vector<std::string> order_deps{};
+    for (const auto & f : e.sources) {
+        if (std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(f)) {
+            const auto & t = *std::get<std::shared_ptr<MIR::CustomTarget>>(f);
+            for (const auto & ff : t.outputs) {
+                if (tc.build()->compiler->supports_file(ff.get_name()) ==
+                    MIR::Toolchain::Compiler::CanCompileType::DEPENDS) {
+                    order_deps.emplace_back(ff.relative_to_build_dir());
+                }
+            }
+        }
+    }
+
     std::vector<std::string> srcs{};
     for (const auto & f : e.sources) {
         // TODO: obj files are a per compiler thing, I think
@@ -248,15 +282,39 @@ std::vector<Rule> target_rule(const T & e, const MIR::State::Persistant & pstate
         auto lang_args = cpp_args;
         lang_args.insert(lang_args.end(), always_args.begin(), always_args.end());
 
-        // XXX: yeah...
-        const auto & ff = *std::get<std::shared_ptr<MIR::File>>(f);
-
-        rules.emplace_back(Rule{{escape(ff.relative_to_build_dir())},
-                                escape(fs::path{e.name + ".p"} / ff.get_name()) + ".o",
-                                RuleType::COMPILE,
-                                MIR::Toolchain::Language::CPP,
-                                MIR::Machines::Machine::BUILD,
-                                lang_args});
+        // FIXME: without depfile support, we can't really treat order only deps
+        // correctly, and instead we have to treat them as full deps for correct
+        // behavior. This should be fixed.
+        if (std::holds_alternative<std::shared_ptr<MIR::File>>(f)) {
+            const auto & ff = *std::get<std::shared_ptr<MIR::File>>(f);
+            if (tc.build()->compiler->supports_file(ff.get_name()) ==
+                MIR::Toolchain::Compiler::CanCompileType::SOURCE) {
+                rules.emplace_back(Rule{{ff.relative_to_build_dir()},
+                                        std::string{fs::path{e.name + ".p"} / ff.get_name()} + ".o",
+                                        RuleType::COMPILE,
+                                        MIR::Toolchain::Language::CPP,
+                                        MIR::Machines::Machine::BUILD,
+                                        lang_args,
+                                        {},
+                                        order_deps});
+            }
+        } else {
+            const auto & t = *std::get<std::shared_ptr<MIR::CustomTarget>>(f);
+            for (const auto & ff : t.outputs) {
+                if (tc.build()->compiler->supports_file(ff.get_name()) ==
+                    MIR::Toolchain::Compiler::CanCompileType::SOURCE) {
+                    rules.emplace_back(
+                        Rule{{ff.relative_to_build_dir()},
+                             std::string{fs::path{e.name + ".p"} / ff.get_name()} + ".o",
+                             RuleType::COMPILE,
+                             MIR::Toolchain::Language::CPP,
+                             MIR::Machines::Machine::BUILD,
+                             lang_args,
+                             {ff.relative_to_build_dir()},
+                             order_deps});
+                }
+            }
+        }
     }
 
     std::vector<std::string> final_outs;
