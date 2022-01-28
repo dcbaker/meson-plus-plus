@@ -158,6 +158,11 @@ FunctionCall::FunctionCall(const std::string & _name, std::vector<Object> && _po
     : name{_name}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)}, holder{std::nullopt},
       source_dir{_sd}, var{} {};
 
+FunctionCall::FunctionCall(const std::string & _name, std::vector<Object> && _pos,
+                           const std::filesystem::path & _sd)
+    : name{_name}, pos_args{std::move(_pos)}, kw_args{}, holder{std::nullopt},
+      source_dir{_sd}, var{} {};
+
 String::String(const std::string & f) : value{f}, var{} {};
 
 Boolean::Boolean(const bool & f) : value{f}, var{} {};
