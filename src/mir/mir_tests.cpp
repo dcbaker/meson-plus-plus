@@ -66,3 +66,17 @@ TEST(file, not_equal) {
     MIR::File i{"foO.c", "sub", true, "/home/user/src", "/home/user/src/build"};
     ASSERT_NE(f, i);
 }
+
+TEST(number, equal) {
+    MIR::Number two{2};
+    MIR::Number two_2{2};
+
+    ASSERT_EQ(two, two_2);
+}
+
+TEST(number, not_equal) {
+    MIR::Number one{1};
+    MIR::Number two{2};
+
+    ASSERT_NE(two, one);
+}
