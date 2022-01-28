@@ -345,6 +345,7 @@ class String {
 class Boolean {
   public:
     Boolean(const bool & f);
+    Boolean(const bool & f, const Variable & v);
 
     const bool value;
     Variable var;
