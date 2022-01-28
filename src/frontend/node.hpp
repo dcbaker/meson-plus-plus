@@ -282,15 +282,15 @@ class Arguments {
 class FunctionCall {
   public:
     FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a, location & l)
-        : id{std::move(i)}, args{std::move(a)}, loc{l} {};
+        : held{std::move(i)}, args{std::move(a)}, loc{l} {};
     FunctionCall(FunctionCall && a) noexcept
-        : id{std::move(a.id)}, args{std::move(a.args)}, loc{std::move(a.loc)} {};
+        : held{std::move(a.held)}, args{std::move(a.args)}, loc{std::move(a.loc)} {};
     FunctionCall(const FunctionCall &) = delete;
     ~FunctionCall(){};
 
     std::string as_string() const;
 
-    ExpressionV id;
+    ExpressionV held;
     std::unique_ptr<Arguments> args;
     Location loc;
 };
@@ -298,18 +298,18 @@ class FunctionCall {
 class GetAttribute {
   public:
     GetAttribute(ExpressionV && o, ExpressionV && i, location & l)
-        : object{std::move(o)}, id{std::move(i)}, loc{l} {};
+        : holder{std::move(o)}, held{std::move(i)}, loc{l} {};
     GetAttribute(GetAttribute && a) noexcept
-        : object{std::move(a.object)}, id{std::move(a.id)}, loc{std::move(a.loc)} {};
+        : holder{std::move(a.holder)}, held{std::move(a.held)}, loc{std::move(a.loc)} {};
     GetAttribute(const GetAttribute &) = delete;
     ~GetAttribute(){};
 
     std::string as_string() const;
 
     /// Object holding the attribute
-    ExpressionV object;
+    ExpressionV holder;
     /// The attribute to get (really, the method)
-    ExpressionV id;
+    ExpressionV held;
     Location loc;
 };
 

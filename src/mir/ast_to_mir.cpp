@@ -46,7 +46,7 @@ struct ExpressionLowering {
 
     Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
         // I think that a function can only be an ID, I think
-        auto fname_id = std::visit(*this, expr->id);
+        auto fname_id = std::visit(*this, expr->held);
         auto fname_ptr = std::get_if<std::unique_ptr<Identifier>>(&fname_id);
         if (fname_ptr == nullptr) {
             // TODO: Better error message witht the thing being called
@@ -115,19 +115,12 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
-        // XXX: This is wrong, we can have things like:
-        // meson.get_compiler('c').get_id()
-        // Which this code *cannot* handle here.
-        auto holding_obj = std::visit(*this, expr->object);
-        assert(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(holding_obj));
+        auto holding_obj = std::visit(*this, expr->holder);
 
         // Meson only allows methods in objects, so we can enforce that this is a function
-        auto method = std::visit(*this, expr->id);
-        assert(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(method));
-
-        auto func = std::move(std::get<std::shared_ptr<MIR::FunctionCall>>(method));
-        func->holder = std::make_unique<MIR::Identifier>(
-            std::get<std::unique_ptr<MIR::Identifier>>(holding_obj)->value);
+        auto method = std::visit(*this, expr->held);
+        auto func = std::get<std::shared_ptr<MIR::FunctionCall>>(method);
+        func->holder = std::move(holding_obj);
 
         return func;
     };
