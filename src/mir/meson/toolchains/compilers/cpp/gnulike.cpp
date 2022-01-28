@@ -98,4 +98,9 @@ CanCompileType GnuLike::supports_file(const std::string & name) const {
     }
 }
 
+std::vector<std::string> GnuLike::generate_depfile(const std::string & target_file,
+                                                   const std::string & depfile) const {
+    return {"-MD", "-MQ", target_file, "-MF", depfile};
+}
+
 } // namespace MIR::Toolchain::Compiler::CPP
