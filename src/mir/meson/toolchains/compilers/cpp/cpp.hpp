@@ -26,6 +26,7 @@ class GnuLike : public Compiler {
                                                  const fs::path & build_dir) const final;
     std::vector<std::string> always_args() const final;
     CanCompileType supports_file(const std::string &) const final;
+    std::vector<std::string> generate_depfile(const std::string &, const std::string &) const final;
 
   protected:
     GnuLike(const std::vector<std::string> & c) : Compiler{c} {};
