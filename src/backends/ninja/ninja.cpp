@@ -37,14 +37,24 @@ void write_compiler_rule(const std::string & lang,
     for (const auto & c : c->command) {
         out << " " << c;
     }
+
     out << " ${ARGS}";
-    for (const auto & c : c->output_command("${out}")) {
-        out << " " << c;
+    for (const auto & a : c->generate_depfile("${out}", "$DEPFILE")) {
+        out << " " << a;
     }
-    for (const auto & c : c->compile_only_command()) {
-        out << " " << c;
+    for (const auto & a : c->output_command("${out}")) {
+        out << " " << a;
+    }
+    for (const auto & a : c->compile_only_command()) {
+        out << " " << a;
     }
     out << " ${in}" << std::endl;
+
+    // TODO: control support for this
+    // TODO: MSVC style deps
+    // FIXME: why does meson write this out with two different vlues?
+    out << "  deps = gcc" << std::endl;
+    out << "  depfile = $DEPFILE_UNQUOTED" << std::endl;
 
     // Write the description
     out << "  description = Compiling " << c->language() << " object ${out}" << std::endl
@@ -164,6 +174,13 @@ void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
         out << " " << escape(a, true);
     }
     out << "\n";
+
+    // Write the depfile
+    // TODO: better control of when to do this
+    if (rule.type == FIR::TargetType::COMPILE) {
+        out << "  DEPFILE = " << escape(rule.output[0]) << ".d" << std::endl;
+        out << "  DEPFILE_UNQUOTED = " << rule.output[0] << ".d" << std::endl;
+    }
 
     if (rule.type == FIR::TargetType::CUSTOM) {
         out << "  DESCRIPTION = " << escape("generating ") << escape(rule.output[0])
