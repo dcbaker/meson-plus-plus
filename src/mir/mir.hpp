@@ -311,6 +311,8 @@ class FunctionCall {
   public:
     FunctionCall(const std::string & _name, std::vector<Object> && _pos,
                  std::unordered_map<std::string, Object> && _kw, const std::filesystem::path & _sd);
+    FunctionCall(const std::string & _name, std::vector<Object> && _pos,
+                 const std::filesystem::path & _sd);
 
     const std::string name;
 

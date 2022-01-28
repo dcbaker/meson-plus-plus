@@ -153,16 +153,57 @@ struct ExpressionLowering {
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
         return std::make_shared<FunctionCall>(name, std::move(pos),
-                                              std::unordered_map<std::string, Object>{},
                                               fs::relative(path.parent_path(), pstate.build_root));
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
         return std::make_shared<String>("placeholder: subscript");
     };
+
     Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
-        return std::make_shared<String>("placeholder: rel");
+        std::vector<Object> pos{};
+        pos.emplace_back(std::visit(*this, expr->lhs));
+        pos.emplace_back(std::visit(*this, expr->rhs));
+
+        std::string func_name;
+        switch (expr->op) {
+            case Frontend::AST::RelationalOp::EQ:
+                func_name = "rel_eq";
+                break;
+            case Frontend::AST::RelationalOp::NE:
+                func_name = "rel_ne";
+                break;
+            case Frontend::AST::RelationalOp::GT:
+                func_name = "rel_gt";
+                break;
+            case Frontend::AST::RelationalOp::GE:
+                func_name = "rel_ge";
+                break;
+            case Frontend::AST::RelationalOp::LT:
+                func_name = "rel_lt";
+                break;
+            case Frontend::AST::RelationalOp::LE:
+                func_name = "rel_le";
+                break;
+            case Frontend::AST::RelationalOp::AND:
+                func_name = "logic_and";
+                break;
+            case Frontend::AST::RelationalOp::OR:
+                func_name = "logic_or";
+                break;
+            case Frontend::AST::RelationalOp::IN:
+                func_name = "contains";
+                break;
+            case Frontend::AST::RelationalOp::NOT_IN:
+                func_name = "not_contains";
+                break;
+        }
+        fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
+
+        return std::make_shared<FunctionCall>(func_name, std::move(pos),
+                                              fs::relative(path.parent_path(), pstate.build_root));
     };
+
     Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
         return std::make_shared<String>("placeholder: tern");
     };
