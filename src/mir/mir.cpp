@@ -161,6 +161,7 @@ FunctionCall::FunctionCall(const std::string & _name, std::vector<Object> && _po
 String::String(const std::string & f) : value{f}, var{} {};
 
 Boolean::Boolean(const bool & f) : value{f}, var{} {};
+Boolean::Boolean(const bool & f, const Variable & v) : value{f}, var{v} {};
 
 Number::Number(const int64_t & f) : value{f}, var{} {};
 
