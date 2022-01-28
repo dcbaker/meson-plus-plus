@@ -578,3 +578,20 @@ TEST(parser, fstring) {
     auto block = parse("f'This is an @fstring@'");
     ASSERT_EQ(block->statements.size(), 1);
 }
+
+TEST(parser, chained_getattr) {
+    auto block = parse("obj.func1().func2()");
+    ASSERT_EQ(block->statements.size(), 1);
+    const auto & stmt = std::get<0>(block->statements[0]);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::GetAttribute>>(stmt->expr));
+
+    const auto & func2 = *std::get<std::unique_ptr<Frontend::AST::GetAttribute>>(stmt->expr);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::GetAttribute>>(func2.holder));
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(func2.held));
+
+    const auto & func2_obj = *std::get<std::unique_ptr<Frontend::AST::GetAttribute>>(func2.holder);
+    ASSERT_EQ(func2_obj.as_string(), "obj.func1()");
+
+    const auto & func1 = *std::get<std::unique_ptr<Frontend::AST::FunctionCall>>(func2.held);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Identifier>>(func1.held));
+}

@@ -231,14 +231,14 @@ std::string Arguments::as_string() const {
 }
 
 std::string FunctionCall::as_string() const {
-    auto name = std::visit(ExprStringVisitor(), id);
+    auto name = std::visit(ExprStringVisitor(), held);
     return name + "(" + args->as_string() + ")";
 }
 
 std::string GetAttribute::as_string() const {
     ExprStringVisitor as{};
-    auto obj = std::visit(as, object);
-    auto name = std::visit(as, id);
+    auto obj = std::visit(as, holder);
+    auto name = std::visit(as, held);
     return obj + "." + name;
 }
 

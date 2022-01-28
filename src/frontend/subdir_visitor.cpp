@@ -53,14 +53,14 @@ SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
     // Meson functions are not first class, so we know that if the type is not
     // an identifier it's not what we want. The other option would be a
     // `GetAttribute` (a method).
-    const auto id_ptr = std::get_if<std::unique_ptr<Identifier>>(&func->id);
+    const auto id_ptr = std::get_if<std::unique_ptr<Identifier>>(&func->held);
     if (id_ptr == nullptr) {
         return std::nullopt;
     }
 
-    const auto & id = *id_ptr;
+    const auto & held = *id_ptr;
 
-    if (id->value != "subdir") {
+    if (held->value != "subdir") {
         return std::nullopt;
     }
 
@@ -83,7 +83,7 @@ SubdirVisitor::operator()(const std::unique_ptr<Statement> & stmt) const {
     auto const & dir = *dir_ptr;
 
     // This assumes that the filename is foo/meson.build
-    const std::filesystem::path _p{id->loc.filename};
+    const std::filesystem::path _p{held->loc.filename};
     const std::filesystem::path p{_p.parent_path() / dir->value / "meson.build"};
     if (!std::filesystem::exists(p)) {
         // TODO: use the location data.
