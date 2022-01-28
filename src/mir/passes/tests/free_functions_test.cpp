@@ -224,3 +224,29 @@ TEST(custom_target, simple) {
     ASSERT_EQ(ct.name, "foo");
     ASSERT_EQ(ct.command, std::vector<std::string>{"thing"});
 }
+
+static inline bool _test_equality(const std::string & expr) {
+    auto irlist = lower(expr);
+
+    const MIR::State::Persistant pstate{src_root, build_root};
+
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    const auto & r = irlist.instructions.front();
+    const auto & value = *std::get<std::shared_ptr<MIR::Boolean>>(r);
+    return value.value;
+}
+
+TEST(ne, number_false) { ASSERT_FALSE(_test_equality("1 != 1")); }
+TEST(ne, number_true) { ASSERT_TRUE(_test_equality("1 != 5")); }
+TEST(eq, number_false) { ASSERT_FALSE(_test_equality("1 == 5")); }
+TEST(eq, number_true) { ASSERT_TRUE(_test_equality("1 == 1")); }
+
+TEST(ne, string_false) { ASSERT_FALSE(_test_equality("'' != ''")); }
+TEST(ne, string_true) { ASSERT_TRUE(_test_equality("'' != 'foo'")); }
+TEST(eq, string_false) { ASSERT_FALSE(_test_equality("'foo' == 'bar'")); }
+TEST(eq, string_true) { ASSERT_TRUE(_test_equality("'foo' == 'foo'")); }
+
+TEST(ne, boolean_false) { ASSERT_FALSE(_test_equality("false != false")); }
+TEST(ne, boolean_true) { ASSERT_TRUE(_test_equality("false != true")); }
+TEST(eq, boolean_false) { ASSERT_FALSE(_test_equality("false == true")); }
+TEST(eq, boolean_true) { ASSERT_TRUE(_test_equality("false == false")); }
