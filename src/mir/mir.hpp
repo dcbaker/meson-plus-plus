@@ -340,6 +340,9 @@ class String {
   public:
     String(const std::string & f);
 
+    bool operator==(const String &) const;
+    bool operator!=(const String &) const;
+
     const std::string value;
     Variable var;
 };
@@ -349,6 +352,9 @@ class Boolean {
     Boolean(const bool & f);
     Boolean(const bool & f, const Variable & v);
 
+    bool operator==(const Boolean &) const;
+    bool operator!=(const Boolean &) const;
+
     const bool value;
     Variable var;
 };
@@ -356,6 +362,9 @@ class Boolean {
 class Number {
   public:
     Number(const int64_t & f);
+
+    bool operator==(const Number &) const;
+    bool operator!=(const Number &) const;
 
     const int64_t value;
     Variable var;
