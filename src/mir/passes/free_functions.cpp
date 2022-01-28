@@ -297,6 +297,94 @@ std::optional<Object> lower_neg(const Object & obj) {
     return std::make_shared<Number>(-value.value()->value);
 }
 
+std::optional<Object> lower_eq(const Object & obj) {
+    const auto & f = get_func_call(obj, "rel_eq");
+    if (f == nullptr) {
+        return std::nullopt;
+    }
+
+    // TODO: is this code actually reachable?
+    if (f->pos_args.size() != 2) {
+        throw Util::Exceptions::InvalidArguments("==: takes 2 argument, got " +
+                                                 std::to_string(f->pos_args.size()));
+    }
+
+    const auto & lhs = f->pos_args[0];
+    const auto & rhs = f->pos_args[1];
+
+    const bool can_compare =
+        lhs.index() == rhs.index() || lhs.valueless_by_exception() || rhs.valueless_by_exception();
+    if (!can_compare) {
+        // TODO: metter error message here
+        throw Util::Exceptions::InvalidArguments("Trying to compare unlike types");
+    }
+
+    // Can't rely on variants equality, because we have either shared_ptr or
+    // unique_ptr inside the variant. Since we know they hold the same type, we
+    // can do this safely
+    bool value;
+    if (std::holds_alternative<std::shared_ptr<String>>(lhs)) {
+        value = std::get<std::shared_ptr<String>>(lhs)->value ==
+                std::get<std::shared_ptr<String>>(rhs)->value;
+    } else if (std::holds_alternative<std::shared_ptr<Number>>(lhs)) {
+        value = std::get<std::shared_ptr<Number>>(lhs)->value ==
+                std::get<std::shared_ptr<Number>>(rhs)->value;
+    } else if (std::holds_alternative<std::shared_ptr<Boolean>>(lhs)) {
+        value = std::get<std::shared_ptr<Boolean>>(lhs)->value ==
+                std::get<std::shared_ptr<Boolean>>(rhs)->value;
+    } else {
+        // TODO: better error message here
+        throw Util::Exceptions::MesonException("This might be a bug, cannot compare types");
+    }
+
+    return std::make_shared<Boolean>(value, f->var);
+
+    return std::make_shared<Boolean>(lhs == rhs);
+}
+
+std::optional<Object> lower_ne(const Object & obj) {
+    const auto & f = get_func_call(obj, "rel_ne");
+    if (f == nullptr) {
+        return std::nullopt;
+    }
+
+    // TODO: is this code actually reachable?
+    if (f->pos_args.size() != 2) {
+        throw Util::Exceptions::InvalidArguments("!=: takes 2 argument, got " +
+                                                 std::to_string(f->pos_args.size()));
+    }
+
+    const auto & lhs = f->pos_args[0];
+    const auto & rhs = f->pos_args[1];
+
+    const bool can_compare =
+        lhs.index() == rhs.index() || lhs.valueless_by_exception() || rhs.valueless_by_exception();
+    if (!can_compare) {
+        // TODO: metter error message here
+        throw Util::Exceptions::InvalidArguments("Trying to compare unlike types");
+    }
+
+    // Can't rely on variants equality, because we have either shared_ptr or
+    // unique_ptr inside the variant. Since we know they hold the same type, we
+    // can do this safely
+    bool value;
+    if (std::holds_alternative<std::shared_ptr<String>>(lhs)) {
+        value = std::get<std::shared_ptr<String>>(lhs)->value !=
+                std::get<std::shared_ptr<String>>(rhs)->value;
+    } else if (std::holds_alternative<std::shared_ptr<Number>>(lhs)) {
+        value = std::get<std::shared_ptr<Number>>(lhs)->value !=
+                std::get<std::shared_ptr<Number>>(rhs)->value;
+    } else if (std::holds_alternative<std::shared_ptr<Boolean>>(lhs)) {
+        value = std::get<std::shared_ptr<Boolean>>(lhs)->value !=
+                std::get<std::shared_ptr<Boolean>>(rhs)->value;
+    } else {
+        // TODO: better error message here
+        throw Util::Exceptions::MesonException("This might be a bug, cannot compare types");
+    }
+
+    return std::make_shared<Boolean>(value, f->var);
+}
+
 Source extract_source(const Object & obj, const fs::path & current_source_dir,
                       const State::Persistant & pstate) {
     if (std::holds_alternative<std::shared_ptr<CustomTarget>>(obj)) {
@@ -565,6 +653,8 @@ bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) 
         || function_walker(block, lower_assert)
         || function_walker(block, lower_not)
         || function_walker(block, lower_neg)
+        || function_walker(block, lower_eq)
+        || function_walker(block, lower_ne)
         || function_walker(block, [&](const Object & obj) { return lower_files(obj, pstate); })
         || flatten(block, pstate)
         || function_walker(block, [&](const Object & obj) { return lower_include_dirs(obj, pstate); })
