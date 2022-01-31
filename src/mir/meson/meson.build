@@ -25,6 +25,7 @@ libmeson = static_library(
     'toolchains/linker_drivers/gnu.cpp',
     'toolchains/linkers/gnu.cpp',
     'toolchains/toolchain.cpp',
+    'version.cpp',
   ],
   cpp_args : _meson_args,
   dependencies : [idep_util],
@@ -52,6 +53,7 @@ test(
   'meson objects',
   executable(
     'meson_object_test',
+    'meson_tests.cpp',
     link_with : libmeson,
     dependencies : dep_gtest,
   ),
