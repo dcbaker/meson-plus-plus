@@ -224,6 +224,38 @@ class IncludeDirectories {
     Variable var;
 };
 
+enum class DependencyType {
+    INTERNAL,
+};
+
+/**
+ * A dependency object
+ *
+ * Holds files, arguments, etc, to apply to build targets
+ */
+class Dependency {
+  public:
+    Dependency(const std::string & name, const bool & found, const std::string & version,
+               const std::vector<Arguments::Argument> & args, const Variable & var);
+
+    /// Name of the dependency
+    const std::string name;
+
+    /// whether or not the dependency is found
+    const bool found;
+
+    /// The version of the dependency
+    const std::string version;
+
+    /// Per-language compiler args
+    const std::vector<Arguments::Argument> arguments;
+
+    /// The kind of dependency this is
+    const DependencyType type = DependencyType::INTERNAL;
+
+    Variable var;
+};
+
 enum class MessageLevel {
     DEBUG,
     MESSAGE,
@@ -286,7 +318,8 @@ using Object =
                  std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
                  std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
                  std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>,
-                 std::shared_ptr<Program>, std::unique_ptr<Empty>, std::shared_ptr<CustomTarget>>;
+                 std::shared_ptr<Program>, std::unique_ptr<Empty>, std::shared_ptr<CustomTarget>,
+                 std::shared_ptr<Dependency>>;
 
 /**
  * Holds a toolchain

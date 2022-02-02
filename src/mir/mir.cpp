@@ -194,4 +194,8 @@ CustomTarget::CustomTarget(const std::string & n, const std::vector<Source> & i,
                            const fs::path & s, const Variable & v)
     : name{n}, inputs{i}, outputs{o}, command{c}, subdir{s}, var{v} {};
 
+Dependency::Dependency(const std::string & n, const bool & f, const std::string & ver,
+                       const std::vector<Arguments::Argument> & a, const Variable & v)
+    : name{n}, found{f}, version{ver}, arguments{a}, var{v} {};
+
 } // namespace MIR
