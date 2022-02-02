@@ -124,4 +124,7 @@ bool lower_program_objects(BasicBlock &, State::Persistant & pstate);
 /// Lower string object methods
 bool lower_string_objects(BasicBlock & block, State::Persistant & pstate);
 
+/// Delete any code that has become unreachable
+bool delete_unreachable(BasicBlock & block);
+
 } // namespace MIR::Passes
