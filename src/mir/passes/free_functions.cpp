@@ -558,23 +558,17 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
     if (f->pos_args.size() < 1) {
         throw Util::Exceptions::InvalidArguments{"project requires at least 1 argument"};
     }
-    if (!std::holds_alternative<std::shared_ptr<String>>(f->pos_args[0])) {
-        // TODO: it could also be an identifier pointing to a string
-        throw Util::Exceptions::InvalidArguments{"project first argument must be a string"};
-    }
-    pstate.name = std::get<std::shared_ptr<String>>(f->pos_args[0])->value;
+
+    auto pos = f->pos_args.begin();
+
+    pstate.name = std::get<std::shared_ptr<String>>(*pos++)->value;
     // TODO: I don't want this in here, I'd rather have this all done in the backend, I think
     std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
-    // The rest of the poisitional arguments are languages
-    // TODO: and these could be passed as a list as well.
-    for (auto it = f->pos_args.begin() + 1; it != f->pos_args.end(); ++it) {
-        if (!std::holds_alternative<std::shared_ptr<String>>(*it)) {
-            throw Util::Exceptions::MesonException{
-                "All additional arguments to project must be strings"};
-        }
-        const auto & f = std::get<std::shared_ptr<String>>(*it);
-        const auto l = Toolchain::from_string(f->value);
+    const auto & langs =
+        extract_variadic_arguments<std::shared_ptr<String>>(pos, f->pos_args.end());
+    for (const auto & lang : langs) {
+        const auto l = Toolchain::from_string(lang->value);
 
         auto & tc = pstate.toolchains[l];
 

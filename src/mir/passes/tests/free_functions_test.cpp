@@ -96,6 +96,14 @@ TEST(project, valid) {
     ASSERT_EQ(pstate.name, "foo");
 }
 
+TEST(project, vararg_array) {
+    auto irlist = lower("project('foo', ['cpp'])");
+    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::Passes::lower_project(&irlist, pstate);
+    ASSERT_EQ(pstate.name, "foo");
+    ASSERT_TRUE(pstate.toolchains.find(MIR::Toolchain::Language::CPP) != pstate.toolchains.end());
+}
+
 TEST(messages, simple) {
     auto irlist = lower("message('foo')");
     MIR::State::Persistant pstate{src_root, build_root};
