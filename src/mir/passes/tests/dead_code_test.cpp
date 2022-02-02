@@ -60,4 +60,7 @@ TEST(unreachable_code, clear_next) {
     const auto & branch = *get_bb(get_con(irlist.next)->if_true);
     ASSERT_EQ(branch.instructions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::monostate>(branch.next));
+
+    const auto & fin = *get_bb(get_bb(get_con(irlist.next)->if_false)->next);
+    ASSERT_EQ(fin.parents.size(), 1);
 }
