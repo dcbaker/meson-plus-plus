@@ -33,6 +33,13 @@ elif cpp.get_id() == 'clang'
 endif
 
 dep_gtest = dependency('gtest_main', disabler : true, required : get_option('tests'), fallback : ['gtest', 'gtest_main_dep'])
+# TODO: fallback for this
+dep_pkgconf = dependency('libpkgconf', required : get_option('pkgconf'))
+if dep_pkgconf.found()
+  add_project_arguments('-DHAVE_LIBPKGCONF', language : 'cpp')
+else
+  warning('Building without libpkgconf support is not recomended, beware.')
+endif
 
 subdir('src')
 subdir('tests')

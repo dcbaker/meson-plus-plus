@@ -6,3 +6,8 @@ option(
   type : 'feature',
   description : 'build unit tests',
 )
+option(
+  'pkgconf',
+  type : 'feature',
+  description : 'Control the use of libpkgconf',
+)
