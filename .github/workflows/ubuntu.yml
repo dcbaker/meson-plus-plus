@@ -34,6 +34,10 @@ jobs:
           action: test
       - name: unit tests
         run : ./run-tests.sh
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.28
+        with:
+          files: build/meson-logs/testlog.junit.xml
 
   gcc-sanitizer:
     runs-on: ubuntu-latest
@@ -52,3 +56,7 @@ jobs:
           action: test
       - name: unit tests
         run : ./run-tests.sh
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.28
+        with:
+          files: build/meson-logs/testlog.junit.xml
