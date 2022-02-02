@@ -121,4 +121,7 @@ bool threaded_lowering(BasicBlock *, State::Persistant & pstate);
  */
 bool lower_program_objects(BasicBlock &, State::Persistant & pstate);
 
+/// Lower string object methods
+bool lower_string_objects(BasicBlock & block, State::Persistant & pstate);
+
 } // namespace MIR::Passes

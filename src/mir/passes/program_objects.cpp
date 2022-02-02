@@ -45,6 +45,7 @@ std::optional<Object> lower_program_methods_impl(const Object & obj,
     // XXX: Shouldn't really be able to get here...
     return std::nullopt;
 }
+
 } // namespace
 
 bool lower_program_objects(BasicBlock & block, State::Persistant & pstate) {

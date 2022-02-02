@@ -250,3 +250,19 @@ TEST(ne, boolean_false) { ASSERT_FALSE(_test_equality("false != false")); }
 TEST(ne, boolean_true) { ASSERT_TRUE(_test_equality("false != true")); }
 TEST(eq, boolean_false) { ASSERT_FALSE(_test_equality("false == true")); }
 TEST(eq, boolean_true) { ASSERT_TRUE(_test_equality("false == false")); }
+
+TEST(version_compare, simple) {
+    auto irlist = lower("'3.6'.version_compare('< 3.7')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+
+    bool progress = MIR::Passes::lower_string_objects(irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(r));
+
+    const auto & ct = *std::get<std::shared_ptr<MIR::Boolean>>(r);
+    ASSERT_TRUE(ct.value);
+}
