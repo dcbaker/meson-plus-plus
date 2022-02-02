@@ -547,26 +547,26 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
         throw Util::Exceptions::MesonException{
             "First non-whitespace, non-comment must be a call to project()"};
     }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
+    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
 
-    if (f->name != "project") {
+    if (f.name != "project") {
         throw Util::Exceptions::MesonException{
             "First non-whitespace, non-comment must be a call to project()"};
     }
 
     // This doesn't handle the listified version corretly
-    if (f->pos_args.size() < 1) {
+    if (f.pos_args.size() < 1) {
         throw Util::Exceptions::InvalidArguments{"project requires at least 1 argument"};
     }
 
-    auto pos = f->pos_args.begin();
+    auto pos = f.pos_args.begin();
 
     pstate.name = std::get<std::shared_ptr<String>>(*pos++)->value;
     // TODO: I don't want this in here, I'd rather have this all done in the backend, I think
     std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
     const auto & langs =
-        extract_variadic_arguments<std::shared_ptr<String>>(pos, f->pos_args.end());
+        extract_variadic_arguments<std::shared_ptr<String>>(pos, f.pos_args.end());
     for (const auto & lang : langs) {
         const auto l = Toolchain::from_string(lang->value);
 
