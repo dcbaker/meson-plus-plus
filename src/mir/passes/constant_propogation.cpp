@@ -82,7 +82,8 @@ bool constant_propogation_holder_impl(Object & obj, const PropTable & table) {
 
     if (std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
         const auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
-        if (func->holder) {
+        if (func->holder &&
+            std::holds_alternative<std::unique_ptr<Identifier>>(func->holder.value())) {
             const auto & id = std::get<std::unique_ptr<Identifier>>(func->holder.value());
             auto v = get_value(*id, table);
             if (v) {
