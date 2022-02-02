@@ -28,6 +28,8 @@ jobs:
           sudo apt install libfl-dev libgtest-dev
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.0.5
       - uses: BSFishy/meson-build@v1.0.3
         with:
           meson-version: 0.55
@@ -49,6 +51,8 @@ jobs:
           sudo apt install libfl-dev libgtest-dev
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.0.5
       - uses: BSFishy/meson-build@v1.0.3
         with:
           meson-version: 0.55
