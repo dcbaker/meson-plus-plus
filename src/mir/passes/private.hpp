@@ -76,10 +76,16 @@ std::vector<T> extract_variadic_arguments(std::vector<Object>::const_iterator st
                                           std::vector<Object>::const_iterator end) {
     std::vector<T> nobjs{};
     for (; start != end; start++) {
-        // TODO: this is going to ignore invalid arghuments
-        std::optional<T> arg = extract_positional_argument<T>(*start);
-        if (arg) {
-            nobjs.emplace_back(arg.value());
+        if (std::holds_alternative<std::shared_ptr<Array>>(*start)) {
+            const auto & arr = *std::get<std::shared_ptr<Array>>(*start);
+            const auto & nvals = extract_variadic_arguments<T>(arr.value.begin(), arr.value.end());
+            nobjs.insert(nobjs.end(), nvals.begin(), nvals.end());
+        } else {
+            // TODO: this is going to ignore invalid arghuments
+            std::optional<T> arg = extract_positional_argument<T>(*start);
+            if (arg) {
+                nobjs.emplace_back(arg.value());
+            }
         }
     }
     return nobjs;
