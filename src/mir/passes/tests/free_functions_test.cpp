@@ -274,3 +274,68 @@ TEST(version_compare, simple) {
     const auto & ct = *std::get<std::shared_ptr<MIR::Boolean>>(r);
     ASSERT_TRUE(ct.value);
 }
+
+TEST(declare_dependency, string_include_dirs) {
+    auto irlist = lower("x = declare_dependency(include_directories : 'foo')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dependency>>(r));
+
+    const auto & d = *std::get<std::shared_ptr<MIR::Dependency>>(r);
+    ASSERT_EQ(d.arguments.size(), 1);
+    ASSERT_EQ(d.arguments[0].value, "foo");
+}
+
+TEST(declare_dependency, compile_args) {
+    auto irlist = lower("x = declare_dependency(compile_args : '-Dfoo')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    bool progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dependency>>(r));
+
+    const auto & d = *std::get<std::shared_ptr<MIR::Dependency>>(r);
+    ASSERT_EQ(d.arguments.size(), 1);
+    ASSERT_EQ(d.arguments[0].value, "foo");
+    ASSERT_EQ(d.arguments[0].type, MIR::Arguments::Type::DEFINE);
+}
+
+TEST(declare_dependency, recursive) {
+    auto irlist =
+        lower("x = declare_dependency(dependencies : declare_dependency(compile_args : '-Dfoo'))");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    bool progress = true;
+    while (progress) {
+        progress = MIR::Passes::lower_free_functions(&irlist, pstate);
+    }
+    ASSERT_EQ(irlist.instructions.size(), 1);
+
+    const auto & r = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dependency>>(r));
+
+    const auto & d = *std::get<std::shared_ptr<MIR::Dependency>>(r);
+    ASSERT_EQ(d.arguments.size(), 1);
+    ASSERT_EQ(d.arguments[0].value, "foo");
+    ASSERT_EQ(d.arguments[0].type, MIR::Arguments::Type::DEFINE);
+}

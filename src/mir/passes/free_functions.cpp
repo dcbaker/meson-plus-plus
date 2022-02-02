@@ -303,6 +303,67 @@ std::optional<Object> lower_ne(const FunctionCall & f) {
     return std::make_shared<Boolean>(value, f.var);
 }
 
+std::optional<Object> lower_declare_dependency(const FunctionCall & f,
+                                               const State::Persistant & pstate) {
+    if (!f.pos_args.empty()) {
+        throw Util::Exceptions::InvalidArguments(
+            "declare_dependency: takes 0 positional arguments.");
+    }
+
+    std::string version = extract_keyword_argument<std::shared_ptr<String>>(f.kw_args, "version")
+                              .value_or(std::make_shared<String>("unknown"))
+                              ->value;
+
+    std::vector<Arguments::Argument> args{};
+
+    const auto & raw_comp_args =
+        extract_keyword_argument_a<std::shared_ptr<String>>(f.kw_args, "compile_args");
+    if (!raw_comp_args.empty()) {
+        // XXX: this assumes C++
+        // should this always use gcc/g++?
+        const auto & comp_at = pstate.toolchains.find(Toolchain::Language::CPP);
+        if (comp_at == pstate.toolchains.end()) {
+            // TODO: better error message
+            throw Util::Exceptions::MesonException(
+                "Tried to build a C++ target without a C++ toolchain.");
+        }
+        const auto & comp = comp_at->second.build()->compiler;
+
+        for (const auto & ra : raw_comp_args) {
+            args.emplace_back(comp->generalize_argument(ra->value));
+        }
+    }
+
+    const auto & raw_inc_args =
+        extract_keyword_argument_av<std::shared_ptr<String>, std::shared_ptr<IncludeDirectories>>(
+            f.kw_args, "include_directories");
+
+    for (const auto & i : raw_inc_args) {
+        if (std::holds_alternative<std::shared_ptr<String>>(i)) {
+            const auto & s = *std::get<std::shared_ptr<String>>(i);
+            args.emplace_back(Arguments::Argument{s.value, Arguments::Type::INCLUDE,
+                                                  Arguments::IncludeType::BASE});
+        } else {
+            const auto & inc = *std::get<std::shared_ptr<IncludeDirectories>>(i);
+            for (const auto & d : inc.directories) {
+                args.emplace_back(Arguments::Argument{
+                    d, Arguments::Type::INCLUDE,
+                    inc.is_system ? Arguments::IncludeType::SYSTEM : Arguments::IncludeType::BASE});
+            }
+        }
+    }
+
+    const auto & raw_deps =
+        extract_keyword_argument_a<std::shared_ptr<Dependency>>(f.kw_args, "dependencies");
+    for (const auto & d : raw_deps) {
+        for (const auto & a : d->arguments) {
+            args.emplace_back(a);
+        }
+    }
+
+    return std::make_shared<Dependency>("internal", true, version, args, f.var);
+}
+
 Source extract_source(const Object & obj, const fs::path & current_source_dir,
                       const State::Persistant & pstate) {
     if (std::holds_alternative<std::shared_ptr<CustomTarget>>(obj)) {
@@ -518,6 +579,8 @@ std::optional<Object> lower_free_funcs_impl(const Object & obj, const State::Per
         return lower_build_target<Executable>(f, pstate);
     } else if (f.name == "static_library") {
         return lower_build_target<StaticLibrary>(f, pstate);
+    } else if (f.name == "declare_dependency") {
+        return lower_declare_dependency(f, pstate);
     }
 
     // XXX: Shouldn't really be able to get here...
@@ -566,8 +629,7 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
     // TODO: I don't want this in here, I'd rather have this all done in the backend, I think
     std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
-    const auto & langs =
-        extract_variadic_arguments<std::shared_ptr<String>>(pos, f.pos_args.end());
+    const auto & langs = extract_variadic_arguments<std::shared_ptr<String>>(pos, f.pos_args.end());
     for (const auto & lang : langs) {
         const auto l = Toolchain::from_string(lang->value);
 
