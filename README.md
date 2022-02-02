@@ -2,14 +2,18 @@
 
 An experiment to implement Meson in C++
 
-There isn't much to see here, and probably won't be, and if there is it won't
-be for a long time. I'm not sure how much of Meson I want to re-implement
-either, maybe just enough for bootstrapping purposes, maybe a lot. Who knows.
+The project is advancing rapidly, but there's still a *lot* of work to do
+before it can be considered production ready.
 
 ## What is the status of Meson++? Can I use it for my project?
 
-Currently, Meson++ is capable of compiling **very** simple C++ executables 
-and static archives, with limited linkage.
+Currently, Meson++ is capable of compiling simple C++ executables 
+and static archives, as well as some custom_targets. There is a lot of
+functionality still missing, including dependencies.
+
+Currently, I'm pushing toward getting meson++ to be self hosting, to that
+end some features may not be implemented completely, only enough to self host.
+Once self hosting is achieved, I'll begin to flesh out support and fix bugs.
 
 ## FAQ
 
@@ -37,7 +41,7 @@ some things easier. However, in both cases they would complicate my primary
 motivation, solving the boostrapping issue.
 
 Given that goal, I really only had two choices: C and C++. I will choose C++
-ever time given those choices. It provides better cross platform interfaces,
+every time given those choices. It provides better cross platform interfaces,
 resource management (RAII), and programming features: generics, overloading,
 namespaces, strings that aren't char arrays, etc.
 
