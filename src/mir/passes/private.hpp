@@ -72,8 +72,8 @@ template <typename T> std::optional<T> extract_positional_argument(const Object 
 }
 
 template <typename T>
-std::vector<T> extract_variadic_arguments(std::vector<Object>::iterator start,
-                                          std::vector<Object>::iterator end) {
+std::vector<T> extract_variadic_arguments(std::vector<Object>::const_iterator start,
+                                          std::vector<Object>::const_iterator end) {
     std::vector<T> nobjs{};
     for (; start != end; start++) {
         // TODO: this is going to ignore invalid arghuments
