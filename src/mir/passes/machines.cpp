@@ -15,11 +15,11 @@ using namespace MIR::Machines;
 
 std::optional<Machine> machine_map(const std::string & func_name) {
     if (func_name == "build_machine") {
-        return MIR::Machines::Machine::BUILD;
+        return Machine::BUILD;
     } else if (func_name == "host_machine") {
-        return MIR::Machines::Machine::HOST;
+        return Machine::HOST;
     } else if (func_name == "target_machine") {
-        return MIR::Machines::Machine::TARGET;
+        return Machine::TARGET;
     } else {
         return std::nullopt;
     }
@@ -28,23 +28,19 @@ std::optional<Machine> machine_map(const std::string & func_name) {
 MIR::Object lower_function(const std::string & holder, const std::string & name,
                            const Info & info) {
     if (name == "cpu_family") {
-        // TODO: it's probably going to be useful to have a helper for this...
-        return MIR::Object{std::make_shared<MIR::String>(info.cpu_family)};
+        return std::make_shared<MIR::String>(info.cpu_family);
     } else if (name == "cpu") {
-        // TODO: it's probably going to be useful to have a helper for this...
-        return MIR::Object{std::make_shared<MIR::String>(info.cpu)};
+        return std::make_shared<MIR::String>(info.cpu);
     } else if (name == "system") {
-        // TODO: it's probably going to be useful to have a helper for this...
-        return MIR::Object{std::make_shared<MIR::String>(info.system())};
+        return std::make_shared<MIR::String>(info.system());
     } else if (name == "endian") {
-        return MIR::Object{std::make_shared<MIR::String>(
-            info.endian == MIR::Machines::Endian::LITTLE ? "little" : "big")};
+        return std::make_shared<MIR::String>(info.endian == Endian::LITTLE ? "little" : "big");
     } else {
         throw Util::Exceptions::MesonException{holder + " has no method " + name};
     }
 }
 
-using MachineInfo = MIR::Machines::PerMachine<MIR::Machines::Info>;
+using MachineInfo = PerMachine<Info>;
 
 std::optional<Object> lower_functions(const MachineInfo & machines, const Object & obj) {
     if (std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj)) {
