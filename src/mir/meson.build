@@ -13,6 +13,7 @@ libmir = static_library(
     'passes/constant_folding.cpp',
     'passes/constant_propogation.cpp',
     'passes/dead_code.cpp',
+    'passes/dependency_objects.cpp',
     'passes/flatten.cpp',
     'passes/free_functions.cpp',
     'passes/insert_phis.cpp',
