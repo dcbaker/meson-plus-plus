@@ -1,5 +1,5 @@
 // SPDX-license-identifier: Apache-2.0
-// Copyright © 2021 Dylan Baker
+// Copyright © 2021-2022 Dylan Baker
 
 #include <iostream>
 #include <vector>
@@ -476,6 +476,7 @@ bool holds_reduced(const Object & obj) {
             std::holds_alternative<std::shared_ptr<IncludeDirectories>>(obj) ||
             std::holds_alternative<std::shared_ptr<Program>>(obj) ||
             std::holds_alternative<std::shared_ptr<CustomTarget>>(obj) ||
+            std::holds_alternative<std::shared_ptr<Dependency>>(obj) ||
             std::holds_alternative<std::unique_ptr<Message>>(obj) || holds_reduced_array(obj) ||
             holds_reduced_dict(obj));
 }
