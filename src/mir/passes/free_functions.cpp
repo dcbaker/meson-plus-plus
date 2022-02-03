@@ -120,6 +120,14 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
         }
     }
 
+    const auto & deps =
+        extract_keyword_argument_a<std::shared_ptr<Dependency>>(f.kw_args, "dependencies");
+    for (const auto & d : deps) {
+        for (const auto & a : d->arguments) {
+            args[Toolchain::Language::CPP].emplace_back(a);
+        }
+    }
+
     // TODO: machine parameter needs to be set from the native kwarg
     return std::make_shared<T>(name.value()->value, srcs, Machines::Machine::BUILD, f.source_dir,
                                args, slink, f.var);
