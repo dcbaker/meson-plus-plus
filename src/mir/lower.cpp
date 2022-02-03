@@ -33,6 +33,7 @@ void lower_impl(BasicBlock & block, State::Persistant & pstate) {
                 [&](BasicBlock * b) { return Passes::constant_propogation(b, pt); },
                 [&](BasicBlock * b) { return Passes::lower_program_objects(*b, pstate); },
                 [&](BasicBlock * b) { return Passes::lower_string_objects(*b, pstate); },
+                [&](BasicBlock * b) { return Passes::lower_dependency_objects(*b, pstate); },
             });
     }
 }
