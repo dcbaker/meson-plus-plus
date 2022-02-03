@@ -59,36 +59,6 @@ Source src_to_file(const Object & raw_src, const State::Persistant & pstate,
     }
 }
 
-inline std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>
-target_arguments(const FunctionCall & f, const State::Persistant & pstate) {
-    std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
-    const auto & comp_at = pstate.toolchains.find(Toolchain::Language::CPP);
-    if (comp_at == pstate.toolchains.end()) {
-        // TODO: better error message
-        throw Util::Exceptions::MesonException(
-            "Tried to build a C++ target without a C++ toolchain.");
-    }
-
-    const auto & comp = comp_at->second.build()->compiler;
-    auto raw_args = extract_keyword_argument_a<std::shared_ptr<String>>(f.kw_args, "cpp_args");
-    for (const auto & ra : raw_args) {
-        args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra->value));
-    }
-
-    return args;
-}
-
-inline std::vector<StaticLinkage>
-target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
-    std::vector<StaticLinkage> s_link{};
-    auto raw_args = extract_keyword_argument_a<std::shared_ptr<StaticLibrary>>(kwargs, "link_with");
-    for (const auto & s : raw_args) {
-        s_link.emplace_back(StaticLinkage{StaticLinkMode::NORMAL, s.get()});
-    }
-
-    return s_link;
-}
-
 template <typename T>
 std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
                                                      const State::Persistant & pstate) {
@@ -118,8 +88,28 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
     for (; pos_itr != f.pos_args.end(); ++pos_itr) {
         srcs.emplace_back(src_to_file(*pos_itr, pstate, f.source_dir));
     }
-    auto args = target_arguments(f, pstate);
-    auto slink = target_kwargs(f.kw_args);
+
+    std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>> args{};
+    const auto & comp_at = pstate.toolchains.find(Toolchain::Language::CPP);
+    if (comp_at == pstate.toolchains.end()) {
+        // TODO: better error message
+        throw Util::Exceptions::MesonException(
+            "Tried to build a C++ target without a C++ toolchain.");
+    }
+
+    const auto & comp = comp_at->second.build()->compiler;
+    auto raw_args = extract_keyword_argument_a<std::shared_ptr<String>>(f.kw_args, "cpp_args");
+    for (const auto & ra : raw_args) {
+        args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra->value));
+    }
+
+    std::vector<StaticLinkage> slink{};
+    auto raw_link_with =
+        extract_keyword_argument_a<std::shared_ptr<StaticLibrary>>(f.kw_args, "link_with");
+    for (const auto & s : raw_link_with) {
+        slink.emplace_back(StaticLinkage{StaticLinkMode::NORMAL, s.get()});
+    }
+
     auto raw_inc = extract_keyword_argument_a<std::shared_ptr<IncludeDirectories>>(
         f.kw_args, "include_directories", true);
     for (const auto & i : raw_inc) {
