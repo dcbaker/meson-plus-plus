@@ -5,6 +5,7 @@
 #include "meson/version.hpp"
 #include "passes.hpp"
 #include "private.hpp"
+#include "argument_extractors.hpp"
 
 namespace MIR::Passes {
 

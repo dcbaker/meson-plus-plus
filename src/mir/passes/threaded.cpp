@@ -7,6 +7,7 @@
 #include <iostream>
 #include <mutex>
 
+#include "argument_extractors.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "passes.hpp"
