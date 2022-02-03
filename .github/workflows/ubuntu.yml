@@ -15,48 +15,35 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  gcc:
+  meson:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cfg:
+          - { id: gcc, cc: gcc, cpp: g++, setup_options: null}
+          - { id: gcc-sanitize, cc: gcc, cpp: g++, setup_options: -Db_sanitize=address,undefined}
+
+    env:
+      CC: ccache ${{ matrix.cfg.cc }}
+      CXX: ccache ${{ matrix.cfg.cpp }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: apt
         run: |
           sudo apt update
-          sudo apt install libfl-dev libgtest-dev
+          sudo apt install libfl-dev libgtest-dev ninja-build ccache
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.0.5
+        with:
+          key: ${{ matrix.id }}
       - uses: BSFishy/meson-build@v1.0.3
         with:
           meson-version: 0.55
-          action: test
-      - name: unit tests
-        run : ./run-tests.sh
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.28
-        with:
-          files: build/meson-logs/testlog.junit.xml
-
-  gcc-sanitizer:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: apt
-        run: |
-          sudo apt update
-          sudo apt install libfl-dev libgtest-dev
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.0.5
-      - uses: BSFishy/meson-build@v1.0.3
-        with:
-          meson-version: 0.55
-          setup-options: -Db_sanitize=address,undefined
+          setup-options: ${{ matrix.cfg.setup_options }}
           action: test
       - name: unit tests
         run : ./run-tests.sh
