@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "argument_extractors.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "passes.hpp"
@@ -69,7 +70,7 @@ target_arguments(const FunctionCall & f, const State::Persistant & pstate) {
     }
 
     const auto & comp = comp_at->second.build()->compiler;
-    auto raw_args = extract_array_keyword_argument<std::shared_ptr<String>>(f.kw_args, "cpp_args");
+    auto raw_args = extract_keyword_argument_a<std::shared_ptr<String>>(f.kw_args, "cpp_args");
     for (const auto & ra : raw_args) {
         args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra->value));
     }
@@ -80,8 +81,7 @@ target_arguments(const FunctionCall & f, const State::Persistant & pstate) {
 inline std::vector<StaticLinkage>
 target_kwargs(const std::unordered_map<std::string, Object> & kwargs) {
     std::vector<StaticLinkage> s_link{};
-    auto raw_args =
-        extract_array_keyword_argument<std::shared_ptr<StaticLibrary>>(kwargs, "link_with");
+    auto raw_args = extract_keyword_argument_a<std::shared_ptr<StaticLibrary>>(kwargs, "link_with");
     for (const auto & s : raw_args) {
         s_link.emplace_back(StaticLinkage{StaticLinkMode::NORMAL, s.get()});
     }
@@ -120,7 +120,7 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
     }
     auto args = target_arguments(f, pstate);
     auto slink = target_kwargs(f.kw_args);
-    auto raw_inc = extract_array_keyword_argument<std::shared_ptr<IncludeDirectories>>(
+    auto raw_inc = extract_keyword_argument_a<std::shared_ptr<IncludeDirectories>>(
         f.kw_args, "include_directories", true);
     for (const auto & i : raw_inc) {
         for (const auto & d : i->directories) {
@@ -423,7 +423,7 @@ std::optional<Object> lower_custom_target(const FunctionCall & func,
 
     std::vector<File> outputs{};
     for (const auto & a :
-         extract_array_keyword_argument<std::shared_ptr<String>>(func.kw_args, "output")) {
+         extract_keyword_argument_a<std::shared_ptr<String>>(func.kw_args, "output")) {
         outputs.emplace_back(
             File{a->value, func.source_dir, true, pstate.source_root, pstate.build_root});
     }
