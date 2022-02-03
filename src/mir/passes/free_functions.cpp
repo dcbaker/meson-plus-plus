@@ -333,7 +333,17 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
         std::copy(dargs.begin(), dargs.end(), std::back_inserter(args));
     }
 
-    return Dependency{"internal", true, version, args};
+    std::vector<StaticLinkage> slink{};
+    auto raw_link_with = extract_keyword_argument_a<StaticLibrary>(f.kw_args, "link_with");
+    for (const auto & s : raw_link_with) {
+        slink.emplace_back(StaticLinkMode::NORMAL, s);
+    }
+    auto raw_link_whole = extract_keyword_argument_a<StaticLibrary>(f.kw_args, "link_whole");
+    for (const auto & s : raw_link_whole) {
+        slink.emplace_back(StaticLinkMode::WHOLE, s);
+    }
+
+    return Instruction{Dependency{"internal", true, version, args, slink}};
 }
 
 std::vector<Instruction>

@@ -282,7 +282,7 @@ enum class DependencyType {
 class Dependency {
   public:
     Dependency(std::string name, const bool & found, std::string version,
-               std::vector<Arguments::Argument> args);
+               std::vector<Arguments::Argument> args, std::vector<StaticLinkage> s_link);
 
     /// Name of the dependency
     const std::string name;
@@ -295,6 +295,9 @@ class Dependency {
 
     /// Per-language compiler args
     const std::vector<Arguments::Argument> arguments;
+
+    /// Dependencies to statically link with
+    const std::vector<StaticLinkage> link_static{};
 
     /// The kind of dependency this is
     const DependencyType type = DependencyType::INTERNAL;
