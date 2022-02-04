@@ -4,14 +4,39 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <unordered_map>
+#include <vector>
 
+#include "arguments.hpp"
 #include "machines.hpp"
 #include "toolchains/toolchain.hpp"
 
 namespace fs = std::filesystem;
 
 namespace MIR::State {
+
+/**
+ * Serializable representation of a Dependency
+ */
+class Dependency {
+  public:
+    Dependency();
+    Dependency(std::string ver, std::vector<Arguments::Argument> compile_args,
+               std::vector<Arguments::Argument> link_args);
+
+    /// The version of the dependency
+    std::string version;
+
+    /// compilation arguments for this dependency
+    std::vector<Arguments::Argument> compile{};
+
+    /// link arguments for this dependency
+    std::vector<Arguments::Argument> link{};
+
+    /// whether the dependency is found or not
+    bool found;
+};
 
 /**
  * Persistant state
@@ -49,6 +74,17 @@ class Persistant {
      * be built when getting a value from the cache.
      */
     Machines::PerMachine<std::unordered_map<std::string, fs::path>> programs;
+
+    /**
+     * Programs found by the `dependency` function, as well as `compiler.find_program`.
+     *
+     * These are cached across re-runs.
+     * These are stored int [name: Dependency] format, an actual representation has to
+     * be built when getting a value from the cache.
+     *
+     * TODO: what do we need to do about multiple versions of a dependency?
+     */
+    Machines::PerMachine<std::unordered_map<std::string, std::shared_ptr<Dependency>>> dependencies;
 };
 
 } // namespace MIR::State
