@@ -32,9 +32,19 @@ elif cpp.get_id() == 'clang'
   dep_fs = cpp.find_library('c++fs', required : false)
 endif
 
-dep_gtest = dependency('gtest_main', disabler : true, required : get_option('tests'), fallback : ['gtest', 'gtest_main_dep'])
-# TODO: fallback for this
-dep_pkgconf = dependency('libpkgconf', required : get_option('pkgconf'))
+dep_gtest = dependency(
+  'gtest_main',
+  disabler : true,
+  required : get_option('tests'),
+  fallback : ['gtest', 'gtest_main_dep'],
+)
+dep_pkgconf = dependency(
+  'libpkgconf++',
+  version : '>= 0.1.0',
+  required : get_option('pkgconf'),
+  fallback : ['libpkgconfpp', 'dep_libpkgconfpp'],
+  default_options : ['default_library=static'],
+)
 if dep_pkgconf.found()
   add_project_arguments('-DHAVE_LIBPKGCONF', language : 'cpp')
 else

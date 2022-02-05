@@ -2,7 +2,6 @@
 // Copyright © 2022 Dylan Baker
 
 #include <algorithm>
-#include <array>
 #include <future>
 #include <iostream>
 #include <mutex>
@@ -12,6 +11,9 @@
 #include "log.hpp"
 #include "passes.hpp"
 #include "private.hpp"
+#ifdef HAVE_LIBPKGCONF
+#include "meson/pkgconf.hpp"
+#endif
 
 namespace MIR::Passes {
 
@@ -65,8 +67,55 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
     }
 }
 
+/**
+ * Do the actual work of finding a dependency
+ */
+void dependency(const std::vector<std::string> & names, std::mutex & lock,
+                State::Persistant & pstate, std::set<std::string> & dependencies
+#ifdef HAVE_LIBPKGCONF
+                ,
+                Dependencies::PkgConf & pkgconf
+
+#endif
+) {
+    for (const std::string & name : names) {
+        // Only schedule one finder for this program
+        {
+            std::lock_guard l{lock};
+            if (dependencies.count(name)) {
+                continue;
+            }
+            dependencies.emplace(name);
+        }
+    }
+
+    State::Dependency dep{};
+#ifdef HAVE_LIBPKGCONF
+    for (auto && n : names) {
+        dep = pkgconf(n, "");
+        if (dep.found) {
+            break;
+        }
+    }
+#endif
+    auto m_dep = std::make_shared<State::Dependency>(std::move(dep));
+    auto & mapping = pstate.dependencies.build();
+    for (auto && n : names) {
+        std::lock_guard l{lock};
+        mapping[n] = m_dep;
+    }
+    std::lock_guard l{lock};
+    std::cout << "Found dependency \"" << names[0]
+              << "\": " << (m_dep->found ? Util::Log::green("YES") : Util::Log::red("NO")) << " "
+#ifdef HAVE_LIBPKGCONF
+              << Util::Log::blue("(tried pkg-config)")
+#endif
+              << std::endl;
+}
+
 enum class Type {
     PROGRAM,
+    DEPENDENCY,
 };
 
 using FindJob = std::tuple<Type, std::vector<std::string>>;
@@ -83,9 +132,26 @@ bool search_find_program(const FunctionCall & f, State::Persistant & pstate, Fin
     return true;
 }
 
+bool search_dependency(const FunctionCall & f, State::Persistant & pstate, FindList & jobs) {
+    auto names = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
+
+    std::vector<std::string> ret{names.size()};
+    std::transform(names.begin(), names.end(), ret.begin(),
+                   [](const String & s) { return s.value; });
+    jobs.emplace_back(Type::DEPENDENCY, ret);
+
+    return true;
+}
+
 void worker(FindList & jobs, std::mutex & state_lock,
             std::mutex & job_lock, // NOLINT(bugprone-easily-swappable-parameters)
-            State::Persistant & pstate, std::set<std::string> & programs) {
+            State::Persistant & pstate, std::set<std::string> & programs,
+            std::set<std::string> & dependencies
+#ifdef HAVE_LIBPKGCONF
+            ,
+            Dependencies::PkgConf & pkgconf
+#endif
+) {
     while (true) {
         Type job;
         std::vector<std::string> names;
@@ -100,6 +166,15 @@ void worker(FindList & jobs, std::mutex & state_lock,
         switch (job) {
             case Type::PROGRAM:
                 find_program(names, state_lock, pstate, programs);
+                break;
+            case Type::DEPENDENCY:
+                dependency(names, state_lock, pstate, dependencies
+#ifdef HAVE_LIBPKGCONF
+                           ,
+                           pkgconf
+#endif
+                );
+                break;
         }
     }
 }
@@ -118,13 +193,23 @@ void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
     // TODO: should we use promises to get a result back from this?
     std::mutex state_lock{}, job_lock{};
     std::set<std::string> programs{};
+    std::set<std::string> dependencies{};
 
     // TODO: Don't hardocde this
-    std::array<std::thread, 8> threads{};
+    std::vector<std::thread> threads{};
+#ifdef HAVE_LIBPKGCONF
+    Dependencies::PkgConf pkgconf{};
+#endif
 
-    for (auto && t : threads) {
-        t = std::thread(&worker, std::ref(jobs), std::ref(state_lock), std::ref(job_lock),
-                        std::ref(pstate), std::ref(programs));
+    for (unsigned i = 0; i < std::thread::hardware_concurrency(); ++i) {
+        threads.emplace_back(std::thread(&worker, std::ref(jobs), std::ref(state_lock),
+                                         std::ref(job_lock), std::ref(pstate), std::ref(programs),
+                                         std::ref(dependencies)
+#ifdef HAVE_LIBPKGCONF
+                                             ,
+                                         std::ref(pkgconf)
+#endif
+                                             ));
     }
 
     for (auto & t : threads) {
@@ -153,6 +238,29 @@ std::optional<Instruction> replace_find_program(const FunctionCall & f, State::P
     return Program{name, Machines::Machine::BUILD, exe};
 }
 
+std::optional<Instruction> replace_dependency(const FunctionCall & f, State::Persistant & state) {
+    // We know this is safe since we've already processed this call before (hopefully)
+    // We only need the first name, as all of the names should be in the mapping
+    auto name = extract_positional_argument<String>(f.pos_args[0]).value().value;
+
+    std::shared_ptr<State::Dependency> dep;
+    try {
+        dep = state.dependencies.build().at(name);
+    } catch (std::out_of_range &) {
+        // TODO: a better exception here
+        abort();
+    }
+
+    bool required =
+        extract_keyword_argument<Boolean>(f.kw_args, "required").value_or(Boolean{true}).value;
+    if (required && !dep->found) {
+        throw Util::Exceptions::MesonException("Could not find required dependency \"" + name +
+                                               "\"");
+    }
+
+    return Dependency{name, dep->found, dep->version, dep->compile, dep->link};
+}
+
 bool search_threaded(const Instruction & obj, State::Persistant & pstate, FindList & jobs) {
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         return false;
@@ -168,6 +276,9 @@ bool search_threaded(const Instruction & obj, State::Persistant & pstate, FindLi
 
     if (f.name == "find_program") {
         return search_find_program(f, pstate, jobs);
+    }
+    if (f.name == "dependency") {
+        return search_dependency(f, pstate, jobs);
     }
     return false;
 }
@@ -188,6 +299,8 @@ std::optional<Instruction> replace_threaded(const Instruction & obj, State::Pers
     std::optional<Instruction> i{std::nullopt};
     if (f.name == "find_program") {
         i = replace_find_program(f, state);
+    } else if (f.name == "dependency") {
+        i = replace_dependency(f, state);
     }
 
     if (i) {

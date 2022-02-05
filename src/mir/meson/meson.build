@@ -9,6 +9,13 @@ foreach h : ['endian.h']
   endif
 endforeach
 
+libmeson_files = []
+if dep_pkgconf.found()
+  libmeson_files += [
+    'pkgconf.cpp',
+  ]
+endif
+
 libmeson = static_library(
   'meson',
   [
@@ -26,14 +33,16 @@ libmeson = static_library(
     'toolchains/linkers/gnu.cpp',
     'toolchains/toolchain.cpp',
     'version.cpp',
+    libmeson_files,
   ],
   cpp_args : _meson_args,
-  dependencies : [idep_util],
+  dependencies : [idep_util, dep_pkgconf],
 )
 
 idep_meson = declare_dependency(
   link_with : libmeson,
   include_directories : include_directories('.'),
+  dependencies : [dep_pkgconf],
 )
 
 foreach t : ['compiler', 'archiver', 'linker']
