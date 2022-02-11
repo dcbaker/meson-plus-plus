@@ -69,6 +69,7 @@ jobs:
       with:
         meson-version: 0.55
         action: build
+        directory: builddir
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
