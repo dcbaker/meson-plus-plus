@@ -178,7 +178,7 @@ std::optional<Object> replace_find_program(const Object & obj, State::Persistant
 
 } // namespace
 
-bool threaded_lowering(BasicBlock * block, State::Persistant & pstate) {
+bool threaded_lowering(BasicBlock & block, State::Persistant & pstate) {
     bool progress = false;
     FindList jobs{};
 
@@ -187,7 +187,7 @@ bool threaded_lowering(BasicBlock * block, State::Persistant & pstate) {
     //  2. create the threads and send them to work on filling out those futures
     //  3. call the block walker again to fill in those values
     progress |= block_walker(block, {
-                                        [&](BasicBlock * b) {
+                                        [&](BasicBlock & b) {
                                             return function_walker(b, [&](const Object & obj) {
                                                 return search_find_program(obj, pstate, jobs);
                                             });
@@ -196,7 +196,7 @@ bool threaded_lowering(BasicBlock * block, State::Persistant & pstate) {
     if (progress) {
         search_for_threaded_impl(jobs, pstate);
         progress |= block_walker(block, {
-                                            [&](BasicBlock * b) {
+                                            [&](BasicBlock & b) {
                                                 return function_walker(b, [&](const Object & obj) {
                                                     return replace_find_program(obj, pstate);
                                                 });

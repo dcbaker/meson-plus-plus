@@ -26,13 +26,13 @@ TEST(constant_propogation, phi_should_not_propogate) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, vt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
-                 });
+        irlist, {
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, vt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
 
@@ -72,16 +72,16 @@ TEST(constant_propogation, function_arguments) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, vt); },
-                     MIR::Passes::branch_pruning,
-                     MIR::Passes::join_blocks,
-                     MIR::Passes::fixup_phis,
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
-                 });
+        irlist, {
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, vt); },
+                    MIR::Passes::branch_pruning,
+                    MIR::Passes::join_blocks,
+                    MIR::Passes::fixup_phis,
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
 
@@ -112,16 +112,16 @@ TEST(constant_propogation, array) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, vt); },
-                     MIR::Passes::branch_pruning,
-                     MIR::Passes::join_blocks,
-                     MIR::Passes::fixup_phis,
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
-                 });
+        irlist, {
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, vt); },
+                    MIR::Passes::branch_pruning,
+                    MIR::Passes::join_blocks,
+                    MIR::Passes::fixup_phis,
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
 
@@ -147,16 +147,16 @@ TEST(constant_propogation, method_holder) {
     MIR::State::Persistant pstate{"foo", "bar"};
 
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::threaded_lowering(b, pstate); },
-                 });
+        irlist, {
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::threaded_lowering(b, pstate); },
+                });
     bool progress = MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
-                 });
+        irlist, {
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                });
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 2);
@@ -183,17 +183,17 @@ TEST(constant_propogation, into_function_call) {
     MIR::State::Persistant pstate{"foo", "bar"};
 
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::threaded_lowering(b, pstate); },
-                 });
+        irlist, {
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::threaded_lowering(b, pstate); },
+                });
     bool progress = MIR::Passes::block_walker(
-        &irlist,
+        irlist,
         {
-            [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, vt); },
-            [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-            [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
-            [&](MIR::BasicBlock * b) { return MIR::Passes::constant_propogation(b, pt); },
-            [&](MIR::BasicBlock * b) { return MIR::Passes::lower_program_objects(*b, pstate); },
+            [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
+            [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+            [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+            [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+            [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },
         });
 
     ASSERT_TRUE(progress);

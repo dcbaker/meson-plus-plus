@@ -20,9 +20,9 @@ TEST(insert_phi, simple) {
     std::unordered_map<std::string, uint32_t> data{};
 
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
@@ -49,9 +49,9 @@ TEST(insert_phi, three_branches) {
     std::unordered_map<std::string, uint32_t> data{};
 
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
@@ -90,9 +90,9 @@ TEST(insert_phi, nested_branches) {
     std::unordered_map<std::string, uint32_t> data{};
 
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
 
     {

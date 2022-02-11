@@ -99,7 +99,7 @@ bool constant_propogation_holder_impl(Object & obj, const PropTable & table) {
 
 } // namespace
 
-bool constant_propogation(BasicBlock * block, PropTable & table) {
+bool constant_propogation(BasicBlock & block, PropTable & table) {
     const auto & prop = [&](const Object & obj) { return constant_propogation_impl(obj, table); };
     const auto & prop_h = [&](Object & obj) {
         return constant_propogation_holder_impl(obj, table);

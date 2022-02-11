@@ -21,10 +21,10 @@ TEST(constant_folding, simple) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                  });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -58,17 +58,17 @@ TEST(constant_folding, with_phi) {
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
     MIR::Passes::block_walker(
-        &irlist, {
+        irlist, {
                      MIR::Passes::branch_pruning,
                      MIR::Passes::join_blocks,
                      MIR::Passes::fixup_phis,
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, lst); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rt); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                  });
 
     auto it = irlist.instructions.begin();
@@ -127,10 +127,10 @@ TEST(constant_folding, three_statements) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rpt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
                  });
 
     const auto & func_obj = irlist.instructions.back();
@@ -159,10 +159,10 @@ TEST(constant_folding, redefined_value) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rpt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
                  });
 
     const auto & func_obj = irlist.instructions.back();
@@ -190,10 +190,10 @@ TEST(constant_folding, in_array) {
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::constant_folding(b, rpt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
                  });
 
     auto it = irlist.instructions.begin();

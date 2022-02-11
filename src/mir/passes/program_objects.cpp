@@ -50,7 +50,7 @@ std::optional<Object> lower_program_methods_impl(const Object & obj,
 
 bool lower_program_objects(BasicBlock & block, State::Persistant & pstate) {
     return function_walker(
-        &block, [&](const Object & obj) { return lower_program_methods_impl(obj, pstate); });
+        block, [&](const Object & obj) { return lower_program_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

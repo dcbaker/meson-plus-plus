@@ -63,16 +63,16 @@ bool number_uses(const uint32_t & index, const Object & obj, LastSeenTable & tab
 
 } // namespace
 
-bool value_numbering(BasicBlock * block, std::unordered_map<std::string, uint32_t> & data) {
+bool value_numbering(BasicBlock & block, std::unordered_map<std::string, uint32_t> & data) {
     return function_walker(block, {[&](Object & obj) { return number(obj, data); }});
 }
 
-bool usage_numbering(BasicBlock * block, LastSeenTable & table) {
-    const auto number = [&](Object & obj) { return number_uses(block->index, obj, table); };
+bool usage_numbering(BasicBlock & block, LastSeenTable & table) {
+    const auto number = [&](Object & obj) { return number_uses(block.index, obj, table); };
 
-    table[block->index] = {};
-    for (const auto & p : block->parents) {
-        table[block->index].merge(table[p->index]);
+    table[block.index] = {};
+    for (const auto & p : block.parents) {
+        table[block.index].merge(table[p->index]);
     }
 
     return function_walker(block, number);

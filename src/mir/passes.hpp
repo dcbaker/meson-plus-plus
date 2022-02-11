@@ -23,7 +23,7 @@ namespace MIR::Passes {
  * to trim away dead branches and join the ir lists together so we end up with a
  * single flat list of Objects.
  */
-bool branch_pruning(BasicBlock *);
+bool branch_pruning(BasicBlock &);
 
 /**
  * Join basic blocks together
@@ -31,7 +31,7 @@ bool branch_pruning(BasicBlock *);
  * Specifically for use after branch_pruning, when we have two continguous
  * blocks with no condition to move between thme
  */
-bool join_blocks(BasicBlock *);
+bool join_blocks(BasicBlock &);
 
 /**
  * Lower away machine related information.
@@ -39,12 +39,12 @@ bool join_blocks(BasicBlock *);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-bool machine_lower(BasicBlock *, const MIR::Machines::PerMachine<MIR::Machines::Info> &);
+bool machine_lower(BasicBlock &, const MIR::Machines::PerMachine<MIR::Machines::Info> &);
 
 /**
  * Run complier detection code and replace variables with compiler objects.
  */
-bool insert_compilers(BasicBlock *,
+bool insert_compilers(BasicBlock &,
                       const std::unordered_map<
                           MIR::Toolchain::Language,
                           MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
@@ -54,7 +54,7 @@ bool insert_compilers(BasicBlock *,
  *
  * This lowers free standing functions (those not part of an object/namespace).
  */
-bool lower_free_functions(BasicBlock *, const State::Persistant &);
+bool lower_free_functions(BasicBlock &, const State::Persistant &);
 
 /**
  * Flatten array arguments to functions.
@@ -76,7 +76,7 @@ bool lower_free_functions(BasicBlock *, const State::Persistant &);
  * Meson++ uses this pass to flatten arguments, building an idealized set of
  * arguments for each function.
  */
-bool flatten(BasicBlock *, const State::Persistant &);
+bool flatten(BasicBlock &, const State::Persistant &);
 
 using ValueTable = std::unordered_map<std::string, uint32_t>;
 using LastSeenTable = std::map<uint32_t, std::map<std::string, uint32_t>>;
@@ -84,25 +84,25 @@ using LastSeenTable = std::map<uint32_t, std::map<std::string, uint32_t>>;
 /**
  * number each use of a variable
  */
-bool value_numbering(BasicBlock *, ValueTable &);
-bool usage_numbering(BasicBlock *, LastSeenTable &);
+bool value_numbering(BasicBlock &, ValueTable &);
+bool usage_numbering(BasicBlock &, LastSeenTable &);
 
 /**
  * Insert phi nodes along dominance frontiers
  */
-bool insert_phis(BasicBlock *, ValueTable &);
-bool fixup_phis(BasicBlock *);
+bool insert_phis(BasicBlock &, ValueTable &);
+bool fixup_phis(BasicBlock &);
 
 using ReplacementTable = std::map<Variable, Variable>;
 
-bool constant_folding(BasicBlock *, ReplacementTable &);
+bool constant_folding(BasicBlock &, ReplacementTable &);
 
 using PropTable = std::map<Variable, Object *>;
 
 /**
  * push variables out of assignments into their uses
  */
-bool constant_propogation(BasicBlock *, PropTable &);
+bool constant_propogation(BasicBlock &, PropTable &);
 
 /**
  * Do work that can be more optimally handled in threads.
@@ -114,7 +114,7 @@ bool constant_propogation(BasicBlock *, PropTable &);
  *
  * These can be done in parallel, using the cache
  */
-bool threaded_lowering(BasicBlock *, State::Persistant & pstate);
+bool threaded_lowering(BasicBlock &, State::Persistant & pstate);
 
 /**
  * Lower Program objects and their methods

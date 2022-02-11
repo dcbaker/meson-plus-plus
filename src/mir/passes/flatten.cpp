@@ -50,7 +50,7 @@ std::optional<Object> flatten_cb(const Object & obj) {
 
 } // namespace
 
-bool flatten(BasicBlock * block, const State::Persistant & pstate) {
+bool flatten(BasicBlock & block, const State::Persistant & pstate) {
     // TODO: we need to skip this for message, error, and warning
     return function_walker(block, flatten_cb);
 }

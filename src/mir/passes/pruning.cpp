@@ -9,16 +9,16 @@ namespace MIR::Passes {
 
 namespace {
 
-bool branch_pruning_impl(BasicBlock * ir) {
+bool branch_pruning_impl(BasicBlock & ir) {
     // If we don't have a condition there's nothing to do
-    if (!std::holds_alternative<std::unique_ptr<Condition>>(ir->next)) {
+    if (!std::holds_alternative<std::unique_ptr<Condition>>(ir.next)) {
         return false;
     }
 
     // If the condition expression hasn't been reduced to a boolean then there's
     // nothing to do yet.
-    auto & con = std::get<std::unique_ptr<Condition>>(ir->next);
-    if (!std::holds_alternative<std::shared_ptr<Boolean>>(con->condition)) {
+    auto & con = *std::get<std::unique_ptr<Condition>>(ir.next);
+    if (!std::holds_alternative<std::shared_ptr<Boolean>>(con.condition)) {
         return false;
     }
 
@@ -28,16 +28,16 @@ bool branch_pruning_impl(BasicBlock * ir) {
     // If the true branch is the one we want, move the next and condition to our
     // next and condition, otherwise move the `else` branch to be the main condition, and
     // continue
-    const bool & con_v = std::get<std::shared_ptr<Boolean>>(con->condition)->value;
+    const bool & con_v = std::get<std::shared_ptr<Boolean>>(con.condition)->value;
     std::shared_ptr<BasicBlock> next;
     if (con_v) {
-        assert(con->if_true != nullptr);
-        next = con->if_true;
-        todo.emplace_back(con->if_false.get());
+        assert(con.if_true != nullptr);
+        next = con.if_true;
+        todo.emplace_back(con.if_false.get());
     } else {
-        assert(con->if_false != nullptr);
-        next = con->if_false;
-        todo.emplace_back(con->if_true.get());
+        assert(con.if_false != nullptr);
+        next = con.if_false;
+        todo.emplace_back(con.if_true.get());
     }
 
     // When we prune this, we need to all remove it from any successor blocks
@@ -62,9 +62,9 @@ bool branch_pruning_impl(BasicBlock * ir) {
         // If we have a Condition then push the True block, then the False
         // block, then loop back through
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
-            const auto & con = std::get<std::unique_ptr<Condition>>(current->next);
-            todo.emplace_back(con->if_true.get());
-            todo.emplace_back(con->if_false.get());
+            const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
+            todo.emplace_back(con.if_true.get());
+            todo.emplace_back(con.if_false.get());
             continue;
         }
 
@@ -79,15 +79,15 @@ bool branch_pruning_impl(BasicBlock * ir) {
         bb->parents = new_parents;
     }
 
-    next->parents = {ir};
-    ir->next = next;
+    next->parents = {&ir};
+    ir.next = next;
 
     return true;
 };
 
 } // namespace
 
-bool branch_pruning(BasicBlock * block) {
+bool branch_pruning(BasicBlock & block) {
     bool progress = false;
     bool lprogress;
 

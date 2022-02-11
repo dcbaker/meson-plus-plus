@@ -1,11 +1,11 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2022 Dylan Baker
 
+#include "argument_extractors.hpp"
 #include "exceptions.hpp"
 #include "meson/version.hpp"
 #include "passes.hpp"
 #include "private.hpp"
-#include "argument_extractors.hpp"
 
 namespace MIR::Passes {
 
@@ -91,7 +91,7 @@ std::optional<Object> lower_string_methods_impl(const Object & obj,
 
 bool lower_string_objects(BasicBlock & block, State::Persistant & pstate) {
     return function_walker(
-        &block, [&](const Object & obj) { return lower_string_methods_impl(obj, pstate); });
+        block, [&](const Object & obj) { return lower_string_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes
