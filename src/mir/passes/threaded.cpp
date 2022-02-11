@@ -42,7 +42,7 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
         }
 
         // TODO: the path separator may not be `:`
-        while ((next = path.find(":", last)) != std::string::npos) {
+        while ((next = path.find(':', last)) != std::string::npos) {
             fs::path substr = path.substr(last, next - last);
             last = next + 1;
 
