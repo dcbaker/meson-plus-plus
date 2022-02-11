@@ -8,7 +8,7 @@ ret=0
 for x in tests/*/*/; do
     echo -n "Testing: ${x}"
     tdir=`mktemp -d`
-    build/src/meson++ configure "${tdir}" --source-dir "${x}" 1>/dev/null
+    builddir/src/meson++ configure "${tdir}" --source-dir "${x}" 1>/dev/null
     if [ $? != 0 ]; then
         echo " - FAILED"
         rm -rf "${tdir}"
