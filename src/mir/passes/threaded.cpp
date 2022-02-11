@@ -90,7 +90,7 @@ bool search_find_program(const Object & obj, State::Persistant & pstate, FindLis
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
                    [](const std::shared_ptr<String> & s) { return s->value; });
-    jobs.emplace_back(std::tuple(Type::PROGRAM, ret));
+    jobs.emplace_back(Type::PROGRAM, ret);
 
     return true;
 }
