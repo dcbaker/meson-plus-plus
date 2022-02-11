@@ -42,7 +42,8 @@ jobs:
           key: ${{ matrix.id }}
       - uses: BSFishy/meson-build@v1.0.3
         with:
-          meson-version: 0.55
+          # Use 0.60 to get graceful failures of gtest protocol
+          meson-version: 0.60.3
           setup-options: ${{ matrix.cfg.setup_options }}
           action: test
       - name: unit tests
