@@ -35,3 +35,4 @@ endif
 dep_gtest = dependency('gtest_main', disabler : true, required : get_option('tests'), fallback : ['gtest', 'gtest_main_dep'])
 
 subdir('src')
+subdir('tests')

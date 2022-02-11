@@ -47,9 +47,3 @@ jobs:
           setup-options: ${{ matrix.cfg.setup_options }}
           action: test
           directory: builddir
-      - name: unit tests
-        run : ./run-tests.sh
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.28
-        with:
-          files: builddir/meson-logs/testlog.junit.xml

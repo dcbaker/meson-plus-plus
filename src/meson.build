@@ -11,7 +11,7 @@ version_hpp = vcs_tag(
   output : 'version.hpp',
 )
 
-executable(
+mesonpp = executable(
   'meson++',
   [
     'main.cpp',
