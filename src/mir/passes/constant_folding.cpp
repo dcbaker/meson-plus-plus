@@ -10,9 +10,10 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable & table) {
-    if (std::holds_alternative<std::unique_ptr<Identifier>>(obj)) {
-        auto & id = std::get<std::unique_ptr<Identifier>>(obj);
+std::optional<Instruction> constant_folding_impl(const Instruction & obj,
+                                                 ReplacementTable & table) {
+    auto id = std::get_if<Identifier>(obj.obj_ptr.get());
+    if (id != nullptr) {
         const Variable new_var{id->value, id->version};
 
         if (const auto & found = table.find(new_var); found != table.end()) {
@@ -27,14 +28,13 @@ std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable
              * and optimize that.
              */
 
-            if (id->var) {
-                table[id->var] = Variable{found->second.name, found->second.version};
+            if (obj.var) {
+                table[obj.var] = Variable{found->second.name, found->second.version};
             }
-            return std::make_unique<Identifier>(found->second.name, found->second.version,
-                                                Variable{id->var});
+            return Instruction{Identifier{found->second.name, found->second.version}, obj.var};
         }
-        if (id->var) {
-            table[id->var] = new_var;
+        if (obj.var) {
+            table[obj.var] = new_var;
         }
     }
     return std::nullopt;
@@ -43,8 +43,8 @@ std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable
 } // namespace
 
 bool constant_folding(BasicBlock & block, ReplacementTable & table) {
-    return function_walker(block,
-                           {[&](const Object & o) { return constant_folding_impl(o, table); }});
+    return function_walker(
+        block, {[&](const Instruction & o) { return constant_folding_impl(o, table); }});
 }
 
 } // namespace MIR::Passes

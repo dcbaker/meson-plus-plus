@@ -17,11 +17,8 @@ TEST(value_numbering, simple) {
     std::unordered_map<std::string, uint32_t> data{};
     MIR::Passes::value_numbering(irlist, data);
 
-    const auto & first = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.front());
-    ASSERT_EQ(first->var.version, 1);
-
-    const auto & last = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.back());
-    ASSERT_EQ(last->var.version, 2);
+    ASSERT_EQ(irlist.instructions.front().var.version, 1);
+    ASSERT_EQ(irlist.instructions.back().var.version, 2);
 }
 
 TEST(value_numbering, branching) {
@@ -38,19 +35,14 @@ TEST(value_numbering, branching) {
     MIR::Passes::block_walker(
         irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
 
-    const auto & first = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.front());
-    ASSERT_EQ(first->var.version, 1);
-
-    const auto & last = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.back());
-    ASSERT_EQ(last->var.version, 2);
+    ASSERT_EQ(irlist.instructions.front().var.version, 1);
+    ASSERT_EQ(irlist.instructions.back().var.version, 2);
 
     const auto & bb1 = get_con(irlist.next)->if_false;
-    const auto & bb1_val = std::get<std::shared_ptr<MIR::Number>>(bb1->instructions.front());
-    ASSERT_EQ(bb1_val->var.version, 3);
+    ASSERT_EQ(bb1->instructions.front().var.version, 3);
 
     const auto & bb2 = get_con(irlist.next)->if_true;
-    const auto & bb2_val = std::get<std::shared_ptr<MIR::Number>>(bb2->instructions.front());
-    ASSERT_EQ(bb2_val->var.version, 4);
+    ASSERT_EQ(bb2->instructions.front().var.version, 4);
 }
 
 TEST(value_numbering, three_branch) {
@@ -68,18 +60,15 @@ TEST(value_numbering, three_branch) {
         irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
 
     const auto & bb1 = get_con(irlist.next)->if_true;
-    const auto & bb1_val = std::get<std::shared_ptr<MIR::Number>>(bb1->instructions.front());
-    ASSERT_EQ(bb1_val->var.version, 1);
+    ASSERT_EQ(bb1->instructions.front().var.version, 1);
 
     const auto & con2 = get_con(get_con(irlist.next)->if_false->next);
 
     const auto & bb2 = con2->if_false;
-    const auto & bb2_val = std::get<std::shared_ptr<MIR::Number>>(bb2->instructions.front());
-    ASSERT_EQ(bb2_val->var.version, 2);
+    ASSERT_EQ(bb2->instructions.front().var.version, 2);
 
     const auto & bb3 = con2->if_true;
-    const auto & bb3_val = std::get<std::shared_ptr<MIR::Number>>(bb3->instructions.front());
-    ASSERT_EQ(bb3_val->var.version, 3);
+    ASSERT_EQ(bb3->instructions.front().var.version, 3);
 }
 
 TEST(number_uses, simple) {
@@ -94,29 +83,31 @@ TEST(number_uses, simple) {
     // get the state we want to test.
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     {
         const auto & num_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
-        const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
-        ASSERT_EQ(num->value, 9);
-        ASSERT_EQ(num->var.name, "x");
-        ASSERT_EQ(num->var.version, 1);
+        ASSERT_EQ(num_obj.var.name, "x");
+        ASSERT_EQ(num_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
+        const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
+        ASSERT_EQ(num.value, 9);
     }
 
     {
         const auto & id_obj = irlist.instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
-        ASSERT_EQ(id->value, "x");
-        ASSERT_EQ(id->version, 1);
-        ASSERT_EQ(id->var.name, "y");
-        ASSERT_EQ(id->var.version, 1);
+        ASSERT_EQ(id_obj.var.name, "y");
+        ASSERT_EQ(id_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
+        ASSERT_EQ(id.value, "x");
+        ASSERT_EQ(id.version, 1);
     }
 }
 
@@ -136,36 +127,38 @@ TEST(number_uses, with_phi) {
     // wrong thing
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
+                });
     MIR::Passes::block_walker(
         irlist, {
-                     MIR::Passes::branch_pruning,
-                     MIR::Passes::join_blocks,
-                     MIR::Passes::fixup_phis,
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    MIR::Passes::branch_pruning,
+                    MIR::Passes::join_blocks,
+                    MIR::Passes::fixup_phis,
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
     {
         const auto & num_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
-        const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
-        ASSERT_EQ(num->value, 9);
-        ASSERT_EQ(num->var.name, "x");
-        ASSERT_EQ(num->var.version, 2);
+        ASSERT_EQ(num_obj.var.name, "x");
+        ASSERT_EQ(num_obj.var.version, 2);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
+        const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
+        ASSERT_EQ(num.value, 9);
     }
 
     {
         const auto & id_obj = irlist.instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
-        ASSERT_EQ(id->value, "x");
-        ASSERT_EQ(id->version, 3);
-        ASSERT_EQ(id->var.name, "y");
-        ASSERT_EQ(id->var.version, 1);
+        ASSERT_EQ(id_obj.var.name, "y");
+        ASSERT_EQ(id_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
+        ASSERT_EQ(id.value, "x");
+        ASSERT_EQ(id.version, 3);
     }
 }
 
@@ -185,29 +178,28 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
     // wrong thing
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 2);
 
     {
         const auto & phi_obj = fin->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(phi_obj));
+        ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     }
 
     {
         const auto & func_obj = fin->instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
-        const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
+        ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
+        const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
-        ASSERT_TRUE(
-            std::holds_alternative<std::unique_ptr<MIR::Identifier>>(func->pos_args.front()));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(func->pos_args.front());
-        ASSERT_EQ(id->value, "x");
-        ASSERT_EQ(id->version, 3);
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*func.pos_args.front().obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*func.pos_args.front().obj_ptr);
+        ASSERT_EQ(id.value, "x");
+        ASSERT_EQ(id.version, 3);
     }
 }
 
@@ -227,27 +219,28 @@ TEST(number_uses, with_phi_no_pruning) {
     // wrong thing
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 2);
 
     {
         const auto & phi_obj = fin->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(phi_obj));
+        ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     }
 
     {
         const auto & id_obj = fin->instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
-        ASSERT_EQ(id->value, "x");
-        ASSERT_EQ(id->version, 3);
-        ASSERT_EQ(id->var.name, "y");
-        ASSERT_EQ(id->var.version, 1);
+        ASSERT_EQ(id_obj.var.name, "y");
+        ASSERT_EQ(id_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
+        ASSERT_EQ(id.value, "x");
+        ASSERT_EQ(id.version, 3);
     }
 }
 
@@ -264,20 +257,21 @@ TEST(number_uses, three_statements) {
     // get the state we want to test.
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
     {
         const auto & id_obj = irlist.instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
-        ASSERT_EQ(id->value, "y");
-        ASSERT_EQ(id->version, 1);
-        ASSERT_EQ(id->var.name, "z");
-        ASSERT_EQ(id->var.version, 1);
+        ASSERT_EQ(id_obj.var.name, "z");
+        ASSERT_EQ(id_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
+        ASSERT_EQ(id.value, "y");
+        ASSERT_EQ(id.version, 1);
     }
 }
 
@@ -294,20 +288,21 @@ TEST(number_uses, redefined_value) {
     // get the state we want to test.
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
     {
         const auto & id_obj = irlist.instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(id_obj));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(id_obj);
-        ASSERT_EQ(id->value, "x");
-        ASSERT_EQ(id->version, 2);
-        ASSERT_EQ(id->var.name, "y");
-        ASSERT_EQ(id->var.version, 1);
+        ASSERT_EQ(id_obj.var.name, "y");
+        ASSERT_EQ(id_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
+        ASSERT_EQ(id.value, "x");
+        ASSERT_EQ(id.version, 2);
     }
 }
 
@@ -324,31 +319,32 @@ TEST(number_uses, in_array) {
     // wrong thing
     MIR::Passes::block_walker(
         irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                 });
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
     {
         const auto & num_obj = irlist.instructions.front();
-        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(num_obj));
-        const auto & num = std::get<std::shared_ptr<MIR::Number>>(num_obj);
-        ASSERT_EQ(num->value, 10);
-        ASSERT_EQ(num->var.name, "x");
-        ASSERT_EQ(num->var.version, 1);
+        ASSERT_EQ(num_obj.var.name, "x");
+        ASSERT_EQ(num_obj.var.version, 1);
+
+        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
+        const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
+        ASSERT_EQ(num.value, 10);
     }
 
     {
         const auto & arr_obj = irlist.instructions.back();
-        ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(arr_obj));
-        const auto & arr = std::get<std::shared_ptr<MIR::Array>>(arr_obj);
+        ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arr_obj.obj_ptr));
+        const auto & arr = std::get<MIR::Array>(*arr_obj.obj_ptr);
 
-        ASSERT_EQ(arr->value.size(), 1);
-        ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arr->value[0]));
-        const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(arr->value[0]);
+        ASSERT_EQ(arr.value.size(), 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arr.value[0].obj_ptr));
+        const auto & id = std::get<MIR::Identifier>(*arr.value[0].obj_ptr);
 
-        ASSERT_EQ(id->value, "y");
-        ASSERT_EQ(id->version, 1);
+        ASSERT_EQ(id.value, "y");
+        ASSERT_EQ(id.version, 1);
     }
 }

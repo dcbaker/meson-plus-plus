@@ -11,7 +11,7 @@ namespace MIR::Passes {
 
 namespace {
 
-bool replace_elements(std::vector<Object> & vec, const ReplacementCallback & cb) {
+bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback & cb) {
     bool progress = false;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
         auto rt = cb(*it);
@@ -54,16 +54,16 @@ bool instruction_walker(BasicBlock & block, const std::vector<MutationCallback> 
     return progress;
 };
 
-bool array_walker(Object & obj, const MutationCallback & cb) {
+bool array_walker(Instruction & obj, const MutationCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::shared_ptr<Array>>(obj)) {
+    auto arr_ptr = std::get_if<Array>(obj.obj_ptr.get());
+    if (arr_ptr == nullptr) {
         return progress;
     }
-    auto & arr = std::get<std::shared_ptr<Array>>(obj);
 
-    for (auto & e : arr->value) {
-        if (std::holds_alternative<std::shared_ptr<Array>>(e)) {
+    for (auto & e : arr_ptr->value) {
+        if (std::holds_alternative<Array>(*e.obj_ptr)) {
             progress |= array_walker(e, cb);
         } else {
             progress |= cb(e);
@@ -73,21 +73,21 @@ bool array_walker(Object & obj, const MutationCallback & cb) {
     return progress;
 }
 
-bool array_walker(const Object & obj, const ReplacementCallback & cb) {
+bool array_walker(const Instruction & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::shared_ptr<Array>>(obj)) {
+    auto arr_ptr = std::get_if<Array>(obj.obj_ptr.get());
+    if (arr_ptr == nullptr) {
         return progress;
     }
-    auto & arr = std::get<std::shared_ptr<Array>>(obj);
 
-    for (auto it = arr->value.begin(); it != arr->value.end(); ++it) {
-        if (std::holds_alternative<std::shared_ptr<Array>>(*it)) {
+    for (auto it = arr_ptr->value.begin(); it != arr_ptr->value.end(); ++it) {
+        if (std::holds_alternative<Array>(*it->obj_ptr)) {
             progress |= array_walker(*it, cb);
         } else {
             auto rt = cb(*it);
             if (rt.has_value()) {
-                arr->value[it - arr->value.begin()] = std::move(rt.value());
+                arr_ptr->value[it - arr_ptr->value.begin()] = std::move(rt.value());
                 progress |= true;
             }
         }
@@ -96,28 +96,27 @@ bool array_walker(const Object & obj, const ReplacementCallback & cb) {
     return progress;
 }
 
-bool function_argument_walker(const Object & obj, const ReplacementCallback & cb) {
+bool function_argument_walker(const Instruction & obj, const ReplacementCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+    auto func_ptr = std::get_if<FunctionCall>(obj.obj_ptr.get());
+    if (func_ptr == nullptr) {
         return progress;
     }
 
-    auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (!func->pos_args.empty()) {
-        progress |= replace_elements(func->pos_args, cb);
+    if (!func_ptr->pos_args.empty()) {
+        progress |= replace_elements(func_ptr->pos_args, cb);
     }
 
-    if (!func->kw_args.empty()) {
-        for (auto & [n, v] : func->kw_args) {
-            if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
+    if (!func_ptr->kw_args.empty()) {
+        for (auto & [n, v] : func_ptr->kw_args) {
+            if (std::holds_alternative<Array>(*v.obj_ptr)) {
                 progress |= array_walker(v, cb);
             }
             // If the callback can act on arrays (like flatten can), we need to
             // call the cb on the array, and on the array elements
-            if (std::optional<Object> o = cb(v); o.has_value()) {
-                func->kw_args[n] = std::move(o.value());
+            if (std::optional<Instruction> o = cb(v); o.has_value()) {
+                func_ptr->kw_args[n] = std::move(o.value());
                 progress |= true;
             }
         }
@@ -126,22 +125,21 @@ bool function_argument_walker(const Object & obj, const ReplacementCallback & cb
     return progress;
 }
 
-bool function_argument_walker(Object & obj, const MutationCallback & cb) {
+bool function_argument_walker(Instruction & obj, const MutationCallback & cb) {
     bool progress = false;
 
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+    auto func_ptr = std::get_if<FunctionCall>(obj.obj_ptr.get());
+    if (func_ptr == nullptr) {
         return progress;
     }
 
-    auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    for (auto & e : func->pos_args) {
+    for (auto & e : func_ptr->pos_args) {
         progress |= cb(e);
         progress |= array_walker(e, cb);
     }
 
-    if (!func->kw_args.empty()) {
-        for (auto & [_, v] : func->kw_args) {
+    if (!func_ptr->kw_args.empty()) {
+        for (auto & [_, v] : func_ptr->kw_args) {
             progress |= cb(v);
             progress |= array_walker(v, cb);
         }
@@ -154,9 +152,9 @@ bool function_walker(BasicBlock & block, const ReplacementCallback & cb) {
     bool progress = instruction_walker(
         block,
         {
-            [&](const Object & obj) { return array_walker(obj, cb); }, // look into arrays
+            [&](const Instruction & obj) { return array_walker(obj, cb); }, // look into arrays
             // look into function arguments
-            [&](const Object & obj) { return function_argument_walker(obj, cb); },
+            [&](const Instruction & obj) { return function_argument_walker(obj, cb); },
             // TODO: look into dictionary elements
         },
         {cb});
@@ -178,9 +176,9 @@ bool function_walker(BasicBlock & block, const MutationCallback & cb) {
     bool progress = instruction_walker(
         block,
         {
-            [&](Object & obj) { return array_walker(obj, cb); }, // look into arrays
+            [&](Instruction & obj) { return array_walker(obj, cb); }, // look into arrays
             // look into function arguments
-            [&](Object & obj) { return function_argument_walker(obj, cb); },
+            [&](Instruction & obj) { return function_argument_walker(obj, cb); },
             // TODO: look into dictionary elements
             cb,
         },

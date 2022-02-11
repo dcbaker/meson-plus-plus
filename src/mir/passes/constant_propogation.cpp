@@ -11,98 +11,64 @@ namespace MIR::Passes {
 
 namespace {
 
-bool identifier_to_object_mapper(Object & obj, PropTable & table) {
-    if (!std::holds_alternative<std::unique_ptr<Identifier>>(obj) &&
-        !std::holds_alternative<std::unique_ptr<Phi>>(obj) &&
-        !std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        const Variable & var = std::visit([](const auto & o) { return o->var; }, obj);
-        if (var) {
-            table[var] = &obj;
+bool identifier_to_object_mapper(Instruction & obj, PropTable & table) {
+    if (!std::holds_alternative<Identifier>(*obj.obj_ptr) &&
+        !std::holds_alternative<Phi>(*obj.obj_ptr) &&
+        !std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
+
+        if (obj.var) {
+            table[obj.var] = &obj;
         }
     }
 
     return false;
 }
 
-std::optional<Object> get_value(const Identifier & id, const PropTable & table) {
+std::optional<Instruction> get_value(const Identifier & id, const PropTable & table) {
     const Variable var{id.value, id.version};
     if (const auto & val = table.find(var); val != table.end()) {
         auto & v = *val->second;
-        if (std::holds_alternative<std::shared_ptr<Number>>(v)) {
-            return std::get<std::shared_ptr<Number>>(v);
+        const Object & obj = *v.obj_ptr;
+        if (std::holds_alternative<Number>(obj) || std::holds_alternative<String>(obj) ||
+            std::holds_alternative<Boolean>(obj) || std::holds_alternative<Array>(obj) ||
+            std::holds_alternative<Dict>(obj) || std::holds_alternative<Compiler>(obj) ||
+            std::holds_alternative<File>(obj) || std::holds_alternative<Executable>(obj) ||
+            std::holds_alternative<StaticLibrary>(obj) || std::holds_alternative<Program>(obj) ||
+            std::holds_alternative<IncludeDirectories>(obj) ||
+            std::holds_alternative<CustomTarget>(obj) || std::holds_alternative<Dependency>(obj)) {
+            return v;
         }
-        if (std::holds_alternative<std::shared_ptr<String>>(v)) {
-            return std::get<std::shared_ptr<String>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Boolean>>(v)) {
-            return std::get<std::shared_ptr<Boolean>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
-            return std::get<std::shared_ptr<Array>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Dict>>(v)) {
-            return std::get<std::shared_ptr<Dict>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Compiler>>(v)) {
-            return std::get<std::shared_ptr<Compiler>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<File>>(v)) {
-            return std::get<std::shared_ptr<File>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Executable>>(v)) {
-            return std::get<std::shared_ptr<Executable>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(v)) {
-            return std::get<std::shared_ptr<StaticLibrary>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Program>>(v)) {
-            return std::get<std::shared_ptr<Program>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<IncludeDirectories>>(v)) {
-            return std::get<std::shared_ptr<IncludeDirectories>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<CustomTarget>>(v)) {
-            return std::get<std::shared_ptr<CustomTarget>>(v);
-        }
-        if (std::holds_alternative<std::shared_ptr<Dependency>>(v)) {
-            return std::get<std::shared_ptr<Dependency>>(v);
 #ifndef NDEBUG
-        }
-        if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
-              std::holds_alternative<std::unique_ptr<Identifier>>(v) &&
-              std::holds_alternative<std::unique_ptr<Empty>>(v) &&
-              std::holds_alternative<std::unique_ptr<Message>>(v) &&
-              std::holds_alternative<std::shared_ptr<FunctionCall>>(v))) {
+        if (!(std::holds_alternative<Phi>(obj) && std::holds_alternative<Identifier>(obj) &&
+              std::holds_alternative<Empty>(obj) && std::holds_alternative<Message>(obj) &&
+              std::holds_alternative<FunctionCall>(obj) &&
+              std::holds_alternative<std::monostate>(obj))) {
             throw Util::Exceptions::MesonException(
                 "Missing MIR type, this is an implementation bug");
+        }
 #endif
-        }
     }
     return std::nullopt;
 }
 
-std::optional<Object> constant_propogation_impl(const Object & obj, const PropTable & table) {
-    if (std::holds_alternative<std::unique_ptr<Identifier>>(obj)) {
-        const auto & id = std::get<std::unique_ptr<Identifier>>(obj);
-        if (!id->var) {
-            return get_value(*id, table);
-        }
+std::optional<Instruction> constant_propogation_impl(const Instruction & obj,
+                                                     const PropTable & table) {
+    auto * id = std::get_if<Identifier>(obj.obj_ptr.get());
+    if (id != nullptr && !obj.var) {
+        return get_value(*id, table);
     }
-
     return std::nullopt;
 }
 
-bool constant_propogation_holder_impl(Object & obj, const PropTable & table) {
+bool constant_propogation_holder_impl(Instruction & obj, const PropTable & table) {
     bool progress = false;
 
-    if (std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        const auto & func = std::get<std::shared_ptr<FunctionCall>>(obj);
-        if (func->holder &&
-            std::holds_alternative<std::unique_ptr<Identifier>>(func->holder.value())) {
-            const auto & id = std::get<std::unique_ptr<Identifier>>(func->holder.value());
-            auto v = get_value(*id, table);
-            if (v) {
-                func->holder = std::move(v);
+    auto * func = std::get_if<FunctionCall>(obj.obj_ptr.get());
+    if (func != nullptr) {
+        auto * holder = std::get_if<Identifier>(func->holder.obj_ptr.get());
+        if (holder != nullptr) {
+            if (auto v = get_value(*holder, table)) {
+                func->holder = std::move(v.value());
             }
         }
     }
@@ -113,8 +79,10 @@ bool constant_propogation_holder_impl(Object & obj, const PropTable & table) {
 } // namespace
 
 bool constant_propogation(BasicBlock & block, PropTable & table) {
-    const auto & prop = [&](const Object & obj) { return constant_propogation_impl(obj, table); };
-    const auto & prop_h = [&](Object & obj) {
+    const auto & prop = [&](const Instruction & obj) {
+        return constant_propogation_impl(obj, table);
+    };
+    const auto & prop_h = [&](Instruction & obj) {
         return constant_propogation_holder_impl(obj, table);
     };
 
@@ -122,16 +90,16 @@ bool constant_propogation(BasicBlock & block, PropTable & table) {
     // then the replacement
     bool progress = instruction_walker(
         block, {
-                   [&](Object & obj) { return identifier_to_object_mapper(obj, table); },
+                   [&](Instruction & obj) { return identifier_to_object_mapper(obj, table); },
                });
 
     progress |= instruction_walker(
         block,
         {
-            [&](const Object & obj) { return array_walker(obj, prop); },
-            [&](Object & obj) { return array_walker(obj, prop_h); },
-            [&](const Object & obj) { return function_argument_walker(obj, prop); },
-            [&](Object & obj) { return function_argument_walker(obj, prop_h); },
+            [&](const Instruction & obj) { return array_walker(obj, prop); },
+            [&](Instruction & obj) { return array_walker(obj, prop_h); },
+            [&](const Instruction & obj) { return function_argument_walker(obj, prop); },
+            [&](Instruction & obj) { return function_argument_walker(obj, prop_h); },
             prop_h,
         },
         {

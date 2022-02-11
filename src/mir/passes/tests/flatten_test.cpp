@@ -19,14 +19,14 @@ TEST(flatten, basic) {
 
     const auto & r = irlist.instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(r));
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(r);
-    ASSERT_EQ(f->name, "func");
-    ASSERT_EQ(f->pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
+    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
+    ASSERT_EQ(f.name, "func");
+    ASSERT_EQ(f.pos_args.size(), 1);
 
-    const auto & arg = f->pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(arg));
-    const auto & arr = std::get<std::shared_ptr<MIR::Array>>(arg)->value;
+    const auto & arg = f.pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arg.obj_ptr));
+    const auto & arr = std::get<MIR::Array>(*arg.obj_ptr).value;
 
     ASSERT_EQ(arr.size(), 4);
 }
@@ -41,14 +41,14 @@ TEST(flatten, already_flat) {
 
     const auto & r = irlist.instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(r));
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(r);
-    ASSERT_EQ(f->name, "func");
-    ASSERT_EQ(f->pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
+    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
+    ASSERT_EQ(f.name, "func");
+    ASSERT_EQ(f.pos_args.size(), 1);
 
-    const auto & arg = f->pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(arg));
-    const auto & arr = std::get<std::shared_ptr<MIR::Array>>(arg)->value;
+    const auto & arg = f.pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arg.obj_ptr));
+    const auto & arr = std::get<MIR::Array>(*arg.obj_ptr).value;
 
     ASSERT_EQ(arr.size(), 2);
 }
@@ -63,13 +63,13 @@ TEST(flatten, mixed_args) {
 
     const auto & r = irlist.instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(r));
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(r);
-    ASSERT_EQ(f->pos_args.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
+    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
+    ASSERT_EQ(f.pos_args.size(), 2);
 
-    const auto & arg = f->pos_args.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(arg));
-    const auto & arr = std::get<std::shared_ptr<MIR::Array>>(arg)->value;
+    const auto & arg = f.pos_args.back();
+    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arg.obj_ptr));
+    const auto & arr = std::get<MIR::Array>(*arg.obj_ptr).value;
 
     ASSERT_EQ(arr.size(), 2);
 }
@@ -84,8 +84,8 @@ TEST(flatten, keyword_mixed) {
 
     const auto & r = irlist.instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(r));
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(r);
-    const auto & arr = *std::get<std::shared_ptr<MIR::Array>>(f->kw_args.at("arg"));
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
+    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
+    const auto & arr = std::get<MIR::Array>(*f.kw_args.at("arg").obj_ptr);
     ASSERT_EQ(arr.value.size(), 3);
 }

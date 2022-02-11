@@ -22,8 +22,8 @@ TEST(machine_lower, simple) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 2);
     const auto & r = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(r));
-    ASSERT_EQ(std::get<std::shared_ptr<MIR::String>>(r)->value, "x86_64");
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*r.obj_ptr));
+    ASSERT_EQ(std::get<MIR::String>(*r.obj_ptr).value, "x86_64");
 }
 
 TEST(machine_lower, in_array) {
@@ -36,12 +36,12 @@ TEST(machine_lower, in_array) {
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & r = irlist.instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(r));
-    const auto & a = std::get<std::shared_ptr<MIR::Array>>(r)->value;
+    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*r.obj_ptr));
+    const auto & a = std::get<MIR::Array>(*r.obj_ptr).value;
 
     ASSERT_EQ(a.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(a[0]));
-    ASSERT_EQ(std::get<std::shared_ptr<MIR::String>>(a[0])->value, "x86_64");
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*a[0].obj_ptr));
+    ASSERT_EQ(std::get<MIR::String>(*a[0].obj_ptr).value, "x86_64");
 }
 
 TEST(machine_lower, in_function_args) {
@@ -54,12 +54,12 @@ TEST(machine_lower, in_function_args) {
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & r = irlist.instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(r));
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(r);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
+    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
 
-    ASSERT_EQ(f->pos_args.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(f->pos_args[0]));
-    ASSERT_EQ(std::get<std::shared_ptr<MIR::String>>(f->pos_args[0])->value, "little");
+    ASSERT_EQ(f.pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*f.pos_args[0].obj_ptr));
+    ASSERT_EQ(std::get<MIR::String>(*f.pos_args[0].obj_ptr).value, "little");
 }
 
 TEST(machine_lower, in_condtion) {
@@ -74,6 +74,6 @@ TEST(machine_lower, in_condtion) {
     ASSERT_TRUE(is_con(irlist.next));
     const auto & con = get_con(irlist.next);
     const auto & obj = con->condition;
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(obj));
-    ASSERT_EQ(std::get<std::shared_ptr<MIR::String>>(obj)->value, "x86_64");
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*obj.obj_ptr));
+    ASSERT_EQ(std::get<MIR::String>(*obj.obj_ptr).value, "x86_64");
 }

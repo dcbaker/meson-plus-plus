@@ -14,22 +14,15 @@ namespace MIR::Passes {
 
 namespace {
 
-// XXX: we probably need access to the source_root and build_root
-std::optional<Object> lower_files(const FunctionCall & f, const State::Persistant & pstate) {
-    std::vector<Object> files{};
-    for (const auto & arg_h : f.pos_args) {
-        // XXX: do something more realistic here
-        // This could be Array<STring> and still be valid.
-        if (!std::holds_alternative<std::shared_ptr<String>>(arg_h)) {
-            throw Util::Exceptions::InvalidArguments("Arguments to 'files()' must be strings");
-        }
-        auto const & v = *std::get<std::shared_ptr<String>>(arg_h);
+std::optional<Instruction> lower_files(const FunctionCall & f, const State::Persistant & pstate) {
+    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
+    std::vector<Instruction> files{};
+    files.reserve(args.size());
+    std::transform(args.begin(), args.end(), std::back_inserter(files), [&](const String & v) {
+        return File{v.value, f.source_dir, false, pstate.source_root, pstate.build_root};
+    });
 
-        files.push_back(std::make_shared<File>(v.value, f.source_dir, false, pstate.source_root,
-                                                  pstate.build_root));
-    }
-
-    return std::make_shared<Array>(std::move(files));
+    return Array{std::move(files)};
 }
 
 /**
@@ -38,30 +31,26 @@ std::optional<Object> lower_files(const FunctionCall & f, const State::Persistan
  * This is only for Files, not for targets. I want to separate targets into a
  * separate structure (or multiple structures, probably).
  *
- * This walks a vector of Objects, creating a new, flat vector of Files,
+ * This walks a vector of Instructions, creating a new, flat vector of Files,
  * converting any strings into files, appending files as is, and flattening any
  * arrays it runs into.
  */
-Source src_to_file(const Object & raw_src, const State::Persistant & pstate,
-                   const std::string & subdir) {
-    if (std::holds_alternative<std::shared_ptr<String>>(raw_src)) {
-        const auto & src = *std::get<std::shared_ptr<String>>(raw_src);
-        return std::make_shared<File>(src.value, subdir, false, pstate.source_root,
-                                      pstate.build_root);
+Instruction src_to_file(const Instruction & raw_src, const State::Persistant & pstate,
+                        const std::string & subdir) {
+    if (std::holds_alternative<String>(*raw_src.obj_ptr)) {
+        const auto & src = std::get<String>(*raw_src.obj_ptr);
+        return File{src.value, subdir, false, pstate.source_root, pstate.build_root};
     }
-    if (std::holds_alternative<std::shared_ptr<File>>(raw_src)) {
-        return std::get<std::shared_ptr<File>>(raw_src);
+    if (std::holds_alternative<File>(*raw_src.obj_ptr) ||
+        std::holds_alternative<CustomTarget>(*raw_src.obj_ptr)) {
+        return raw_src;
     }
-    if (std::holds_alternative<std::shared_ptr<CustomTarget>>(raw_src)) {
-        return std::get<std::shared_ptr<CustomTarget>>(raw_src);
-    } // TODO: there are other valid types here, like generator output and custom targets
     throw Util::Exceptions::InvalidArguments{
         "'executable' sources must be strings, files, or custom_target objects."};
 }
 
 template <typename T>
-std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
-                                                     const State::Persistant & pstate) {
+std::optional<T> lower_build_target(const FunctionCall & f, const State::Persistant & pstate) {
     std::string f_name;
     if constexpr (std::is_same<T, Executable>::value) {
         f_name = "executable";
@@ -78,13 +67,14 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
 
     auto pos_itr = f.pos_args.begin();
 
-    const auto & name = extract_positional_argument<std::shared_ptr<String>>(*pos_itr++);
+    const auto & name = extract_positional_argument<String>(*pos_itr->obj_ptr);
     if (!name) {
         throw Util::Exceptions::InvalidArguments{f.name + " first argument must be a string"};
     }
+    ++pos_itr;
 
     // skip the first argument
-    std::vector<Source> srcs{};
+    std::vector<Instruction> srcs{};
     for (; pos_itr != f.pos_args.end(); ++pos_itr) {
         srcs.emplace_back(src_to_file(*pos_itr, pstate, f.source_dir));
     }
@@ -98,45 +88,45 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
     }
 
     const auto & comp = comp_at->second.build()->compiler;
-    auto raw_args = extract_keyword_argument_a<std::shared_ptr<String>>(f.kw_args, "cpp_args");
+    auto raw_args = extract_keyword_argument_a<String>(f.kw_args, "cpp_args");
     for (const auto & ra : raw_args) {
-        args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra->value));
+        args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra.value));
     }
 
+    // XXX: is this going to work, or are we going to end up taking a pointer to a temporary?
+    // TODO: validation
     std::vector<StaticLinkage> slink{};
-    auto raw_link_with =
-        extract_keyword_argument_a<std::shared_ptr<StaticLibrary>>(f.kw_args, "link_with");
+    auto raw_link_with = extract_keyword_argument_a<StaticLibrary>(f.kw_args, "link_with");
     slink.reserve(raw_link_with.size());
     for (const auto & s : raw_link_with) {
-        slink.emplace_back(StaticLinkMode::NORMAL, s.get());
+        slink.emplace_back(StaticLinkMode::NORMAL, s);
     }
 
-    auto raw_inc = extract_keyword_argument_a<std::shared_ptr<IncludeDirectories>>(
-        f.kw_args, "include_directories", true);
+    auto raw_inc =
+        extract_keyword_argument_a<IncludeDirectories>(f.kw_args, "include_directories", true);
     for (const auto & i : raw_inc) {
-        for (const auto & d : i->directories) {
-            args[Toolchain::Language::CPP].emplace_back(
-                d, Arguments::Type::INCLUDE,
-                i->is_system ? Arguments::IncludeType::SYSTEM : Arguments::IncludeType::BASE);
+        for (const auto & d : i.directories) {
+            args[Toolchain::Language::CPP].emplace_back(d, Arguments::Type::INCLUDE,
+                                                        i.is_system ? Arguments::IncludeType::SYSTEM
+                                                                    : Arguments::IncludeType::BASE);
         }
     }
 
-    const auto & deps =
-        extract_keyword_argument_a<std::shared_ptr<Dependency>>(f.kw_args, "dependencies");
+    const auto & deps = extract_keyword_argument_a<Dependency>(f.kw_args, "dependencies");
     for (const auto & d : deps) {
-        for (const auto & a : d->arguments) {
+        for (const auto & a : d.arguments) {
             args[Toolchain::Language::CPP].emplace_back(a);
         }
     }
 
     // TODO: machine parameter needs to be set from the native kwarg
-    return std::make_shared<T>(name.value()->value, srcs, Machines::Machine::BUILD, f.source_dir,
-                               args, slink, f.var);
+    return T{name.value().value, srcs, Machines::Machine::BUILD, f.source_dir, args, slink};
 }
 
-std::optional<Object> lower_include_dirs(const FunctionCall & f, const State::Persistant & pstate) {
+std::optional<Instruction> lower_include_dirs(const FunctionCall & f,
+                                              const State::Persistant & pstate) {
     for (const auto & a : f.pos_args) {
-        if (!std::holds_alternative<std::shared_ptr<String>>(a)) {
+        if (!std::holds_alternative<String>(*a.obj_ptr)) {
             throw Util::Exceptions::InvalidArguments{
                 "include_directories: all positional arguments must be strings"};
         }
@@ -144,16 +134,16 @@ std::optional<Object> lower_include_dirs(const FunctionCall & f, const State::Pe
 
     std::vector<std::string> dirs{};
     for (const auto & a : f.pos_args) {
-        dirs.emplace_back(std::get<std::shared_ptr<String>>(a)->value);
+        dirs.emplace_back(std::get<String>(*a.obj_ptr).value);
     }
 
-    auto is_system = extract_keyword_argument<std::shared_ptr<Boolean>>(f.kw_args, "is_system")
-                         .value_or(std::make_shared<Boolean>(false));
+    auto is_system =
+        extract_keyword_argument<Boolean>(f.kw_args, "is_system").value_or(Boolean{false});
 
-    return std::make_shared<IncludeDirectories>(dirs, is_system->value, f.var);
+    return IncludeDirectories{dirs, is_system.value};
 }
 
-std::optional<Object> lower_messages(const FunctionCall & f) {
+std::optional<Instruction> lower_messages(const FunctionCall & f) {
     MessageLevel level;
     if (f.name == "message") {
         level = MessageLevel::MESSAGE;
@@ -165,68 +155,66 @@ std::optional<Object> lower_messages(const FunctionCall & f) {
 
     // TODO: Meson accepts anything as a message bascially, without flattening.
     // Currently, Meson++ flattens everything so I'm only going to allow strings for the moment.
-    auto args =
-        extract_variadic_arguments<std::shared_ptr<String>>(f.pos_args.begin(), f.pos_args.end());
+    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
 
     std::string message{};
     for (const auto & a : args) {
         if (!message.empty()) {
             message.append(" ");
         }
-        message.append(a->value);
+        message.append(a.value);
     }
 
-    return std::make_unique<Message>(level, message);
+    return Message{level, message};
 }
 
-std::optional<Object> lower_assert(const FunctionCall & f) {
+std::optional<Instruction> lower_assert(const FunctionCall & f) {
     if (f.pos_args.empty() || f.pos_args.size() > 2) {
         throw Util::Exceptions::InvalidArguments("assert: takes 1 or 2 arguments, got " +
                                                  std::to_string(f.pos_args.size()));
     }
 
-    const auto & value = extract_positional_argument<std::shared_ptr<Boolean>>(f.pos_args[0]);
+    const auto & value = extract_positional_argument<Boolean>(f.pos_args[0]);
 
-    if (!value.value()->value) {
+    if (!value.value().value) {
         // TODO: maye have an assert level of message?
         // TODO, how to get the original values of this?
         std::string message;
         if (f.pos_args.size() == 2) {
-            message =
-                extract_positional_argument<std::shared_ptr<String>>(f.pos_args[1]).value()->value;
+            message = extract_positional_argument<String>(f.pos_args[1]).value().value;
         }
-        return std::make_unique<Message>(MessageLevel::ERROR, "Assertion failed: " + message);
+        return Message{MessageLevel::ERROR, "Assertion failed: " + message};
     }
 
     // TODO: it would be better to
-    return std::make_unique<Empty>();
+    return Empty{};
 }
 
-std::optional<Object> lower_not(const FunctionCall & f) {
+std::optional<Instruction> lower_not(const FunctionCall & f) {
     // TODO: is this code actually reachable?
     if (f.pos_args.size() != 1) {
         throw Util::Exceptions::InvalidArguments("not: takes 1 argument, got " +
                                                  std::to_string(f.pos_args.size()));
     }
 
-    const auto & value = extract_positional_argument<std::shared_ptr<Boolean>>(f.pos_args[0]);
+    const auto & value = extract_positional_argument<Boolean>(f.pos_args[0]);
 
-    return std::make_shared<Boolean>(!value.value()->value);
+    return Boolean{!value.value().value};
 }
 
-std::optional<Object> lower_neg(const FunctionCall & f) {
+std::optional<Instruction> lower_neg(const FunctionCall & f) {
     // TODO: is this code actually reachable?
     if (f.pos_args.size() != 1) {
         throw Util::Exceptions::InvalidArguments("neg: takes 1 argument, got " +
                                                  std::to_string(f.pos_args.size()));
     }
 
-    const auto & value = extract_positional_argument<std::shared_ptr<Number>>(f.pos_args[0]);
+    const auto & value = extract_positional_argument<Number>(f.pos_args[0]);
 
-    return std::make_shared<Number>(-value.value()->value);
+    return Number{-value.value().value};
 }
 
-std::optional<Object> lower_eq(const FunctionCall & f) {
+std::optional<Instruction> lower_eq(const FunctionCall & f) {
     // TODO: is this code actually reachable?
     if (f.pos_args.size() != 2) {
         throw Util::Exceptions::InvalidArguments("==: takes 2 argument, got " +
@@ -236,35 +224,32 @@ std::optional<Object> lower_eq(const FunctionCall & f) {
     const auto & lhs = f.pos_args[0];
     const auto & rhs = f.pos_args[1];
 
-    const bool can_compare =
-        lhs.index() == rhs.index() || lhs.valueless_by_exception() || rhs.valueless_by_exception();
+    const bool can_compare = lhs.obj_ptr->index() == rhs.obj_ptr->index() ||
+                             lhs.obj_ptr->valueless_by_exception() ||
+                             rhs.obj_ptr->valueless_by_exception();
     if (!can_compare) {
         // TODO: metter error message here
         throw Util::Exceptions::InvalidArguments("Trying to compare unlike types");
     }
 
-    // Can't rely on variants equality, because we have either shared_ptr or
-    // unique_ptr inside the variant. Since we know they hold the same type, we
-    // can do this safely
+    // TODO: if all Object types were comparible then we could just lhs == rhs
+    // and be done with it
+    // We know that both types are the same already
     bool value;
-    if (std::holds_alternative<std::shared_ptr<String>>(lhs)) {
-        value = std::get<std::shared_ptr<String>>(lhs)->value ==
-                std::get<std::shared_ptr<String>>(rhs)->value;
-    } else if (std::holds_alternative<std::shared_ptr<Number>>(lhs)) {
-        value = std::get<std::shared_ptr<Number>>(lhs)->value ==
-                std::get<std::shared_ptr<Number>>(rhs)->value;
-    } else if (std::holds_alternative<std::shared_ptr<Boolean>>(lhs)) {
-        value = std::get<std::shared_ptr<Boolean>>(lhs)->value ==
-                std::get<std::shared_ptr<Boolean>>(rhs)->value;
+    if (std::holds_alternative<String>(*lhs.obj_ptr)) {
+        value = std::get<String>(*lhs.obj_ptr) == std::get<String>(*rhs.obj_ptr);
+    } else if (std::holds_alternative<Number>(*lhs.obj_ptr)) {
+        value = std::get<Number>(*lhs.obj_ptr) == std::get<Number>(*rhs.obj_ptr);
+    } else if (std::holds_alternative<Boolean>(*lhs.obj_ptr)) {
+        value = std::get<Boolean>(*lhs.obj_ptr) == std::get<Boolean>(*rhs.obj_ptr);
     } else {
-        // TODO: better error message here
-        throw Util::Exceptions::MesonException("This might be a bug, cannot compare types");
+        throw Util::Exceptions::MesonException{"TODO: missing comparison operator"};
     }
 
-    return std::make_shared<Boolean>(value, f.var);
+    return Boolean{value};
 }
 
-std::optional<Object> lower_ne(const FunctionCall & f) {
+std::optional<Instruction> lower_ne(const FunctionCall & f) {
     // TODO: is this code actually reachable?
     if (f.pos_args.size() != 2) {
         throw Util::Exceptions::InvalidArguments("!=: takes 2 argument, got " +
@@ -274,49 +259,41 @@ std::optional<Object> lower_ne(const FunctionCall & f) {
     const auto & lhs = f.pos_args[0];
     const auto & rhs = f.pos_args[1];
 
-    const bool can_compare =
-        lhs.index() == rhs.index() || lhs.valueless_by_exception() || rhs.valueless_by_exception();
+    const bool can_compare = lhs.obj_ptr->index() == rhs.obj_ptr->index() ||
+                             lhs.obj_ptr->valueless_by_exception() ||
+                             rhs.obj_ptr->valueless_by_exception();
     if (!can_compare) {
         // TODO: metter error message here
         throw Util::Exceptions::InvalidArguments("Trying to compare unlike types");
     }
 
-    // Can't rely on variants equality, because we have either shared_ptr or
-    // unique_ptr inside the variant. Since we know they hold the same type, we
-    // can do this safely
+    // We know that both types are the same already
     bool value;
-    if (std::holds_alternative<std::shared_ptr<String>>(lhs)) {
-        value = std::get<std::shared_ptr<String>>(lhs)->value !=
-                std::get<std::shared_ptr<String>>(rhs)->value;
-    } else if (std::holds_alternative<std::shared_ptr<Number>>(lhs)) {
-        value = std::get<std::shared_ptr<Number>>(lhs)->value !=
-                std::get<std::shared_ptr<Number>>(rhs)->value;
-    } else if (std::holds_alternative<std::shared_ptr<Boolean>>(lhs)) {
-        value = std::get<std::shared_ptr<Boolean>>(lhs)->value !=
-                std::get<std::shared_ptr<Boolean>>(rhs)->value;
+    if (std::holds_alternative<String>(*lhs.obj_ptr)) {
+        value = std::get<String>(*lhs.obj_ptr) != std::get<String>(*rhs.obj_ptr);
+    } else if (std::holds_alternative<Number>(*lhs.obj_ptr)) {
+        value = std::get<Number>(*lhs.obj_ptr) != std::get<Number>(*rhs.obj_ptr);
+    } else if (std::holds_alternative<Boolean>(*lhs.obj_ptr)) {
+        value = std::get<Boolean>(*lhs.obj_ptr) != std::get<Boolean>(*rhs.obj_ptr);
     } else {
-        // TODO: better error message here
-        throw Util::Exceptions::MesonException("This might be a bug, cannot compare types");
+        throw Util::Exceptions::MesonException{"TODO: missing comparison operator"};
     }
 
-    return std::make_shared<Boolean>(value, f.var);
+    return Boolean{value};
 }
 
-std::optional<Object> lower_declare_dependency(const FunctionCall & f,
-                                               const State::Persistant & pstate) {
+std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
+                                                    const State::Persistant & pstate) {
     if (!f.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "declare_dependency: takes 0 positional arguments.");
     }
 
-    std::string version = extract_keyword_argument<std::shared_ptr<String>>(f.kw_args, "version")
-                              .value_or(std::make_shared<String>("unknown"))
-                              ->value;
+    std::string version =
+        extract_keyword_argument<String>(f.kw_args, "version").value_or(String("unknown")).value;
 
     std::vector<Arguments::Argument> args{};
-
-    const auto & raw_comp_args =
-        extract_keyword_argument_a<std::shared_ptr<String>>(f.kw_args, "compile_args");
+    const auto & raw_comp_args = extract_keyword_argument_a<String>(f.kw_args, "compile_args");
     if (!raw_comp_args.empty()) {
         // XXX: this assumes C++
         // should this always use gcc/g++?
@@ -329,20 +306,19 @@ std::optional<Object> lower_declare_dependency(const FunctionCall & f,
         const auto & comp = comp_at->second.build()->compiler;
 
         for (const auto & ra : raw_comp_args) {
-            args.emplace_back(comp->generalize_argument(ra->value));
+            args.emplace_back(comp->generalize_argument(ra.value));
         }
     }
 
     const auto & raw_inc_args =
-        extract_keyword_argument_av<std::shared_ptr<String>, std::shared_ptr<IncludeDirectories>>(
-            f.kw_args, "include_directories");
+        extract_keyword_argument_av<String, IncludeDirectories>(f.kw_args, "include_directories");
 
     for (const auto & i : raw_inc_args) {
-        if (std::holds_alternative<std::shared_ptr<String>>(i)) {
-            const auto & s = *std::get<std::shared_ptr<String>>(i);
+        if (std::holds_alternative<String>(i)) {
+            const auto & s = std::get<String>(i);
             args.emplace_back(s.value, Arguments::Type::INCLUDE, Arguments::IncludeType::BASE);
         } else {
-            const auto & inc = *std::get<std::shared_ptr<IncludeDirectories>>(i);
+            const auto & inc = std::get<IncludeDirectories>(i);
             for (const auto & d : inc.directories) {
                 args.emplace_back(d, Arguments::Type::INCLUDE,
                                   inc.is_system ? Arguments::IncludeType::SYSTEM
@@ -351,63 +327,46 @@ std::optional<Object> lower_declare_dependency(const FunctionCall & f,
         }
     }
 
-    const auto & raw_deps =
-        extract_keyword_argument_a<std::shared_ptr<Dependency>>(f.kw_args, "dependencies");
+    const auto & raw_deps = extract_keyword_argument_a<Dependency>(f.kw_args, "dependencies");
     for (const auto & d : raw_deps) {
-        auto dargs = d->arguments;
+        auto dargs = d.arguments;
         std::copy(dargs.begin(), dargs.end(), std::back_inserter(args));
     }
 
-    return std::make_shared<Dependency>("internal", true, version, args, f.var);
+    return Dependency{"internal", true, version, args};
 }
 
-Source extract_source(const Object & obj, const fs::path & current_source_dir,
+std::vector<Instruction>
+extract_source_inputs(const std::unordered_map<std::string, Instruction> & kws,
+                      const std::string & name, const fs::path & current_source_dir,
                       const State::Persistant & pstate) {
-    if (std::holds_alternative<std::shared_ptr<CustomTarget>>(obj)) {
-        return std::get<std::shared_ptr<CustomTarget>>(obj);
-    }
-    if (std::holds_alternative<std::shared_ptr<File>>(obj)) {
-        return std::get<std::shared_ptr<File>>(obj);
-    }
-    if (std::holds_alternative<std::shared_ptr<String>>(obj)) {
-        const auto & str = *std::get<std::shared_ptr<String>>(obj);
-        return std::make_shared<File>(str.value, current_source_dir, false, pstate.source_root,
-                                      pstate.build_root);
-    } // TODO: better error
-    throw Util::Exceptions::InvalidArguments("custom_target: 'input' keyword argument must "
-                                             "be 'custom_target', 'string', or 'file'");
-}
-
-std::vector<Source> extract_source_inputs(const std::unordered_map<std::string, Object> & kws,
-                                          const std::string & name,
-                                          const fs::path & current_source_dir,
-                                          const State::Persistant & pstate) {
     const auto & obj = kws.find(name);
     if (obj == kws.end()) {
         return {};
     }
 
-    std::vector<Source> srcs{};
-    if (std::holds_alternative<std::shared_ptr<Array>>(obj->second)) {
-        for (const auto & o : std::get<std::shared_ptr<Array>>(obj->second)->value) {
-            srcs.emplace_back(extract_source(o, current_source_dir, pstate));
+    std::vector<Instruction> srcs{};
+    if (std::holds_alternative<Array>(*obj->second.obj_ptr)) {
+        for (const auto & o : std::get<Array>(*obj->second.obj_ptr).value) {
+            srcs.emplace_back(src_to_file(o, pstate, current_source_dir));
         }
     } else {
-        srcs.emplace_back(extract_source(obj->second, current_source_dir, pstate));
+        srcs.emplace_back(src_to_file(obj->second, pstate, current_source_dir));
     }
 
     return srcs;
 }
 
-std::vector<std::string> extract_ct_command(const Object & obj, const std::vector<Source> & inputs,
+std::vector<std::string> extract_ct_command(const Instruction & obj,
+                                            const std::vector<Instruction> & inputs,
                                             const std::vector<File> & outputs) {
 
-    if (std::holds_alternative<std::shared_ptr<String>>(obj)) {
+    if (std::holds_alternative<String>(*obj.obj_ptr)) {
         // TODO: in c++20 these can be constexpr
         static const auto output_size = std::string{"@OUTPUT"}.size();
         static const auto input_size = std::string{"@INPUT"}.size();
 
-        const auto & v = std::get<std::shared_ptr<String>>(obj)->value;
+        const auto & v = std::get<String>(*obj.obj_ptr).value;
         // TODO: indexed input and output arguments
         if (v == "@OUTPUT@") {
             std::vector<std::string> outs{};
@@ -424,10 +383,10 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
         if (v == "@INPUT@") {
             std::vector<std::string> ins{};
             for (const auto & o : inputs) {
-                if (std::holds_alternative<std::shared_ptr<File>>(o)) {
-                    ins.emplace_back(std::get<std::shared_ptr<File>>(o)->relative_to_build_dir());
+                if (std::holds_alternative<File>(*o.obj_ptr)) {
+                    ins.emplace_back(std::get<File>(*o.obj_ptr).relative_to_build_dir());
                 } else {
-                    const auto & t = *std::get<std::shared_ptr<CustomTarget>>(o);
+                    const auto & t = std::get<CustomTarget>(*o.obj_ptr);
                     for (const auto & o2 : t.outputs) {
                         ins.emplace_back(o2.relative_to_build_dir());
                     }
@@ -437,34 +396,35 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
         }
         if (v.substr(0, input_size) == "@INPUT") {
             const auto & index = std::stoul(v.substr(input_size, v.size() - 1));
-            const Source s = inputs[index];
-            if (std::holds_alternative<std::shared_ptr<File>>(s)) {
-                return {std::get<std::shared_ptr<File>>(s)->relative_to_build_dir()};
+            const Instruction s = inputs[index];
+            if (std::holds_alternative<File>(*s.obj_ptr)) {
+                return {std::get<File>(*s.obj_ptr).relative_to_build_dir()};
             }
             assert(false); // FIXME: inputs
-        } else {
-            return {v};
         }
-    } else if (std::holds_alternative<std::shared_ptr<File>>(obj)) {
-        return {std::get<std::shared_ptr<File>>(obj)->relative_to_build_dir()};
-    } else if (std::holds_alternative<std::shared_ptr<Program>>(obj)) {
-        return {std::get<std::shared_ptr<Program>>(obj)->path};
+        return {v};
+    }
+    if (std::holds_alternative<File>(*obj.obj_ptr)) {
+        return {std::get<File>(*obj.obj_ptr).relative_to_build_dir()};
+    }
+    if (std::holds_alternative<Program>(*obj.obj_ptr)) {
+        return {std::get<Program>(*obj.obj_ptr).path};
     }
     throw Util::Exceptions::InvalidArguments(
         "custom_target: 'commands' must be strings, files, or find_program objects");
 }
 
-std::vector<std::string> extract_ct_command(const std::unordered_map<std::string, Object> & kws,
-                                            const std::vector<Source> & inputs,
-                                            const std::vector<File> & outputs) {
+std::vector<std::string>
+extract_ct_command(const std::unordered_map<std::string, Instruction> & kws,
+                   const std::vector<Instruction> & inputs, const std::vector<File> & outputs) {
     const auto & cmd_obj = kws.find("command");
     if (cmd_obj == kws.end()) {
         throw Util::Exceptions::MesonException("custom_target: missing required kwarg 'command'");
     }
 
     std::vector<std::string> command{};
-    if (std::holds_alternative<std::shared_ptr<Array>>(cmd_obj->second)) {
-        for (const auto & o : std::get<std::shared_ptr<Array>>(cmd_obj->second)->value) {
+    if (std::holds_alternative<Array>(*cmd_obj->second.obj_ptr)) {
+        for (const auto & o : std::get<Array>(*cmd_obj->second.obj_ptr).value) {
             const auto & e = extract_ct_command(o, inputs, outputs);
             command.insert(command.end(), e.begin(), e.end());
         }
@@ -476,71 +436,69 @@ std::vector<std::string> extract_ct_command(const std::unordered_map<std::string
     return command;
 }
 
-std::optional<Object> lower_custom_target(const FunctionCall & func,
-                                          const State::Persistant & pstate) {
+std::optional<Instruction> lower_custom_target(const FunctionCall & func,
+                                               const State::Persistant & pstate) {
     const auto & inputs = extract_source_inputs(func.kw_args, "input", func.source_dir, pstate);
 
     std::vector<File> outputs{};
-    for (const auto & a :
-         extract_keyword_argument_a<std::shared_ptr<String>>(func.kw_args, "output")) {
-        outputs.emplace_back(a->value, func.source_dir, true, pstate.source_root,
-                             pstate.build_root);
+    for (const auto & a : extract_keyword_argument_a<String>(func.kw_args, "output")) {
+        outputs.emplace_back(a.value, func.source_dir, true, pstate.source_root, pstate.build_root);
     }
 
-    const auto & raw_name = extract_positional_argument<std::shared_ptr<String>>(func.pos_args[0]);
-    const std::string & name = raw_name ? raw_name.value()->value : outputs[0].name;
+    const auto & raw_name = extract_positional_argument<String>(func.pos_args[0]);
+    const std::string & name = raw_name ? raw_name.value().value : outputs[0].name;
 
     // TODO: output and input substitution
     const auto & command = extract_ct_command(func.kw_args, inputs, outputs);
 
-    return std::make_shared<CustomTarget>(name, inputs, outputs, command, func.source_dir,
-                                          func.var);
+    return CustomTarget{name, inputs, outputs, command, func.source_dir};
 }
 
-bool holds_reduced(const Object & obj);
+bool holds_reduced(const Instruction & obj);
 
-bool holds_reduced_array(const Object & obj) {
-    if (std::holds_alternative<std::shared_ptr<Array>>(obj)) {
-        auto && val = std::get<std::shared_ptr<Array>>(obj)->value;
-        return std::none_of(val.begin(), val.end(), [](auto && a) {
-            return !holds_reduced(a) || std::holds_alternative<std::shared_ptr<Array>>(a);
+bool holds_reduced_array(const Instruction & obj) {
+    auto val = std::get_if<Array>(obj.obj_ptr.get());
+    if (val != nullptr) {
+        return std::none_of(val->value.begin(), val->value.end(), [](auto && a) {
+            return !holds_reduced(a) || std::holds_alternative<Array>(*a.obj_ptr);
         });
     }
     return false;
 }
 
-bool holds_reduced_dict(const Object & obj) {
-    if (std::holds_alternative<std::shared_ptr<Dict>>(obj)) {
-        auto && val = std::get<std::shared_ptr<Dict>>(obj)->value;
-        return std::all_of(val.begin(), val.end(),
-                           [](auto && v) { return holds_reduced(v.second); });
+bool holds_reduced_dict(const Instruction & obj) {
+    auto val = std::get_if<Dict>(obj.obj_ptr.get());
+    if (val != nullptr) {
+        return std::all_of(val->value.begin(), val->value.end(),
+                           [](auto && v) { return holds_reduced(*v.second.obj_ptr); });
     }
     return false;
 }
 
-bool holds_reduced(const Object & obj) {
-    return (std::holds_alternative<std::shared_ptr<String>>(obj) ||
-            std::holds_alternative<std::shared_ptr<Boolean>>(obj) ||
-            std::holds_alternative<std::shared_ptr<Number>>(obj) ||
-            std::holds_alternative<std::shared_ptr<File>>(obj) ||
-            std::holds_alternative<std::shared_ptr<Executable>>(obj) ||
-            std::holds_alternative<std::shared_ptr<StaticLibrary>>(obj) ||
-            std::holds_alternative<std::shared_ptr<IncludeDirectories>>(obj) ||
-            std::holds_alternative<std::shared_ptr<Program>>(obj) ||
-            std::holds_alternative<std::shared_ptr<CustomTarget>>(obj) ||
-            std::holds_alternative<std::shared_ptr<Dependency>>(obj) ||
-            std::holds_alternative<std::unique_ptr<Message>>(obj) || holds_reduced_array(obj) ||
+bool holds_reduced(const Instruction & obj) {
+    return (std::holds_alternative<String>(*obj.obj_ptr) ||
+            std::holds_alternative<Boolean>(*obj.obj_ptr) ||
+            std::holds_alternative<Number>(*obj.obj_ptr) ||
+            std::holds_alternative<File>(*obj.obj_ptr) ||
+            std::holds_alternative<Executable>(*obj.obj_ptr) ||
+            std::holds_alternative<StaticLibrary>(*obj.obj_ptr) ||
+            std::holds_alternative<IncludeDirectories>(*obj.obj_ptr) ||
+            std::holds_alternative<Program>(*obj.obj_ptr) ||
+            std::holds_alternative<CustomTarget>(*obj.obj_ptr) ||
+            std::holds_alternative<Dependency>(*obj.obj_ptr) ||
+            std::holds_alternative<Message>(*obj.obj_ptr) || holds_reduced_array(obj) ||
             holds_reduced_dict(obj));
 }
 
-std::optional<Object> lower_free_funcs_impl(const Object & obj, const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
+                                                 const State::Persistant & pstate) {
+    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         return std::nullopt;
     }
-    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
+    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 
     // This is not a free function
-    if (f.holder.has_value()) {
+    if (!std::holds_alternative<std::monostate>(*f.holder.obj_ptr)) {
         return std::nullopt;
     }
 
@@ -548,51 +506,46 @@ std::optional<Object> lower_free_funcs_impl(const Object & obj, const State::Per
         return std::nullopt;
     }
 
+    std::optional<Instruction> i = std::nullopt;
+
     if (f.name == "rel_eq") {
-        return lower_eq(f);
-    }
-    if (f.name == "rel_ne") {
-        return lower_ne(f);
-    }
-    if (f.name == "unary_not") {
-        return lower_not(f);
-    }
-    if (f.name == "unary_neg") {
-        return lower_neg(f);
-    }
-    if (f.name == "assert") {
-        return lower_assert(f);
-    }
-    if (f.name == "message" || f.name == "warning" || f.name == "error") {
-        return lower_messages(f);
-    }
-    if (f.name == "include_directories") {
-        return lower_include_dirs(f, pstate);
-    }
-    if (f.name == "files") {
-        return lower_files(f, pstate);
-    }
-    if (f.name == "custom_target") {
-        return lower_custom_target(f, pstate);
-    }
-    if (f.name == "executable") {
-        return lower_build_target<Executable>(f, pstate);
-    }
-    if (f.name == "static_library") {
-        return lower_build_target<StaticLibrary>(f, pstate);
-    }
-    if (f.name == "declare_dependency") {
-        return lower_declare_dependency(f, pstate);
+        i = lower_eq(f);
+    } else if (f.name == "rel_ne") {
+        i = lower_ne(f);
+    } else if (f.name == "unary_not") {
+        i = lower_not(f);
+    } else if (f.name == "unary_neg") {
+        i = lower_neg(f);
+    } else if (f.name == "assert") {
+        i = lower_assert(f);
+    } else if (f.name == "message" || f.name == "warning" || f.name == "error") {
+        i = lower_messages(f);
+    } else if (f.name == "include_directories") {
+        i = lower_include_dirs(f, pstate);
+    } else if (f.name == "files") {
+        i = lower_files(f, pstate);
+    } else if (f.name == "custom_target") {
+        i = lower_custom_target(f, pstate);
+    } else if (f.name == "executable") {
+        i = lower_build_target<Executable>(f, pstate);
+    } else if (f.name == "static_library") {
+        i = lower_build_target<StaticLibrary>(f, pstate);
+    } else if (f.name == "declare_dependency") {
+        i = lower_declare_dependency(f, pstate);
     }
 
+    if (i) {
+        i.value().var = obj.var;
+        return i;
+    }
     // XXX: Shouldn't really be able to get here...
     return std::nullopt;
 }
 
 } // namespace
 
-bool all_args_reduced(const std::vector<Object> & pos_args,
-                      const std::unordered_map<std::string, Object> & kw_args) {
+bool all_args_reduced(const std::vector<Instruction> & pos_args,
+                      const std::unordered_map<std::string, Instruction> & kw_args) {
     return std::all_of(pos_args.begin(), pos_args.end(),
                        [](auto && p) { return holds_reduced(p); }) &&
            std::all_of(kw_args.begin(), kw_args.end(),
@@ -602,11 +555,11 @@ bool all_args_reduced(const std::vector<Object> & pos_args,
 void lower_project(BasicBlock & block, State::Persistant & pstate) {
     const auto & obj = block.instructions.front();
 
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         throw Util::Exceptions::MesonException{
             "First non-whitespace, non-comment must be a call to project()"};
     }
-    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
+    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 
     if (f.name != "project") {
         throw Util::Exceptions::MesonException{
@@ -620,13 +573,13 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
 
     auto pos = f.pos_args.begin();
 
-    pstate.name = std::get<std::shared_ptr<String>>(*pos++)->value;
+    pstate.name = std::get<String>(*pos->obj_ptr).value;
     // TODO: I don't want this in here, I'd rather have this all done in the backend, I think
     std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
-    const auto & langs = extract_variadic_arguments<std::shared_ptr<String>>(pos, f.pos_args.end());
+    const auto & langs = extract_variadic_arguments<String>(++pos, f.pos_args.end());
     for (const auto & lang : langs) {
-        const auto l = Toolchain::from_string(lang->value);
+        const auto l = Toolchain::from_string(lang.value);
 
         auto & tc = pstate.toolchains[l];
 
@@ -657,8 +610,8 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
 }
 
 bool lower_free_functions(BasicBlock & block, const State::Persistant & pstate) {
-    return function_walker(block,
-                           [&](const Object & obj) { return lower_free_funcs_impl(obj, pstate); });
+    return function_walker(
+        block, [&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

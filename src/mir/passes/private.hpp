@@ -12,11 +12,11 @@
 
 namespace MIR::Passes {
 
-/// Callback will return a an optional Object, when it does the original object is replaced
-using ReplacementCallback = std::function<std::optional<Object>(Object &)>;
+/// Callback will return a an optional Instruction, when it does the original object is replaced
+using ReplacementCallback = std::function<std::optional<Instruction>(Instruction &)>;
 
 /// Callback will return a boolean that progress is mode
-using MutationCallback = std::function<bool(Object &)>;
+using MutationCallback = std::function<bool(Instruction &)>;
 
 /// Callback to pass to a BlockWalker, probably an instruction_walker
 using BlockWalkerCb = std::function<bool(BasicBlock &)>;
@@ -42,16 +42,16 @@ bool function_walker(BasicBlock &, const MutationCallback &);
 /**
  * Walk each instruction in an array, recursively, calling the callbck on them.
  */
-bool array_walker(const Object &, const ReplacementCallback &);
-bool array_walker(Object &, const MutationCallback &);
+bool array_walker(const Instruction &, const ReplacementCallback &);
+bool array_walker(Instruction &, const MutationCallback &);
 
 /**
  * Walk over the arguments (positional and keyword) of a function
  *
  * This will replace the arguments if they are loweed by the callback
  */
-bool function_argument_walker(const Object &, const ReplacementCallback &);
-bool function_argument_walker(Object &, const MutationCallback &);
+bool function_argument_walker(const Instruction &, const ReplacementCallback &);
+bool function_argument_walker(Instruction &, const MutationCallback &);
 
 /**
  * Walker over all basic blocks starting with the provided one, applying the given callbacks
@@ -59,7 +59,7 @@ bool function_argument_walker(Object &, const MutationCallback &);
 bool block_walker(BasicBlock &, const std::vector<BlockWalkerCb> &);
 
 /// Check if all of the arguments have been reduced from ids
-bool all_args_reduced(const std::vector<Object> & pos_args,
-                      const std::unordered_map<std::string, Object> & kw_args);
+bool all_args_reduced(const std::vector<Instruction> & pos_args,
+                      const std::unordered_map<std::string, Instruction> & kw_args);
 
 } // namespace MIR::Passes

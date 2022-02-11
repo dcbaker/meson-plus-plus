@@ -11,7 +11,7 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Object> lower_version_compare_method(const FunctionCall & f) {
+std::optional<Instruction> lower_version_compare_method(const FunctionCall & f) {
     if (!f.kw_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "string.version_compare() does not take any keyword arguments");
@@ -24,8 +24,8 @@ std::optional<Object> lower_version_compare_method(const FunctionCall & f) {
     }
 
     // XXX: really need to check that this has a value...
-    const auto & c = *extract_positional_argument<std::shared_ptr<String>>(f.pos_args[0]).value();
-    const auto & s = *std::get<std::shared_ptr<String>>(f.holder.value());
+    const auto c = extract_positional_argument<String>(f.pos_args[0]).value();
+    const auto & s = std::get<String>(*f.holder.obj_ptr);
 
     std::string cval{};
     for (const auto & ch : c.value) {
@@ -60,18 +60,17 @@ std::optional<Object> lower_version_compare_method(const FunctionCall & f) {
             c.value);
     }
 
-    return std::make_shared<Boolean>(Version::compare(s.value, op, val));
+    return Boolean{Version::compare(s.value, op, val)};
 }
 
-std::optional<Object> lower_string_methods_impl(const Object & obj,
-                                                const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+std::optional<Instruction> lower_string_methods_impl(const Instruction & obj,
+                                                     const State::Persistant & pstate) {
+    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         return std::nullopt;
     }
-    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
+    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 
-    if (!(f.holder.has_value() &&
-          std::holds_alternative<std::shared_ptr<String>>(f.holder.value()))) {
+    if (!std::holds_alternative<String>(*f.holder.obj_ptr)) {
         return std::nullopt;
     }
 
@@ -79,8 +78,14 @@ std::optional<Object> lower_string_methods_impl(const Object & obj,
         return std::nullopt;
     }
 
+    std::optional<Instruction> i = std::nullopt;
     if (f.name == "version_compare") {
-        return lower_version_compare_method(f);
+        i = lower_version_compare_method(f);
+    }
+
+    if (i) {
+        i.value().var = obj.var;
+        return i;
     }
 
     // XXX: Shouldn't really be able to get here...
@@ -91,7 +96,7 @@ std::optional<Object> lower_string_methods_impl(const Object & obj,
 
 bool lower_string_objects(BasicBlock & block, State::Persistant & pstate) {
     return function_walker(
-        block, [&](const Object & obj) { return lower_string_methods_impl(obj, pstate); });
+        block, [&](const Instruction & obj) { return lower_string_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

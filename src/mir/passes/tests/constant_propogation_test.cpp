@@ -39,20 +39,19 @@ TEST(constant_propogation, phi_should_not_propogate) {
     ASSERT_EQ(fin->instructions.size(), 2);
 
     const auto & phi_obj = fin->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Phi>>(phi_obj));
-    const auto & phi = std::get<std::unique_ptr<MIR::Phi>>(phi_obj);
-    ASSERT_EQ(phi->var.name, "x");
-    ASSERT_EQ(phi->var.version, 3);
+    ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
+    ASSERT_EQ(phi_obj.var.name, "x");
+    ASSERT_EQ(phi_obj.var.version, 3);
 
     const auto & func_obj = fin->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
+    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
-    const auto & arg_obj = func->pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Identifier>>(arg_obj));
-    const auto & id = std::get<std::unique_ptr<MIR::Identifier>>(arg_obj);
-    ASSERT_EQ(id->value, "x");
-    ASSERT_EQ(id->version, 3);
+    const auto & arg_obj = func.pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
+    const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
+    ASSERT_EQ(id.value, "x");
+    ASSERT_EQ(id.version, 3);
 }
 
 TEST(constant_propogation, function_arguments) {
@@ -86,13 +85,13 @@ TEST(constant_propogation, function_arguments) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(func_obj));
-    const auto & func = std::get<std::shared_ptr<MIR::FunctionCall>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
+    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
-    const auto & arg_obj = func->pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(arg_obj));
-    const auto & str = std::get<std::shared_ptr<MIR::String>>(arg_obj);
-    ASSERT_EQ(str->value, "true");
+    const auto & arg_obj = func.pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*arg_obj.obj_ptr));
+    const auto & str = std::get<MIR::String>(*arg_obj.obj_ptr);
+    ASSERT_EQ(str.value, "true");
 }
 
 TEST(constant_propogation, array) {
@@ -126,13 +125,13 @@ TEST(constant_propogation, array) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     const auto & func_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(func_obj));
-    const auto & func = std::get<std::shared_ptr<MIR::Array>>(func_obj);
+    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*func_obj.obj_ptr));
+    const auto & func = std::get<MIR::Array>(*func_obj.obj_ptr);
 
-    const auto & arg_obj = func->value.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::String>>(arg_obj));
-    const auto & str = std::get<std::shared_ptr<MIR::String>>(arg_obj);
-    ASSERT_EQ(str->value, "true");
+    const auto & arg_obj = func.value.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*arg_obj.obj_ptr));
+    const auto & str = std::get<MIR::String>(*arg_obj.obj_ptr);
+    ASSERT_EQ(str.value, "true");
 }
 
 TEST(constant_propogation, method_holder) {
@@ -162,13 +161,13 @@ TEST(constant_propogation, method_holder) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     const auto & front = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Program>>(front));
+    ASSERT_TRUE(std::holds_alternative<MIR::Program>(*front.obj_ptr));
 
     const auto & back = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(back));
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*back.obj_ptr));
 
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(back);
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Program>>(f->holder.value()));
+    const auto & f = std::get<MIR::FunctionCall>(*back.obj_ptr);
+    ASSERT_TRUE(std::holds_alternative<MIR::Program>(*f.holder.obj_ptr));
 }
 
 TEST(constant_propogation, into_function_call) {
@@ -200,11 +199,11 @@ TEST(constant_propogation, into_function_call) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     const auto & front = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Program>>(front));
+    ASSERT_TRUE(std::holds_alternative<MIR::Program>(*front.obj_ptr));
 
     const auto & back = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(back));
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*back.obj_ptr));
 
-    const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(back);
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(f->pos_args[0]));
+    const auto & f = std::get<MIR::FunctionCall>(*back.obj_ptr);
+    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*f.pos_args[0].obj_ptr));
 }

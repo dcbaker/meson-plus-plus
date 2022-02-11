@@ -1,8 +1,10 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
-#include "mir.hpp"
+#include <utility>
+
 #include "exceptions.hpp"
+#include "mir.hpp"
 
 namespace MIR {
 
@@ -12,15 +14,46 @@ static uint32_t bb_index = 0;
 
 }
 
+Instruction::Instruction() : obj_ptr{std::make_shared<Object>(std::monostate{})} {};
+Instruction::Instruction(Instruction &&) = default;
+Instruction::Instruction(const Instruction & other) = default;
+Instruction::Instruction(std::shared_ptr<Object> ptr) : obj_ptr{std::move(std::move(ptr))} {};
+Instruction::Instruction(const Object & obj) : obj_ptr{std::make_shared<Object>(obj)} {};
+Instruction::Instruction(Object obj, const Variable & var_)
+    : obj_ptr{std::make_shared<Object>(std::move(obj))}, var{var_} {};
+Instruction::Instruction(Boolean val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Number val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(String val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(FunctionCall val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Identifier val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Array val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Dict val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(File val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(IncludeDirectories val)
+    : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Message val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Empty val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Dependency val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(CustomTarget val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(StaticLibrary val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Executable val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+
+const Object & Instruction::object() const { return *obj_ptr; }
+
 Phi::Phi() : left{}, right{} {};
-Phi::Phi(const uint32_t & l, const uint32_t & r, const Variable & v) : left{l}, right{r}, var{v} {}; // NOLINT(bugprone-easily-swappable-parameters)
+Phi::Phi(const uint32_t & l, const uint32_t & r)
+    : left{l}, right{r} {}; // NOLINT(bugprone-easily-swappable-parameters)
 
 bool Phi::operator==(const Phi & other) const {
-    return var.name == other.var.name && left == other.left && right == other.right;
+    // TODO: need to handle name == name
+    return left == other.left && right == other.right;
 }
 
 bool Phi::operator<(const Phi & other) const {
-    return var.name < other.var.name && left < other.left && right < other.right;
+    // TODO: need to handle name < name
+    return left < other.left && right < other.right;
 }
 
 BasicBlock::BasicBlock() : next{std::monostate{}}, index{++bb_index} {};
@@ -34,16 +67,16 @@ bool BBComparitor::operator()(const BasicBlock * lhs, const BasicBlock * rhs) co
     return *lhs < *rhs;
 }
 
-Condition::Condition(Object && o)
+Condition::Condition(Instruction && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
 
-Condition::Condition(Object && o, std::shared_ptr<BasicBlock> s)
+Condition::Condition(Instruction && o, std::shared_ptr<BasicBlock> s)
     : condition{std::move(o)}, if_true{std::move(s)}, if_false{nullptr} {};
 
 Compiler::Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc) : toolchain{std::move(tc)} {};
 
-Object Compiler::get_id(const std::vector<Object> & args,
-                              const std::unordered_map<std::string, Object> & kwargs) const {
+Instruction Compiler::get_id(const std::vector<Instruction> & args,
+                             const std::unordered_map<std::string, Instruction> & kwargs) const {
     if (!args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "compiler.get_id(): takes no positional arguments");
@@ -52,7 +85,7 @@ Object Compiler::get_id(const std::vector<Object> & args,
         throw Util::Exceptions::InvalidArguments("compiler.get_id(): takes no keyword arguments");
     }
 
-    return std::make_shared<String>(toolchain->compiler->id());
+    return std::make_shared<Object>(String{toolchain->compiler->id()});
 };
 
 Variable::Variable() : version{0} {};
@@ -73,10 +106,6 @@ bool Variable::operator==(const Variable & other) const {
 File::File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_)
     : name{std::move(name_)}, subdir{std::move(sdir)}, built{built_}, source_root{std::move(sr_)},
       build_root{std::move(br_)} {};
-File::File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_,
-           const Variable & v)
-    : name{std::move(name_)}, subdir{std::move(sdir)}, built{built_}, source_root{std::move(sr_)},
-      build_root{std::move(br_)}, var{v} {};
 
 bool File::is_built() const { return built; }
 
@@ -120,45 +149,42 @@ std::ostream & operator<<(std::ostream & os, const File & f) {
     return os << (f.is_built() ? f.build_root : f.source_root) / f.subdir / f.get_name();
 }
 
-Executable::Executable(std::string name_, std::vector<Source> srcs, const Machines::Machine & m,
-                       fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link,
-                       const Variable & v)
+Executable::Executable(std::string name_, std::vector<Instruction> srcs,
+                       const Machines::Machine & m, fs::path sdir, ArgMap args,
+                       std::vector<StaticLinkage> s_link)
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
-      arguments{std::move(args)}, link_static{std::move(s_link)}, var{v} {};
+      arguments{std::move(args)}, link_static{std::move(s_link)} {};
 
 std::string Executable::output() const { return name; }
 
-StaticLibrary::StaticLibrary(std::string name_, std::vector<Source> srcs,
+StaticLibrary::StaticLibrary(std::string name_, std::vector<Instruction> srcs,
                              const Machines::Machine & m, fs::path sdir, ArgMap args,
-                             std::vector<StaticLinkage> s_link, const Variable & v)
+                             std::vector<StaticLinkage> s_link)
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
-      arguments{std::move(args)}, link_static{std::move(s_link)}, var{v} {};
+      arguments{std::move(args)}, link_static{std::move(s_link)} {};
 
 std::string StaticLibrary::output() const { return name + ".a"; }
 
-IncludeDirectories::IncludeDirectories(std::vector<std::string> d, const bool & s,
-                                       const Variable & v)
-    : directories{std::move(d)}, is_system{s}, var{v} {};
+IncludeDirectories::IncludeDirectories(std::vector<std::string> d, const bool & s)
+    : directories{std::move(d)}, is_system{s} {};
 
 Message::Message(const MessageLevel & l, std::string m) : level{l}, message{std::move(m)} {};
 
 Program::Program(std::string n, const Machines::Machine & m, fs::path p)
     : name{std::move(n)}, for_machine{m}, path{std::move(p)} {};
-Program::Program(std::string n, const Machines::Machine & m, fs::path p, const Variable & v)
-    : name{std::move(n)}, for_machine{m}, path{std::move(p)}, var{v} {};
 
 bool Program::found() const { return path != ""; }
 
-FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
-                           std::unordered_map<std::string, Object> && _kw,
+FunctionCall::FunctionCall(std::string _name, std::vector<Instruction> && _pos,
+                           std::unordered_map<std::string, Instruction> && _kw,
                            std::filesystem::path _sd)
     : name{std::move(_name)}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)},
-      holder{std::nullopt}, source_dir{std::move(_sd)} {};
+      holder{std::make_shared<Object>(std::monostate{})}, source_dir{std::move(_sd)} {};
 
-FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
+FunctionCall::FunctionCall(std::string _name, std::vector<Instruction> && _pos,
                            std::filesystem::path _sd)
-    : name{std::move(_name)}, pos_args{std::move(_pos)}, holder{std::nullopt}, source_dir{std::move(
-                                                                                   _sd)} {};
+    : name{std::move(_name)}, pos_args{std::move(_pos)},
+      holder{std::make_shared<Object>(std::monostate{})}, source_dir{std::move(_sd)} {};
 
 String::String(std::string f) : value{std::move(f)} {};
 
@@ -167,7 +193,6 @@ bool String::operator!=(const String & o) const { return value != o.value; }
 bool String::operator==(const String & o) const { return value == o.value; }
 
 Boolean::Boolean(const bool & f) : value{f} {};
-Boolean::Boolean(const bool & f, const Variable & v) : value{f}, var{v} {};
 
 bool Boolean::operator!=(const Boolean & o) const { return value != o.value; }
 bool Boolean::operator==(const Boolean & o) const { return value == o.value; }
@@ -178,21 +203,20 @@ bool Number::operator!=(const Number & o) const { return value != o.value; }
 bool Number::operator==(const Number & o) const { return value == o.value; }
 
 Identifier::Identifier(std::string s) : value{std::move(s)}, version{} {};
-Identifier::Identifier(std::string s, const uint32_t & ver, Variable && v)
-    : value{std::move(s)}, version{ver}, var{std::move(v)} {};
+Identifier::Identifier(std::string s, const uint32_t & ver) : value{std::move(s)}, version{ver} {};
 
 Array::Array() = default;
-Array::Array(std::vector<Object> && a) : value{std::move(a)} {};
+Array::Array(std::vector<Instruction> && a) : value{std::move(a)} {};
 
 Dict::Dict() = default;
 
-CustomTarget::CustomTarget(std::string n, std::vector<Source> i, std::vector<File> o,
-                           std::vector<std::string> c, fs::path s, const Variable & v)
+CustomTarget::CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
+                           std::vector<std::string> c, fs::path s)
     : name{std::move(n)}, inputs{std::move(i)}, outputs{std::move(o)}, command{std::move(c)},
-      subdir{std::move(s)}, var{v} {};
+      subdir{std::move(s)} {};
 
 Dependency::Dependency(std::string n, const bool & f, std::string ver,
-                       std::vector<Arguments::Argument> a, const Variable & v)
-    : name{std::move(n)}, found{f}, version{std::move(ver)}, arguments{std::move(a)}, var{v} {};
+                       std::vector<Arguments::Argument> a)
+    : name{std::move(n)}, found{f}, version{std::move(ver)}, arguments{std::move(a)} {};
 
 } // namespace MIR

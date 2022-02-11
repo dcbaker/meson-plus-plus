@@ -24,15 +24,15 @@ TEST(files, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Array>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*r.obj_ptr));
 
-    const auto & a = std::get<std::shared_ptr<MIR::Array>>(r)->value;
+    const auto & a = std::get<MIR::Array>(*r.obj_ptr).value;
     ASSERT_EQ(a.size(), 1);
 
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::File>>(a[0]));
+    ASSERT_TRUE(std::holds_alternative<MIR::File>(*a[0].obj_ptr));
 
-    const auto & f = std::get<std::shared_ptr<MIR::File>>(a[0]);
-    ASSERT_EQ(f->get_name(), "foo.c");
+    const auto & f = std::get<MIR::File>(*a[0].obj_ptr);
+    ASSERT_EQ(f.get_name(), "foo.c");
 }
 
 TEST(executable, simple) {
@@ -48,9 +48,9 @@ TEST(executable, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Executable>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Executable>(*r.obj_ptr));
 
-    const auto & e = *std::get<std::shared_ptr<MIR::Executable>>(r);
+    const auto & e = std::get<MIR::Executable>(*r.obj_ptr);
     ASSERT_EQ(e.name, "exe");
     ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
 
@@ -75,9 +75,9 @@ TEST(static_library, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::StaticLibrary>(*r.obj_ptr));
 
-    const auto & e = *std::get<std::shared_ptr<MIR::StaticLibrary>>(r);
+    const auto & e = std::get<MIR::StaticLibrary>(*r.obj_ptr);
     ASSERT_EQ(e.name, "exe");
     ASSERT_TRUE(e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end());
 
@@ -113,11 +113,11 @@ TEST(messages, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Message>(*r.obj_ptr));
 
-    const auto & m = std::get<std::unique_ptr<MIR::Message>>(r);
-    ASSERT_EQ(m->level, MIR::MessageLevel::MESSAGE);
-    ASSERT_EQ(m->message, "foo");
+    const auto & m = std::get<MIR::Message>(*r.obj_ptr);
+    ASSERT_EQ(m.level, MIR::MessageLevel::MESSAGE);
+    ASSERT_EQ(m.message, "foo");
 }
 
 TEST(messages, two_args) {
@@ -129,11 +129,11 @@ TEST(messages, two_args) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Message>(*r.obj_ptr));
 
-    const auto & m = std::get<std::unique_ptr<MIR::Message>>(r);
-    ASSERT_EQ(m->level, MIR::MessageLevel::WARN);
-    ASSERT_EQ(m->message, "foo bar");
+    const auto & m = std::get<MIR::Message>(*r.obj_ptr);
+    ASSERT_EQ(m.level, MIR::MessageLevel::WARN);
+    ASSERT_EQ(m.message, "foo bar");
 }
 
 TEST(assert, simple) {
@@ -145,11 +145,11 @@ TEST(assert, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Message>(*r.obj_ptr));
 
-    const auto & m = std::get<std::unique_ptr<MIR::Message>>(r);
-    ASSERT_EQ(m->level, MIR::MessageLevel::ERROR);
-    ASSERT_EQ(m->message, "Assertion failed: ");
+    const auto & m = std::get<MIR::Message>(*r.obj_ptr);
+    ASSERT_EQ(m.level, MIR::MessageLevel::ERROR);
+    ASSERT_EQ(m.message, "Assertion failed: ");
 }
 
 TEST(find_program, found) {
@@ -181,10 +181,10 @@ TEST(find_program, found) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     const auto & r = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*r.obj_ptr));
 
-    const auto & m = std::get<std::shared_ptr<MIR::Boolean>>(r);
-    ASSERT_EQ(m->value, true);
+    const auto & m = std::get<MIR::Boolean>(*r.obj_ptr);
+    ASSERT_EQ(m.value, true);
 }
 
 TEST(not, simple) {
@@ -195,10 +195,10 @@ TEST(not, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*r.obj_ptr));
 
-    const auto & m = std::get<std::shared_ptr<MIR::Boolean>>(r);
-    ASSERT_EQ(m->value, true);
+    const auto & m = std::get<MIR::Boolean>(*r.obj_ptr);
+    ASSERT_EQ(m.value, true);
 }
 
 TEST(neg, simple) {
@@ -209,10 +209,10 @@ TEST(neg, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Number>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*r.obj_ptr));
 
-    const auto & m = std::get<std::shared_ptr<MIR::Number>>(r);
-    ASSERT_EQ(m->value, -5);
+    const auto & m = std::get<MIR::Number>(*r.obj_ptr);
+    ASSERT_EQ(m.value, -5);
 }
 
 TEST(custom_target, simple) {
@@ -226,9 +226,9 @@ TEST(custom_target, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::CustomTarget>(*r.obj_ptr));
 
-    const auto & ct = *std::get<std::shared_ptr<MIR::CustomTarget>>(r);
+    const auto & ct = std::get<MIR::CustomTarget>(*r.obj_ptr);
     ASSERT_EQ(ct.name, "foo");
     ASSERT_EQ(ct.command, std::vector<std::string>{"thing"});
 }
@@ -240,7 +240,7 @@ static inline bool test_equality(const std::string & expr) {
 
     MIR::Passes::lower_free_functions(irlist, pstate);
     const auto & r = irlist.instructions.front();
-    const auto & value = *std::get<std::shared_ptr<MIR::Boolean>>(r);
+    const auto & value = std::get<MIR::Boolean>(*r.obj_ptr);
     return value.value;
 }
 
@@ -269,9 +269,9 @@ TEST(version_compare, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Boolean>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*r.obj_ptr));
 
-    const auto & ct = *std::get<std::shared_ptr<MIR::Boolean>>(r);
+    const auto & ct = std::get<MIR::Boolean>(*r.obj_ptr);
     ASSERT_TRUE(ct.value);
 }
 
@@ -288,9 +288,9 @@ TEST(declare_dependency, string_include_dirs) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dependency>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Dependency>(*r.obj_ptr));
 
-    const auto & d = *std::get<std::shared_ptr<MIR::Dependency>>(r);
+    const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
     ASSERT_EQ(d.arguments.size(), 1);
     ASSERT_EQ(d.arguments[0].value, "foo");
 }
@@ -308,9 +308,9 @@ TEST(declare_dependency, compile_args) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dependency>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Dependency>(*r.obj_ptr));
 
-    const auto & d = *std::get<std::shared_ptr<MIR::Dependency>>(r);
+    const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
     ASSERT_EQ(d.arguments.size(), 1);
     ASSERT_EQ(d.arguments[0].value, "foo");
     ASSERT_EQ(d.arguments[0].type, MIR::Arguments::Type::DEFINE);
@@ -332,9 +332,9 @@ TEST(declare_dependency, recursive) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & r = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Dependency>>(r));
+    ASSERT_TRUE(std::holds_alternative<MIR::Dependency>(*r.obj_ptr));
 
-    const auto & d = *std::get<std::shared_ptr<MIR::Dependency>>(r);
+    const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
     ASSERT_EQ(d.arguments.size(), 1);
     ASSERT_EQ(d.arguments[0].value, "foo");
     ASSERT_EQ(d.arguments[0].type, MIR::Arguments::Type::DEFINE);

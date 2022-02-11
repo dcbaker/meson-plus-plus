@@ -9,7 +9,7 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Object> lower_found_method(const FunctionCall & f) {
+std::optional<Instruction> lower_found_method(const FunctionCall & f) {
     if (!f.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "Program.found() does not take any positional arguments");
@@ -19,18 +19,17 @@ std::optional<Object> lower_found_method(const FunctionCall & f) {
             "Program.found() does not take any keyword arguments");
     }
 
-    return std::make_shared<Boolean>(std::get<std::shared_ptr<Program>>(f.holder.value())->found());
+    return Boolean{std::get<Program>(*f.holder.obj_ptr).found()};
 }
 
-std::optional<Object> lower_program_methods_impl(const Object & obj,
-                                                 const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+std::optional<Instruction> lower_program_methods_impl(const Instruction & obj,
+                                                      const State::Persistant & pstate) {
+    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         return std::nullopt;
     }
-    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
+    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 
-    if (!(f.holder.has_value() &&
-          std::holds_alternative<std::shared_ptr<Program>>(f.holder.value()))) {
+    if (!std::holds_alternative<Program>(*f.holder.obj_ptr)) {
         return std::nullopt;
     }
 
@@ -38,10 +37,14 @@ std::optional<Object> lower_program_methods_impl(const Object & obj,
         return std::nullopt;
     }
 
+    std::optional<Instruction> i = std::nullopt;
     if (f.name == "found") {
-        return lower_found_method(f);
+        i = lower_found_method(f);
     }
-
+    if (i) {
+        i.value().var = obj.var;
+        return i;
+    }
     // XXX: Shouldn't really be able to get here...
     return std::nullopt;
 }
@@ -50,7 +53,7 @@ std::optional<Object> lower_program_methods_impl(const Object & obj,
 
 bool lower_program_objects(BasicBlock & block, State::Persistant & pstate) {
     return function_walker(
-        block, [&](const Object & obj) { return lower_program_methods_impl(obj, pstate); });
+        block, [&](const Instruction & obj) { return lower_program_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes
