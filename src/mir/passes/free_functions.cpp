@@ -354,9 +354,8 @@ std::optional<Object> lower_declare_dependency(const FunctionCall & f,
     const auto & raw_deps =
         extract_keyword_argument_a<std::shared_ptr<Dependency>>(f.kw_args, "dependencies");
     for (const auto & d : raw_deps) {
-        for (const auto & a : d->arguments) {
-            args.emplace_back(a);
-        }
+        auto dargs = d->arguments;
+        std::copy(dargs.begin(), dargs.end(), std::back_inserter(args));
     }
 
     return std::make_shared<Dependency>("internal", true, version, args, f.var);
@@ -589,17 +588,10 @@ std::optional<Object> lower_free_funcs_impl(const Object & obj, const State::Per
 
 bool all_args_reduced(const std::vector<Object> & pos_args,
                       const std::unordered_map<std::string, Object> & kw_args) {
-    for (const auto & p : pos_args) {
-        if (!holds_reduced(p)) {
-            return false;
-        }
-    }
-    for (const auto & [_, p] : kw_args) {
-        if (!holds_reduced(p)) {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(pos_args.begin(), pos_args.end(),
+                       [](auto && p) { return holds_reduced(p); }) &&
+           std::all_of(kw_args.begin(), kw_args.end(),
+                       [](auto && kw) { return holds_reduced(kw.second); });
 }
 
 void lower_project(BasicBlock * block, State::Persistant & pstate) {
