@@ -19,9 +19,7 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
         for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
             const auto & args =
                 tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
-            for (const auto & arg : args) {
-                cpp_args.emplace_back(arg);
-            }
+            std::copy(args.begin(), args.end(), std::back_inserter(cpp_args));
         }
     }
 
@@ -35,9 +33,7 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
     auto lincs = tc.build()->compiler->specialize_argument(
         MIR::Arguments::Argument(e.subdir, MIR::Arguments::Type::INCLUDE), pstate.source_root,
         pstate.build_root);
-    for (const auto & arg : lincs) {
-        cpp_args.emplace_back(arg);
-    }
+    std::copy(lincs.begin(), lincs.end(), std::back_inserter(cpp_args));
 
     std::vector<std::string> order_deps{};
     for (const auto & f : e.sources) {
