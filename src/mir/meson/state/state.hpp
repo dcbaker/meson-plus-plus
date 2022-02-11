@@ -20,7 +20,7 @@ namespace MIR::State {
  */
 class Persistant {
   public:
-    Persistant(const std::filesystem::path &, const std::filesystem::path &);
+    Persistant(std::filesystem::path, std::filesystem::path);
 
     // This must be mutable because of `add_language`
     /// A mapping of language : machine : toolchain
