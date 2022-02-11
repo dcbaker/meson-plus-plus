@@ -38,7 +38,7 @@ Condition::Condition(Object && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
 
 Condition::Condition(Object && o, std::shared_ptr<BasicBlock> s)
-    : condition{std::move(o)}, if_true{s}, if_false{nullptr} {};
+    : condition{std::move(o)}, if_true{std::move(s)}, if_false{nullptr} {};
 
 Compiler::Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc) : toolchain{tc} {};
 
@@ -123,7 +123,7 @@ std::ostream & operator<<(std::ostream & os, const File & f) {
 
 Executable::Executable(const std::string & name_, const std::vector<Source> & srcs,
                        const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
-                       const std::vector<StaticLinkage> s_link, const Variable & v)
+                       const std::vector<StaticLinkage>& s_link, const Variable & v)
     : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
       link_static{s_link}, var{v} {};
 
@@ -131,7 +131,7 @@ std::string Executable::output() const { return name; }
 
 StaticLibrary::StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
                              const Machines::Machine & m, const fs::path & sdir,
-                             const ArgMap & args, const std::vector<StaticLinkage> s_link,
+                             const ArgMap & args, const std::vector<StaticLinkage>& s_link,
                              const Variable & v)
     : name{name_}, sources{srcs}, machine{m}, subdir{sdir}, arguments{args},
       link_static{s_link}, var{v} {};

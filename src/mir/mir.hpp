@@ -129,7 +129,7 @@ class Executable {
   public:
     Executable(const std::string & name_, const std::vector<Source> & srcs,
                const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
-               const std::vector<StaticLinkage> s_link, const Variable & v);
+               const std::vector<StaticLinkage>& s_link, const Variable & v);
 
     /// The name of the target
     const std::string name;
@@ -163,7 +163,7 @@ class StaticLibrary {
   public:
     StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
                   const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
-                  const std::vector<StaticLinkage> s_link, const Variable & v);
+                  const std::vector<StaticLinkage>& s_link, const Variable & v);
 
     /// The name of the target
     const std::string name;
