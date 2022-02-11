@@ -79,7 +79,7 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
                 break;
             case 'D': {
                 const std::string d{optarg};
-                const auto n = d.find("=");
+                const auto n = d.find('=');
                 if (n == std::string::npos) {
                     std::cerr << "define options must be in the for `-Dopt=value` or `--define "
                                  "opt=value`. Option \""
