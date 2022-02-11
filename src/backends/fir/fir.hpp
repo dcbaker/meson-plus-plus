@@ -70,7 +70,7 @@ class Target {
     const std::vector<std::string> order_deps;
 };
 
-std::vector<Target> mir_to_fir(const MIR::BasicBlock * const block,
+std::vector<Target> mir_to_fir(const MIR::BasicBlock & block,
                                const MIR::State::Persistant & pstate);
 
 } // namespace Backends::FIR

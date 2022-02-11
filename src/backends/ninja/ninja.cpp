@@ -191,7 +191,7 @@ void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
 
 } // namespace
 
-void generate(const MIR::BasicBlock * const block, const MIR::State::Persistant & pstate) {
+void generate(const MIR::BasicBlock & block, const MIR::State::Persistant & pstate) {
     if (!fs::exists(pstate.build_root)) {
         std::error_code ec{};
         fs::create_directory(pstate.build_root, ec);

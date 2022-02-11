@@ -15,6 +15,6 @@ namespace Backends::Ninja {
 /**
  * Generates a ninja file in the build directory
  */
-void generate(const MIR::BasicBlock * const, const MIR::State::Persistant &);
+void generate(const MIR::BasicBlock &, const MIR::State::Persistant &);
 
 } // namespace Backends::Ninja

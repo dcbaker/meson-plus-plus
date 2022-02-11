@@ -76,7 +76,7 @@ static int configure(const Options::ConfigureOptions & opts) {
         throw Util::Exceptions::MesonException("Configure failed with errors.");
     }
 
-    Backends::Ninja::generate(&irlist, pstate);
+    Backends::Ninja::generate(irlist, pstate);
 
     return 0;
 };

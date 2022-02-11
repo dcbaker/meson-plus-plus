@@ -161,12 +161,12 @@ std::vector<Target> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
 
 } // namespace
 
-std::vector<Target> mir_to_fir(const MIR::BasicBlock * const block,
+std::vector<Target> mir_to_fir(const MIR::BasicBlock & block,
                                const MIR::State::Persistant & pstate) {
     // A list of all rules
     std::vector<Target> rules{};
 
-    for (const auto & i : block->instructions) {
+    for (const auto & i : block.instructions) {
         if (std::holds_alternative<std::shared_ptr<MIR::Executable>>(i)) {
             auto r = target_rule(*std::get<std::shared_ptr<MIR::Executable>>(i), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
