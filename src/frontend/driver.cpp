@@ -34,8 +34,7 @@ std::unique_ptr<AST::CodeBlock> Driver::parse(std::istream & iss) {
 
     // Walk over all of the statements, replacing any subdir() calls with new
     AST::SubdirVisitor sv{};
-    for (unsigned i = 0; i < block->statements.size(); ++i) {
-        auto const & stmt = block->statements[i];
+    for (auto && stmt : block->statements) {
         auto res = std::visit(sv, stmt);
 
         // If we have a value that means that a `subdir()` call was
@@ -46,7 +45,7 @@ std::unique_ptr<AST::CodeBlock> Driver::parse(std::istream & iss) {
             auto & v = res.value();
             std::move(v->statements.begin(), v->statements.end(), std::back_inserter(new_stmts));
         } else {
-            new_stmts.emplace_back(std::move(block->statements[i]));
+            new_stmts.emplace_back(std::move(stmt));
         }
     }
 
