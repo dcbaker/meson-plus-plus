@@ -12,7 +12,7 @@
 TEST(flatten, basic) {
     auto irlist = lower("func(['a', ['b', ['c']], 'd'])");
     MIR::State::Persistant pstate{src_root, build_root};
-    bool progress = MIR::Passes::flatten(&irlist, pstate);
+    bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -34,7 +34,7 @@ TEST(flatten, basic) {
 TEST(flatten, already_flat) {
     auto irlist = lower("func(['a', 'd'])");
     MIR::State::Persistant pstate{src_root, build_root};
-    bool progress = MIR::Passes::flatten(&irlist, pstate);
+    bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_FALSE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -56,7 +56,7 @@ TEST(flatten, already_flat) {
 TEST(flatten, mixed_args) {
     auto irlist = lower("project('foo', ['a', ['d']])");
     MIR::State::Persistant pstate{src_root, build_root};
-    bool progress = MIR::Passes::flatten(&irlist, pstate);
+    bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -77,7 +77,7 @@ TEST(flatten, mixed_args) {
 TEST(flatten, keyword_mixed) {
     auto irlist = lower("func(arg : ['foo', ['bar', ['foobar']]])");
     MIR::State::Persistant pstate{src_root, build_root};
-    bool progress = MIR::Passes::flatten(&irlist, pstate);
+    bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);

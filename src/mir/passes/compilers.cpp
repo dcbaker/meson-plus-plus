@@ -73,7 +73,7 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
 
 } // namespace
 
-bool insert_compilers(BasicBlock * block, const ToolchainMap & toolchains) {
+bool insert_compilers(BasicBlock & block, const ToolchainMap & toolchains) {
     auto cb = [&](const Object & obj) { return replace_compiler(obj, toolchains); };
     return function_walker(block, cb);
 };

@@ -602,8 +602,8 @@ bool all_args_reduced(const std::vector<Object> & pos_args,
     return true;
 }
 
-void lower_project(BasicBlock * block, State::Persistant & pstate) {
-    const auto & obj = block->instructions.front();
+void lower_project(BasicBlock & block, State::Persistant & pstate) {
+    const auto & obj = block.instructions.front();
 
     if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
         throw Util::Exceptions::MesonException{
@@ -656,10 +656,10 @@ void lower_project(BasicBlock * block, State::Persistant & pstate) {
 
     // Remove the valid project() call so we don't accidently find it later when
     // looking for invalid function calls.
-    block->instructions.pop_front();
+    block.instructions.pop_front();
 }
 
-bool lower_free_functions(BasicBlock * block, const State::Persistant & pstate) {
+bool lower_free_functions(BasicBlock & block, const State::Persistant & pstate) {
     return function_walker(block,
                            [&](const Object & obj) { return lower_free_funcs_impl(obj, pstate); });
 }

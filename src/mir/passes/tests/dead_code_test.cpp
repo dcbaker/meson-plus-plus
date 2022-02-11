@@ -18,12 +18,12 @@ TEST(unreachable_code, clear_dead_instructions) {
 
     MIR::State::Persistant pstate{"", ""};
 
-    MIR::Passes::block_walker(
-        &irlist,
-        {
-            [&](MIR::BasicBlock * b) { return MIR::Passes::lower_free_functions(b, pstate); },
-            [](MIR::BasicBlock * b) { return MIR::Passes::delete_unreachable(*b); },
-        });
+    MIR::Passes::block_walker(irlist, {
+                                          [&](MIR::BasicBlock & b) {
+                                              return MIR::Passes::lower_free_functions(b, pstate);
+                                          },
+                                          MIR::Passes::delete_unreachable,
+                                      });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
 
@@ -50,12 +50,12 @@ TEST(unreachable_code, clear_next) {
 
     MIR::State::Persistant pstate{"", ""};
 
-    MIR::Passes::block_walker(
-        &irlist,
-        {
-            [&](MIR::BasicBlock * b) { return MIR::Passes::lower_free_functions(b, pstate); },
-            [](MIR::BasicBlock * b) { return MIR::Passes::delete_unreachable(*b); },
-        });
+    MIR::Passes::block_walker(irlist, {
+                                          [&](MIR::BasicBlock & b) {
+                                              return MIR::Passes::lower_free_functions(b, pstate);
+                                          },
+                                          MIR::Passes::delete_unreachable,
+                                      });
 
     const auto & branch = *get_bb(get_con(irlist.next)->if_true);
     ASSERT_EQ(branch.instructions.size(), 1);

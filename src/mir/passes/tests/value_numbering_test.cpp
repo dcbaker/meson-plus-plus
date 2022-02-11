@@ -15,7 +15,7 @@ TEST(value_numbering, simple) {
         x = 8
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::value_numbering(&irlist, data);
+    MIR::Passes::value_numbering(irlist, data);
 
     const auto & first = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.front());
     ASSERT_EQ(first->var.version, 1);
@@ -36,7 +36,7 @@ TEST(value_numbering, branching) {
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
     MIR::Passes::block_walker(
-        &irlist, {[&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); }});
+        irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
 
     const auto & first = std::get<std::shared_ptr<MIR::Number>>(irlist.instructions.front());
     ASSERT_EQ(first->var.version, 1);
@@ -65,7 +65,7 @@ TEST(value_numbering, three_branch) {
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
     MIR::Passes::block_walker(
-        &irlist, {[&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); }});
+        irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
 
     const auto & bb1 = get_con(irlist.next)->if_true;
     const auto & bb1_val = std::get<std::shared_ptr<MIR::Number>>(bb1->instructions.front());
@@ -93,9 +93,9 @@ TEST(number_uses, simple) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
@@ -135,16 +135,16 @@ TEST(number_uses, with_phi) {
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
     MIR::Passes::block_walker(
-        &irlist, {
+        irlist, {
                      MIR::Passes::branch_pruning,
                      MIR::Passes::join_blocks,
                      MIR::Passes::fixup_phis,
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -184,10 +184,10 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
@@ -226,10 +226,10 @@ TEST(number_uses, with_phi_no_pruning) {
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
@@ -263,9 +263,9 @@ TEST(number_uses, three_statements) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -293,9 +293,9 @@ TEST(number_uses, redefined_value) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -323,9 +323,9 @@ TEST(number_uses, in_array) {
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::usage_numbering(b, rt); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
                  });
 
     ASSERT_EQ(irlist.instructions.size(), 3);

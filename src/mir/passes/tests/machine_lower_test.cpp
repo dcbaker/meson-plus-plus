@@ -18,7 +18,7 @@ TEST(machine_lower, simple) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 2);
     const auto & r = irlist.instructions.back();
@@ -31,7 +31,7 @@ TEST(machine_lower, in_array) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & r = irlist.instructions.front();
@@ -49,7 +49,7 @@ TEST(machine_lower, in_function_args) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & r = irlist.instructions.front();
@@ -67,7 +67,7 @@ TEST(machine_lower, in_condtion) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(&irlist, info);
+    bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 0);
 

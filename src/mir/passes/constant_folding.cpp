@@ -43,7 +43,7 @@ std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable
 
 } // namespace
 
-bool constant_folding(BasicBlock * block, ReplacementTable & table) {
+bool constant_folding(BasicBlock & block, ReplacementTable & table) {
     return function_walker(block,
                            {[&](const Object & o) { return constant_folding_impl(o, table); }});
 }

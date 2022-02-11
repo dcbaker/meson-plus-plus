@@ -11,8 +11,8 @@
 TEST(lower, trivial) {
     auto irlist = lower("project('foo')");
     MIR::State::Persistant pstate{src_root, build_root};
-    MIR::Passes::lower_project(&irlist, pstate);
-    MIR::lower(&irlist, pstate);
+    MIR::Passes::lower_project(irlist, pstate);
+    MIR::lower(irlist, pstate);
 }
 
 TEST(lower, after_files) {
@@ -24,8 +24,8 @@ TEST(lower, after_files) {
         )
         )EOF");
     MIR::State::Persistant pstate{src_root, build_root};
-    // MIR::Passes::lower_project(&irlist, pstate);
-    MIR::lower(&irlist, pstate);
+    // MIR::Passes::lower_project(irlist, pstate);
+    MIR::lower(irlist, pstate);
 
     ASSERT_EQ(irlist.instructions.size(), 1);
 
@@ -48,7 +48,7 @@ TEST(lower, simple_real) {
         )
     )EOF");
     MIR::State::Persistant pstate{src_root, build_root};
-    MIR::Passes::lower_project(&irlist, pstate);
-    MIR::lower(&irlist, pstate);
+    MIR::Passes::lower_project(irlist, pstate);
+    MIR::lower(irlist, pstate);
 }
 #endif

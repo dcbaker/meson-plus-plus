@@ -61,7 +61,7 @@ std::optional<Object> lower_functions(const MachineInfo & machines, const Object
 
 } // namespace
 
-bool machine_lower(BasicBlock * block, const MachineInfo & machines) {
+bool machine_lower(BasicBlock & block, const MachineInfo & machines) {
     const auto cb = [&](const Object & o) { return lower_functions(machines, o); };
 
     return function_walker(block, cb);

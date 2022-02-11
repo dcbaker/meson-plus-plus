@@ -82,7 +82,7 @@ std::optional<Object> lower_dependency_methods_impl(const Object & obj,
 
 bool lower_dependency_objects(BasicBlock & block, State::Persistant & pstate) {
     return function_walker(
-        &block, [&](const Object & obj) { return lower_dependency_methods_impl(obj, pstate); });
+        block, [&](const Object & obj) { return lower_dependency_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

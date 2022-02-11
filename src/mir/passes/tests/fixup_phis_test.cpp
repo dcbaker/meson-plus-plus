@@ -21,11 +21,11 @@ TEST(fixup_phi, simple) {
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
-    MIR::Passes::block_walker(&irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::branch_pruning,
                                            MIR::Passes::join_blocks,
                                            MIR::Passes::fixup_phis,
@@ -65,11 +65,11 @@ TEST(fixup_phi, three_branches) {
     std::unordered_map<std::string, uint32_t> data{};
 
     MIR::Passes::block_walker(
-        &irlist, {
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                     [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+        irlist, {
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                  });
-    MIR::Passes::block_walker(&irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::branch_pruning,
                                            MIR::Passes::join_blocks,
                                            MIR::Passes::fixup_phis,
@@ -123,9 +123,9 @@ TEST(fixup_phi, nested_branches) {
     bool progress = true;
     while (progress) {
         progress = MIR::Passes::block_walker(
-            &irlist, {
-                         [&](MIR::BasicBlock * b) { return MIR::Passes::value_numbering(b, data); },
-                         [&](MIR::BasicBlock * b) { return MIR::Passes::insert_phis(b, data); },
+            irlist, {
+                         [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
+                         [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                          MIR::Passes::branch_pruning,
                          MIR::Passes::join_blocks,
                          MIR::Passes::fixup_phis,
