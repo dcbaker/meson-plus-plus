@@ -37,8 +37,8 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
 
     std::vector<std::string> order_deps{};
     for (const auto & f : e.sources) {
-        if (std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(f)) {
-            const auto & t = *std::get<std::shared_ptr<MIR::CustomTarget>>(f);
+        if (std::holds_alternative<MIR::CustomTarget>(*f.obj_ptr)) {
+            const auto & t = std::get<MIR::CustomTarget>(*f.obj_ptr);
             for (const auto & ff : t.outputs) {
                 if (tc.build()->compiler->supports_file(ff.get_name()) ==
                     MIR::Toolchain::Compiler::CanCompileType::DEPENDS) {
@@ -61,8 +61,8 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
         // FIXME: without depfile support, we can't really treat order only deps
         // correctly, and instead we have to treat them as full deps for correct
         // behavior. This should be fixed.
-        if (std::holds_alternative<std::shared_ptr<MIR::File>>(f)) {
-            const auto & ff = *std::get<std::shared_ptr<MIR::File>>(f);
+        if (std::holds_alternative<MIR::File>(*f.obj_ptr)) {
+            const auto & ff = std::get<MIR::File>(*f.obj_ptr);
             if (tc.build()->compiler->supports_file(ff.get_name()) ==
                 MIR::Toolchain::Compiler::CanCompileType::SOURCE) {
                 rules.emplace_back(
@@ -76,7 +76,7 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
                            order_deps});
             }
         } else {
-            const auto & t = *std::get<std::shared_ptr<MIR::CustomTarget>>(f);
+            const auto & t = std::get<MIR::CustomTarget>(*f.obj_ptr);
             for (const auto & ff : t.outputs) {
                 if (tc.build()->compiler->supports_file(ff.get_name()) ==
                     MIR::Toolchain::Compiler::CanCompileType::SOURCE) {
@@ -99,7 +99,7 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
         final_outs.insert(final_outs.end(), r.output.begin(), r.output.end());
     }
     for (const auto & [_, l] : e.link_static) {
-        final_outs.emplace_back(l->output());
+        final_outs.emplace_back(l.output());
     }
 
     std::string name;
@@ -141,11 +141,11 @@ std::vector<Target> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
 
     std::vector<std::string> ins{};
     for (const auto & i : e.inputs) {
-        if (std::holds_alternative<std::shared_ptr<MIR::File>>(i)) {
-            const auto & f = *std::get<std::shared_ptr<MIR::File>>(i);
+        if (std::holds_alternative<MIR::File>(*i.obj_ptr)) {
+            const auto & f = std::get<MIR::File>(*i.obj_ptr);
             ins.emplace_back(f.relative_to_build_dir());
         } else {
-            const auto & c = *std::get<std::shared_ptr<MIR::CustomTarget>>(i);
+            const auto & c = std::get<MIR::CustomTarget>(*i.obj_ptr);
             for (const auto & f : c.outputs) {
                 ins.emplace_back(f.relative_to_build_dir());
             }
@@ -163,14 +163,14 @@ std::vector<Target> mir_to_fir(const MIR::BasicBlock & block,
     std::vector<Target> rules{};
 
     for (const auto & i : block.instructions) {
-        if (std::holds_alternative<std::shared_ptr<MIR::Executable>>(i)) {
-            auto r = target_rule(*std::get<std::shared_ptr<MIR::Executable>>(i), pstate);
+        if (std::holds_alternative<MIR::Executable>(*i.obj_ptr)) {
+            auto r = target_rule(std::get<MIR::Executable>(*i.obj_ptr), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
-        } else if (std::holds_alternative<std::shared_ptr<MIR::StaticLibrary>>(i)) {
-            auto r = target_rule(*std::get<std::shared_ptr<MIR::StaticLibrary>>(i), pstate);
+        } else if (std::holds_alternative<MIR::StaticLibrary>(*i.obj_ptr)) {
+            auto r = target_rule(std::get<MIR::StaticLibrary>(*i.obj_ptr), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
-        } else if (std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(i)) {
-            auto r = target_rule(*std::get<std::shared_ptr<MIR::CustomTarget>>(i), pstate);
+        } else if (std::holds_alternative<MIR::CustomTarget>(*i.obj_ptr)) {
+            auto r = target_rule(std::get<MIR::CustomTarget>(*i.obj_ptr), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
         }
     }

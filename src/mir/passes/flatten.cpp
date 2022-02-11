@@ -10,10 +10,10 @@ namespace MIR::Passes {
 namespace {
 
 /// Recursively call this to flatten nested arrays to function calls
-void do_flatten(const std::shared_ptr<Array> & arr, std::vector<Object> & newarr) {
-    for (auto & e : arr->value) {
-        if (std::holds_alternative<std::shared_ptr<Array>>(e)) {
-            do_flatten(std::get<std::shared_ptr<Array>>(e), newarr);
+void do_flatten(const Array & arr, std::vector<Instruction> & newarr) {
+    for (auto & e : arr.value) {
+        if (std::holds_alternative<Array>(*e.obj_ptr)) {
+            do_flatten(std::get<Array>(*e.obj_ptr), newarr);
         } else {
             newarr.emplace_back(std::move(e));
         }
@@ -23,17 +23,16 @@ void do_flatten(const std::shared_ptr<Array> & arr, std::vector<Object> & newarr
 /**
  * Flatten arrays when passed as arguments to functions.
  */
-std::optional<Object> flatten_cb(const Object & obj) {
-    if (!std::holds_alternative<std::shared_ptr<Array>>(obj)) {
+std::optional<Instruction> flatten_cb(const Instruction & obj) {
+    const auto * arr = std::get_if<Array>(obj.obj_ptr.get());
+    if (arr == nullptr) {
         return std::nullopt;
     }
-
-    const auto & arr = std::get<std::shared_ptr<Array>>(obj);
 
     // If there is nothing to flatten, don't go mutation anything
     bool has_array = false;
     for (const auto & e : arr->value) {
-        has_array = std::holds_alternative<std::shared_ptr<Array>>(e);
+        has_array = std::holds_alternative<Array>(*e.obj_ptr);
         if (has_array) {
             break;
         }
@@ -42,10 +41,10 @@ std::optional<Object> flatten_cb(const Object & obj) {
         return std::nullopt;
     }
 
-    std::vector<Object> newarr{};
-    do_flatten(arr, newarr);
+    std::vector<Instruction> newarr{};
+    do_flatten(*arr, newarr);
 
-    return std::make_shared<Array>(std::move(newarr));
+    return Array{std::move(newarr)};
 }
 
 } // namespace

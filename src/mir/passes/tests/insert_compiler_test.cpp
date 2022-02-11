@@ -35,10 +35,10 @@ TEST(insert_compiler, simple) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & e = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::Compiler>>(e));
+    ASSERT_TRUE(std::holds_alternative<MIR::Compiler>(*e.obj_ptr));
 
-    const auto & c = std::get<std::shared_ptr<MIR::Compiler>>(e);
-    ASSERT_EQ(c->toolchain->compiler->id(), "clang");
+    const auto & c = std::get<MIR::Compiler>(*e.obj_ptr);
+    ASSERT_EQ(c.toolchain->compiler->id(), "clang");
 }
 
 TEST(insert_compiler, unknown_language) {

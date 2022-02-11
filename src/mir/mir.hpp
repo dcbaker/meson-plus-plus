@@ -55,6 +55,73 @@ class Variable {
     bool operator==(const Variable &) const;
 };
 
+class FunctionCall;
+class String;
+class Boolean;
+class Number;
+class Identifier;
+class Array;
+class Dict;
+class Compiler;
+class File;
+class Executable;
+class StaticLibrary;
+class Phi;
+class IncludeDirectories;
+class Message;
+class Program;
+class Empty;
+class CustomTarget;
+class Dependency;
+
+using Object = std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier,
+                            Array, Dict, Compiler, File, Executable, StaticLibrary, Phi,
+                            IncludeDirectories, Message, Program, Empty, CustomTarget, Dependency>;
+
+/**
+ * A single instruction.
+ */
+class Instruction {
+
+  public:
+    Instruction();
+    Instruction(Instruction &&);
+    Instruction(const Instruction &);
+    Instruction(std::shared_ptr<Object>);
+    Instruction(const Object & obj);
+    Instruction(Object obj, const Variable & var_);
+    Instruction(Boolean val);
+    Instruction(Number val);
+    Instruction(String val);
+    Instruction(FunctionCall val);
+    Instruction(Identifier val);
+    Instruction(Array val);
+    Instruction(Dict val);
+    Instruction(File val);
+    Instruction(IncludeDirectories val);
+    Instruction(Message val);
+    Instruction(Empty val);
+    Instruction(Dependency val);
+    Instruction(CustomTarget val);
+    Instruction(StaticLibrary val);
+    Instruction(Executable val);
+    Instruction(Phi val);
+    Instruction(Program val);
+
+    Instruction & operator=(const Instruction &) = default;
+
+    /// The actual object in the instruction
+    /// This is a ptr because of self-referncing, Objects can hold Instructions, so we can't put an
+    /// Object directly into the Instruction
+    std::shared_ptr<Object> obj_ptr;
+
+    /// The place where the instruction was defined
+    Variable var;
+
+    /// Get a const reference to the held object
+    const Object & object() const;
+};
+
 /**
  * Holds a File, which is a smart object point to a source
  *
@@ -62,8 +129,6 @@ class Variable {
 class File {
   public:
     File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_);
-    File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_,
-         const Variable & v);
 
     /// Whether this is a built object, or a static one
     bool is_built() const;
@@ -89,27 +154,20 @@ class File {
     const bool built;
     const fs::path source_root;
     const fs::path build_root;
-
-    Variable var;
 };
 
 class CustomTarget;
 
-/// Input sources for most targets
-using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>>;
-
 class CustomTarget {
   public:
-    CustomTarget(std::string n, std::vector<Source> i, std::vector<File> o,
-                 std::vector<std::string> c, fs::path s, const Variable & v);
+    CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
+                 std::vector<std::string> c, fs::path s);
 
     const std::string name;
-    const std::vector<Source> inputs;
+    const std::vector<Instruction> inputs;
     const std::vector<File> outputs;
     const std::vector<std::string> command;
     const fs::path subdir;
-
-    Variable var;
 };
 
 using ArgMap = std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>;
@@ -121,19 +179,18 @@ enum class StaticLinkMode {
 
 class StaticLibrary;
 
-using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary *>;
-using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>>;
+using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary>;
 
 class Executable {
   public:
-    Executable(std::string name_, std::vector<Source> srcs, const Machines::Machine & m,
-               fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link, const Variable & v);
+    Executable(std::string name_, std::vector<Instruction> srcs, const Machines::Machine & m,
+               fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link);
 
     /// The name of the target
     const std::string name;
 
     /// The sources (as files)
-    const std::vector<Source> sources;
+    const std::vector<Instruction> sources;
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
@@ -151,23 +208,20 @@ class Executable {
 
     /// static targets to link with
     const std::vector<StaticLinkage> link_static{};
-
-    Variable var;
 
     std::string output() const;
 };
 
 class StaticLibrary {
   public:
-    StaticLibrary(std::string name_, std::vector<Source> srcs, const Machines::Machine & m,
-                  fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link,
-                  const Variable & v);
+    StaticLibrary(std::string name_, std::vector<Instruction> srcs, const Machines::Machine & m,
+                  fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link);
 
     /// The name of the target
     const std::string name;
 
     /// The sources (as files)
-    const std::vector<Source> sources;
+    const std::vector<Instruction> sources;
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
@@ -185,8 +239,6 @@ class StaticLibrary {
 
     /// static targets to link with
     const std::vector<StaticLinkage> link_static{};
-
-    Variable var;
 
     std::string output() const;
 };
@@ -201,25 +253,21 @@ class StaticLibrary {
 class Phi {
   public:
     Phi();
-    Phi(const uint32_t & l, const uint32_t & r, const Variable & v);
+    Phi(const uint32_t & l, const uint32_t & r);
 
     uint32_t left;
     uint32_t right;
 
     bool operator==(const Phi & other) const;
     bool operator<(const Phi & other) const;
-
-    Variable var;
 };
 
 class IncludeDirectories {
   public:
-    IncludeDirectories(std::vector<std::string> d, const bool & s, const Variable & v);
+    IncludeDirectories(std::vector<std::string> d, const bool & s);
 
     const std::vector<std::string> directories;
     const bool is_system;
-
-    Variable var;
 };
 
 enum class DependencyType {
@@ -234,7 +282,7 @@ enum class DependencyType {
 class Dependency {
   public:
     Dependency(std::string name, const bool & found, std::string version,
-               std::vector<Arguments::Argument> args, const Variable & var);
+               std::vector<Arguments::Argument> args);
 
     /// Name of the dependency
     const std::string name;
@@ -250,8 +298,6 @@ class Dependency {
 
     /// The kind of dependency this is
     const DependencyType type = DependencyType::INTERNAL;
-
-    Variable var;
 };
 
 enum class MessageLevel {
@@ -270,53 +316,23 @@ class Message {
 
     /// The message itself
     const std::string message;
-
-    Variable var;
 };
 
 class Program {
   public:
     Program(std::string n, const Machines::Machine & m, fs::path p);
-    Program(std::string n, const Machines::Machine & m, fs::path p, const Variable & v);
 
     const std::string name;
     const Machines::Machine for_machine;
     const fs::path path;
 
     bool found() const;
-
-    Variable var;
 };
 
 class Empty {
   public:
     Empty(){};
-
-    Variable var;
 };
-
-/*
- * Thse objects "Wrap" a lower level object, and provide interfaces for user
- * defined data. Their main job is to take the user data, validate it, and call
- * into the lower level objects
- */
-class Array;
-class Boolean;
-class Dict;
-class FunctionCall;
-class Identifier;
-class Number;
-class String;
-class Compiler;
-
-using Object =
-    std::variant<std::shared_ptr<FunctionCall>, std::shared_ptr<String>, std::shared_ptr<Boolean>,
-                 std::shared_ptr<Number>, std::unique_ptr<Identifier>, std::shared_ptr<Array>,
-                 std::shared_ptr<Dict>, std::shared_ptr<Compiler>, std::shared_ptr<File>,
-                 std::shared_ptr<Executable>, std::shared_ptr<StaticLibrary>, std::unique_ptr<Phi>,
-                 std::shared_ptr<IncludeDirectories>, std::unique_ptr<Message>,
-                 std::shared_ptr<Program>, std::unique_ptr<Empty>, std::shared_ptr<CustomTarget>,
-                 std::shared_ptr<Dependency>>;
 
 /**
  * Holds a toolchain
@@ -329,30 +345,28 @@ class Compiler {
 
     const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
 
-    Object get_id(const std::vector<Object> &,
-                        const std::unordered_map<std::string, Object> &) const;
-
-    Variable var;
+    Instruction get_id(const std::vector<Instruction> &,
+                       const std::unordered_map<std::string, Instruction> &) const;
 };
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(std::string _name, std::vector<Object> && _pos,
-                 std::unordered_map<std::string, Object> && _kw, std::filesystem::path _sd);
-    FunctionCall(std::string _name, std::vector<Object> && _pos, std::filesystem::path _sd);
+    FunctionCall(std::string _name, std::vector<Instruction> && _pos,
+                 std::unordered_map<std::string, Instruction> && _kw, std::filesystem::path _sd);
+    FunctionCall(std::string _name, std::vector<Instruction> && _pos, std::filesystem::path _sd);
 
     const std::string name;
 
     /// Ordered container of positional argument objects
-    std::vector<Object> pos_args;
+    std::vector<Instruction> pos_args;
 
     /// Unordered container mapping keyword arguments to their values
-    std::unordered_map<std::string, Object> kw_args;
+    std::unordered_map<std::string, Instruction> kw_args;
 
-    /// reference to object holding this function, if it's a method.
-    std::optional<Object> holder;
+    /// reference to object holding this function, it's monostate if not
+    Instruction holder;
 
     /**
      * The directory this was called form.
@@ -361,8 +375,6 @@ class FunctionCall {
      * required to accurately map sources between the source and build dirs.
      */
     const std::filesystem::path source_dir;
-
-    Variable var;
 };
 
 class String {
@@ -372,20 +384,17 @@ class String {
     bool operator==(const String &) const;
     bool operator!=(const String &) const;
 
-    const std::string value;
-    Variable var;
+    std::string value;
 };
 
 class Boolean {
   public:
     Boolean(const bool & f);
-    Boolean(const bool & f, const Variable & v);
 
     bool operator==(const Boolean &) const;
     bool operator!=(const Boolean &) const;
 
     const bool value;
-    Variable var;
 };
 
 class Number {
@@ -396,13 +405,12 @@ class Number {
     bool operator!=(const Number &) const;
 
     const int64_t value;
-    Variable var;
 };
 
 class Identifier {
   public:
     Identifier(std::string s);
-    Identifier(std::string s, const uint32_t & ver, Variable && v);
+    Identifier(std::string s, const uint32_t & ver);
 
     /// The name of the identifier
     const std::string value;
@@ -422,17 +430,15 @@ class Identifier {
      * removing the need to track this information long term.
      */
     uint32_t version;
-
-    Variable var;
 };
 
 class Array {
   public:
     Array();
-    Array(std::vector<Object> && a);
+    Array(std::vector<Instruction> && a);
+    Array(std::vector<String> && a);
 
-    std::vector<Object> value;
-    Variable var;
+    std::vector<Instruction> value;
 };
 
 class Dict {
@@ -441,8 +447,7 @@ class Dict {
 
     // TODO: the key is allowed to be a string or an expression that evaluates
     // to a string, we need to enforce that somewhere.
-    std::unordered_map<std::string, Object> value;
-    Variable var;
+    std::unordered_map<std::string, Instruction> value;
 };
 
 class BasicBlock;
@@ -470,11 +475,11 @@ class BasicBlock;
  */
 class Condition {
   public:
-    Condition(Object && o);
-    Condition(Object && o, std::shared_ptr<BasicBlock> s);
+    Condition(Instruction && o);
+    Condition(Instruction && o, std::shared_ptr<BasicBlock> s);
 
     /// An object that is the condition
-    Object condition;
+    Instruction condition;
 
     /// The block to go to if the condition is true
     std::shared_ptr<BasicBlock> if_true;
@@ -501,7 +506,7 @@ class BasicBlock {
     BasicBlock(std::unique_ptr<Condition> &&);
 
     /// The instructions in this block
-    std::list<Object> instructions;
+    std::list<Instruction> instructions;
 
     /// Either nothing, a pointer to another BasicBlock, or a pointer to a Condition
     NextType next;

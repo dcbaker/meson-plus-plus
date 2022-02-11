@@ -30,7 +30,7 @@ TEST(lower, after_files) {
     ASSERT_EQ(irlist.instructions.size(), 1);
 
     const auto & ct_obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::shared_ptr<MIR::CustomTarget>>(ct_obj));
+    ASSERT_TRUE(std::holds_alternative<MIR::CustomTarget>(*ct_obj.obj_ptr));
 }
 
 #if false

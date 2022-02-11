@@ -26,36 +26,38 @@ std::optional<Machine> machine_map(const std::string & func_name) {
     return std::nullopt;
 }
 
-MIR::Object lower_function(const std::string & holder, const std::string & name,
+Instruction lower_function(const std::string & holder, const std::string & name,
                            const Info & info) {
     if (name == "cpu_family") {
-        return std::make_shared<MIR::String>(info.cpu_family);
+        return MIR::String{info.cpu_family};
     }
     if (name == "cpu") {
-        return std::make_shared<MIR::String>(info.cpu);
+        return MIR::String{info.cpu};
     }
     if (name == "system") {
-        return std::make_shared<MIR::String>(info.system());
+        return MIR::String{info.system()};
     }
     if (name == "endian") {
-        return std::make_shared<MIR::String>(info.endian == Endian::LITTLE ? "little" : "big");
+        return MIR::String{info.endian == Endian::LITTLE ? "little" : "big"};
     }
     throw Util::Exceptions::MesonException{holder + " has no method " + name};
 }
 
 using MachineInfo = PerMachine<Info>;
 
-std::optional<Object> lower_functions(const MachineInfo & machines, const Object & obj) {
-    if (std::holds_alternative<std::shared_ptr<MIR::FunctionCall>>(obj)) {
-        const auto & f = std::get<std::shared_ptr<MIR::FunctionCall>>(obj);
-        if (f->holder && std::holds_alternative<std::unique_ptr<Identifier>>(f->holder.value())) {
-            const auto & holder = std::get<std::unique_ptr<Identifier>>(f->holder.value())->value;
+std::optional<Instruction> lower_functions(const MachineInfo & machines, const Instruction & obj) {
+    if (std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr)) {
+        const auto & f = std::get<MIR::FunctionCall>(*obj.obj_ptr);
+        if (std::holds_alternative<Identifier>(*f.holder.obj_ptr)) {
+            const auto & holder = std::get<Identifier>(*f.holder.obj_ptr).value;
 
             auto maybe_m = machine_map(holder);
             if (maybe_m.has_value()) {
                 const auto & info = machines.get(maybe_m.value());
 
-                return lower_function(holder, f->name, info);
+                Instruction i = lower_function(holder, f.name, info);
+                i.var = obj.var;
+                return i;
             }
         }
     }
@@ -65,7 +67,7 @@ std::optional<Object> lower_functions(const MachineInfo & machines, const Object
 } // namespace
 
 bool machine_lower(BasicBlock & block, const MachineInfo & machines) {
-    const auto cb = [&](const Object & o) { return lower_functions(machines, o); };
+    const auto cb = [&](const Instruction & o) { return lower_functions(machines, o); };
 
     return function_walker(block, cb);
 };

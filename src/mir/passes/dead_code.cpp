@@ -11,9 +11,8 @@ bool delete_unreachable(BasicBlock & block) {
     // If we see an Message object that is an error, that block will not return,
     // break it's next connection
     for (auto itr = block.instructions.begin(); itr != block.instructions.end(); ++itr) {
-        if (std::holds_alternative<std::unique_ptr<Message>>(*itr)) {
-            const auto & m = *std::get<std::unique_ptr<Message>>(*itr);
-            if (m.level == MessageLevel::ERROR) {
+        if (auto * m = std::get_if<Message>(itr->obj_ptr.get())) {
+            if (m->level == MessageLevel::ERROR) {
                 // Delete any children point to this block
                 if (std::holds_alternative<std::shared_ptr<BasicBlock>>(block.next)) {
                     auto & b = *std::get<std::shared_ptr<BasicBlock>>(block.next);

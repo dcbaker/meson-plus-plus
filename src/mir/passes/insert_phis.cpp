@@ -11,12 +11,11 @@ namespace {
 /// Does this block have only one parent?
 inline bool is_strictly_dominated(const BasicBlock & block) { return block.parents.size() == 1; }
 
-/// Get a variable from an Object
-inline auto get_variable = [](const auto & obj) { return obj->var; };
-
 /// Allows comparing Phi pointers, using the value comparisons
 struct PhiComparator {
-    bool operator()(const Phi * l, const Phi * r) const { return *l < *r; };
+    bool operator()(const Instruction * l, const Instruction * r) const {
+        return l->var.name < r->var.name && std::get<Phi>(*l->obj_ptr) < std::get<Phi>(*r->obj_ptr);
+    };
 };
 
 template <typename T> struct reversion_wrapper { T & iterable; };
@@ -49,13 +48,14 @@ bool insert_phis(BasicBlock & block, ValueTable & values) {
      *
      * XXX: What happens if a variable is erroniously undefined in a branch?
      */
-    std::list<Object> phis{};
+    std::list<Instruction> phis{};
 
     // Find all phis in the block arleady, so we don't re-add them
-    std::set<Phi *, PhiComparator> existing_phis{};
+    std::set<const Instruction *, PhiComparator> existing_phis{};
     for (const auto & obj : block.instructions) {
-        if (std::holds_alternative<std::unique_ptr<Phi>>(obj)) {
-            existing_phis.emplace(std::get<std::unique_ptr<Phi>>(obj).get());
+        if (std::holds_alternative<Phi>(*obj.obj_ptr)) {
+            // XXX: this seems sketchy?
+            existing_phis.emplace(&obj);
         }
     }
 
@@ -65,7 +65,7 @@ bool insert_phis(BasicBlock & block, ValueTable & values) {
     std::set<std::string> dominated{};
     for (const auto & p : block.parents) {
         for (const auto & i : p->instructions) {
-            if (auto v = std::visit(get_variable, i)) {
+            if (auto v = i.var) {
                 if (all_vars.count(v.name)) {
                     dominated.emplace(v.name);
                 }
@@ -81,14 +81,14 @@ bool insert_phis(BasicBlock & block, ValueTable & values) {
         uint32_t last = 0;
         for (const auto p : block.parents) {
             for (const auto & i : reverse(p->instructions)) {
-                if (const auto & var = std::visit(get_variable, i)) {
+                if (const auto & var = i.var) {
                     if (last) {
-                        auto phi = std::make_unique<Phi>(last, var.version, Variable{name});
-                        if (!existing_phis.count(phi.get())) {
+                        auto phi = Instruction{Phi{last, var.version}, Variable{name}};
+                        if (!existing_phis.count(&phi)) {
                             // Only set the version if we're actually using this phi
-                            phi->var.version = ++values[name];
-                            last = phi->var.version;
-                            phis.emplace_back(std::move(phi));
+                            phi.var.version = ++values[name];
+                            last = phi.var.version;
+                            phis.emplace_back(phi);
                         }
                     } else {
                         last = var.version;
@@ -110,19 +110,19 @@ bool insert_phis(BasicBlock & block, ValueTable & values) {
 bool fixup_phis(BasicBlock & block) {
     bool progress = false;
     for (auto it = block.instructions.begin(); it != block.instructions.end(); ++it) {
-        if (std::holds_alternative<std::unique_ptr<Phi>>(*it)) {
-            const auto & phi = std::get<std::unique_ptr<Phi>>(*it);
+        if (std::holds_alternative<Phi>(*it->obj_ptr)) {
+            const auto & phi = std::get<Phi>(*it->obj_ptr);
             bool right = false;
             bool left = false;
             for (const auto & p : block.parents) {
-                for (const Object & i : p->instructions) {
-                    const auto & var = std::visit([](const auto & obj) { return obj->var; }, i);
-                    if (var.name == phi->var.name) {
-                        if (var.version == phi->left) {
+                for (const Instruction & i : p->instructions) {
+                    const auto & var = i.var;
+                    if (var.name == it->var.name) {
+                        if (var.version == phi.left) {
                             left = true;
                             break;
                         }
-                        if (var.version == phi->right) {
+                        if (var.version == phi.right) {
                             right = true;
                             break;
                         }
@@ -135,8 +135,8 @@ bool fixup_phis(BasicBlock & block) {
 
             if (left ^ right) {
                 progress = true;
-                auto id = std::make_unique<Identifier>(phi->var.name, left ? phi->left : phi->right,
-                                                       Variable{phi->var});
+                auto id =
+                    Instruction{Identifier{it->var.name, left ? phi.left : phi.right}, it->var};
                 it = block.instructions.erase(it);
                 it = block.instructions.emplace(it, std::move(id));
                 continue;
@@ -147,17 +147,16 @@ bool fixup_phis(BasicBlock & block) {
             // found is dead code after the second, so we can ignore it and
             // treat the second one as the truth
             for (auto it2 = block.instructions.begin(); it2 != it; ++it2) {
-                const auto & var = std::visit([](const auto & obj) { return obj->var; }, *it2);
-                if (var.name == phi->var.name) {
-                    left = var.version == phi->left;
-                    right = var.version == phi->right;
+                if (it->var.name == it2->var.name) {
+                    left = it2->var.version == phi.left;
+                    right = it2->var.version == phi.right;
                 }
             }
 
             if (left ^ right) {
                 progress = true;
-                auto id = std::make_unique<Identifier>(phi->var.name, left ? phi->left : phi->right,
-                                                       Variable{phi->var});
+                auto id =
+                    Instruction{Identifier{it->var.name, left ? phi.left : phi.right}, it->var};
                 it = block.instructions.erase(it);
                 it = block.instructions.emplace(it, std::move(id));
             }

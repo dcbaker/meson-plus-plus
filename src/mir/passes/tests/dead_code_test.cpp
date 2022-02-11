@@ -28,13 +28,13 @@ TEST(unreachable_code, clear_dead_instructions) {
     ASSERT_EQ(irlist.instructions.size(), 2);
 
     const auto & msg_obj = irlist.instructions.front();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(msg_obj));
-    const auto & msg = *std::get<std::unique_ptr<MIR::Message>>(msg_obj);
+    ASSERT_TRUE(std::holds_alternative<MIR::Message>(*msg_obj.obj_ptr));
+    const auto & msg = std::get<MIR::Message>(*msg_obj.obj_ptr);
     ASSERT_EQ(msg.level, MIR::MessageLevel::MESSAGE);
 
     const auto & err_obj = irlist.instructions.back();
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Message>>(err_obj));
-    const auto & err = *std::get<std::unique_ptr<MIR::Message>>(err_obj);
+    ASSERT_TRUE(std::holds_alternative<MIR::Message>(*err_obj.obj_ptr));
+    const auto & err = std::get<MIR::Message>(*err_obj.obj_ptr);
     ASSERT_EQ(err.level, MIR::MessageLevel::ERROR);
 }
 

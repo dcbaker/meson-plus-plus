@@ -40,35 +40,35 @@ struct ExpressionLowering {
 
     const MIR::State::Persistant & pstate;
 
-    Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
-        return std::make_shared<String>(expr->value);
+    Instruction operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
+        return String{expr->value};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
+    Instruction operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
         // I think that a function can only be an ID, I think
         auto fname_id = std::visit(*this, expr->held);
-        auto fname_ptr = std::get_if<std::unique_ptr<Identifier>>(&fname_id);
+        auto fname_ptr = std::get_if<Identifier>(fname_id.obj_ptr.get());
         if (fname_ptr == nullptr) {
             // TODO: Better error message witht the thing being called
             throw Util::Exceptions::MesonException{"Object is not callable"};
         }
-        auto fname = (*fname_ptr)->value;
+        auto fname = fname_ptr->value;
 
         // Get the positional arguments
-        std::vector<Object> pos{};
+        std::vector<Instruction> pos{};
         for (const auto & i : expr->args->positional) {
             pos.emplace_back(std::visit(*this, i));
         }
 
-        std::unordered_map<std::string, Object> kwargs{};
+        std::unordered_map<std::string, Instruction> kwargs{};
         for (const auto & [k, v] : expr->args->keyword) {
             auto key_obj = std::visit(*this, k);
-            auto key_ptr = std::get_if<std::unique_ptr<Identifier>>(&key_obj);
+            auto key_ptr = std::get_if<Identifier>(key_obj.obj_ptr.get());
             if (key_ptr == nullptr) {
                 // TODO: better error message
                 throw Util::Exceptions::MesonException{"keyword arguments must be identifiers"};
             }
-            auto key = (*key_ptr)->value;
+            auto key = key_ptr->value;
             kwargs[key] = std::visit(*this, v);
         }
 
@@ -76,64 +76,67 @@ struct ExpressionLowering {
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_shared<FunctionCall>(fname, std::move(pos), std::move(kwargs),
-                                              fs::relative(path.parent_path(), pstate.build_root));
+        return FunctionCall{fname, std::move(pos), std::move(kwargs),
+                            fs::relative(path.parent_path(), pstate.build_root)};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
-        return std::make_shared<Boolean>(expr->value);
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
+        return Boolean{expr->value};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
-        return std::make_shared<Number>(expr->value);
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
+        return Number{expr->value};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
-        return std::make_unique<Identifier>(expr->value);
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
+        return Identifier{expr->value};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
-        auto arr = std::make_shared<Array>();
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
+        Array arr{};
         for (const auto & i : expr->elements) {
-            arr->value.emplace_back(std::visit(*this, i));
+            arr.value.emplace_back(std::visit(*this, i));
         }
         return arr;
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
-        auto dict = std::make_shared<Dict>();
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
+        Dict dict{};
         for (const auto & [k, v] : expr->elements) {
             auto key_obj = std::visit(*this, k);
-            if (!std::holds_alternative<std::shared_ptr<String>>(key_obj)) {
-                throw Util::Exceptions::InvalidArguments("Dictionary keys must be strintg");
+            auto key_ptr = std::get_if<String>(key_obj.obj_ptr.get());
+            if (key_ptr == nullptr) {
+                // TODO: Better error message witht the thing being called
+                throw Util::Exceptions::InvalidArguments("Dictionary keys must be string");
             }
-            auto key = std::get<std::shared_ptr<MIR::String>>(key_obj)->value;
 
-            dict->value[key] = std::visit(*this, v);
+            dict.value[key_ptr->value] = std::visit(*this, v);
         }
-        return dict;
+        return std::move(dict);
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
+    Instruction operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
         auto holding_obj = std::visit(*this, expr->holder);
 
         // Meson only allows methods in objects, so we can enforce that this is a function
         auto method = std::visit(*this, expr->held);
-        auto func = std::get<std::shared_ptr<MIR::FunctionCall>>(method);
-        func->holder = std::move(holding_obj);
+        auto func = std::get<MIR::FunctionCall>(*method.obj_ptr);
+        func.holder = std::move(holding_obj);
 
-        return func;
+        return std::move(func);
     };
 
     // XXX: all of thse are lies to get things compiling
-    Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
-        return std::make_shared<String>("placeholder: add");
-    };
-    Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
-        return std::make_shared<String>("placeholder: mul");
+    Instruction operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
+        return String{"placeholder: add"};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
+    Instruction
+    operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
+        return String{"placeholder: mul"};
+    };
+
+    Instruction operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
         std::string name;
         switch (expr->op) {
             case Frontend::AST::UnaryOp::NOT:
@@ -147,21 +150,21 @@ struct ExpressionLowering {
         }
 
         fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
-        std::vector<Object> pos{};
+        std::vector<Instruction> pos{};
         pos.emplace_back(std::visit(*this, expr->rhs));
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_shared<FunctionCall>(name, std::move(pos),
-                                              fs::relative(path.parent_path(), pstate.build_root));
+        return FunctionCall{name, std::move(pos),
+                            fs::relative(path.parent_path(), pstate.build_root)};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
-        return std::make_shared<String>("placeholder: subscript");
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
+        return String{"placeholder: subscript"};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
-        std::vector<Object> pos{};
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
+        std::vector<Instruction> pos{};
         pos.emplace_back(std::visit(*this, expr->lhs));
         pos.emplace_back(std::visit(*this, expr->rhs));
 
@@ -200,12 +203,12 @@ struct ExpressionLowering {
         }
         fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
 
-        return std::make_shared<FunctionCall>(func_name, std::move(pos),
-                                              fs::relative(path.parent_path(), pstate.build_root));
+        return FunctionCall{func_name, std::move(pos),
+                            fs::relative(path.parent_path(), pstate.build_root)};
     };
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
-        return std::make_shared<String>("placeholder: tern");
+    Instruction operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
+        return String{"placeholder: tern"};
     };
 };
 
@@ -327,12 +330,12 @@ struct StatementLowering {
         assert(stmt->op == Frontend::AST::AssignOp::EQUAL);
 
         // XXX: need to handle other things that can be assigned to, like subscript
-        auto name_ptr = std::get_if<std::unique_ptr<Identifier>>(&target);
+        auto name_ptr = std::get_if<Identifier>(target.obj_ptr.get());
         if (name_ptr == nullptr) {
             throw Util::Exceptions::MesonException{
                 "This might be a bug, or might be an incomplete implementation"};
         }
-        std::visit([&](const auto & t) { t->var.name = (*name_ptr)->value; }, value);
+        value.var.name = name_ptr->value;
 
         list->instructions.emplace_back(std::move(value));
         assert(std::holds_alternative<std::monostate>(list->next));

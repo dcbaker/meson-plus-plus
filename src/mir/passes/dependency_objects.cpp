@@ -9,7 +9,7 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Object> lower_found_method(const FunctionCall & f) {
+std::optional<Instruction> lower_found_method(const FunctionCall & f) {
     if (!f.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "Dependency.found() does not take any positional arguments");
@@ -19,11 +19,10 @@ std::optional<Object> lower_found_method(const FunctionCall & f) {
             "Dependency.found() does not take any keyword arguments");
     }
 
-    return std::make_shared<Boolean>(
-        std::get<std::shared_ptr<Dependency>>(f.holder.value())->found);
+    return Boolean{std::get<Dependency>(*f.holder.obj_ptr).found};
 }
 
-std::optional<Object> lower_version_method(const FunctionCall & f) {
+std::optional<Instruction> lower_version_method(const FunctionCall & f) {
     if (!f.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "Dependency.version() does not take any positional arguments");
@@ -33,11 +32,10 @@ std::optional<Object> lower_version_method(const FunctionCall & f) {
             "Dependency.version() does not take any keyword arguments");
     }
 
-    return std::make_shared<String>(
-        std::get<std::shared_ptr<Dependency>>(f.holder.value())->version);
+    return String{std::get<Dependency>(*f.holder.obj_ptr).version};
 }
 
-std::optional<Object> lower_name_method(const FunctionCall & f) {
+std::optional<Instruction> lower_name_method(const FunctionCall & f) {
     if (!f.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "Dependency.name() does not take any positional arguments");
@@ -47,33 +45,32 @@ std::optional<Object> lower_name_method(const FunctionCall & f) {
             "Dependency.name() does not take any keyword arguments");
     }
 
-    return std::make_shared<String>(std::get<std::shared_ptr<Dependency>>(f.holder.value())->name);
+    return String{std::get<Dependency>(*f.holder.obj_ptr).name};
 }
 
-std::optional<Object> lower_dependency_methods_impl(const Object & obj,
-                                                    const State::Persistant & pstate) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (!(f.holder.has_value() &&
-          std::holds_alternative<std::shared_ptr<Dependency>>(f.holder.value()))) {
+std::optional<Instruction> lower_dependency_methods_impl(const Instruction & obj,
+                                                         const State::Persistant & pstate) {
+    const auto * f = std::get_if<FunctionCall>(obj.obj_ptr.get());
+    if (f == nullptr) {
         return std::nullopt;
     }
 
-    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+    if (std::get_if<Dependency>(f->holder.obj_ptr.get()) == nullptr) {
         return std::nullopt;
     }
 
-    if (f.name == "found") {
-        return lower_found_method(f);
+    if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
     }
-    if (f.name == "version") {
-        return lower_version_method(f);
+
+    if (f->name == "found") {
+        return lower_found_method(*f);
     }
-    if (f.name == "name") {
-        return lower_name_method(f);
+    if (f->name == "version") {
+        return lower_version_method(*f);
+    }
+    if (f->name == "name") {
+        return lower_name_method(*f);
     }
 
     // XXX: Shouldn't really be able to get here...
@@ -84,7 +81,7 @@ std::optional<Object> lower_dependency_methods_impl(const Object & obj,
 
 bool lower_dependency_objects(BasicBlock & block, State::Persistant & pstate) {
     return function_walker(
-        block, [&](const Object & obj) { return lower_dependency_methods_impl(obj, pstate); });
+        block, [&](const Instruction & obj) { return lower_dependency_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

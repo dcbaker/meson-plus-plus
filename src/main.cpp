@@ -38,12 +38,12 @@ bool emit_messages(MIR::BasicBlock & block) {
             std::cout << Util::Log::bold("Debug information:") << std::endl;
         }
         for (const auto & i : block.instructions) {
-            if (std::holds_alternative<std::unique_ptr<MIR::Message>>(i)) {
-                const auto & m = std::get<std::unique_ptr<MIR::Message>>(i);
-                if (m->level == level) {
-                    std::cout << Util::Log::bold(" *  ") << m->message << std::endl;
+            if (std::holds_alternative<MIR::Message>(*i.obj_ptr)) {
+                const auto & m = std::get<MIR::Message>(*i.obj_ptr);
+                if (m.level == level) {
+                    std::cout << Util::Log::bold(" *  ") << m.message << std::endl;
                 }
-                if (m->level == MIR::MessageLevel::ERROR) {
+                if (m.level == MIR::MessageLevel::ERROR) {
                     errors = true;
                 }
             }

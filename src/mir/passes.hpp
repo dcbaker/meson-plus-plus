@@ -97,7 +97,7 @@ using ReplacementTable = std::map<Variable, Variable>;
 
 bool constant_folding(BasicBlock &, ReplacementTable &);
 
-using PropTable = std::map<Variable, Object *>;
+using PropTable = std::map<Variable, Instruction *>;
 
 /**
  * push variables out of assignments into their uses
