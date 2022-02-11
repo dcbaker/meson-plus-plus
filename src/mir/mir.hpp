@@ -41,8 +41,8 @@ namespace MIR {
 class Variable {
   public:
     Variable();
-    Variable(const std::string & n);
-    Variable(const std::string & n, const uint32_t & v);
+    Variable(std::string n);
+    Variable(std::string n, const uint32_t & v);
     Variable(const Variable & v);
 
     std::string name;
@@ -61,10 +61,9 @@ class Variable {
  */
 class File {
   public:
-    File(const std::string & name_, const fs::path & sdir, const bool & built_,
-         const fs::path & sr_, const fs::path & br_);
-    File(const std::string & name_, const fs::path & sdir, const bool & built_,
-         const fs::path & sr_, const fs::path & br_, const Variable & v);
+    File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_);
+    File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_,
+         const Variable & v);
 
     /// Whether this is a built object, or a static one
     const bool is_built() const;
@@ -101,8 +100,8 @@ using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>
 
 class CustomTarget {
   public:
-    CustomTarget(const std::string & n, const std::vector<Source> & i, const std::vector<File> & o,
-                 const std::vector<std::string> & c, const fs::path & s, const Variable & v);
+    CustomTarget(std::string n, std::vector<Source> i, std::vector<File> o,
+                 std::vector<std::string> c, fs::path s, const Variable & v);
 
     const std::string name;
     const std::vector<Source> inputs;
@@ -127,9 +126,8 @@ using Source = std::variant<std::shared_ptr<File>, std::shared_ptr<CustomTarget>
 
 class Executable {
   public:
-    Executable(const std::string & name_, const std::vector<Source> & srcs,
-               const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
-               const std::vector<StaticLinkage>& s_link, const Variable & v);
+    Executable(std::string name_, std::vector<Source> srcs, const Machines::Machine & m,
+               fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link, const Variable & v);
 
     /// The name of the target
     const std::string name;
@@ -161,9 +159,9 @@ class Executable {
 
 class StaticLibrary {
   public:
-    StaticLibrary(const std::string & name_, const std::vector<Source> & srcs,
-                  const Machines::Machine & m, const fs::path & sdir, const ArgMap & args,
-                  const std::vector<StaticLinkage>& s_link, const Variable & v);
+    StaticLibrary(std::string name_, std::vector<Source> srcs, const Machines::Machine & m,
+                  fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link,
+                  const Variable & v);
 
     /// The name of the target
     const std::string name;
@@ -216,7 +214,7 @@ class Phi {
 
 class IncludeDirectories {
   public:
-    IncludeDirectories(const std::vector<std::string> & d, const bool & s, const Variable & v);
+    IncludeDirectories(std::vector<std::string> d, const bool & s, const Variable & v);
 
     const std::vector<std::string> directories;
     const bool is_system;
@@ -235,8 +233,8 @@ enum class DependencyType {
  */
 class Dependency {
   public:
-    Dependency(const std::string & name, const bool & found, const std::string & version,
-               const std::vector<Arguments::Argument> & args, const Variable & var);
+    Dependency(std::string name, const bool & found, std::string version,
+               std::vector<Arguments::Argument> args, const Variable & var);
 
     /// Name of the dependency
     const std::string name;
@@ -265,7 +263,7 @@ enum class MessageLevel {
 
 class Message {
   public:
-    Message(const MessageLevel & l, const std::string & m);
+    Message(const MessageLevel & l, std::string m);
 
     /// What level or kind of message this is
     const MessageLevel level;
@@ -278,9 +276,8 @@ class Message {
 
 class Program {
   public:
-    Program(const std::string & n, const Machines::Machine & m, const fs::path & p);
-    Program(const std::string & n, const Machines::Machine & m, const fs::path & p,
-            const Variable & v);
+    Program(std::string n, const Machines::Machine & m, fs::path p);
+    Program(std::string n, const Machines::Machine & m, fs::path p, const Variable & v);
 
     const std::string name;
     const Machines::Machine for_machine;
@@ -328,7 +325,7 @@ using Object =
  */
 class Compiler {
   public:
-    Compiler(const std::shared_ptr<MIR::Toolchain::Toolchain> & tc);
+    Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc);
 
     const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
 
@@ -342,10 +339,9 @@ class Compiler {
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(const std::string & _name, std::vector<Object> && _pos,
-                 std::unordered_map<std::string, Object> && _kw, const std::filesystem::path & _sd);
-    FunctionCall(const std::string & _name, std::vector<Object> && _pos,
-                 const std::filesystem::path & _sd);
+    FunctionCall(std::string _name, std::vector<Object> && _pos,
+                 std::unordered_map<std::string, Object> && _kw, std::filesystem::path _sd);
+    FunctionCall(std::string _name, std::vector<Object> && _pos, std::filesystem::path _sd);
 
     const std::string name;
 
@@ -371,7 +367,7 @@ class FunctionCall {
 
 class String {
   public:
-    String(const std::string & f);
+    String(std::string f);
 
     bool operator==(const String &) const;
     bool operator!=(const String &) const;
@@ -405,8 +401,8 @@ class Number {
 
 class Identifier {
   public:
-    Identifier(const std::string & s);
-    Identifier(const std::string & s, const uint32_t & ver, Variable && v);
+    Identifier(std::string s);
+    Identifier(std::string s, const uint32_t & ver, Variable && v);
 
     /// The name of the identifier
     const std::string value;

@@ -5,8 +5,7 @@
 
 namespace MIR::State {
 
-Persistant::Persistant(const std::filesystem::path & sr_, const std::filesystem::path & br_)
-    : toolchains{}, machines{Machines::detect_build()}, source_root{sr_},
-      build_root{br_}, programs{} {};
-
+Persistant::Persistant(std::filesystem::path sr_, std::filesystem::path br_)
+    : toolchains{}, machines{Machines::detect_build()}, source_root{std::move(sr_)},
+      build_root{std::move(br_)}, programs{} {};
 }
