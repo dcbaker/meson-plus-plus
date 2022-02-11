@@ -20,8 +20,7 @@ void subdir_replacer(std::unique_ptr<CodeBlock> & block) {
     std::vector<StatementV> new_stmts{};
 
     // TODO: this code is basically copied out of the driver, how can we share it?
-    for (unsigned i = 0; i < block->statements.size(); ++i) {
-        auto const & stmt = block->statements[i];
+    for (auto && stmt : block->statements) {
         auto res = std::visit(sv, stmt);
 
         // If we have a value that means that a `subdir()` call was
@@ -32,7 +31,7 @@ void subdir_replacer(std::unique_ptr<CodeBlock> & block) {
             auto & v = res.value();
             std::move(v->statements.begin(), v->statements.end(), std::back_inserter(new_stmts));
         } else {
-            new_stmts.emplace_back(std::move(block->statements[i]));
+            new_stmts.emplace_back(std::move(stmt));
         }
     }
 
