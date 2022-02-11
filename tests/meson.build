@@ -1,0 +1,22 @@
+# SPDX-license-identifier: Apache-2.0
+# Copyright © 2022 Intel Corporation
+
+prog_runner = find_program('runner.sh', dirs : meson.current_source_dir())
+
+test_dirs = [
+  '01 subdir',
+  '02 trivial',
+  '03 static library',
+  '04 link static and exe',
+  '05 include_directories',
+  '06 messages',
+  '07 find_program',
+  '08 custom_target',
+  '09 string methods',
+  '10 dependency methods',
+]
+
+foreach t : test_dirs
+  test(t, prog_runner, args : [mesonpp, meson.current_source_dir() / 'dsl' / t], suite : 'dsl')
+endforeach
+
