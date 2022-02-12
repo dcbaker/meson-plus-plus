@@ -68,7 +68,7 @@ Info detect_build() {
     return Info{Machine::BUILD, detect_kernel(), detect_endian(), detect_cpu_family()};
 }
 
-const std::string Info::system() const {
+std::string Info::system() const {
     switch (kernel) {
         case Kernel::LINUX:
             return "linux";

@@ -47,7 +47,7 @@ class Info {
         : machine{m}, kernel{k}, endian{e}, cpu_family{cf}, cpu{c} {};
     ~Info(){};
 
-    const std::string system() const;
+    std::string system() const;
 
     const Machine machine;
     const Kernel kernel;

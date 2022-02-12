@@ -66,7 +66,7 @@ class File {
          const Variable & v);
 
     /// Whether this is a built object, or a static one
-    const bool is_built() const;
+    bool is_built() const;
 
     /// Get the name of the of the file, relative to the src dir if it's static,
     /// or the build dir if it's built
@@ -329,7 +329,7 @@ class Compiler {
 
     const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
 
-    const Object get_id(const std::vector<Object> &,
+    Object get_id(const std::vector<Object> &,
                         const std::unordered_map<std::string, Object> &) const;
 
     Variable var;

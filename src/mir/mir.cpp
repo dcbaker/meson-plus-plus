@@ -42,7 +42,7 @@ Condition::Condition(Object && o, std::shared_ptr<BasicBlock> s)
 
 Compiler::Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc) : toolchain{std::move(tc)} {};
 
-const Object Compiler::get_id(const std::vector<Object> & args,
+Object Compiler::get_id(const std::vector<Object> & args,
                               const std::unordered_map<std::string, Object> & kwargs) const {
     if (!args.empty()) {
         throw Util::Exceptions::InvalidArguments(
@@ -78,7 +78,7 @@ File::File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, 
     : name{std::move(name_)}, subdir{std::move(sdir)}, built{built_}, source_root{std::move(sr_)},
       build_root{std::move(br_)}, var{v} {};
 
-const bool File::is_built() const { return built; }
+bool File::is_built() const { return built; }
 
 std::string File::get_name() const { return name; }
 
