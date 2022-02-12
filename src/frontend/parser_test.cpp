@@ -90,7 +90,7 @@ TEST(parser, triple_string_escaped_newlines) {
 }
 
 TEST(parser, triple_string_escapes) {
-    auto block = parse("'''foo\\t\\\\tab'''");
+    auto block = parse(R"('''foo\t\\tab''')");
     ASSERT_EQ(block->statements.size(), 1);
     auto const & stmt = std::get<0>(block->statements[0]);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::String>>(stmt->expr));
