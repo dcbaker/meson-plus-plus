@@ -23,10 +23,10 @@ bool Phi::operator<(const Phi & other) const {
     return var.name < other.var.name && left < other.left && right < other.right;
 }
 
-BasicBlock::BasicBlock() : instructions{}, next{std::monostate{}}, parents{}, index{++bb_index} {};
+BasicBlock::BasicBlock() : next{std::monostate{}}, index{++bb_index} {};
 
 BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
-    : instructions{}, next{std::move(con)}, parents{}, index{++bb_index} {};
+    : next{std::move(con)}, index{++bb_index} {};
 
 bool BasicBlock::operator<(const BasicBlock & other) const { return index < other.index; }
 
@@ -55,7 +55,7 @@ const Object Compiler::get_id(const std::vector<Object> & args,
     return std::make_shared<String>(toolchain->compiler->id());
 };
 
-Variable::Variable() : name{}, version{0} {};
+Variable::Variable() : version{0} {};
 Variable::Variable(std::string n) : name{std::move(n)}, version{0} {};
 Variable::Variable(std::string n, const uint32_t & v) : name{std::move(n)}, version{v} {};
 Variable::Variable(const Variable & v) : name{v.name}, version{v.version} {};
@@ -72,7 +72,7 @@ bool Variable::operator==(const Variable & other) const {
 
 File::File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_)
     : name{std::move(name_)}, subdir{std::move(sdir)}, built{built_}, source_root{std::move(sr_)},
-      build_root{std::move(br_)}, var{} {};
+      build_root{std::move(br_)} {};
 File::File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_,
            const Variable & v)
     : name{std::move(name_)}, subdir{std::move(sdir)}, built{built_}, source_root{std::move(sr_)},
@@ -155,38 +155,38 @@ FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
                            std::unordered_map<std::string, Object> && _kw,
                            std::filesystem::path _sd)
     : name{std::move(_name)}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)},
-      holder{std::nullopt}, source_dir{std::move(_sd)}, var{} {};
+      holder{std::nullopt}, source_dir{std::move(_sd)} {};
 
 FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
                            std::filesystem::path _sd)
-    : name{std::move(_name)}, pos_args{std::move(_pos)}, kw_args{}, holder{std::nullopt},
-      source_dir{std::move(_sd)}, var{} {};
+    : name{std::move(_name)}, pos_args{std::move(_pos)}, holder{std::nullopt}, source_dir{std::move(
+                                                                                   _sd)} {};
 
-String::String(std::string f) : value{std::move(f)}, var{} {};
+String::String(std::string f) : value{std::move(f)} {};
 
 bool String::operator!=(const String & o) const { return value != o.value; }
 
 bool String::operator==(const String & o) const { return value == o.value; }
 
-Boolean::Boolean(const bool & f) : value{f}, var{} {};
+Boolean::Boolean(const bool & f) : value{f} {};
 Boolean::Boolean(const bool & f, const Variable & v) : value{f}, var{v} {};
 
 bool Boolean::operator!=(const Boolean & o) const { return value != o.value; }
 bool Boolean::operator==(const Boolean & o) const { return value == o.value; }
 
-Number::Number(const int64_t & f) : value{f}, var{} {};
+Number::Number(const int64_t & f) : value{f} {};
 
 bool Number::operator!=(const Number & o) const { return value != o.value; }
 bool Number::operator==(const Number & o) const { return value == o.value; }
 
-Identifier::Identifier(std::string s) : value{std::move(s)}, version{}, var{} {};
+Identifier::Identifier(std::string s) : value{std::move(s)}, version{} {};
 Identifier::Identifier(std::string s, const uint32_t & ver, Variable && v)
     : value{std::move(s)}, version{ver}, var{std::move(v)} {};
 
-Array::Array() : value{}, var{} {};
+Array::Array(){};
 Array::Array(std::vector<Object> && a) : value{std::move(a)} {};
 
-Dict::Dict() : value{}, var{} {};
+Dict::Dict(){};
 
 CustomTarget::CustomTarget(std::string n, std::vector<Source> i, std::vector<File> o,
                            std::vector<std::string> c, fs::path s, const Variable & v)
