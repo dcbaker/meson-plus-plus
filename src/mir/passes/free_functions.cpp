@@ -503,27 +503,19 @@ bool holds_reduced(const Object & obj);
 
 bool holds_reduced_array(const Object & obj) {
     if (std::holds_alternative<std::shared_ptr<Array>>(obj)) {
-        for (const auto & a : std::get<std::shared_ptr<Array>>(obj)->value) {
-            if (!holds_reduced(a)) {
-                return false;
-            }
-            if (std::holds_alternative<std::shared_ptr<Array>>(a)) {
-                return false;
-            }
-        }
-        return true;
+        auto && val = std::get<std::shared_ptr<Array>>(obj)->value;
+        return std::none_of(val.begin(), val.end(), [](auto && a) {
+            return !holds_reduced(a) || std::holds_alternative<std::shared_ptr<Array>>(a);
+        });
     }
     return false;
 }
 
 bool holds_reduced_dict(const Object & obj) {
     if (std::holds_alternative<std::shared_ptr<Dict>>(obj)) {
-        for (const auto & [_, a] : std::get<std::shared_ptr<Dict>>(obj)->value) {
-            if (!holds_reduced(a)) {
-                return false;
-            }
-        }
-        return true;
+        auto && val = std::get<std::shared_ptr<Dict>>(obj)->value;
+        return std::all_of(val.begin(), val.end(),
+                           [](auto && v) { return holds_reduced(v.second); });
     }
     return false;
 }
