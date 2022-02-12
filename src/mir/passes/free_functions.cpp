@@ -179,7 +179,7 @@ std::optional<Object> lower_messages(const FunctionCall & f) {
 }
 
 std::optional<Object> lower_assert(const FunctionCall & f) {
-    if (f.pos_args.size() < 1 || f.pos_args.size() > 2) {
+    if (f.pos_args.empty() || f.pos_args.size() > 2) {
         throw Util::Exceptions::InvalidArguments("assert: takes 1 or 2 arguments, got " +
                                                  std::to_string(f.pos_args.size()));
     }
@@ -624,7 +624,7 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
     }
 
     // This doesn't handle the listified version corretly
-    if (f.pos_args.size() < 1) {
+    if (f.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments{"project requires at least 1 argument"};
     }
 
