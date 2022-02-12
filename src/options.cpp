@@ -83,7 +83,7 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
                 if (n == std::string::npos) {
                     std::cerr << "define options must be in the for `-Dopt=value` or `--define "
                                  "opt=value`. Option \""
-                              << d << "\" does not have an \"=\"." << std::endl;
+                              << d << R"(" does not have an "=".)" << std::endl;
                     exit(1);
                 }
                 auto opt = d.substr(0, n);
