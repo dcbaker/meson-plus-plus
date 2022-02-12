@@ -32,7 +32,7 @@ std::optional<Object> replace_compiler(const Object & obj, const ToolchainMap & 
     const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
 
     // XXX: this seems like a bug
-    if (f.get() == nullptr) {
+    if (!f) {
         return std::nullopt;
     }
 
