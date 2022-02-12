@@ -19,7 +19,7 @@ namespace Util {
  *
  * In the form (returncode, stdout, stderr)
  */
-typedef std::tuple<int8_t, std::string, std::string> Result;
+using Result = std::tuple<int8_t, std::string, std::string>;
 
 /**
  * Run an external process in a thread, and return the output, stdout, and stderr
