@@ -62,17 +62,17 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
 
     static const char * const short_opts = "hs:D:";
     static const option long_opts[] = {
-        {"help", no_argument, NULL, 'h'},
-        {"source-dir", required_argument, NULL, 's'},
-        {"define", required_argument, NULL, 'D'},
-        {NULL},
+        {"help", no_argument, nullptr, 'h'},
+        {"source-dir", required_argument, nullptr, 's'},
+        {"define", required_argument, nullptr, 'D'},
+        {nullptr},
     };
 
     // Initialize the sourcedir
     conf.sourcedir = fs::path{"."};
 
     int c;
-    while ((c = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
         switch (c) {
             case 's':
                 conf.sourcedir = fs::path{optarg};

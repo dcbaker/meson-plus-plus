@@ -47,7 +47,7 @@ Result process(const std::vector<std::string> & cmd) {
         for (unsigned i = 0; i < cmd.size(); ++i) {
             c_cmd[i] = strdup(cmd[i].c_str());
         }
-        c_cmd[cmd.size()] = NULL;
+        c_cmd[cmd.size()] = nullptr;
 
         execvp(c_cmd[0], c_cmd);
         std::cerr << "Program failed to execute: " << strerror(errno) << std::endl;
