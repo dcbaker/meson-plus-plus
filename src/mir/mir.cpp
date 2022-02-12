@@ -91,9 +91,8 @@ std::filesystem::path File::relative_to_source_dir() const {
             throw Util::Exceptions::MesonException{"Failed to create relative path"};
         }
         return p;
-    } else {
-        return subdir / name;
     }
+    return subdir / name;
 }
 
 std::filesystem::path File::relative_to_build_dir() const {
@@ -105,9 +104,8 @@ std::filesystem::path File::relative_to_build_dir() const {
             throw Util::Exceptions::MesonException{"Failed to create relative path"};
         }
         return p;
-    } else {
-        return subdir / name;
     }
+    return subdir / name;
 }
 
 bool File::operator==(const File & f) const {

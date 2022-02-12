@@ -34,7 +34,8 @@ std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable
             }
             return std::make_unique<Identifier>(found->second.name, found->second.version,
                                                 Variable{id->var});
-        } else if (id->var) {
+        }
+        if (id->var) {
             table[id->var] = new_var;
         }
     }

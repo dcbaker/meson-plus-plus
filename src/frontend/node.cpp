@@ -157,11 +157,11 @@ std::string Boolean::as_string() const { return value ? "true" : "false"; };
 std::string String::as_string() const {
     if (is_triple) {
         return "'''" + value + "'''";
-    } else if (is_fstring) {
-        return "f'" + value + "'";
-    } else {
-        return "'" + value + "'";
     }
+    if (is_fstring) {
+        return "f'" + value + "'";
+    }
+    return "'" + value + "'";
 };
 
 std::string Identifier::as_string() const { return value; };
@@ -216,18 +216,17 @@ std::string Arguments::as_string() const {
                                   auto v = std::visit(as, k) + " : " + std::visit(as, a);
                                   if (s.empty()) {
                                       return v;
-                                  } else {
-                                      return s + ", " + v;
                                   }
+                                  return s + ", " + v;
                               });
 
     if (!pos.empty() && !kw.empty()) {
         return pos + ", " + kw;
-    } else if (!pos.empty()) {
-        return pos;
-    } else {
-        return kw;
     }
+    if (!pos.empty()) {
+        return pos;
+    }
+    return kw;
 }
 
 std::string FunctionCall::as_string() const {

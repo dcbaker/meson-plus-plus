@@ -48,15 +48,15 @@ Source src_to_file(const Object & raw_src, const State::Persistant & pstate,
         const auto & src = *std::get<std::shared_ptr<String>>(raw_src);
         return std::make_shared<File>(src.value, subdir, false, pstate.source_root,
                                       pstate.build_root);
-    } else if (std::holds_alternative<std::shared_ptr<File>>(raw_src)) {
+    }
+    if (std::holds_alternative<std::shared_ptr<File>>(raw_src)) {
         return std::get<std::shared_ptr<File>>(raw_src);
-    } else if (std::holds_alternative<std::shared_ptr<CustomTarget>>(raw_src)) {
+    }
+    if (std::holds_alternative<std::shared_ptr<CustomTarget>>(raw_src)) {
         return std::get<std::shared_ptr<CustomTarget>>(raw_src);
-    } else {
-        // TODO: there are other valid types here, like generator output and custom targets
+    } // TODO: there are other valid types here, like generator output and custom targets
         throw Util::Exceptions::InvalidArguments{
             "'executable' sources must be strings, files, or custom_target objects."};
-    }
 }
 
 template <typename T>
@@ -365,17 +365,17 @@ Source extract_source(const Object & obj, const fs::path & current_source_dir,
                       const State::Persistant & pstate) {
     if (std::holds_alternative<std::shared_ptr<CustomTarget>>(obj)) {
         return std::get<std::shared_ptr<CustomTarget>>(obj);
-    } else if (std::holds_alternative<std::shared_ptr<File>>(obj)) {
+    }
+    if (std::holds_alternative<std::shared_ptr<File>>(obj)) {
         return std::get<std::shared_ptr<File>>(obj);
-    } else if (std::holds_alternative<std::shared_ptr<String>>(obj)) {
+    }
+    if (std::holds_alternative<std::shared_ptr<String>>(obj)) {
         const auto & str = *std::get<std::shared_ptr<String>>(obj);
         return std::make_shared<File>(str.value, current_source_dir, false, pstate.source_root,
                                       pstate.build_root);
-    } else {
-        // TODO: better error
+    } // TODO: better error
         throw Util::Exceptions::InvalidArguments("custom_target: 'input' keyword argument must "
                                                  "be 'custom_target', 'string', or 'file'");
-    }
 }
 
 std::vector<Source> extract_source_inputs(const std::unordered_map<std::string, Object> & kws,
@@ -415,10 +415,12 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
                 outs.emplace_back(o.relative_to_build_dir());
             }
             return outs;
-        } else if (v.substr(0, output_size) == "@OUTPUT") {
+        }
+        if (v.substr(0, output_size) == "@OUTPUT") {
             const auto & index = std::stoul(v.substr(output_size, v.size() - 1));
             return {outputs[index].relative_to_build_dir()};
-        } else if (v == "@INPUT@") {
+        }
+        if (v == "@INPUT@") {
             std::vector<std::string> ins{};
             for (const auto & o : inputs) {
                 if (std::holds_alternative<std::shared_ptr<File>>(o)) {
@@ -431,16 +433,17 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
                 }
             }
             return ins;
-        } else if (v.substr(0, input_size) == "@INPUT") {
+        }
+        if (v.substr(0, input_size) == "@INPUT") {
             const auto & index = std::stoul(v.substr(input_size, v.size() - 1));
             const Source s = inputs[index];
             if (std::holds_alternative<std::shared_ptr<File>>(s)) {
                 return {std::get<std::shared_ptr<File>>(s)->relative_to_build_dir()};
-            } else {
-                std::vector<std::string> outs{};
-                const auto & t = *std::get<std::shared_ptr<CustomTarget>>(s);
-                // TODO: get the right index
             }
+            std::vector<std::string> outs{};
+            const auto & t = *std::get<std::shared_ptr<CustomTarget>>(s);
+            // TODO: get the right index
+
         } else {
             return {v};
         }
@@ -503,7 +506,8 @@ bool holds_reduced_array(const Object & obj) {
         for (const auto & a : std::get<std::shared_ptr<Array>>(obj)->value) {
             if (!holds_reduced(a)) {
                 return false;
-            } else if (std::holds_alternative<std::shared_ptr<Array>>(a)) {
+            }
+            if (std::holds_alternative<std::shared_ptr<Array>>(a)) {
                 return false;
             }
         }
@@ -556,27 +560,38 @@ std::optional<Object> lower_free_funcs_impl(const Object & obj, const State::Per
 
     if (f.name == "rel_eq") {
         return lower_eq(f);
-    } else if (f.name == "rel_ne") {
+    }
+    if (f.name == "rel_ne") {
         return lower_ne(f);
-    } else if (f.name == "unary_not") {
+    }
+    if (f.name == "unary_not") {
         return lower_not(f);
-    } else if (f.name == "unary_neg") {
+    }
+    if (f.name == "unary_neg") {
         return lower_neg(f);
-    } else if (f.name == "assert") {
+    }
+    if (f.name == "assert") {
         return lower_assert(f);
-    } else if (f.name == "message" || f.name == "warning" || f.name == "error") {
+    }
+    if (f.name == "message" || f.name == "warning" || f.name == "error") {
         return lower_messages(f);
-    } else if (f.name == "include_directories") {
+    }
+    if (f.name == "include_directories") {
         return lower_include_dirs(f, pstate);
-    } else if (f.name == "files") {
+    }
+    if (f.name == "files") {
         return lower_files(f, pstate);
-    } else if (f.name == "custom_target") {
+    }
+    if (f.name == "custom_target") {
         return lower_custom_target(f, pstate);
-    } else if (f.name == "executable") {
+    }
+    if (f.name == "executable") {
         return lower_build_target<Executable>(f, pstate);
-    } else if (f.name == "static_library") {
+    }
+    if (f.name == "static_library") {
         return lower_build_target<StaticLibrary>(f, pstate);
-    } else if (f.name == "declare_dependency") {
+    }
+    if (f.name == "declare_dependency") {
         return lower_declare_dependency(f, pstate);
     }
 
