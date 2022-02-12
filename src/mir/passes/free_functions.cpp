@@ -189,7 +189,7 @@ std::optional<Object> lower_assert(const FunctionCall & f) {
     if (!value.value()->value) {
         // TODO: maye have an assert level of message?
         // TODO, how to get the original values of this?
-        std::string message = "";
+        std::string message;
         if (f.pos_args.size() == 2) {
             message =
                 extract_positional_argument<std::shared_ptr<String>>(f.pos_args[1]).value()->value;
