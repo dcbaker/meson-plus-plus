@@ -17,24 +17,29 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
     // XXX: this can't handle things like "-I foo"...
     if (arg.substr(0, 2) == "-L") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH);
-    } else if (arg.substr(0, 2) == "-D") {
+    }
+    if (arg.substr(0, 2) == "-D") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::DEFINE);
-    } else if (arg.substr(0, 2) == "-l") {
+    }
+    if (arg.substr(0, 2) == "-l") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK);
-    } else if (arg.substr(0, 2) == "-I") {
+    }
+    if (arg.substr(0, 2) == "-I") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
                                    Arguments::IncludeType::BASE);
-    } else if (arg.substr(0, 8) == "-isystem") {
+    }
+    if (arg.substr(0, 8) == "-isystem") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
                                    Arguments::IncludeType::SYSTEM);
-    } else if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
+    }
+    if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
         return Arguments::Argument(arg, Arguments::Type::LINK);
-    } else if (arg.substr(arg.length() - 2, arg.length()) == ".so") {
+    }
+    if (arg.substr(arg.length() - 2, arg.length()) == ".so") {
         // TODO: or .so.X.Y.Z, .so.X.Y, .so.X
         return Arguments::Argument(arg, Arguments::Type::LINK);
-    } else {
-        return Arguments::Argument(arg, Arguments::Type::RAW);
     }
+    return Arguments::Argument(arg, Arguments::Type::RAW);
 }
 
 std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument & arg,
@@ -91,11 +96,11 @@ CanCompileType GnuLike::supports_file(const std::string & name) const {
     const auto ext = fs::path{name}.extension();
     if (ext == ".cpp" || ext == ".c++") {
         return CanCompileType::SOURCE;
-    } else if (ext == ".hpp" || ext == ".h++" || ext == ".h") {
-        return CanCompileType::DEPENDS;
-    } else {
-        return CanCompileType::NONE;
     }
+    if (ext == ".hpp" || ext == ".h++" || ext == ".h") {
+        return CanCompileType::DEPENDS;
+    }
+    return CanCompileType::NONE;
 }
 
 std::vector<std::string> GnuLike::generate_depfile(const std::string & target_file,

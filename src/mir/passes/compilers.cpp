@@ -14,11 +14,11 @@ namespace {
 inline bool valid_holder(const std::optional<Object> & holder) {
     if (!holder) {
         return false;
-    } else if (!std::holds_alternative<std::unique_ptr<Identifier>>(holder.value())) {
-        return false;
-    } else {
-        return std::get<std::unique_ptr<Identifier>>(holder.value())->value == "meson";
     }
+    if (!std::holds_alternative<std::unique_ptr<Identifier>>(holder.value())) {
+        return false;
+    }
+    return std::get<std::unique_ptr<Identifier>>(holder.value())->value == "meson";
 }
 
 using ToolchainMap =

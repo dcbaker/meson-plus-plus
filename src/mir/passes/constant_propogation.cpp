@@ -30,36 +30,49 @@ std::optional<Object> get_value(const Identifier & id, const PropTable & table) 
         auto & v = *val->second;
         if (std::holds_alternative<std::shared_ptr<Number>>(v)) {
             return std::get<std::shared_ptr<Number>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<String>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<String>>(v)) {
             return std::get<std::shared_ptr<String>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Boolean>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Boolean>>(v)) {
             return std::get<std::shared_ptr<Boolean>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Array>>(v)) {
             return std::get<std::shared_ptr<Array>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Dict>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Dict>>(v)) {
             return std::get<std::shared_ptr<Dict>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Compiler>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Compiler>>(v)) {
             return std::get<std::shared_ptr<Compiler>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<File>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<File>>(v)) {
             return std::get<std::shared_ptr<File>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Executable>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Executable>>(v)) {
             return std::get<std::shared_ptr<Executable>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<StaticLibrary>>(v)) {
             return std::get<std::shared_ptr<StaticLibrary>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Program>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Program>>(v)) {
             return std::get<std::shared_ptr<Program>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<IncludeDirectories>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<IncludeDirectories>>(v)) {
             return std::get<std::shared_ptr<IncludeDirectories>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<CustomTarget>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<CustomTarget>>(v)) {
             return std::get<std::shared_ptr<CustomTarget>>(v);
-        } else if (std::holds_alternative<std::shared_ptr<Dependency>>(v)) {
+        }
+        if (std::holds_alternative<std::shared_ptr<Dependency>>(v)) {
             return std::get<std::shared_ptr<Dependency>>(v);
 #ifndef NDEBUG
-        } else if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
-                     std::holds_alternative<std::unique_ptr<Identifier>>(v) &&
-                     std::holds_alternative<std::unique_ptr<Empty>>(v) &&
-                     std::holds_alternative<std::unique_ptr<Message>>(v) &&
-                     std::holds_alternative<std::shared_ptr<FunctionCall>>(v))) {
+        }
+        if (!(std::holds_alternative<std::unique_ptr<Phi>>(v) &&
+              std::holds_alternative<std::unique_ptr<Identifier>>(v) &&
+              std::holds_alternative<std::unique_ptr<Empty>>(v) &&
+              std::holds_alternative<std::unique_ptr<Message>>(v) &&
+              std::holds_alternative<std::shared_ptr<FunctionCall>>(v))) {
             throw Util::Exceptions::MesonException(
                 "Missing MIR type, this is an implementation bug");
 #endif

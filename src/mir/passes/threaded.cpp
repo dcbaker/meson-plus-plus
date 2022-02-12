@@ -80,7 +80,8 @@ bool search_find_program(const Object & obj, State::Persistant & pstate, FindLis
 
     if (f->holder.has_value() || f->name != "find_program") {
         return false;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+    }
+    if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return false;
     }
 
@@ -151,7 +152,8 @@ std::optional<Object> replace_find_program(const Object & obj, State::Persistant
 
     if (f->holder.has_value() || f->name != "find_program") {
         return std::nullopt;
-    } else if (!all_args_reduced(f->pos_args, f->kw_args)) {
+    }
+    if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;
     }
 

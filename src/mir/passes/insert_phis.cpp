@@ -121,7 +121,8 @@ bool fixup_phis(BasicBlock & block) {
                         if (var.version == phi->left) {
                             left = true;
                             break;
-                        } else if (var.version == phi->right) {
+                        }
+                        if (var.version == phi->right) {
                             right = true;
                             break;
                         }

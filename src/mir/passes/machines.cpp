@@ -16,28 +16,31 @@ using namespace MIR::Machines;
 std::optional<Machine> machine_map(const std::string & func_name) {
     if (func_name == "build_machine") {
         return Machine::BUILD;
-    } else if (func_name == "host_machine") {
-        return Machine::HOST;
-    } else if (func_name == "target_machine") {
-        return Machine::TARGET;
-    } else {
-        return std::nullopt;
     }
+    if (func_name == "host_machine") {
+        return Machine::HOST;
+    }
+    if (func_name == "target_machine") {
+        return Machine::TARGET;
+    }
+    return std::nullopt;
 }
 
 MIR::Object lower_function(const std::string & holder, const std::string & name,
                            const Info & info) {
     if (name == "cpu_family") {
         return std::make_shared<MIR::String>(info.cpu_family);
-    } else if (name == "cpu") {
-        return std::make_shared<MIR::String>(info.cpu);
-    } else if (name == "system") {
-        return std::make_shared<MIR::String>(info.system());
-    } else if (name == "endian") {
-        return std::make_shared<MIR::String>(info.endian == Endian::LITTLE ? "little" : "big");
-    } else {
-        throw Util::Exceptions::MesonException{holder + " has no method " + name};
     }
+    if (name == "cpu") {
+        return std::make_shared<MIR::String>(info.cpu);
+    }
+    if (name == "system") {
+        return std::make_shared<MIR::String>(info.system());
+    }
+    if (name == "endian") {
+        return std::make_shared<MIR::String>(info.endian == Endian::LITTLE ? "little" : "big");
+    }
+    throw Util::Exceptions::MesonException{holder + " has no method " + name};
 }
 
 using MachineInfo = PerMachine<Info>;

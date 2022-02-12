@@ -30,7 +30,8 @@ std::unique_ptr<Compiler> detect_cpp_compiler(const Machines::Machine & m,
 
         if (out.find("Free Software Foundation") != std::string::npos) {
             return std::make_unique<CPP::Gnu>(std::vector<std::string>{c});
-        } else if (out.find("clang version") != std::string::npos) {
+        }
+        if (out.find("clang version") != std::string::npos) {
             return std::make_unique<CPP::Clang>(std::vector<std::string>{c});
         }
     }

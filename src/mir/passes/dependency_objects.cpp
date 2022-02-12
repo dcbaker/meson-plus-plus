@@ -68,9 +68,11 @@ std::optional<Object> lower_dependency_methods_impl(const Object & obj,
 
     if (f.name == "found") {
         return lower_found_method(f);
-    } else if (f.name == "version") {
+    }
+    if (f.name == "version") {
         return lower_version_method(f);
-    } else if (f.name == "name") {
+    }
+    if (f.name == "name") {
         return lower_name_method(f);
     }
 
