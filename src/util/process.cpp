@@ -59,7 +59,7 @@ Result process(const std::vector<std::string> & cmd) {
 
     std::array<char, 16384> buffer{};
     int status;
-    int count = 0;
+    ssize_t count = 0;
 
     std::array<pollfd, 2> fds;
     fds[0] = {out_pipes[READ], POLLIN, 0};
