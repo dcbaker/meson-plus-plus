@@ -93,7 +93,9 @@ int main(int argc, char * argv[]) {
                 break;
         };
     } catch (Util::Exceptions::MesonException & e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Meson++ error: " << e.what() << std::endl;
+    } catch (std::exception & e) {
+        std::cerr << "Uncaught general exceptions: " << e.what() << std::endl;
     }
 
     return ret;
