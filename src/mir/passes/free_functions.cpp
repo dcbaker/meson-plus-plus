@@ -55,8 +55,8 @@ Source src_to_file(const Object & raw_src, const State::Persistant & pstate,
     if (std::holds_alternative<std::shared_ptr<CustomTarget>>(raw_src)) {
         return std::get<std::shared_ptr<CustomTarget>>(raw_src);
     } // TODO: there are other valid types here, like generator output and custom targets
-        throw Util::Exceptions::InvalidArguments{
-            "'executable' sources must be strings, files, or custom_target objects."};
+    throw Util::Exceptions::InvalidArguments{
+        "'executable' sources must be strings, files, or custom_target objects."};
 }
 
 template <typename T>
@@ -374,8 +374,8 @@ Source extract_source(const Object & obj, const fs::path & current_source_dir,
         return std::make_shared<File>(str.value, current_source_dir, false, pstate.source_root,
                                       pstate.build_root);
     } // TODO: better error
-        throw Util::Exceptions::InvalidArguments("custom_target: 'input' keyword argument must "
-                                                 "be 'custom_target', 'string', or 'file'");
+    throw Util::Exceptions::InvalidArguments("custom_target: 'input' keyword argument must "
+                                             "be 'custom_target', 'string', or 'file'");
 }
 
 std::vector<Source> extract_source_inputs(const std::unordered_map<std::string, Object> & kws,
@@ -440,10 +440,7 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
             if (std::holds_alternative<std::shared_ptr<File>>(s)) {
                 return {std::get<std::shared_ptr<File>>(s)->relative_to_build_dir()};
             }
-            std::vector<std::string> outs{};
-            const auto & t = *std::get<std::shared_ptr<CustomTarget>>(s);
-            // TODO: get the right index
-
+            assert(false); // FIXME: inputs
         } else {
             return {v};
         }
