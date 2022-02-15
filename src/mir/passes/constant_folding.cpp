@@ -10,8 +10,6 @@ namespace MIR::Passes {
 
 namespace {
 
-const auto get_var = [](const auto & o) { return o->var; };
-
 std::optional<Object> constant_folding_impl(const Object & obj, ReplacementTable & table) {
     if (std::holds_alternative<std::unique_ptr<Identifier>>(obj)) {
         auto & id = std::get<std::unique_ptr<Identifier>>(obj);
