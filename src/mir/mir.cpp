@@ -13,7 +13,7 @@ static uint32_t bb_index = 0;
 }
 
 Phi::Phi() : left{}, right{} {};
-Phi::Phi(const uint32_t & l, const uint32_t & r, const Variable & v) : left{l}, right{r}, var{v} {};
+Phi::Phi(const uint32_t & l, const uint32_t & r, const Variable & v) : left{l}, right{r}, var{v} {}; // NOLINT(bugprone-easily-swappable-parameters)
 
 bool Phi::operator==(const Phi & other) const {
     return var.name == other.var.name && left == other.left && right == other.right;
