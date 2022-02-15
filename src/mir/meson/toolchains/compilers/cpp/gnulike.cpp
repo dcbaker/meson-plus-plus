@@ -15,27 +15,29 @@ std::vector<std::string> GnuLike::compile_only_command() const { return {"-c"}; 
 
 Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const {
     // XXX: this can't handle things like "-I foo"...
-    if (arg.substr(0, 2) == "-L") {
+    const std::string start{arg.substr(0, 2)};
+
+    if (start == "-L") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH);
     }
-    if (arg.substr(0, 2) == "-D") {
+    if (start == "-D") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::DEFINE);
     }
-    if (arg.substr(0, 2) == "-l") {
+    if (start == "-l") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK);
     }
-    if (arg.substr(0, 2) == "-I") {
+    if (start == "-I") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
                                    Arguments::IncludeType::BASE);
     }
-    if (arg.substr(0, 8) == "-isystem") {
+    if (start == "-isystem") {
         return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
                                    Arguments::IncludeType::SYSTEM);
     }
     if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
         return Arguments::Argument(arg, Arguments::Type::LINK);
     }
-    if (arg.substr(arg.length() - 2, arg.length()) == ".so") {
+    if (arg.substr(arg.length() - 3, arg.length()) == ".so") {
         // TODO: or .so.X.Y.Z, .so.X.Y, .so.X
         return Arguments::Argument(arg, Arguments::Type::LINK);
     }

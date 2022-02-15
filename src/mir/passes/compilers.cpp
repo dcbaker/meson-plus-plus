@@ -15,10 +15,12 @@ inline bool valid_holder(const std::optional<Object> & holder) {
     if (!holder) {
         return false;
     }
-    if (!std::holds_alternative<std::unique_ptr<Identifier>>(holder.value())) {
+    auto && held = holder.value();
+
+    if (!std::holds_alternative<std::unique_ptr<Identifier>>(held)) {
         return false;
     }
-    return std::get<std::unique_ptr<Identifier>>(holder.value())->value == "meson";
+    return std::get<std::unique_ptr<Identifier>>(held)->value == "meson";
 }
 
 using ToolchainMap =
