@@ -84,7 +84,7 @@ bool search_find_program(const FunctionCall & f, State::Persistant & pstate, Fin
     return true;
 }
 
-void worker(FindList & jobs, std::mutex & state_lock, std::mutex & job_lock,
+void worker(FindList & jobs, std::mutex & state_lock, std::mutex & job_lock,  // NOLINT(bugprone-easily-swappable-parameters)
             State::Persistant & pstate, std::set<std::string> & programs) {
     while (true) {
         Type job;
