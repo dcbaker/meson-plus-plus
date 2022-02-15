@@ -25,7 +25,7 @@ std::optional<Object> lower_files(const FunctionCall & f, const State::Persistan
         }
         auto const & v = *std::get<std::shared_ptr<String>>(arg_h);
 
-        files.emplace_back(std::make_shared<File>(v.value, f.source_dir, false, pstate.source_root,
+        files.push_back(std::make_shared<File>(v.value, f.source_dir, false, pstate.source_root,
                                                   pstate.build_root));
     }
 
