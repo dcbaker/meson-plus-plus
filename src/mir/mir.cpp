@@ -181,10 +181,10 @@ Identifier::Identifier(std::string s) : value{std::move(s)}, version{} {};
 Identifier::Identifier(std::string s, const uint32_t & ver, Variable && v)
     : value{std::move(s)}, version{ver}, var{std::move(v)} {};
 
-Array::Array(){};
+Array::Array() = default;
 Array::Array(std::vector<Object> && a) : value{std::move(a)} {};
 
-Dict::Dict(){};
+Dict::Dict() = default;
 
 CustomTarget::CustomTarget(std::string n, std::vector<Source> i, std::vector<File> o,
                            std::vector<std::string> c, fs::path s, const Variable & v)
