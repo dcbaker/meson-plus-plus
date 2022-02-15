@@ -106,8 +106,9 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
     std::vector<StaticLinkage> slink{};
     auto raw_link_with =
         extract_keyword_argument_a<std::shared_ptr<StaticLibrary>>(f.kw_args, "link_with");
+    slink.reserve(raw_link_with.size());
     for (const auto & s : raw_link_with) {
-        slink.emplace_back(StaticLinkage{StaticLinkMode::NORMAL, s.get()});
+        slink.emplace_back(StaticLinkMode::NORMAL, s.get());
     }
 
     auto raw_inc = extract_keyword_argument_a<std::shared_ptr<IncludeDirectories>>(
@@ -411,8 +412,9 @@ std::vector<std::string> extract_ct_command(const Object & obj, const std::vecto
         // TODO: indexed input and output arguments
         if (v == "@OUTPUT@") {
             std::vector<std::string> outs{};
+            outs.reserve(outputs.size());
             for (const auto & o : outputs) {
-                outs.emplace_back(o.relative_to_build_dir());
+                outs.push_back(o.relative_to_build_dir());
             }
             return outs;
         }
