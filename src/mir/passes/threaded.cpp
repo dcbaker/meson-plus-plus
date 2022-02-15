@@ -72,21 +72,9 @@ enum class Type {
 using FindJob = std::tuple<Type, std::vector<std::string>>;
 using FindList = std::vector<FindJob>;
 
-bool search_find_program(const Object & obj, State::Persistant & pstate, FindList & jobs) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return false;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.has_value() || f->name != "find_program") {
-        return false;
-    }
-    if (!all_args_reduced(f->pos_args, f->kw_args)) {
-        return false;
-    }
-
+bool search_find_program(const FunctionCall & f, State::Persistant & pstate, FindList & jobs) {
     auto names =
-        extract_variadic_arguments<std::shared_ptr<String>>(f->pos_args.begin(), f->pos_args.end());
+        extract_variadic_arguments<std::shared_ptr<String>>(f.pos_args.begin(), f.pos_args.end());
 
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
@@ -144,22 +132,10 @@ void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
     }
 }
 
-std::optional<Object> replace_find_program(const Object & obj, State::Persistant & state) {
-    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
-        return std::nullopt;
-    }
-    const auto & f = std::get<std::shared_ptr<FunctionCall>>(obj);
-
-    if (f->holder.has_value() || f->name != "find_program") {
-        return std::nullopt;
-    }
-    if (!all_args_reduced(f->pos_args, f->kw_args)) {
-        return std::nullopt;
-    }
-
+std::optional<Object> replace_find_program(const FunctionCall & f, State::Persistant & state) {
     // We know this is safe since we've already processed this call before (hopefully)
     // We only need the first name, as all of the names should be in the mapping
-    auto name = extract_positional_argument<std::shared_ptr<String>>(f->pos_args[0]).value()->value;
+    auto name = extract_positional_argument<std::shared_ptr<String>>(f.pos_args[0]).value()->value;
 
     fs::path exe;
     try {
@@ -168,14 +144,53 @@ std::optional<Object> replace_find_program(const Object & obj, State::Persistant
         exe = "";
     }
 
-    bool required = extract_keyword_argument<std::shared_ptr<Boolean>>(f->kw_args, "required")
+    bool required = extract_keyword_argument<std::shared_ptr<Boolean>>(f.kw_args, "required")
                         .value_or(std::make_shared<Boolean>(true))
                         ->value;
     if (required && exe == "") {
         throw Util::Exceptions::MesonException("Could not find required program \"" + name + "\"");
     }
 
-    return std::make_shared<Program>(name, Machines::Machine::BUILD, exe, f->var);
+    return std::make_shared<Program>(name, Machines::Machine::BUILD, exe, f.var);
+}
+
+bool search_threaded(const Object & obj, State::Persistant & pstate, FindList & jobs) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return false;
+    }
+    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f.holder.has_value()) {
+        return false;
+    }
+    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+        return false;
+    }
+
+    if (f.name == "find_program") {
+        return search_find_program(f, pstate, jobs);
+    }
+    return false;
+}
+
+std::optional<Object> replace_threaded(const Object & obj, State::Persistant & state) {
+    if (!std::holds_alternative<std::shared_ptr<FunctionCall>>(obj)) {
+        return std::nullopt;
+    }
+    const auto & f = *std::get<std::shared_ptr<FunctionCall>>(obj);
+
+    if (f.holder.has_value()) {
+        return std::nullopt;
+    }
+    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+        return std::nullopt;
+    }
+
+    if (f.name == "find_program") {
+        return replace_find_program(f, state);
+    }
+
+    return std::nullopt;
 }
 
 } // namespace
@@ -191,7 +206,7 @@ bool threaded_lowering(BasicBlock & block, State::Persistant & pstate) {
     progress |= block_walker(block, {
                                         [&](BasicBlock & b) {
                                             return function_walker(b, [&](const Object & obj) {
-                                                return search_find_program(obj, pstate, jobs);
+                                                return search_threaded(obj, pstate, jobs);
                                             });
                                         },
                                     });
@@ -200,7 +215,7 @@ bool threaded_lowering(BasicBlock & block, State::Persistant & pstate) {
         progress |= block_walker(block, {
                                             [&](BasicBlock & b) {
                                                 return function_walker(b, [&](const Object & obj) {
-                                                    return replace_find_program(obj, pstate);
+                                                    return replace_threaded(obj, pstate);
                                                 });
                                             },
                                         });
