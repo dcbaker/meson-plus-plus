@@ -17,7 +17,7 @@ std::vector<std::tuple<std::string, bool>> split_values(const std::string & str)
     bool last_is_digit = true;
 
     for (const auto & s : str) {
-        if (!std::isalnum(s) || std::isdigit(s) != last_is_digit) {
+        if (!std::isalnum(s) || static_cast<bool>(std::isdigit(s)) != last_is_digit) {
             if (!current.empty()) {
                 out.emplace_back(current, last_is_digit);
                 last_is_digit = true;
@@ -25,8 +25,8 @@ std::vector<std::tuple<std::string, bool>> split_values(const std::string & str)
             }
         }
         if (std::isalnum(s)) {
-            last_is_digit &= std::isdigit(s);
-            current.insert(current.end(), s);
+            last_is_digit &= static_cast<bool>(std::isdigit(s));
+            current.push_back(s);
         }
     }
     // Put any remaining values in the returned value
