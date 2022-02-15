@@ -18,30 +18,29 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
     const std::string start{arg.substr(0, 2)};
 
     if (start == "-L") {
-        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH);
+        return {arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH};
     }
     if (start == "-D") {
-        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::DEFINE);
+        return {arg.substr(2, arg.size()), Arguments::Type::DEFINE};
     }
     if (start == "-l") {
-        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::LINK);
+        return {arg.substr(2, arg.size()), Arguments::Type::LINK};
     }
     if (start == "-I") {
-        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
-                                   Arguments::IncludeType::BASE);
+        return {arg.substr(2, arg.size()), Arguments::Type::INCLUDE, Arguments::IncludeType::BASE};
     }
     if (start == "-isystem") {
-        return Arguments::Argument(arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
-                                   Arguments::IncludeType::SYSTEM);
+        return {arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
+                Arguments::IncludeType::SYSTEM};
     }
     if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
-        return Arguments::Argument(arg, Arguments::Type::LINK);
+        return {arg, Arguments::Type::LINK};
     }
     if (arg.substr(arg.length() - 3, arg.length()) == ".so") {
         // TODO: or .so.X.Y.Z, .so.X.Y, .so.X
-        return Arguments::Argument(arg, Arguments::Type::LINK);
+        return {arg, Arguments::Type::LINK};
     }
-    return Arguments::Argument(arg, Arguments::Type::RAW);
+    return {arg, Arguments::Type::RAW};
 }
 
 std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument & arg,
