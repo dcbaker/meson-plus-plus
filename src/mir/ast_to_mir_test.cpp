@@ -42,10 +42,6 @@ inline const std::unique_ptr<MIR::Condition> & get_con(const MIR::NextType & nex
     return std::get<std::unique_ptr<MIR::Condition>>(next);
 }
 
-inline bool is_empty(const MIR::NextType & next) {
-    return std::holds_alternative<std::monostate>(next);
-}
-
 } // namespace
 
 TEST(ast_to_ir, number) {
@@ -307,8 +303,6 @@ TEST(ast_to_ir, if_elif_else_more) {
     auto const & con = get_con(irlist.next);
     ASSERT_EQ(con->if_true->instructions.size(), 1);
     ASSERT_TRUE(is_bb(con->if_true->next));
-
-    const auto & out_block = get_bb(con->if_true->next);
 
     // block 2
     ASSERT_TRUE(is_con(con->if_false->next));
