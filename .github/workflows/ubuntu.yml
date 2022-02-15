@@ -47,3 +47,22 @@ jobs:
           setup-options: ${{ matrix.cfg.setup_options }}
           action: test
           directory: builddir
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: apt
+        run: |
+          sudo apt update
+          sudo apt install libfl-dev libgtest-dev ninja-build clang-tidy
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install meson
+        run: pip install meson==0.60.3
+      - name: generate headers
+        run: |
+          meson setup builddir
+          ninja -C builddir src/version.hpp src/frontend/parser.yy.hpp
+      - name: clang-tidy
+        run: |
+          ninja -C builddir clang-tidy
