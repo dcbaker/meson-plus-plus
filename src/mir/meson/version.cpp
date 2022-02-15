@@ -90,8 +90,8 @@ bool compare(const std::string & v1, const Operator & op, const std::string & v2
 
         // We know both are, or aren't
         if (ours_is_digit) {
-            int i1 = std::atoi(v1.c_str());
-            int i2 = std::atoi(v2.c_str());
+            long i1 = std::atol(v1.c_str());
+            long i2 = std::atol(v2.c_str());
 
             if (i1 != i2) {
                 return compare_impl(i1, op, i2);
