@@ -74,7 +74,7 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
             args.emplace_back(b_inc);
             args.emplace_back(inc_arg);
             // Needs to be relative to build dir
-            args.emplace_back(std::string{fs::relative(src_dir / arg.value, build_dir)});
+            args.emplace_back(fs::relative(src_dir / arg.value, build_dir));
             return args;
         }
         case Arguments::Type::RAW:

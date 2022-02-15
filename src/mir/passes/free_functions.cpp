@@ -115,9 +115,9 @@ std::optional<std::shared_ptr<T>> lower_build_target(const FunctionCall & f,
         f.kw_args, "include_directories", true);
     for (const auto & i : raw_inc) {
         for (const auto & d : i->directories) {
-            args[Toolchain::Language::CPP].emplace_back(Arguments::Argument{
+            args[Toolchain::Language::CPP].emplace_back(
                 d, Arguments::Type::INCLUDE,
-                i->is_system ? Arguments::IncludeType::SYSTEM : Arguments::IncludeType::BASE});
+                i->is_system ? Arguments::IncludeType::SYSTEM : Arguments::IncludeType::BASE);
         }
     }
 
@@ -340,14 +340,13 @@ std::optional<Object> lower_declare_dependency(const FunctionCall & f,
     for (const auto & i : raw_inc_args) {
         if (std::holds_alternative<std::shared_ptr<String>>(i)) {
             const auto & s = *std::get<std::shared_ptr<String>>(i);
-            args.emplace_back(Arguments::Argument{s.value, Arguments::Type::INCLUDE,
-                                                  Arguments::IncludeType::BASE});
+            args.emplace_back(s.value, Arguments::Type::INCLUDE, Arguments::IncludeType::BASE);
         } else {
             const auto & inc = *std::get<std::shared_ptr<IncludeDirectories>>(i);
             for (const auto & d : inc.directories) {
-                args.emplace_back(Arguments::Argument{
-                    d, Arguments::Type::INCLUDE,
-                    inc.is_system ? Arguments::IncludeType::SYSTEM : Arguments::IncludeType::BASE});
+                args.emplace_back(d, Arguments::Type::INCLUDE,
+                                  inc.is_system ? Arguments::IncludeType::SYSTEM
+                                                : Arguments::IncludeType::BASE);
             }
         }
     }
@@ -484,8 +483,8 @@ std::optional<Object> lower_custom_target(const FunctionCall & func,
     std::vector<File> outputs{};
     for (const auto & a :
          extract_keyword_argument_a<std::shared_ptr<String>>(func.kw_args, "output")) {
-        outputs.emplace_back(
-            File{a->value, func.source_dir, true, pstate.source_root, pstate.build_root});
+        outputs.emplace_back(a->value, func.source_dir, true, pstate.source_root,
+                             pstate.build_root);
     }
 
     const auto & raw_name = extract_positional_argument<std::shared_ptr<String>>(func.pos_args[0]);
