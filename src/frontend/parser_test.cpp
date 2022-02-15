@@ -298,15 +298,12 @@ TEST_P(RelationalToStringTests, relational) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Relational>>(stmt->expr));
     ASSERT_EQ(block->as_string(), expected);
 }
-INSTANTIATE_TEST_CASE_P(RelationalParsingTests, RelationalToStringTests,
-                        ::testing::Values(std::tuple("4<3", "4 < 3"),
-                                          std::tuple("4>3", "4 > 3"),
-                                          std::tuple("0 == true", "0 == true"),
-                                          std::tuple("0 != true", "0 != true"),
-                                          std::tuple("x or y", "x or y"),
-                                          std::tuple("x and y", "x and y"),
-                                          std::tuple("x in y", "x in y"),
-                                          std::tuple("x not in y", "x not in y")));
+INSTANTIATE_TEST_SUITE_P(
+    RelationalParsingTests, RelationalToStringTests,
+    ::testing::Values(std::tuple("4<3", "4 < 3"), std::tuple("4>3", "4 > 3"),
+                      std::tuple("0 == true", "0 == true"), std::tuple("0 != true", "0 != true"),
+                      std::tuple("x or y", "x or y"), std::tuple("x and y", "x and y"),
+                      std::tuple("x in y", "x in y"), std::tuple("x not in y", "x not in y")));
 
 class FunctionToStringTests
     : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
@@ -320,7 +317,7 @@ TEST_P(FunctionToStringTests, arguments) {
     ASSERT_EQ(block->as_string(), expected);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     FunctionParsingTests, FunctionToStringTests,
     ::testing::Values(std::tuple("func(  )", "func()"), std::tuple("func(a)", "func(a)"),
                       std::tuple("func(a,b, c)", "func(a, b, c)"),
@@ -333,8 +330,7 @@ INSTANTIATE_TEST_CASE_P(
                       std::tuple("func(a : 1,\nb: 2,\nc : 3)", "func(a : 1, b : 2, c : 3)"),
                       std::tuple("func(a : 1,\nb: 2,\nc : 3\n)", "func(a : 1, b : 2, c : 3)"),
                       std::tuple("func(a,\nb,\nc : 1,\n d: 3)", "func(a, b, c : 1, d : 3)"),
-                      std::tuple("func(a,\nb,\nc : 1,\n d: 3\n)",
-                                      "func(a, b, c : 1, d : 3)")));
+                      std::tuple("func(a,\nb,\nc : 1,\n d: 3\n)", "func(a, b, c : 1, d : 3)")));
 
 class MethodToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {
 };
@@ -347,14 +343,14 @@ TEST_P(MethodToStringTests, arguments) {
     ASSERT_EQ(block->as_string(), expected);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     MethodParsingTests, MethodToStringTests,
-    ::testing::Values(
-        std::tuple("o.m()", "o.m()"),
-        std::tuple("meson.get_compiler ( 'cpp' )", "meson.get_compiler('cpp')"),
-        std::tuple("meson.get_compiler ( 'cpp', 'c' )", "meson.get_compiler('cpp', 'c')"),
-        std::tuple("o.method(x : y, z : 1)", "o.method(x : y, z : 1)"),
-        std::tuple("o.method(a, b, x : y, z : 1)", "o.method(a, b, x : y, z : 1)")));
+    ::testing::Values(std::tuple("o.m()", "o.m()"),
+                      std::tuple("meson.get_compiler ( 'cpp' )", "meson.get_compiler('cpp')"),
+                      std::tuple("meson.get_compiler ( 'cpp', 'c' )",
+                                 "meson.get_compiler('cpp', 'c')"),
+                      std::tuple("o.method(x : y, z : 1)", "o.method(x : y, z : 1)"),
+                      std::tuple("o.method(a, b, x : y, z : 1)", "o.method(a, b, x : y, z : 1)")));
 
 class ArrayToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
@@ -366,12 +362,11 @@ TEST_P(ArrayToStringTests, arguments) {
     ASSERT_EQ(block->as_string(), expected);
 }
 
-INSTANTIATE_TEST_CASE_P(ArrayParsingTests, ArrayToStringTests,
-                        ::testing::Values(std::tuple("[ ]", "[]"),
-                                          std::tuple("[a, b]", "[a, b]"),
-                                          std::tuple("[a, [b]]", "[a, [b]]"),
-                                          std::tuple("[a, ]", "[a]"),
-                                          std::tuple("[\n  a,\n  b\n]", "[a, b]")));
+INSTANTIATE_TEST_SUITE_P(ArrayParsingTests, ArrayToStringTests,
+                         ::testing::Values(std::tuple("[ ]", "[]"), std::tuple("[a, b]", "[a, b]"),
+                                           std::tuple("[a, [b]]", "[a, [b]]"),
+                                           std::tuple("[a, ]", "[a]"),
+                                           std::tuple("[\n  a,\n  b\n]", "[a, b]")));
 
 class DictToStringTests : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
 
@@ -383,14 +378,13 @@ TEST_P(DictToStringTests, arguments) {
     ASSERT_EQ(block->as_string(), expected);
 }
 
-INSTANTIATE_TEST_CASE_P(DictParsingTests, DictToStringTests,
-                        ::testing::Values(std::tuple("{}", "{}"),
-                                          std::tuple("{a:b}", "{a : b}"),
-                                          std::tuple("{a : b, }", "{a : b}"),
-                                          std::tuple("{a : b}", "{a : b}"),
-                                          std::tuple("{'a' : 'b'}", "{'a' : 'b'}"),
-                                          std::tuple("{'a' : func()}", "{'a' : func()}"),
-                                          std::tuple("{a : [b]}", "{a : [b]}")));
+INSTANTIATE_TEST_SUITE_P(DictParsingTests, DictToStringTests,
+                         ::testing::Values(std::tuple("{}", "{}"), std::tuple("{a:b}", "{a : b}"),
+                                           std::tuple("{a : b, }", "{a : b}"),
+                                           std::tuple("{a : b}", "{a : b}"),
+                                           std::tuple("{'a' : 'b'}", "{'a' : 'b'}"),
+                                           std::tuple("{'a' : func()}", "{'a' : func()}"),
+                                           std::tuple("{a : [b]}", "{a : [b]}")));
 // We can't test a multi item dict reliably like this be
 // cause meson dicts are unordered
 
@@ -405,7 +399,7 @@ TEST_P(AssignmentStatementParsingTests, arguments) {
     ASSERT_EQ(block->as_string(), expected);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     parser, AssignmentStatementParsingTests,
     ::testing::Values(std::tuple("a=1+1", "a = 1 + 1"), std::tuple("a += 2", "a += 2"),
                       std::tuple("a -= 2", "a -= 2"), std::tuple("a *= 2", "a *= 2"),
@@ -421,7 +415,7 @@ TEST_P(IfStatementParsingTests, arguments) {
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::IfStatement>>(stmt));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     parser, IfStatementParsingTests,
     ::testing::Values("if true\na = b\nendif", "if true\na = b\n\n\nendif",
                       "if false\na = b\nelse\na = c\nendif",
