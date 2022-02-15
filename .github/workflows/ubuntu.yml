@@ -23,6 +23,7 @@ jobs:
         cfg:
           - { id: gcc, cc: gcc, cpp: g++, setup_options: null}
           - { id: gcc-sanitize, cc: gcc, cpp: g++, setup_options: -Db_sanitize=address,undefined}
+          - { id: clang, cc: clang, cpp: clang++, setup_options: null}
 
     env:
       CC: ccache ${{ matrix.cfg.cc }}
@@ -33,7 +34,7 @@ jobs:
       - name: apt
         run: |
           sudo apt update
-          sudo apt install libfl-dev libgtest-dev ninja-build ccache
+          sudo apt install libfl-dev libgtest-dev ninja-build ccache clang
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: Setup ccache
