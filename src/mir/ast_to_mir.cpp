@@ -36,7 +36,7 @@ fs::path get_subdir(const fs::path & full_path, const State::Persistant & pstate
  */
 struct ExpressionLowering {
 
-    ExpressionLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
+    explicit ExpressionLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
 
     const MIR::State::Persistant & pstate;
 
@@ -217,7 +217,7 @@ struct ExpressionLowering {
  */
 struct StatementLowering {
 
-    StatementLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
+    explicit StatementLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
 
     const MIR::State::Persistant & pstate;
 
