@@ -121,7 +121,7 @@ struct ExpressionLowering {
         // Meson only allows methods in objects, so we can enforce that this is a function
         auto method = std::visit(*this, expr->held);
         auto func = std::get<MIR::FunctionCall>(*method.obj_ptr);
-        func.holder = std::move(holding_obj);
+        func.holder = holding_obj;
 
         return std::move(func);
     };

@@ -15,7 +15,7 @@ void do_flatten(const Array & arr, std::vector<Instruction> & newarr) {
         if (std::holds_alternative<Array>(*e.obj_ptr)) {
             do_flatten(std::get<Array>(*e.obj_ptr), newarr);
         } else {
-            newarr.emplace_back(std::move(e));
+            newarr.emplace_back(e);
         }
     }
 }
