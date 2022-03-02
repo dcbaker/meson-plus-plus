@@ -16,7 +16,7 @@ bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback 
     for (auto it = vec.begin(); it != vec.end(); ++it) {
         auto rt = cb(*it);
         if (rt.has_value()) {
-            vec[it - vec.begin()] = std::move(rt.value());
+            vec[it - vec.begin()] = rt.value();
             progress |= true;
         }
     }
@@ -87,7 +87,7 @@ bool array_walker(const Instruction & obj, const ReplacementCallback & cb) {
         } else {
             auto rt = cb(*it);
             if (rt.has_value()) {
-                arr_ptr->value[it - arr_ptr->value.begin()] = std::move(rt.value());
+                arr_ptr->value[it - arr_ptr->value.begin()] = rt.value();
                 progress |= true;
             }
         }
@@ -116,7 +116,7 @@ bool function_argument_walker(const Instruction & obj, const ReplacementCallback
             // If the callback can act on arrays (like flatten can), we need to
             // call the cb on the array, and on the array elements
             if (std::optional<Instruction> o = cb(v); o.has_value()) {
-                func_ptr->kw_args[n] = std::move(o.value());
+                func_ptr->kw_args[n] = o.value();
                 progress |= true;
             }
         }
@@ -164,7 +164,7 @@ bool function_walker(BasicBlock & block, const ReplacementCallback & cb) {
         auto & con = std::get<std::unique_ptr<Condition>>(block.next);
         auto new_value = cb(con->condition);
         if (new_value.has_value()) {
-            con->condition = std::move(new_value.value());
+            con->condition = new_value.value();
             progress |= true;
         }
     }

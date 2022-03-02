@@ -68,7 +68,7 @@ bool constant_propogation_holder_impl(Instruction & obj, const PropTable & table
         auto * holder = std::get_if<Identifier>(func->holder.obj_ptr.get());
         if (holder != nullptr) {
             if (auto v = get_value(*holder, table)) {
-                func->holder = std::move(v.value());
+                func->holder = v.value();
             }
         }
     }

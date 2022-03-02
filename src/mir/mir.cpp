@@ -21,8 +21,8 @@ Instruction::Instruction(std::shared_ptr<Object> ptr) : obj_ptr{std::move(std::m
 Instruction::Instruction(const Object & obj) : obj_ptr{std::make_shared<Object>(obj)} {};
 Instruction::Instruction(Object obj, const Variable & var_)
     : obj_ptr{std::make_shared<Object>(std::move(obj))}, var{var_} {};
-Instruction::Instruction(Boolean val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Number val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Boolean val) : obj_ptr{std::make_shared<Object>(val)} {};
+Instruction::Instruction(Number val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(String val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(FunctionCall val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Identifier val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
@@ -32,12 +32,12 @@ Instruction::Instruction(File val) : obj_ptr{std::make_shared<Object>(std::move(
 Instruction::Instruction(IncludeDirectories val)
     : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Message val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Empty val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Empty val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(Dependency val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(CustomTarget val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(StaticLibrary val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Executable val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 
 const Object & Instruction::object() const { return *obj_ptr; }
