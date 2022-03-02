@@ -10,7 +10,7 @@ namespace MIR {
 
 namespace {
 
-static uint32_t bb_index = 0;
+uint32_t bb_index = 0;
 
 }
 
