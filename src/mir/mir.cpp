@@ -89,7 +89,6 @@ Instruction Compiler::get_id(const std::vector<Instruction> & args,
 Variable::Variable() : version{0} {};
 Variable::Variable(std::string n) : name{std::move(n)}, version{0} {};
 Variable::Variable(std::string n, const uint32_t & v) : name{std::move(n)}, version{v} {};
-Variable::Variable(const Variable & v) : name{v.name}, version{v.version} {};
 
 Variable::operator bool() const { return !name.empty(); };
 
