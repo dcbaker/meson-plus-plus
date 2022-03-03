@@ -85,8 +85,8 @@ class Instruction {
 
   public:
     Instruction();
-    Instruction(Instruction &&);
-    Instruction(const Instruction &);
+    Instruction(Instruction &&) = default;
+    Instruction(const Instruction &) = default;
     Instruction(std::shared_ptr<Object>);
     Instruction(const Object & obj);
     Instruction(Object obj, const Variable & var_);
@@ -434,7 +434,7 @@ class Identifier {
 
 class Array {
   public:
-    Array();
+    Array() = default;
     Array(std::vector<Instruction> && a);
     Array(std::vector<String> && a);
 
@@ -443,7 +443,7 @@ class Array {
 
 class Dict {
   public:
-    Dict();
+    Dict() = default;
 
     // TODO: the key is allowed to be a string or an expression that evaluates
     // to a string, we need to enforce that somewhere.

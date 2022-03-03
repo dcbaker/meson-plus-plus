@@ -15,8 +15,6 @@ uint32_t bb_index = 0;
 }
 
 Instruction::Instruction() : obj_ptr{std::make_shared<Object>(std::monostate{})} {};
-Instruction::Instruction(Instruction &&) = default;
-Instruction::Instruction(const Instruction & other) = default;
 Instruction::Instruction(std::shared_ptr<Object> ptr) : obj_ptr{std::move(std::move(ptr))} {};
 Instruction::Instruction(const Object & obj) : obj_ptr{std::make_shared<Object>(obj)} {};
 Instruction::Instruction(Object obj, const Variable & var_)
@@ -205,10 +203,7 @@ bool Number::operator==(const Number & o) const { return value == o.value; }
 Identifier::Identifier(std::string s) : value{std::move(s)}, version{} {};
 Identifier::Identifier(std::string s, const uint32_t & ver) : value{std::move(s)}, version{ver} {};
 
-Array::Array() = default;
 Array::Array(std::vector<Instruction> && a) : value{std::move(a)} {};
-
-Dict::Dict() = default;
 
 CustomTarget::CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
                            std::vector<std::string> c, fs::path s)
