@@ -43,7 +43,7 @@ class Variable {
     Variable();
     Variable(std::string n);
     Variable(std::string n, const uint32_t & v);
-    Variable(const Variable & v);
+    Variable(const Variable & v) = default;
 
     std::string name;
 
