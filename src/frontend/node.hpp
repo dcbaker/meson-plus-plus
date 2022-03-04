@@ -48,7 +48,7 @@ class Location {
     Location(const location & l)
         : column_start{l.begin.column}, column_end{l.end.column},
           line_start{l.begin.line}, line_end{l.end.line}, filename{*l.begin.filename} {};
-    virtual ~Location(){};
+    virtual ~Location() = default;
 
     const int column_start;
     const int column_end;
@@ -62,7 +62,7 @@ class Number {
     Number(const int64_t & number, const location & l) : value{number}, loc{l} {};
     Number(Number && n) noexcept : value{std::move(n.value)}, loc{std::move(n.loc)} {};
     Number(const Number &) = delete;
-    ~Number(){};
+    ~Number() = default;
 
     std::string as_string() const;
 
@@ -75,7 +75,7 @@ class Boolean {
     Boolean(const bool & b, const location & l) : value{b}, loc{l} {};
     Boolean(Boolean && b) noexcept : value{std::move(b.value)}, loc{std::move(b.loc)} {};
     Boolean(const Boolean &) = delete;
-    ~Boolean(){};
+    ~Boolean() = default;
 
     std::string as_string() const;
 
@@ -91,7 +91,7 @@ class String {
         : value{std::move(s.value)}, is_triple{std::move(s.is_triple)},
           is_fstring{std::move(s.is_fstring)}, loc{std::move(s.loc)} {};
     String(const String &) = delete;
-    ~String(){};
+    ~String() = default;
 
     std::string as_string() const;
 
@@ -106,7 +106,7 @@ class Identifier {
     Identifier(const std::string & str, const location & l) : value{str}, loc{l} {};
     Identifier(Identifier && s) noexcept : value{std::move(s.value)}, loc{std::move(s.loc)} {};
     Identifier(const Identifier &) = delete;
-    ~Identifier(){};
+    ~Identifier() = default;
 
     std::string as_string() const;
 
@@ -121,7 +121,7 @@ class Subscript {
     Subscript(const Subscript &) = delete;
     Subscript(Subscript && a) noexcept
         : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
-    ~Subscript(){};
+    ~Subscript() = default;
 
     std::string as_string() const;
 
@@ -142,7 +142,7 @@ class UnaryExpression {
     UnaryExpression(UnaryExpression && a) noexcept
         : op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
     UnaryExpression(const UnaryExpression &) = delete;
-    ~UnaryExpression(){};
+    ~UnaryExpression() = default;
 
     std::string as_string() const;
 
@@ -165,7 +165,7 @@ class MultiplicativeExpression {
         : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(
                                                                                  a.loc)} {};
     MultiplicativeExpression(const MultiplicativeExpression &) = delete;
-    ~MultiplicativeExpression(){};
+    ~MultiplicativeExpression() = default;
 
     std::string as_string() const;
 
@@ -188,7 +188,7 @@ class AdditiveExpression {
         : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(
                                                                                  a.loc)} {};
     AdditiveExpression(const AdditiveExpression &) = delete;
-    ~AdditiveExpression(){};
+    ~AdditiveExpression() = default;
 
     std::string as_string() const;
 
@@ -245,7 +245,7 @@ class Relational {
         : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(
                                                                                  a.loc)} {};
     Relational(const Relational &) = delete;
-    ~Relational(){};
+    ~Relational() = default;
 
     std::string as_string() const;
 
@@ -270,7 +270,7 @@ class Arguments {
         : positional{std::move(a.positional)}, keyword{std::move(a.keyword)}, loc{std::move(
                                                                                   a.loc)} {};
     Arguments(const Arguments &) = delete;
-    ~Arguments(){};
+    ~Arguments() = default;
 
     std::string as_string() const;
 
@@ -286,7 +286,7 @@ class FunctionCall {
     FunctionCall(FunctionCall && a) noexcept
         : held{std::move(a.held)}, args{std::move(a.args)}, loc{std::move(a.loc)} {};
     FunctionCall(const FunctionCall &) = delete;
-    ~FunctionCall(){};
+    ~FunctionCall() = default;
 
     std::string as_string() const;
 
@@ -302,7 +302,7 @@ class GetAttribute {
     GetAttribute(GetAttribute && a) noexcept
         : holder{std::move(a.holder)}, held{std::move(a.held)}, loc{std::move(a.loc)} {};
     GetAttribute(const GetAttribute &) = delete;
-    ~GetAttribute(){};
+    ~GetAttribute() = default;
 
     std::string as_string() const;
 
@@ -319,7 +319,7 @@ class Array {
     Array(ExpressionList && e, location & l) : elements{std::move(e)}, loc{l} {};
     Array(Array && a) noexcept : elements{std::move(a.elements)}, loc{std::move(a.loc)} {};
     Array(const Array &) = delete;
-    ~Array(){};
+    ~Array() = default;
 
     std::string as_string() const;
 
@@ -333,7 +333,7 @@ class Dict {
     Dict(KeywordList && l, location & lo);
     Dict(Dict && a) : elements{std::move(a.elements)}, loc{std::move(a.loc)} {};
     Dict(const Dict &) = delete;
-    ~Dict(){};
+    ~Dict() = default;
 
     std::string as_string() const;
 
@@ -349,7 +349,7 @@ class Ternary {
         : condition{std::move(t.condition)}, lhs{std::move(t.lhs)}, rhs{std::move(t.rhs)},
           loc{std::move(t.loc)} {};
     Ternary(const Ternary &) = delete;
-    ~Ternary(){};
+    ~Ternary() = default;
 
     std::string as_string() const;
 
@@ -364,7 +364,7 @@ class Statement {
     Statement(ExpressionV && e) : expr{std::move(e)} {};
     Statement(Statement && a) noexcept : expr{std::move(a.expr)} {};
     Statement(const Statement &) = delete;
-    ~Statement(){};
+    ~Statement() = default;
 
     std::string as_string() const;
 
@@ -387,7 +387,7 @@ class Assignment {
     Assignment(Assignment && a) noexcept
         : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
     Assignment(const Assignment &) = delete;
-    ~Assignment(){};
+    ~Assignment() = default;
 
     std::string as_string() const;
 
@@ -398,8 +398,8 @@ class Assignment {
 
 class Break {
   public:
-    Break(){};
-    ~Break(){};
+    Break() = default;
+    ~Break() = default;
     Break(const Break &) = delete;
 
     std::string as_string() const;
@@ -407,8 +407,8 @@ class Break {
 
 class Continue {
   public:
-    Continue(){};
-    ~Continue(){};
+    Continue() = default;
+    ~Continue() = default;
     Continue(const Break &) = delete;
 
     std::string as_string() const;
@@ -427,7 +427,7 @@ class CodeBlock {
     CodeBlock(StatementV && stmt) : statements{} { statements.emplace_back(std::move(stmt)); };
     CodeBlock(CodeBlock && b) noexcept : statements{std::move(b.statements)} {};
     CodeBlock(const CodeBlock &) = delete;
-    ~CodeBlock(){};
+    ~CodeBlock() = default;
 
     CodeBlock & operator=(CodeBlock &&) = default;
 
@@ -439,14 +439,14 @@ class CodeBlock {
 
 class IfBlock {
   public:
-    IfBlock(){};
+    IfBlock() = default;
     IfBlock(ExpressionV && cond) : condition{std::move(cond)}, block{} {};
     IfBlock(ExpressionV && cond, std::unique_ptr<CodeBlock> && b)
         : condition{std::move(cond)}, block{std::move(b)} {};
     IfBlock(IfBlock && i) noexcept
         : condition{std::move(i.condition)}, block{std::move(i.block)} {};
     IfBlock(const IfBlock &) = delete;
-    ~IfBlock(){};
+    ~IfBlock() = default;
 
     IfBlock & operator=(IfBlock &&) = default;
 
@@ -462,7 +462,7 @@ class ElifBlock {
     ElifBlock(ElifBlock && e) noexcept
         : condition{std::move(e.condition)}, block{std::move(e.block)} {};
     ElifBlock(const ElifBlock &) = delete;
-    ~ElifBlock(){};
+    ~ElifBlock() = default;
 
     ElifBlock & operator=(ElifBlock &&) = default;
 
@@ -476,7 +476,7 @@ class ElseBlock {
     ElseBlock(std::unique_ptr<CodeBlock> && b) : block{std::move(b)} {};
     ElseBlock(ElseBlock && e) noexcept : block{std::move(e.block)} {};
     ElseBlock(const ElseBlock &) = delete;
-    ~ElseBlock(){};
+    ~ElseBlock() = default;
 
     ElseBlock & operator=(ElseBlock &&) = default;
 
@@ -496,7 +496,7 @@ class IfStatement {
         : ifblock{std::move(i.ifblock)}, efblock{std::move(i.efblock)}, eblock{
                                                                             std::move(i.eblock)} {};
     IfStatement(const IfStatement &) = delete;
-    ~IfStatement(){};
+    ~IfStatement() = default;
 
     std::string as_string() const;
 
@@ -516,7 +516,7 @@ class ForeachStatement {
         : id{std::move(f.id)}, id2{std::move(f.id2)}, expr{std::move(f.expr)}, block{std::move(
                                                                                    f.block)} {};
     ForeachStatement(const ForeachStatement &) = delete;
-    ~ForeachStatement(){};
+    ~ForeachStatement() = default;
 
     std::string as_string() const;
 

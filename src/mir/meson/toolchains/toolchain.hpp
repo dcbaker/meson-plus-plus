@@ -26,7 +26,7 @@ class Toolchain {
     Toolchain(Toolchain && t)
         : compiler{std::move(t.compiler)}, linker{std::move(t.linker)}, archiver{std::move(
                                                                             t.archiver)} {};
-    ~Toolchain(){};
+    ~Toolchain() = default;
 
     Toolchain & operator=(Toolchain &&) = default;
 

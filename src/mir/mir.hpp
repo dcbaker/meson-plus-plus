@@ -331,7 +331,7 @@ class Program {
 
 class Empty {
   public:
-    Empty(){};
+    Empty() = default;
 };
 
 /**
