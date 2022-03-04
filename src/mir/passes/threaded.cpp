@@ -123,8 +123,7 @@ void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
     std::array<std::thread, 8> threads{};
 
     for (auto && t : threads) {
-        t = std::thread(&worker, std::ref(jobs), std::ref(state_lock), std::ref(job_lock),
-                        std::ref(pstate), std::ref(programs));
+        t = std::thread([&] { return worker(jobs, state_lock, job_lock, pstate, programs); });
     }
 
     for (auto & t : threads) {
