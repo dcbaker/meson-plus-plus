@@ -45,7 +45,7 @@ class Info {
     Info(const Machine & m, const Kernel & k, const Endian & e, const std::string & cf,
          const std::string & c)
         : machine{m}, kernel{k}, endian{e}, cpu_family{cf}, cpu{c} {};
-    ~Info(){};
+    ~Info() = default;
 
     std::string system() const;
 
@@ -72,7 +72,7 @@ template <typename T> class PerMachine {
     PerMachine(PerMachine<T> && t)
         : _build{std::move(t._build)}, _target{std::move(t._target)}, _host{
                                                                           std::move(t._target)} {};
-    ~PerMachine(){};
+    ~PerMachine() = default;
 
     PerMachine<T> & operator=(PerMachine<T> && t) {
         _build = std::move(t._build);

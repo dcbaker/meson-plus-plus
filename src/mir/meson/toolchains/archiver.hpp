@@ -23,7 +23,7 @@ namespace MIR::Toolchain::Archiver {
  */
 class Archiver {
   public:
-    virtual ~Archiver(){};
+    virtual ~Archiver() = default;
 
     /**
      * What form (if any) or response file this archiver supports
@@ -35,7 +35,6 @@ class Archiver {
     /// Arguments that should always be used by this langauge/compiler
     virtual std::vector<std::string> always_args() const = 0;
 
-  protected:
     Archiver(const std::vector<std::string> & c) : _command{c} {};
 
     const std::vector<std::string> _command;
@@ -45,10 +44,9 @@ class Archiver {
  * The GNU ar archiver.
  */
 class Gnu : public Archiver {
-  public:
-    Gnu(const std::vector<std::string> & c) : Archiver{c} {};
-    ~Gnu(){};
+    using Archiver::Archiver;
 
+  public:
     RSPFileSupport rsp_support() const override;
     std::string id() const override { return "gnu"; }
     std::vector<std::string> command() const final;

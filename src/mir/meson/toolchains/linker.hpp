@@ -23,7 +23,7 @@ namespace MIR::Toolchain::Linker {
  */
 class Linker {
   public:
-    virtual ~Linker(){};
+    virtual ~Linker() = default;
     virtual RSPFileSupport rsp_support() const = 0;
     virtual std::string id() const = 0;
 
@@ -43,16 +43,14 @@ class Linker {
     /// Get arguments that should always be used for this linker
     virtual std::vector<std::string> always_args() const = 0;
 
-  protected:
     Linker(const std::vector<std::string> & c) : _command{c} {};
     const std::vector<std::string> _command;
 };
 
 class GnuBFD : public Linker {
-  public:
-    GnuBFD(const std::vector<std::string> & c) : Linker{c} {};
-    ~GnuBFD(){};
+    using Linker::Linker;
 
+  public:
     std::string id() const override { return "ld.bfd"; }
     RSPFileSupport rsp_support() const override final;
     std::string language() const final {
@@ -72,7 +70,6 @@ class Gnu : public Linker {
   public:
     Gnu(const GnuBFD & l, const Compiler::Compiler * const c)
         : Linker{{}}, linker{l}, compiler{c} {};
-    ~Gnu(){};
 
     std::string id() const override { return linker.id(); }
     RSPFileSupport rsp_support() const override final;

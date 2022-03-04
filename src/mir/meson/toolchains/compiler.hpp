@@ -40,7 +40,7 @@ enum class CanCompileType {
  */
 class Compiler {
   public:
-    virtual ~Compiler(){};
+    virtual ~Compiler() = default;
     virtual RSPFileSupport rsp_support() const = 0;
     virtual std::string id() const = 0;
 
@@ -91,7 +91,6 @@ class Compiler {
     /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;
 
-  protected:
     Compiler(const std::vector<std::string> & c) : command{c} {};
 }; // namespace std::filesystemclassCompiler
 

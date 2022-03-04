@@ -16,6 +16,8 @@ namespace MIR::Toolchain::Compiler::CPP {
 namespace fs = std::filesystem;
 
 class GnuLike : public Compiler {
+    using Compiler::Compiler;
+
   public:
     RSPFileSupport rsp_support() const final;
     std::vector<std::string> compile_only_command() const final;
@@ -27,25 +29,20 @@ class GnuLike : public Compiler {
     std::vector<std::string> always_args() const final;
     CanCompileType supports_file(const std::string &) const final;
     std::vector<std::string> generate_depfile(const std::string &, const std::string &) const final;
-
-  protected:
-    GnuLike(const std::vector<std::string> & c) : Compiler{c} {};
 };
 
 class Gnu : public GnuLike {
-  public:
-    Gnu(const std::vector<std::string> & c) : GnuLike{c} {};
-    ~Gnu(){};
+    using GnuLike::GnuLike;
 
+  public:
     std::string id() const override { return "gcc"; };
     std::string language() const override { return "C++"; };
 };
 
 class Clang : public GnuLike {
-  public:
-    Clang(const std::vector<std::string> & c) : GnuLike{c} {};
-    ~Clang(){};
+    using GnuLike::GnuLike;
 
+  public:
     std::string id() const override { return "clang"; };
     std::string language() const override { return "C++"; };
 };

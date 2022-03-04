@@ -14,8 +14,8 @@ namespace Frontend {
 
 class Driver {
   public:
-    Driver(){};
-    ~Driver(){};
+    Driver() = default;
+    ~Driver() = default;
 
     std::unique_ptr<AST::CodeBlock> parse(std::istream &);
     std::unique_ptr<AST::CodeBlock> parse(const std::string &);
