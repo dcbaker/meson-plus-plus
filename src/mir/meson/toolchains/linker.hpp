@@ -23,6 +23,7 @@ namespace MIR::Toolchain::Linker {
  */
 class Linker {
   public:
+    Linker(const Linker&) = default;
     virtual ~Linker() = default;
     virtual RSPFileSupport rsp_support() const = 0;
     virtual std::string id() const = 0;

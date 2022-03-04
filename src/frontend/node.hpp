@@ -49,6 +49,7 @@ class Location {
         : column_start{l.begin.column}, column_end{l.end.column},
           line_start{l.begin.line}, line_end{l.end.line}, filename{*l.begin.filename} {};
     virtual ~Location() = default;
+    Location(const Location &) = default;
 
     const int column_start;
     const int column_end;
