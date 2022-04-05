@@ -118,6 +118,11 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
     }
 
     // TODO: linker/archiver always_args
+    for (auto && a : e.link_arguments) {
+        // TODO: should be linker
+        auto && outs = tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
+        link_args.insert(link_args.end(), outs.begin(), outs.end());
+    }
 
     rules.emplace_back(Target{
         final_outs,
