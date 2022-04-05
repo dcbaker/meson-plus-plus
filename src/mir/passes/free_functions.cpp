@@ -343,7 +343,7 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
         slink.emplace_back(StaticLinkMode::WHOLE, s);
     }
 
-    return Instruction{Dependency{"internal", true, version, args, slink}};
+    return Dependency{"internal", true, version, args, {}, slink};
 }
 
 std::vector<Instruction>

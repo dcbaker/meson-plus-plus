@@ -282,7 +282,11 @@ enum class DependencyType {
 class Dependency {
   public:
     Dependency(std::string name, const bool & found, std::string version,
-               std::vector<Arguments::Argument> args, std::vector<StaticLinkage> s_link);
+               std::vector<Arguments::Argument> args, std::vector<Arguments::Argument> link_args,
+               std::vector<StaticLinkage> s_link);
+    Dependency(std::string name, const bool & found, std::string version,
+               std::vector<Arguments::Argument> args, std::vector<Arguments::Argument> link_args);
+    Dependency(std::string name);
 
     /// Name of the dependency
     const std::string name;
@@ -295,6 +299,9 @@ class Dependency {
 
     /// Per-language compiler args
     const std::vector<Arguments::Argument> arguments;
+
+    /// Linker arguments, not per-language
+    const std::vector<Arguments::Argument> link_arguments;
 
     /// Dependencies to statically link with
     const std::vector<StaticLinkage> link_static{};

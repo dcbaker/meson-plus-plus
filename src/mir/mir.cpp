@@ -210,8 +210,16 @@ CustomTarget::CustomTarget(std::string n, std::vector<Instruction> i, std::vecto
       subdir{std::move(s)} {};
 
 Dependency::Dependency(std::string n, const bool & f, std::string ver,
-                       std::vector<Arguments::Argument> args, std::vector<StaticLinkage> s_link)
+                       std::vector<Arguments::Argument> args,
+                       std::vector<Arguments::Argument> link_args,
+                       std::vector<StaticLinkage> s_link)
     : name{std::move(n)}, found{f}, version{std::move(ver)}, arguments{std::move(args)},
       link_static{std::move(s_link)} {};
+Dependency::Dependency(std::string n, const bool & f, std::string ver,
+                       std::vector<Arguments::Argument> args,
+                       std::vector<Arguments::Argument> link_args)
+    : name{std::move(n)}, found{f}, version{std::move(ver)}, arguments{std::move(args)},
+      link_arguments{std::move(link_args)} {};
+Dependency::Dependency(std::string n) : name{std::move(n)}, found{false} {};
 
 } // namespace MIR
