@@ -61,7 +61,7 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
                     inc_arg = "-I";
                     break;
                 case Arguments::IncludeType::SYSTEM:
-                    inc_arg = "-system";
+                    inc_arg = "-isystem";
                     break;
                 default:
                     throw std::exception{}; // Should be unreachable
