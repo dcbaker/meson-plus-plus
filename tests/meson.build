@@ -16,6 +16,9 @@ test_cases = {
     '09 string methods',
     '10 dependency methods',
   ],
+  'dependencies' : [
+    '01 pkg-config',
+  ],
 }
 
 foreach k, test_dirs : test_cases
