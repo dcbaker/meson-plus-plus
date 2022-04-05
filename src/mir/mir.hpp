@@ -184,7 +184,8 @@ using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary>;
 class Executable {
   public:
     Executable(std::string name_, std::vector<Instruction> srcs, const Machines::Machine & m,
-               fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link);
+               fs::path sdir, ArgMap args, std::vector<Arguments::Argument> link_args,
+               std::vector<StaticLinkage> s_link);
 
     /// The name of the target
     const std::string name;
@@ -205,6 +206,9 @@ class Executable {
      * per-language arguments
      */
     const ArgMap arguments;
+
+    /// Arguments for linking
+    const std::vector<Arguments::Argument> link_arguments;
 
     /// static targets to link with
     const std::vector<StaticLinkage> link_static{};
@@ -215,7 +219,8 @@ class Executable {
 class StaticLibrary {
   public:
     StaticLibrary(std::string name_, std::vector<Instruction> srcs, const Machines::Machine & m,
-                  fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link);
+                  fs::path sdir, ArgMap args, std::vector<Arguments::Argument> link_args,
+                  std::vector<StaticLinkage> s_link);
 
     /// The name of the target
     const std::string name;
@@ -236,6 +241,9 @@ class StaticLibrary {
      * per-language arguments
      */
     const ArgMap arguments;
+
+    /// Arguments for linking
+    const std::vector<Arguments::Argument> link_arguments;
 
     /// static targets to link with
     const std::vector<StaticLinkage> link_static{};

@@ -112,15 +112,21 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
         }
     }
 
+    std::vector<Arguments::Argument> link_args{};
     const auto & deps = extract_keyword_argument_a<Dependency>(f.kw_args, "dependencies");
     for (const auto & d : deps) {
         for (const auto & a : d.arguments) {
             args[Toolchain::Language::CPP].emplace_back(a);
         }
+
+        for (const auto & a : d.link_arguments) {
+            link_args.emplace_back(a);
+        }
     }
 
     // TODO: machine parameter needs to be set from the native kwarg
-    return T{name.value().value, srcs, Machines::Machine::BUILD, f.source_dir, args, slink};
+    return T{name.value().value, srcs, Machines::Machine::BUILD, f.source_dir, args,
+             link_args,          slink};
 }
 
 std::optional<Instruction> lower_include_dirs(const FunctionCall & f,

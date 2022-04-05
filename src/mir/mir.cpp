@@ -148,17 +148,21 @@ std::ostream & operator<<(std::ostream & os, const File & f) {
 
 Executable::Executable(std::string name_, std::vector<Instruction> srcs,
                        const Machines::Machine & m, fs::path sdir, ArgMap args,
+                       std::vector<Arguments::Argument> link_args,
                        std::vector<StaticLinkage> s_link)
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
-      arguments{std::move(args)}, link_static{std::move(s_link)} {};
+      arguments{std::move(args)}, link_arguments{std::move(link_args)}, link_static{
+                                                                            std::move(s_link)} {};
 
 std::string Executable::output() const { return name; }
 
 StaticLibrary::StaticLibrary(std::string name_, std::vector<Instruction> srcs,
                              const Machines::Machine & m, fs::path sdir, ArgMap args,
+                             std::vector<Arguments::Argument> link_args,
                              std::vector<StaticLinkage> s_link)
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
-      arguments{std::move(args)}, link_static{std::move(s_link)} {};
+      arguments{std::move(args)}, link_arguments{std::move(link_args)}, link_static{
+                                                                            std::move(s_link)} {};
 
 std::string StaticLibrary::output() const { return name + ".a"; }
 
