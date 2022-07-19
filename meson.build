@@ -45,8 +45,8 @@ dep_rpm_version_cpp = dependency(
   default_options : ['default_library=static'],
 )
 dep_pkgconf = dependency(
-  'libpkgconf++',
-  version : '>= 0.1.0',
+  'pkgconf++',
+  version : '>= 0.2.0',
   required : get_option('pkgconf'),
   fallback : ['libpkgconfpp', 'dep_libpkgconf++'],
   default_options : ['default_library=static'],
