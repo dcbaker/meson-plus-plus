@@ -48,7 +48,7 @@ dep_pkgconf = dependency(
   'libpkgconf++',
   version : '>= 0.1.0',
   required : get_option('pkgconf'),
-  fallback : ['libpkgconfpp', 'dep_libpkgconfpp'],
+  fallback : ['libpkgconfpp', 'dep_libpkgconf++'],
   default_options : ['default_library=static'],
 )
 if dep_pkgconf.found()
