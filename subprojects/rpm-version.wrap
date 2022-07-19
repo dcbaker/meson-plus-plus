@@ -1,0 +1,10 @@
+[wrap-file]
+directory = rpm-version-0.0.2
+
+source_url = https://github.com/dcbaker/rpm-version/archive/v0.0.2.tar.gz
+source_filename = rpm-version-0.0.2.tar.gz
+source_hash = 8ca93adf977603219bde766f5f9f752c4880d870d18e8df167e2d2ba283656b6
+
+[provide]
+rpm-version-c = dep_rpm_ver_c
+rpm-version-c++ = dep_rpm_ver_cpp

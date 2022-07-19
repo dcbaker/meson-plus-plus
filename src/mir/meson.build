@@ -28,7 +28,7 @@ libmir = static_library(
     locations_hpp,
   ],
   include_directories : inc_frontend,
-  dependencies : [idep_util, idep_meson, dependency('threads')],
+  dependencies : [idep_util, idep_meson, dependency('threads'), dep_rpm_version_cpp],
 )
 
 inc_mir = include_directories('.')

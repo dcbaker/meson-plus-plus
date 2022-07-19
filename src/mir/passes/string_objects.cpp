@@ -1,9 +1,10 @@
 // SPDX-license-identifier: Apache-2.0
 // Copyright © 2022 Dylan Baker
 
+#include <rpm-version/version.hpp>
+
 #include "argument_extractors.hpp"
 #include "exceptions.hpp"
-#include "meson/version.hpp"
 #include "passes.hpp"
 #include "private.hpp"
 
@@ -34,25 +35,25 @@ std::optional<Instruction> lower_version_compare_method(const FunctionCall & f) 
         }
     }
 
-    Version::Operator op;
+    RPMVersion::Operator op;
     std::string val;
     if (cval.substr(0, 2) == "==") {
-        op = Version::Operator::EQ;
+        op = RPMVersion::Operator::EQ;
         val = cval.substr(2, cval.size());
     } else if (cval.substr(0, 2) == "!=") {
-        op = Version::Operator::NE;
+        op = RPMVersion::Operator::NE;
         val = cval.substr(2, cval.size());
     } else if (cval.substr(0, 2) == ">=") {
-        op = Version::Operator::GE;
+        op = RPMVersion::Operator::GE;
         val = cval.substr(2, cval.size());
     } else if (cval.substr(0, 2) == "<=") {
-        op = Version::Operator::LE;
+        op = RPMVersion::Operator::LE;
         val = cval.substr(2, cval.size());
     } else if (cval.substr(0, 1) == "<") {
-        op = Version::Operator::LT;
+        op = RPMVersion::Operator::LT;
         val = cval.substr(1, cval.size());
     } else if (cval.substr(0, 1) == ">") {
-        op = Version::Operator::GT;
+        op = RPMVersion::Operator::GT;
         val = cval.substr(1, cval.size());
     } else {
         throw Util::Exceptions::MesonException(
@@ -60,7 +61,7 @@ std::optional<Instruction> lower_version_compare_method(const FunctionCall & f) 
             c.value);
     }
 
-    return Boolean{Version::compare(s.value, op, val)};
+    return Boolean{RPMVersion::compare(s.value, op, val)};
 }
 
 std::optional<Instruction> lower_string_methods_impl(const Instruction & obj,

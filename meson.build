@@ -38,6 +38,12 @@ dep_gtest = dependency(
   required : get_option('tests'),
   fallback : ['gtest', 'gtest_main_dep'],
 )
+dep_rpm_version_cpp = dependency(
+  'rpm-version-c++',
+  fallback : ['rpm-version', 'dep_rpm_ver_cpp'],
+  version : '>= 0.0.2',
+  default_options : ['default_library=static'],
+)
 dep_pkgconf = dependency(
   'libpkgconf++',
   version : '>= 0.1.0',
