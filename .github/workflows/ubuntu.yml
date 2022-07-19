@@ -34,7 +34,7 @@ jobs:
       - name: apt
         run: |
           sudo apt update
-          sudo apt install libfl-dev libgtest-dev ninja-build ccache clang
+          sudo apt install libfl-dev libgtest-dev ninja-build ccache clang zlib1g-dev
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: Setup ccache
