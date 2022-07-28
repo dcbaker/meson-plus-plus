@@ -16,8 +16,8 @@ namespace Frontend {
 
 class Scanner : public yyFlexLexer {
   public:
-    Scanner(std::istream * in, const std::string & s) : yyFlexLexer{in}, filename{s} {};
-    ~Scanner() = default;
+    Scanner(std::istream * in, std::string s) : yyFlexLexer{in}, filename{std::move(s)} {};
+    ~Scanner() override = default;
 
     using FlexLexer::yylex;
 
