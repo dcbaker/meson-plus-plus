@@ -91,7 +91,7 @@ class Compiler {
     /// Command to invoke this compiler, as a vector
     const std::vector<std::string> command;
 
-    Compiler(const std::vector<std::string> & c) : command{c} {};
+    Compiler(std::vector<std::string> c) : command{std::move(c)} {};
 }; // namespace std::filesystemclassCompiler
 
 std::unique_ptr<Compiler> detect_compiler(const Language &, const Machines::Machine &,

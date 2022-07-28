@@ -35,7 +35,7 @@ class Archiver {
     /// Arguments that should always be used by this langauge/compiler
     virtual std::vector<std::string> always_args() const = 0;
 
-    Archiver(const std::vector<std::string> & c) : _command{c} {};
+    Archiver(std::vector<std::string> c) : _command{std::move(c)} {};
 
     const std::vector<std::string> _command;
 };

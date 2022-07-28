@@ -25,25 +25,24 @@ enum class TargetType {
  */
 class Target {
   public:
-    Target(const std::vector<std::string> & in, const std::vector<std::string> & out,
-           const TargetType & r, const MIR::Toolchain::Language & l,
-           const MIR::Machines::Machine & m)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{}, deps{},
-          order_deps{} {};
-    Target(const std::vector<std::string> & in, const std::string & out, const TargetType & r,
+    Target(std::vector<std::string> in, std::vector<std::string> out, const TargetType & r,
+           const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m)
+        : input{std::move(in)}, output{std::move(out)}, type{r}, lang{l}, machine{m}, arguments{},
+          deps{}, order_deps{} {};
+    Target(std::vector<std::string> in, const std::string & out, const TargetType & r,
            const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
-           const std::vector<std::string> & args)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{},
-          order_deps{} {};
-    Target(const std::vector<std::string> & in, const std::string & out, const TargetType & r,
+           std::vector<std::string> args)
+        : input{std::move(in)}, output{out}, type{r}, lang{l}, machine{m},
+          arguments{std::move(args)}, deps{}, order_deps{} {};
+    Target(std::vector<std::string> in, const std::string & out, const TargetType & r,
            const MIR::Toolchain::Language & l, const MIR::Machines::Machine & m,
-           const std::vector<std::string> & args, const std::vector<std::string> & d,
-           const std::vector<std::string> & o)
-        : input{in}, output{out}, type{r}, lang{l}, machine{m}, arguments{args}, deps{d},
-          order_deps{o} {};
-    Target(const std::vector<std::string> & in, const std::vector<std::string> & out,
-           const TargetType & r, const std::vector<std::string> & a)
-        : input{in}, output{out}, type{r}, lang{}, machine{}, arguments{a}, deps{}, order_deps{} {};
+           std::vector<std::string> args, std::vector<std::string> d, std::vector<std::string> o)
+        : input{std::move(in)}, output{out}, type{r}, lang{l}, machine{m},
+          arguments{std::move(args)}, deps{std::move(d)}, order_deps{std::move(o)} {};
+    Target(std::vector<std::string> in, std::vector<std::string> out, const TargetType & r,
+           std::vector<std::string> a)
+        : input{std::move(in)}, output{std::move(out)}, type{r}, lang{}, machine{},
+          arguments{std::move(a)}, deps{}, order_deps{} {};
 
     /// The input for this rule
     const std::vector<std::string> input;

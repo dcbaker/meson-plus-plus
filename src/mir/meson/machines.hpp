@@ -42,9 +42,8 @@ class Info {
   public:
     Info(const Machine & m, const Kernel & k, const Endian & e, const std::string & c)
         : machine{m}, kernel{k}, endian{e}, cpu_family{c}, cpu{c} {};
-    Info(const Machine & m, const Kernel & k, const Endian & e, const std::string & cf,
-         const std::string & c)
-        : machine{m}, kernel{k}, endian{e}, cpu_family{cf}, cpu{c} {};
+    Info(const Machine & m, const Kernel & k, const Endian & e, std::string cf, std::string c)
+        : machine{m}, kernel{k}, endian{e}, cpu_family{std::move(cf)}, cpu{std::move(c)} {};
     ~Info() = default;
 
     Info(const Info&) = default;
@@ -67,49 +66,46 @@ template <typename T> class PerMachine {
     PerMachine(T && _b, T && _h, T && _t)
         : _build{std::move(_b)}, _host{std::move(_h)}, _target{std::move(_t)} {};
     PerMachine(T && _b, T && _h)
-        : _build{std::move(_b)}, _host{std::move(_h)}, _target{std::move(std::nullopt)} {};
-    PerMachine(T && _b)
-        : _build{std::move(_b)}, _host{std::move(std::nullopt)}, _target{
-                                                                     std::move(std::nullopt)} {};
-    PerMachine(PerMachine<T> && t)
+        : _build{std::move(_b)}, _host{std::move(_h)}, _target{std::nullopt} {};
+    PerMachine(T && _b) : _build{std::move(_b)}, _host{std::nullopt}, _target{std::nullopt} {};
+    PerMachine(PerMachine<T> && t) noexcept
         : _build{std::move(t._build)}, _target{std::move(t._target)}, _host{
                                                                           std::move(t._target)} {};
     ~PerMachine() = default;
 
-    PerMachine<T> & operator=(PerMachine<T> && t) {
+    PerMachine<T> & operator=(PerMachine<T> && t) noexcept {
         _build = std::move(t._build);
         _target = std::move(t._target);
         _host = std::move(t._target);
         return *this;
     }
 
-    const T build() const { return _build; }
+    T build() const { return _build; }
 
     T & build() { return _build; }
 
-    const T host() const { return _host.value_or(build()); }
+    T host() const { return _host.value_or(build()); }
 
     T & host() {
-        if (_host) {
+        if (_host)
             return _host.value();
-        } else {
-            return _build;
-        }
+
+        return _build;
     }
 
-    const T target() const { return _target.value_or(host()); }
+    T target() const { return _target.value_or(host()); }
 
     T & target() {
-        if (_target) {
+        if (_target)
             return _target.value();
-        } else if (_host) {
+
+        if (_host)
             return _host.value();
-        } else {
-            return _build;
-        }
+
+        return _build;
     }
 
-    const T get(const Machine & m) const {
+    T get(const Machine & m) const {
         switch (m) {
             case Machine::BUILD:
                 return build();

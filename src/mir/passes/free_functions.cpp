@@ -396,7 +396,7 @@ std::vector<std::string> extract_ct_command(const Instruction & obj,
         }
         if (v.substr(0, input_size) == "@INPUT") {
             const auto & index = std::stoul(v.substr(input_size, v.size() - 1));
-            const Instruction s = inputs[index];
+            const Instruction & s = inputs[index];
             if (std::holds_alternative<File>(*s.obj_ptr)) {
                 return {std::get<File>(*s.obj_ptr).relative_to_build_dir()};
             }

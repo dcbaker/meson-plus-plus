@@ -6,12 +6,12 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 #include <variant>
 #include <vector>
-#include <optional>
 
 #include "locations.hpp"
 
@@ -61,7 +61,7 @@ class Location {
 class Number {
   public:
     Number(const int64_t & number, const location & l) : value{number}, loc{l} {};
-    Number(Number && n) noexcept : value{std::move(n.value)}, loc{std::move(n.loc)} {};
+    Number(Number && n) noexcept : value{n.value}, loc{n.loc} {};
     Number(const Number &) = delete;
     ~Number() = default;
 
@@ -74,7 +74,7 @@ class Number {
 class Boolean {
   public:
     Boolean(const bool & b, const location & l) : value{b}, loc{l} {};
-    Boolean(Boolean && b) noexcept : value{std::move(b.value)}, loc{std::move(b.loc)} {};
+    Boolean(Boolean && b) noexcept : value{b.value}, loc{b.loc} {};
     Boolean(const Boolean &) = delete;
     ~Boolean() = default;
 
@@ -86,11 +86,11 @@ class Boolean {
 
 class String {
   public:
-    String(const std::string & str, const bool & t, const bool & f, const location & l)
-        : value{str}, is_triple{t}, is_fstring{f}, loc{l} {};
+    String(std::string str, const bool & t, const bool & f, const location & l)
+        : value{std::move(str)}, is_triple{t}, is_fstring{f}, loc{l} {};
     String(String && s) noexcept
-        : value{std::move(s.value)}, is_triple{std::move(s.is_triple)},
-          is_fstring{std::move(s.is_fstring)}, loc{std::move(s.loc)} {};
+        : value{std::move(s.value)}, is_triple{s.is_triple},
+          is_fstring{s.is_fstring}, loc{s.loc} {};
     String(const String &) = delete;
     ~String() = default;
 
@@ -104,8 +104,8 @@ class String {
 
 class Identifier {
   public:
-    Identifier(const std::string & str, const location & l) : value{str}, loc{l} {};
-    Identifier(Identifier && s) noexcept : value{std::move(s.value)}, loc{std::move(s.loc)} {};
+    Identifier(std::string str, const location & l) : value{std::move(str)}, loc{l} {};
+    Identifier(Identifier && s) noexcept : value{std::move(s.value)}, loc{s.loc} {};
     Identifier(const Identifier &) = delete;
     ~Identifier() = default;
 
@@ -121,7 +121,7 @@ class Subscript {
         : lhs{std::move(l)}, rhs{std::move(r)}, loc{lo} {};
     Subscript(const Subscript &) = delete;
     Subscript(Subscript && a) noexcept
-        : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
+        : lhs{std::move(a.lhs)}, rhs{std::move(a.rhs)}, loc{a.loc} {};
     ~Subscript() = default;
 
     std::string as_string() const;
@@ -140,8 +140,7 @@ class UnaryExpression {
   public:
     UnaryExpression(const UnaryOp & o, ExpressionV && r, location & l)
         : op{o}, rhs{std::move(r)}, loc{l} {};
-    UnaryExpression(UnaryExpression && a) noexcept
-        : op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(a.loc)} {};
+    UnaryExpression(UnaryExpression && a) noexcept : op{a.op}, rhs{std::move(a.rhs)}, loc{a.loc} {};
     UnaryExpression(const UnaryExpression &) = delete;
     ~UnaryExpression() = default;
 
@@ -163,8 +162,7 @@ class MultiplicativeExpression {
     MultiplicativeExpression(ExpressionV && l, const MulOp & o, ExpressionV && r, location & lo)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)}, loc{lo} {};
     MultiplicativeExpression(MultiplicativeExpression && a) noexcept
-        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(
-                                                                                 a.loc)} {};
+        : lhs{std::move(a.lhs)}, op{a.op}, rhs{std::move(a.rhs)}, loc{a.loc} {};
     MultiplicativeExpression(const MultiplicativeExpression &) = delete;
     ~MultiplicativeExpression() = default;
 
@@ -186,8 +184,7 @@ class AdditiveExpression {
     AdditiveExpression(ExpressionV && l, const AddOp & o, ExpressionV && r, location & lo)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)}, loc{lo} {};
     AdditiveExpression(AdditiveExpression && a) noexcept
-        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(
-                                                                                 a.loc)} {};
+        : lhs{std::move(a.lhs)}, op{a.op}, rhs{std::move(a.rhs)}, loc{a.loc} {};
     AdditiveExpression(const AdditiveExpression &) = delete;
     ~AdditiveExpression() = default;
 
@@ -214,27 +211,27 @@ enum class RelationalOp {
 
 // TODO: move this into the parser cpp
 static AST::RelationalOp to_relop(const std::string & s) {
-    if (s == "<") {
+    if (s == "<")
         return AST::RelationalOp::LT;
-    } else if (s == "<=") {
+    if (s == "<=")
         return AST::RelationalOp::LE;
-    } else if (s == "==") {
+    if (s == "==")
         return AST::RelationalOp::EQ;
-    } else if (s == "!=") {
+    if (s == "!=")
         return AST::RelationalOp::NE;
-    } else if (s == ">=") {
+    if (s == ">=")
         return AST::RelationalOp::GE;
-    } else if (s == ">") {
+    if (s == ">")
         return AST::RelationalOp::GT;
-    } else if (s == "and") {
+    if (s == "and")
         return AST::RelationalOp::AND;
-    } else if (s == "or") {
+    if (s == "or")
         return AST::RelationalOp::OR;
-    } else if (s == "in") {
+    if (s == "in")
         return AST::RelationalOp::IN;
-    } else if (s == "not in") {
+    if (s == "not in")
         return AST::RelationalOp::NOT_IN;
-    }
+
     assert(false);
 }
 
@@ -243,8 +240,7 @@ class Relational {
     Relational(ExpressionV && l, const std::string & o, ExpressionV && r, location & lo)
         : lhs{std::move(l)}, op{to_relop(o)}, rhs{std::move(r)}, loc{lo} {};
     Relational(Relational && a) noexcept
-        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)}, loc{std::move(
-                                                                                 a.loc)} {};
+        : lhs{std::move(a.lhs)}, op{a.op}, rhs{std::move(a.rhs)}, loc{a.loc} {};
     Relational(const Relational &) = delete;
     ~Relational() = default;
 
@@ -262,14 +258,13 @@ using KeywordList = std::vector<KeywordPair>;
 
 class Arguments {
   public:
-    Arguments(location & l) : positional{}, keyword{}, loc{l} {};
-    Arguments(ExpressionList && v, location & l) : positional{std::move(v)}, keyword{}, loc{l} {};
-    Arguments(KeywordList && k, location & l) : positional{}, keyword{std::move(k)}, loc{l} {};
+    Arguments(location & l) : loc{l} {};
+    Arguments(ExpressionList && v, location & l) : positional{std::move(v)}, loc{l} {};
+    Arguments(KeywordList && k, location & l) : keyword{std::move(k)}, loc{l} {};
     Arguments(ExpressionList && v, KeywordList && k, location & l)
         : positional{std::move(v)}, keyword{std::move(k)}, loc{l} {};
     Arguments(Arguments && a) noexcept
-        : positional{std::move(a.positional)}, keyword{std::move(a.keyword)}, loc{std::move(
-                                                                                  a.loc)} {};
+        : positional{std::move(a.positional)}, keyword{std::move(a.keyword)}, loc{a.loc} {};
     Arguments(const Arguments &) = delete;
     ~Arguments() = default;
 
@@ -285,7 +280,7 @@ class FunctionCall {
     FunctionCall(ExpressionV && i, std::unique_ptr<Arguments> && a, location & l)
         : held{std::move(i)}, args{std::move(a)}, loc{l} {};
     FunctionCall(FunctionCall && a) noexcept
-        : held{std::move(a.held)}, args{std::move(a.args)}, loc{std::move(a.loc)} {};
+        : held{std::move(a.held)}, args{std::move(a.args)}, loc{a.loc} {};
     FunctionCall(const FunctionCall &) = delete;
     ~FunctionCall() = default;
 
@@ -301,7 +296,7 @@ class GetAttribute {
     GetAttribute(ExpressionV && o, ExpressionV && i, location & l)
         : holder{std::move(o)}, held{std::move(i)}, loc{l} {};
     GetAttribute(GetAttribute && a) noexcept
-        : holder{std::move(a.holder)}, held{std::move(a.held)}, loc{std::move(a.loc)} {};
+        : holder{std::move(a.holder)}, held{std::move(a.held)}, loc{a.loc} {};
     GetAttribute(const GetAttribute &) = delete;
     ~GetAttribute() = default;
 
@@ -316,9 +311,9 @@ class GetAttribute {
 
 class Array {
   public:
-    Array(location & l) : elements{}, loc{l} {};
+    Array(location & l) : loc{l} {};
     Array(ExpressionList && e, location & l) : elements{std::move(e)}, loc{l} {};
-    Array(Array && a) noexcept : elements{std::move(a.elements)}, loc{std::move(a.loc)} {};
+    Array(Array && a) noexcept : elements{std::move(a.elements)}, loc{a.loc} {};
     Array(const Array &) = delete;
     ~Array() = default;
 
@@ -330,9 +325,9 @@ class Array {
 
 class Dict {
   public:
-    Dict(location & l) : elements{}, loc{l} {};
+    Dict(location & l) : loc{l} {};
     Dict(KeywordList && l, location & lo);
-    Dict(Dict && a) : elements{std::move(a.elements)}, loc{std::move(a.loc)} {};
+    Dict(Dict && a) noexcept : elements{std::move(a.elements)}, loc{a.loc} {};
     Dict(const Dict &) = delete;
     ~Dict() = default;
 
@@ -346,9 +341,9 @@ class Ternary {
   public:
     Ternary(ExpressionV && c, ExpressionV && l, ExpressionV && r, location & lo)
         : condition{std::move(c)}, lhs{std::move(l)}, rhs{std::move(r)}, loc{lo} {};
-    Ternary(Ternary && t)
+    Ternary(Ternary && t) noexcept
         : condition{std::move(t.condition)}, lhs{std::move(t.lhs)}, rhs{std::move(t.rhs)},
-          loc{std::move(t.loc)} {};
+          loc{t.loc} {};
     Ternary(const Ternary &) = delete;
     ~Ternary() = default;
 
@@ -386,7 +381,7 @@ class Assignment {
     Assignment(ExpressionV && l, AssignOp & o, ExpressionV && r)
         : lhs{std::move(l)}, op{o}, rhs{std::move(r)} {};
     Assignment(Assignment && a) noexcept
-        : lhs{std::move(a.lhs)}, op{std::move(a.op)}, rhs{std::move(a.rhs)} {};
+        : lhs{std::move(a.lhs)}, op{a.op}, rhs{std::move(a.rhs)} {};
     Assignment(const Assignment &) = delete;
     ~Assignment() = default;
 
@@ -424,8 +419,8 @@ using StatementV = std::variant<std::unique_ptr<Statement>, std::unique_ptr<Assi
 
 class CodeBlock {
   public:
-    CodeBlock() : statements{} {};
-    CodeBlock(StatementV && stmt) : statements{} { statements.emplace_back(std::move(stmt)); };
+    CodeBlock() = default;
+    CodeBlock(StatementV && stmt) { statements.emplace_back(std::move(stmt)); };
     CodeBlock(CodeBlock && b) noexcept : statements{std::move(b.statements)} {};
     CodeBlock(const CodeBlock &) = delete;
     ~CodeBlock() = default;
@@ -441,7 +436,7 @@ class CodeBlock {
 class IfBlock {
   public:
     IfBlock() = default;
-    IfBlock(ExpressionV && cond) : condition{std::move(cond)}, block{} {};
+    IfBlock(ExpressionV && cond) : condition{std::move(cond)} {};
     IfBlock(ExpressionV && cond, std::unique_ptr<CodeBlock> && b)
         : condition{std::move(cond)}, block{std::move(b)} {};
     IfBlock(IfBlock && i) noexcept
@@ -457,7 +452,7 @@ class IfBlock {
 
 class ElifBlock {
   public:
-    ElifBlock() : condition{}, block{} {};
+    ElifBlock() = default;
     ElifBlock(ExpressionV && cond, std::unique_ptr<CodeBlock> && b)
         : condition{std::move(cond)}, block{std::move(b)} {};
     ElifBlock(ElifBlock && e) noexcept
@@ -486,14 +481,13 @@ class ElseBlock {
 
 class IfStatement {
   public:
-    IfStatement(IfBlock && ib) : ifblock{std::move(ib)}, efblock{}, eblock{} {};
-    IfStatement(IfBlock && ib, ElseBlock && eb)
-        : ifblock{std::move(ib)}, efblock{}, eblock{std::move(eb)} {};
+    IfStatement(IfBlock && ib) : ifblock{std::move(ib)} {};
+    IfStatement(IfBlock && ib, ElseBlock && eb) : ifblock{std::move(ib)}, eblock{std::move(eb)} {};
     IfStatement(IfBlock && ib, std::vector<ElifBlock> && ef)
-        : ifblock{std::move(ib)}, efblock{std::move(ef)}, eblock{} {};
+        : ifblock{std::move(ib)}, efblock{std::move(ef)} {};
     IfStatement(IfBlock && ib, std::vector<ElifBlock> && ef, ElseBlock && eb)
         : ifblock{std::move(ib)}, efblock{std::move(ef)}, eblock{std::move(eb)} {};
-    IfStatement(IfStatement && i)
+    IfStatement(IfStatement && i) noexcept
         : ifblock{std::move(i.ifblock)}, efblock{std::move(i.efblock)}, eblock{
                                                                             std::move(i.eblock)} {};
     IfStatement(const IfStatement &) = delete;

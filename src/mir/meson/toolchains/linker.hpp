@@ -39,12 +39,12 @@ class Linker {
     virtual std::vector<std::string> output_command(const std::string & outfile) const = 0;
 
     /// Get the command for this linker
-    virtual const std::vector<std::string> command() const = 0;
+    virtual const std::vector<std::string> & command() const = 0;
 
     /// Get arguments that should always be used for this linker
     virtual std::vector<std::string> always_args() const = 0;
 
-    Linker(const std::vector<std::string> & c) : _command{c} {};
+    Linker(std::vector<std::string> c) : _command{std::move(c)} {};
     const std::vector<std::string> _command;
 };
 
@@ -53,14 +53,14 @@ class GnuBFD : public Linker {
 
   public:
     std::string id() const override { return "ld.bfd"; }
-    RSPFileSupport rsp_support() const override final;
+    RSPFileSupport rsp_support() const final;
     std::string language() const final {
         throw std::exception{}; // "Should be unused"
     }
     std::vector<std::string> output_command(const std::string & outfile) const final {
         throw std::exception{}; // "Should be unused"
     }
-    const std::vector<std::string> command() const final { return _command; }
+    const std::vector<std::string> & command() const final { return _command; }
     std::vector<std::string> always_args() const final { return {}; }
 };
 
@@ -69,14 +69,14 @@ namespace Drivers {
 // TODO: this might have to be a templateized class
 class Gnu : public Linker {
   public:
-    Gnu(const GnuBFD & l, const Compiler::Compiler * const c)
-        : Linker{{}}, linker{l}, compiler{c} {};
+    Gnu(GnuBFD l, const Compiler::Compiler * const c)
+        : Linker{{}}, linker{std::move(l)}, compiler{c} {};
 
     std::string id() const override { return linker.id(); }
-    RSPFileSupport rsp_support() const override final;
+    RSPFileSupport rsp_support() const final;
     std::string language() const override;
     std::vector<std::string> output_command(const std::string & outfile) const override;
-    const std::vector<std::string> command() const final { return compiler->command; }
+    const std::vector<std::string> & command() const final { return compiler->command; }
     std::vector<std::string> always_args() const final { return {}; }
 
   private:

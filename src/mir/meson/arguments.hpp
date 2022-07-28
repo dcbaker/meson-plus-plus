@@ -56,10 +56,10 @@ enum class IncludeType {
  */
 class Argument {
   public:
-    Argument(const std::string & v, const Type & t)
-        : value{v}, type{t}, inc_type{IncludeType::BASE} {};
-    Argument(const std::string & v, const Type & t, const IncludeType & i)
-        : value{v}, type{t}, inc_type{i} {};
+    Argument(std::string v, const Type & t)
+        : value{std::move(v)}, type{t}, inc_type{IncludeType::BASE} {};
+    Argument(std::string v, const Type & t, const IncludeType & i)
+        : value{std::move(v)}, type{t}, inc_type{i} {};
 
     /// The value of the argument
     const std::string value;

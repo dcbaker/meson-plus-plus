@@ -23,7 +23,7 @@ class Toolchain {
     Toolchain(std::unique_ptr<Compiler::Compiler> && c, std::unique_ptr<Linker::Linker> && l,
               std::unique_ptr<Archiver::Archiver> && a)
         : compiler{std::move(c)}, linker{std::move(l)}, archiver{std::move(a)} {};
-    Toolchain(Toolchain && t)
+    Toolchain(Toolchain && t) noexcept
         : compiler{std::move(t.compiler)}, linker{std::move(t.linker)}, archiver{std::move(
                                                                             t.archiver)} {};
     ~Toolchain() = default;
