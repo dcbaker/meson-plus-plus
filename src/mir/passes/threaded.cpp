@@ -87,6 +87,7 @@ bool search_find_program(const FunctionCall & f, State::Persistant & pstate, Fin
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
                    [](const String & s) { return s.value; });
+    std::lock_guard{jobs.lock};
     jobs.jobs.emplace_back(Type::PROGRAM, ret);
 
     return true;
