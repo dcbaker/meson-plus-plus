@@ -70,7 +70,16 @@ enum class Type {
 };
 
 using FindJob = std::tuple<Type, std::vector<std::string>>;
-using FindList = std::vector<FindJob>;
+
+class FindList {
+  public:
+    std::vector<FindJob> jobs;
+    std::mutex lock;
+
+    FindList() = default;
+    FindList(const FindList &) = delete;
+    FindList & operator=(const FindList &) = delete;
+};
 
 bool search_find_program(const FunctionCall & f, State::Persistant & pstate, FindList & jobs) {
     auto names = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
@@ -78,24 +87,23 @@ bool search_find_program(const FunctionCall & f, State::Persistant & pstate, Fin
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
                    [](const String & s) { return s.value; });
-    jobs.emplace_back(Type::PROGRAM, ret);
+    jobs.jobs.emplace_back(Type::PROGRAM, ret);
 
     return true;
 }
 
-void worker(FindList & jobs, std::mutex & state_lock,
-            std::mutex & job_lock, // NOLINT(bugprone-easily-swappable-parameters)
-            State::Persistant & pstate, std::set<std::string> & programs) {
+void worker(FindList & jobs, std::mutex & state_lock, State::Persistant & pstate,
+            std::set<std::string> & programs) {
     while (true) {
         Type job;
         std::vector<std::string> names;
         {
-            std::lock_guard l{job_lock};
-            if (jobs.empty()) {
+            std::lock_guard l{jobs.lock};
+            if (jobs.jobs.empty()) {
                 return;
             }
-            std::tie(job, names) = jobs.back();
-            jobs.pop_back();
+            std::tie(job, names) = jobs.jobs.back();
+            jobs.jobs.pop_back();
         }
         switch (job) {
             case Type::PROGRAM:
@@ -116,14 +124,14 @@ void worker(FindList & jobs, std::mutex & state_lock,
  */
 void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
     // TODO: should we use promises to get a result back from this?
-    std::mutex state_lock{}, job_lock{};
+    std::mutex state_lock{};
     std::set<std::string> programs{};
 
     // TODO: Don't hardocde this
     std::array<std::thread, 8> threads{};
 
     for (auto && t : threads) {
-        t = std::thread([&] { return worker(jobs, state_lock, job_lock, pstate, programs); });
+        t = std::thread([&] { return worker(jobs, state_lock, pstate, programs); });
     }
 
     for (auto & t : threads) {
