@@ -72,13 +72,31 @@ enum class Type {
 using FindJob = std::tuple<Type, std::vector<std::string>>;
 
 class FindList {
-  public:
+  private:
     std::vector<FindJob> jobs;
     std::mutex lock;
 
+  public:
     FindList() = default;
     FindList(const FindList &) = delete;
     FindList & operator=(const FindList &) = delete;
+
+    void emplace(const Type t, const std::vector<std::string> && v) {
+        std::lock_guard{lock};
+        jobs.emplace_back(t, std::move(v));
+    }
+
+    bool empty() {
+        std::lock_guard{lock};
+        return jobs.empty();
+    }
+
+    std::tuple<Type, std::vector<std::string>> get() {
+        std::lock_guard{lock};
+        auto out = std::move(jobs.back());
+        jobs.pop_back();
+        return out;
+    }
 };
 
 bool search_find_program(const FunctionCall & f, State::Persistant & pstate, FindList & jobs) {
@@ -87,8 +105,7 @@ bool search_find_program(const FunctionCall & f, State::Persistant & pstate, Fin
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
                    [](const String & s) { return s.value; });
-    std::lock_guard{jobs.lock};
-    jobs.jobs.emplace_back(Type::PROGRAM, ret);
+    jobs.emplace(Type::PROGRAM, std::move(ret));
 
     return true;
 }
@@ -99,12 +116,10 @@ void worker(FindList & jobs, std::mutex & state_lock, State::Persistant & pstate
         Type job;
         std::vector<std::string> names;
         {
-            std::lock_guard l{jobs.lock};
-            if (jobs.jobs.empty()) {
+            if (jobs.empty()) {
                 return;
             }
-            std::tie(job, names) = jobs.jobs.back();
-            jobs.jobs.pop_back();
+            std::tie(job, names) = jobs.get();
         }
         switch (job) {
             case Type::PROGRAM:
