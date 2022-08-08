@@ -71,6 +71,8 @@ class Compiler {
      * Convert a generic argument into a compiler specific one one
      *
      * @param arg The Argument to be converted
+     * @param src_dir the path of the source directory
+     * @param build_dir the path of the source directory
      */
     virtual std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
                                                          const fs::path & src_dir,
