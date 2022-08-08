@@ -17,6 +17,8 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
     // XXX: this can't handle things like "-I foo"...
     const std::string start{arg.substr(0, 2)};
 
+    // TODO: Linker argument generalization should be done by the linker...
+
     if (start == "-L") {
         return {arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH};
     }
@@ -40,6 +42,7 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
         // TODO: or .so.X.Y.Z, .so.X.Y, .so.X
         return {arg, Arguments::Type::LINK};
     }
+    // TODO: Need to differnentiate RAW_COMPILE and RAW_LINK arguments
     return {arg, Arguments::Type::RAW};
 }
 
@@ -49,10 +52,6 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
     switch (arg.type) {
         case Arguments::Type::DEFINE:
             return {"-D", arg.value};
-        case Arguments::Type::LINK:
-            return {"-l", arg.value};
-        case Arguments::Type::LINK_SEARCH:
-            return {"-L", arg.value};
         case Arguments::Type::INCLUDE: {
             std::vector<std::string> args{};
             std::string inc_arg;
@@ -79,6 +78,9 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
         }
         case Arguments::Type::RAW:
             return {arg.value};
+        case Arguments::Type::LINK:
+        case Arguments::Type::LINK_SEARCH:
+            return {};
         default:
             throw std::exception{}; // Should be unreachable
     }
