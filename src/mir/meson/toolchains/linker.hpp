@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,12 +19,14 @@
 
 namespace MIR::Toolchain::Linker {
 
+namespace fs = std::filesystem;
+
 /**
  * Abstract base for all Linkers.
  */
 class Linker {
   public:
-    Linker(const Linker&) = default;
+    Linker(const Linker &) = default;
     virtual ~Linker() = default;
     virtual RSPFileSupport rsp_support() const = 0;
     virtual std::string id() const = 0;
@@ -43,6 +46,16 @@ class Linker {
 
     /// Get arguments that should always be used for this linker
     virtual std::vector<std::string> always_args() const = 0;
+    /**
+     * Convert a generic argument into a compiler specific one one
+     *
+     * @param arg The Argument to be converted
+     * @param src_dir the path of the source directory
+     * @param build_dir the path of the source directory
+     */
+    virtual std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
+                                                         const fs::path & src_dir,
+                                                         const fs::path & build_dir) const = 0;
 
     Linker(std::vector<std::string> c) : _command{std::move(c)} {};
     const std::vector<std::string> _command;
@@ -62,6 +75,9 @@ class GnuBFD : public Linker {
     }
     const std::vector<std::string> & command() const final { return _command; }
     std::vector<std::string> always_args() const final { return {}; }
+    std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
+                                                 const fs::path & src_dir,
+                                                 const fs::path & build_dir) const final;
 };
 
 namespace Drivers {
@@ -78,6 +94,9 @@ class Gnu : public Linker {
     std::vector<std::string> output_command(const std::string & outfile) const override;
     const std::vector<std::string> & command() const final { return compiler->command; }
     std::vector<std::string> always_args() const final { return {}; }
+    std::vector<std::string> specialize_argument(const Arguments::Argument & arg,
+                                                 const fs::path & src_dir,
+                                                 const fs::path & build_dir) const final;
 
   private:
     const GnuBFD linker;
