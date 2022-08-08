@@ -56,10 +56,8 @@ enum class IncludeType {
  */
 class Argument {
   public:
-    Argument(std::string v, const Type & t)
-        : value{std::move(v)}, type{t}, inc_type{IncludeType::BASE} {};
-    Argument(std::string v, const Type & t, const IncludeType & i)
-        : value{std::move(v)}, type{t}, inc_type{i} {};
+    Argument(std::string v, const Type & t);
+    Argument(std::string v, const Type & t, const IncludeType & i);
 
     /// The value of the argument
     const std::string value;
@@ -69,6 +67,8 @@ class Argument {
 
     /// Include type specialization
     const IncludeType inc_type;
+
+    bool operator==(const Argument &) const;
 };
 
 } // namespace MIR::Arguments

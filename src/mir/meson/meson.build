@@ -12,6 +12,7 @@ endforeach
 libmeson = static_library(
   'meson',
   [
+    'arguments.cpp',
     'machines.cpp',
     'state/state.cpp',
     'toolchains/archivers/gnu.cpp',
