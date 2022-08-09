@@ -55,18 +55,23 @@ enum class IncludeType {
  * internally, and converting between them.
  */
 class Argument {
+  private:
+    std::string _value;
+    Type _type;
+    IncludeType inc_type;
+
   public:
     Argument(std::string v, const Type & t);
     Argument(std::string v, const Type & t, const IncludeType & i);
 
     /// The value of the argument
-    const std::string value;
+    std::string value() const;
 
     /// The type of the argument
-    const Type type;
+    Type type() const;
 
     /// Include type specialization
-    const IncludeType inc_type;
+    IncludeType include_type() const;
 
     bool operator==(const Argument &) const;
 };
