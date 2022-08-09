@@ -49,13 +49,13 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
 std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument & arg,
                                                       const fs::path & src_dir,
                                                       const fs::path & build_dir) const {
-    switch (arg.type) {
+    switch (arg.type()) {
         case Arguments::Type::DEFINE:
-            return {"-D", arg.value};
+            return {"-D", arg.value()};
         case Arguments::Type::INCLUDE: {
             std::vector<std::string> args{};
             std::string inc_arg;
-            switch (arg.inc_type) {
+            switch (arg.include_type()) {
                 case Arguments::IncludeType::BASE:
                     inc_arg = "-I";
                     break;
@@ -65,7 +65,7 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
                 default:
                     throw std::exception{}; // Should be unreachable
             }
-            std::string b_inc = "'" + std::string{fs::relative(arg.value, build_dir)} + "'";
+            std::string b_inc = "'" + std::string{fs::relative(arg.value(), build_dir)} + "'";
             if (b_inc == "''") {
                 b_inc = ".";
             }
@@ -73,11 +73,11 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
             args.emplace_back(b_inc);
             args.emplace_back(inc_arg);
             // Needs to be relative to build dir
-            args.emplace_back(fs::relative(src_dir / arg.value, build_dir));
+            args.emplace_back(fs::relative(src_dir / arg.value(), build_dir));
             return args;
         }
         case Arguments::Type::RAW:
-            return {arg.value};
+            return {arg.value()};
         case Arguments::Type::LINK:
         case Arguments::Type::LINK_SEARCH:
             return {};

@@ -58,8 +58,8 @@ TEST(executable, simple) {
     ASSERT_EQ(args.size(), 1);
 
     const auto & a = args.front();
-    ASSERT_EQ(a.type, MIR::Arguments::Type::DEFINE);
-    ASSERT_EQ(a.value, "foo");
+    ASSERT_EQ(a.type(), MIR::Arguments::Type::DEFINE);
+    ASSERT_EQ(a.value(), "foo");
 }
 
 TEST(static_library, simple) {
@@ -85,8 +85,8 @@ TEST(static_library, simple) {
     ASSERT_EQ(args.size(), 1);
 
     const auto & a = args.front();
-    ASSERT_EQ(a.type, MIR::Arguments::Type::DEFINE);
-    ASSERT_EQ(a.value, "foo");
+    ASSERT_EQ(a.type(), MIR::Arguments::Type::DEFINE);
+    ASSERT_EQ(a.value(), "foo");
 }
 
 TEST(project, valid) {
@@ -292,7 +292,7 @@ TEST(declare_dependency, string_include_dirs) {
 
     const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
     ASSERT_EQ(d.arguments.size(), 1);
-    ASSERT_EQ(d.arguments[0].value, "foo");
+    ASSERT_EQ(d.arguments[0].value(), "foo");
 }
 
 TEST(declare_dependency, compile_args) {
@@ -312,8 +312,8 @@ TEST(declare_dependency, compile_args) {
 
     const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
     ASSERT_EQ(d.arguments.size(), 1);
-    ASSERT_EQ(d.arguments[0].value, "foo");
-    ASSERT_EQ(d.arguments[0].type, MIR::Arguments::Type::DEFINE);
+    ASSERT_EQ(d.arguments[0].value(), "foo");
+    ASSERT_EQ(d.arguments[0].type(), MIR::Arguments::Type::DEFINE);
 }
 
 TEST(declare_dependency, recursive) {
@@ -336,6 +336,6 @@ TEST(declare_dependency, recursive) {
 
     const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
     ASSERT_EQ(d.arguments.size(), 1);
-    ASSERT_EQ(d.arguments[0].value, "foo");
-    ASSERT_EQ(d.arguments[0].type, MIR::Arguments::Type::DEFINE);
+    ASSERT_EQ(d.arguments[0].value(), "foo");
+    ASSERT_EQ(d.arguments[0].type(), MIR::Arguments::Type::DEFINE);
 }
