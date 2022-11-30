@@ -532,14 +532,17 @@ std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
         i = lower_build_target<StaticLibrary>(f, pstate);
     } else if (f.name == "declare_dependency") {
         i = lower_declare_dependency(f, pstate);
+    } else if (f.name == "find_program" || f.name == "dependency") {
+        // These are handled elsewhere
+        return std::nullopt;
     }
 
-    if (i) {
-        i.value().var = obj.var;
-        return i;
+    if (!i) {
+        throw Util::Exceptions::MesonException("Unexpected function name:" + f.name);
     }
-    // XXX: Shouldn't really be able to get here...
-    return std::nullopt;
+
+    i.value().var = obj.var;
+    return i;
 }
 
 } // namespace
