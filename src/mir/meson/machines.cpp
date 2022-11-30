@@ -77,4 +77,34 @@ std::string Info::system() const {
     }
 }
 
+std::string to_string(const Machine m) {
+    switch (m) {
+        case Machine::BUILD:
+            return "build";
+        case Machine::HOST:
+            return "host";
+        case Machine::TARGET:
+            return "target";
+    }
+    assert(false); // unreachable
+}
+
+std::string to_string(const Endian e) {
+    switch (e) {
+        case Endian::BIG:
+            return "big";
+        case Endian::LITTLE:
+            return "little";
+    }
+    assert(false); // unreachable
+}
+
+std::string to_string(const Kernel k) {
+    switch (k) {
+        case Kernel::LINUX:
+            return "linux";
+    }
+    assert(false); // unreachable
+}
+
 } // namespace MIR::Machines
