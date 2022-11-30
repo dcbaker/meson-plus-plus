@@ -33,6 +33,10 @@ enum class Endian {
     LITTLE,
 };
 
+std::string to_string(const Machine);
+std::string to_string(const Kernel);
+std::string to_string(const Endian);
+
 /**
  * Information about one of the three machines (host, build, target)
  *
@@ -46,7 +50,7 @@ class Info {
         : machine{m}, kernel{k}, endian{e}, cpu_family{std::move(cf)}, cpu{std::move(c)} {};
     ~Info() = default;
 
-    Info(const Info&) = default;
+    Info(const Info &) = default;
 
     std::string system() const;
 
