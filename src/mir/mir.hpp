@@ -44,7 +44,7 @@ class Variable {
     Variable(std::string n);
     Variable(std::string n, const uint32_t & v);
     Variable(const Variable & v) = default;
-    Variable& operator=(const Variable & v) = default;
+    Variable & operator=(const Variable & v) = default;
 
     std::string name;
 
@@ -54,6 +54,9 @@ class Variable {
     explicit operator bool() const;
     bool operator<(const Variable &) const;
     bool operator==(const Variable &) const;
+
+    // Print a human readable version of this Variable
+    std::string print() const;
 };
 
 class FunctionCall;
@@ -121,6 +124,9 @@ class Instruction {
 
     /// Get a const reference to the held object
     const Object & object() const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 /**
@@ -147,6 +153,9 @@ class File {
     bool operator==(const File &) const;
     bool operator!=(const File &) const;
 
+    /// Print a human readable version of this
+    std::string print() const;
+
     // For gtest
     friend std::ostream & operator<<(std::ostream & os, const File & f);
 
@@ -156,8 +165,6 @@ class File {
     const fs::path source_root;
     const fs::path build_root;
 };
-
-class CustomTarget;
 
 class CustomTarget {
   public:
@@ -169,6 +176,9 @@ class CustomTarget {
     const std::vector<File> outputs;
     const std::vector<std::string> command;
     const fs::path subdir;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 using ArgMap = std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>;
@@ -211,6 +221,9 @@ class Executable {
     const std::vector<StaticLinkage> link_static{};
 
     std::string output() const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class StaticLibrary {
@@ -242,6 +255,9 @@ class StaticLibrary {
     const std::vector<StaticLinkage> link_static{};
 
     std::string output() const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 /**
@@ -261,6 +277,9 @@ class Phi {
 
     bool operator==(const Phi & other) const;
     bool operator<(const Phi & other) const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class IncludeDirectories {
@@ -269,6 +288,9 @@ class IncludeDirectories {
 
     const std::vector<std::string> directories;
     const bool is_system;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 enum class DependencyType {
@@ -299,6 +321,9 @@ class Dependency {
 
     /// The kind of dependency this is
     const DependencyType type = DependencyType::INTERNAL;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 enum class MessageLevel {
@@ -317,6 +342,9 @@ class Message {
 
     /// The message itself
     const std::string message;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Program {
@@ -328,11 +356,17 @@ class Program {
     const fs::path path;
 
     bool found() const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Empty {
   public:
     Empty() = default;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 /**
@@ -348,6 +382,9 @@ class Compiler {
 
     Instruction get_id(const std::vector<Instruction> &,
                        const std::unordered_map<std::string, Instruction> &) const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 // Can be a method via an optional paramter maybe?
@@ -376,6 +413,9 @@ class FunctionCall {
      * required to accurately map sources between the source and build dirs.
      */
     const std::filesystem::path source_dir;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class String {
@@ -386,6 +426,9 @@ class String {
     bool operator!=(const String &) const;
 
     std::string value;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Boolean {
@@ -396,6 +439,9 @@ class Boolean {
     bool operator!=(const Boolean &) const;
 
     const bool value;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Number {
@@ -406,6 +452,9 @@ class Number {
     bool operator!=(const Number &) const;
 
     const int64_t value;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Identifier {
@@ -431,6 +480,9 @@ class Identifier {
      * removing the need to track this information long term.
      */
     uint32_t version;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Array {
@@ -440,6 +492,9 @@ class Array {
     Array(std::vector<String> && a);
 
     std::vector<Instruction> value;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class Dict {
@@ -449,6 +504,9 @@ class Dict {
     // TODO: the key is allowed to be a string or an expression that evaluates
     // to a string, we need to enforce that somewhere.
     std::unordered_map<std::string, Instruction> value;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 class BasicBlock;
@@ -487,6 +545,9 @@ class Condition {
 
     /// The block to go to if the condition is false
     std::shared_ptr<BasicBlock> if_false;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 using NextType =
@@ -518,6 +579,9 @@ class BasicBlock {
     const uint32_t index;
 
     bool operator<(const BasicBlock &) const;
+
+    /// Print a human readable version of this
+    std::string print() const;
 };
 
 } // namespace MIR
