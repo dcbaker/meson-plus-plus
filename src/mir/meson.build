@@ -20,6 +20,7 @@ libmir = static_library(
     'passes/join_blocks.cpp',
     'passes/machines.cpp',
     'passes/program_objects.cpp',
+    'passes/print.cpp',
     'passes/pruning.cpp',
     'passes/string_objects.cpp',
     'passes/threaded.cpp',
