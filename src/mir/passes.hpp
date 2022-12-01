@@ -130,4 +130,9 @@ bool lower_dependency_objects(BasicBlock & block, State::Persistant & pstate);
 /// Delete any code that has become unreachable
 bool delete_unreachable(BasicBlock & block);
 
+/// Debugging pass that dumps a human readable text representation of the IR to
+/// a file.
+/// controlled by setting the MESONPP_DEBUG_PRINT_MIR environment variable
+bool printer(const BasicBlock & block, const uint64_t pass);
+
 } // namespace MIR::Passes

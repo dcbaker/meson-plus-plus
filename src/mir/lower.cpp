@@ -10,14 +10,18 @@ namespace MIR {
 
 namespace {
 
-void lower_impl(BasicBlock & block, State::Persistant & pstate) {
+uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, uint64_t pass = 0) {
     std::unordered_map<std::string, uint32_t> value_number_data{};
     Passes::ReplacementTable rt{};
     Passes::LastSeenTable lst{};
     Passes::PropTable pt{};
 
+    // Print the initial MIR we get from the AST -> MIR conversion
+    Passes::printer(block, pass);
+
     bool progress = true;
     while (progress) {
+        pass++;
         progress = Passes::block_walker(
             block,
             {
@@ -34,8 +38,11 @@ void lower_impl(BasicBlock & block, State::Persistant & pstate) {
                 [&](BasicBlock & b) { return Passes::lower_program_objects(b, pstate); },
                 [&](BasicBlock & b) { return Passes::lower_string_objects(b, pstate); },
                 [&](BasicBlock & b) { return Passes::lower_dependency_objects(b, pstate); },
+                [&](BasicBlock & b) { return Passes::printer(b, pass); },
             });
     }
+
+    return ++pass;
 }
 
 } // namespace
@@ -54,9 +61,9 @@ void lower(BasicBlock & block, State::Persistant & pstate) {
     // threaded lowering, which we run across the entire program to lower things
     // like find_program(), Then run the main loop again until we've lowered it
     // all away
-    lower_impl(block, pstate);
+    uint64_t pass = lower_impl(block, pstate);
     Passes::threaded_lowering(block, pstate);
-    lower_impl(block, pstate);
+    lower_impl(block, pstate, pass);
 }
 
 } // namespace MIR
