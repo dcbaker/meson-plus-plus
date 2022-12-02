@@ -30,7 +30,7 @@ bool number(Instruction & obj, std::unordered_map<std::string, uint32_t> & data)
 }
 
 // Annotate usages of identifiers, so know if we need to replace them
-bool number_uses(const uint32_t & index, const Instruction & obj, LastSeenTable & tab) {
+bool number_uses(const uint32_t & index, Instruction & obj, LastSeenTable & tab) {
     bool progress = false;
 
     auto & table = tab[index];
@@ -48,6 +48,8 @@ bool number_uses(const uint32_t & index, const Instruction & obj, LastSeenTable 
                 id.version = v->second;
             }
         }
+        progress |= function_argument_walker(
+            obj, [&](Instruction & i) { return number_uses(index, i, tab); });
     }
 
     if (obj.var) {
