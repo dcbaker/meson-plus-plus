@@ -72,6 +72,10 @@ bool constant_propogation_holder_impl(Instruction & obj, const PropTable & table
                 progress |= true;
             }
         }
+        progress |= function_argument_walker(
+            obj, [&](const Instruction & i) { return constant_propogation_impl(i, table); });
+        progress |= function_argument_walker(
+            obj, [&](Instruction & i) { return constant_propogation_holder_impl(i, table); });
     }
 
     return progress;
