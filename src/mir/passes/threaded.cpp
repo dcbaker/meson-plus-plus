@@ -50,6 +50,9 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
 
             p.remove_prefix(dirname.length() + (l != p.npos)); // skip dirname and separator (if there is one)
 
+            if (dirname.empty())
+                continue;
+
             fs::path trial = fs::path{dirname} / name;
             if (fs::exists(trial)) {
                 std::lock_guard l{lock};
