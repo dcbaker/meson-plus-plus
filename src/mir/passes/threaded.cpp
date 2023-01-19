@@ -6,6 +6,7 @@
 #include <future>
 #include <iostream>
 #include <mutex>
+#include <string_view>
 
 #include "argument_extractors.hpp"
 #include "exceptions.hpp"
@@ -31,7 +32,6 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
     const std::string path{std::getenv("PATH")};
 
     for (const std::string & name : names) {
-        std::string::size_type last{0}, next{0};
         // Only schedule one finder for this program
         {
             std::lock_guard l{lock};
@@ -41,12 +41,16 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
             }
         }
 
-        // TODO: the path separator may not be `:`
-        while ((next = path.find(':', last)) != std::string::npos) {
-            fs::path substr = path.substr(last, next - last);
-            last = next + 1;
+        std::string_view p = path;
 
-            fs::path trial = substr / name;
+        while (!p.empty()) {
+            // TODO: the path separator may not be `:`
+            auto l = p.find(':');
+            auto dirname = p.substr(0, std::min(p.length(), l));
+
+            p.remove_prefix(dirname.length() + (l != p.npos)); // skip dirname and separator (if there is one)
+
+            fs::path trial = fs::path{dirname} / name;
             if (fs::exists(trial)) {
                 std::lock_guard l{lock};
                 auto & map = pstate.programs.build();
