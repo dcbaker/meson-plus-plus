@@ -35,10 +35,10 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
         // Only schedule one finder for this program
         {
             std::lock_guard l{lock};
-            if (programs.count(name)) {
+            const auto & [ it, inserted ] = programs.insert(name);
+            if (!inserted) {
                 continue;
             }
-            programs.emplace(name);
         }
 
         // TODO: the path separator may not be `:`
@@ -51,9 +51,7 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
                 std::lock_guard l{lock};
                 auto & map = pstate.programs.build();
                 for (const auto & name : names) {
-                    if (map.count(name) == 0) {
-                        map[name] = trial;
-                    }
+                    map.try_emplace(name, trial);
                 }
                 std::cout << "Found program \"" << name << "\" " << Util::Log::green("YES") << " ("
                           << trial << ")" << std::endl;
