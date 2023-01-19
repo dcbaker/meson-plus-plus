@@ -20,10 +20,6 @@ bool number(Instruction & obj, std::unordered_map<std::string, uint32_t> & data)
         return false;
     }
 
-    if (data.count(obj.var.name) == 0) {
-        data[obj.var.name] = 0;
-    }
-
     obj.var.version = ++data[obj.var.name];
 
     return true;
