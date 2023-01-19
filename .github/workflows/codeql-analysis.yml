@@ -44,7 +44,9 @@ jobs:
         sudo apt install libfl-dev libgtest-dev
 
     - name: setup python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
     - name: Checkout repository
       uses: actions/checkout@v3
