@@ -82,17 +82,17 @@ class FindList {
     FindList & operator=(const FindList &) = delete;
 
     void emplace(const Type t, const std::vector<std::string> && v) {
-        std::lock_guard{lock};
+        std::lock_guard l{lock};
         jobs.emplace_back(t, std::move(v));
     }
 
     bool empty() {
-        std::lock_guard{lock};
+        std::lock_guard l{lock};
         return jobs.empty();
     }
 
     std::tuple<Type, std::vector<std::string>> get() {
-        std::lock_guard{lock};
+        std::lock_guard l{lock};
         auto out = std::move(jobs.back());
         jobs.pop_back();
         return out;
