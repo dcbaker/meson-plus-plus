@@ -93,6 +93,7 @@ Instruction::Instruction(StaticLibrary val) : obj_ptr{std::make_shared<Object>(s
 Instruction::Instruction(Executable val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Test val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 
 std::string Instruction::print() const {
     const std::string i = std::visit(
@@ -364,6 +365,14 @@ std::string Dependency::print() const {
     return "Dependency { name = " + name + "; found = " + to_string(found) +
            "; version = " + version + "; arguments = " + join(args) +
            "; type = " + to_string(type) + " }";
+}
+
+Test::Test(std::string n, Callable exe) : name{std::move(n)}, executable{exe} {};
+
+std::string Test::print() const {
+    return "Test { name = " + name + "; executable = " +
+           std::visit([](auto && arg) { return arg.print(); }, executable) +
+           " }";
 }
 
 } // namespace MIR
