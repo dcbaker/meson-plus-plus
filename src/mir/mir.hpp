@@ -1,4 +1,4 @@
-// SPDX-license-identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021 Intel Corporation
 
 /**
@@ -77,10 +77,14 @@ class Program;
 class Empty;
 class CustomTarget;
 class Dependency;
+class Test;
 
-using Object = std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier,
-                            Array, Dict, Compiler, File, Executable, StaticLibrary, Phi,
-                            IncludeDirectories, Message, Program, Empty, CustomTarget, Dependency>;
+using Object =
+    std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
+                 Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
+                 Program, Empty, CustomTarget, Dependency, Test>;
+
+using Callable = std::variant<File, Executable, Program>;
 
 /**
  * A single instruction.
@@ -111,6 +115,7 @@ class Instruction {
     Instruction(Executable val);
     Instruction(Phi val);
     Instruction(Program val);
+    Instruction(Test val);
 
     Instruction & operator=(const Instruction &) = default;
 
@@ -356,6 +361,17 @@ class Program {
     const fs::path path;
 
     bool found() const;
+
+    /// Print a human readable version of this
+    std::string print() const;
+};
+
+class Test {
+  public:
+    Test(std::string n, Callable exe);
+
+    const std::string name;
+    const Callable executable;
 
     /// Print a human readable version of this
     std::string print() const;
