@@ -336,6 +336,24 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
     return Dependency{"internal", true, version, args};
 }
 
+std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persistant & pstate) {
+    if (f.pos_args.size() != 2) {
+        throw Util::Exceptions::InvalidArguments("test: takes 2 positional arguments.");
+    }
+
+    auto && name = extract_positional_argument<String>(f.pos_args.at(0));
+    if (!name) {
+        throw Util::Exceptions::InvalidArguments("test: first argument must be a string");
+    }
+    auto && prog = extract_positional_argument<Callable>(f.pos_args.at(1));
+    if (!prog) {
+        throw Util::Exceptions::InvalidArguments(
+            "test: second argument must be a File, Executable, or Found Program");
+    }
+
+    return Test{name.value().value, prog.value()};
+}
+
 std::vector<Instruction>
 extract_source_inputs(const std::unordered_map<std::string, Instruction> & kws,
                       const std::string & name, const fs::path & current_source_dir,
@@ -532,6 +550,8 @@ std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
         i = lower_build_target<StaticLibrary>(f, pstate);
     } else if (f.name == "declare_dependency") {
         i = lower_declare_dependency(f, pstate);
+    } else if (f.name == "test") {
+        i = lower_test(f, pstate);
     } else if (f.name == "find_program" || f.name == "dependency") {
         // These are handled elsewhere
         return std::nullopt;
