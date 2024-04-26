@@ -1,30 +1,31 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021-2022 Intel Corporation
+# Copyright © 2021-2024 Intel Corporation
 
-lib_fir = static_library(
-  'fir',
+lib_backend = static_library(
+  'backend',
   [
+    'common/backend.cpp',
     'fir/mir_to_fir.cpp',
-  ],
-  dependencies : [
-    idep_mir,
-    idep_util,
-  ],
-)
-
-lib_ninja = static_library(
-  'ninja',
-  [
     'ninja/ninja.cpp',
   ],
-  link_with : [lib_fir],
   dependencies : [
     idep_mir,
     idep_util,
   ],
 )
 
-idep_ninja = declare_dependency(
-  link_with : lib_ninja,
+idep_backend = declare_dependency(
+  link_with : lib_backend,
   include_directories : include_directories('.'),
+  dependencies : idep_mir.partial_dependency(includes : true),
+)
+
+test(
+  'backends',
+  executable(
+    'backend_tests',
+    'backend_tests.cpp',
+    dependencies : [idep_backend, dep_gtest],
+  ),
+  protocol : 'gtest',
 )

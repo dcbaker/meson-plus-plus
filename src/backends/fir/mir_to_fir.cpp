@@ -155,12 +155,29 @@ std::vector<Target> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
     return {Target{ins, outs, TargetType::CUSTOM, e.command}};
 }
 
+struct TestVisitor {
+    TestVisitor() = default;
+
+    fs::path operator()(const MIR::File & callable) { return callable.relative_to_build_dir(); }
+    fs::path operator()(const MIR::Executable & callable) {
+        return callable.subdir / callable.output();
+    };
+    fs::path operator()(const MIR::Program & callable) { return callable.path; };
+};
+
+Common::Test target_test(const MIR::Test & t, const MIR::State::Persistant & pstate) {
+    TestVisitor visitor{};
+    fs::path && output = std::visit(visitor, t.executable);
+    return Common::Test{t.name, output};
+}
+
 } // namespace
 
-std::vector<Target> mir_to_fir(const MIR::BasicBlock & block,
-                               const MIR::State::Persistant & pstate) {
+std::tuple<std::vector<Target>, std::vector<Common::Test>>
+mir_to_fir(const MIR::BasicBlock & block, const MIR::State::Persistant & pstate) {
     // A list of all rules
     std::vector<Target> rules{};
+    std::vector<Common::Test> tests{};
 
     for (const auto & i : block.instructions) {
         if (std::holds_alternative<MIR::Executable>(*i.obj_ptr)) {
@@ -172,10 +189,12 @@ std::vector<Target> mir_to_fir(const MIR::BasicBlock & block,
         } else if (std::holds_alternative<MIR::CustomTarget>(*i.obj_ptr)) {
             auto r = target_rule(std::get<MIR::CustomTarget>(*i.obj_ptr), pstate);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
+        } else if (std::holds_alternative<MIR::Test>(*i.obj_ptr)) {
+            tests.emplace_back(target_test(std::get<MIR::Test>(*i.obj_ptr), pstate));
         }
     }
 
-    return rules;
+    return std::make_tuple(rules, tests);
 }
 
 } // namespace Backends::FIR

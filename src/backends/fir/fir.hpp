@@ -4,9 +4,10 @@
 #pragma once
 
 #include <string>
-#include <variant>
+#include <tuple>
 #include <vector>
 
+#include "common/backend.hpp"
 #include "meson/machines.hpp"
 #include "meson/state/state.hpp"
 #include "mir.hpp"
@@ -69,7 +70,7 @@ class Target {
     const std::vector<std::string> order_deps;
 };
 
-std::vector<Target> mir_to_fir(const MIR::BasicBlock & block,
-                               const MIR::State::Persistant & pstate);
+std::tuple<std::vector<Target>, std::vector<Common::Test>>
+mir_to_fir(const MIR::BasicBlock & block, const MIR::State::Persistant & pstate);
 
 } // namespace Backends::FIR
