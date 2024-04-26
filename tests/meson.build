@@ -1,4 +1,4 @@
-# SPDX-license-identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2022 Intel Corporation
 
 prog_runner = find_program('runner.sh', dirs : meson.current_source_dir())
