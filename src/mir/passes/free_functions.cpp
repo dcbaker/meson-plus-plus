@@ -336,6 +336,19 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
     return Dependency{"internal", true, version, args};
 }
 
+class CallableReducer {
+  public:
+    CallableReducer() = default;
+
+    Callable operator()(const std::monostate &) {
+        throw Util::Exceptions::InvalidArguments(
+            "test: second argument must be a File, Executable, or Found Program");
+    }
+    Callable operator()(const MIR::File & f) { return f; }
+    Callable operator()(const MIR::Executable & f) { return f; }
+    Callable operator()(const MIR::Program & f) { return f; }
+};
+
 std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persistant & pstate) {
     if (f.pos_args.size() != 2) {
         throw Util::Exceptions::InvalidArguments("test: takes 2 positional arguments.");
@@ -345,13 +358,11 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
     if (!name) {
         throw Util::Exceptions::InvalidArguments("test: first argument must be a string");
     }
-    auto && prog = extract_positional_argument<Callable>(f.pos_args.at(1));
-    if (!prog) {
-        throw Util::Exceptions::InvalidArguments(
-            "test: second argument must be a File, Executable, or Found Program");
-    }
+    auto && prog_v =
+        extract_positional_argument_v<MIR::File, MIR::Program, MIR::Executable>(f.pos_args.at(1));
+    const Callable & prog = std::visit(CallableReducer{}, prog_v);
 
-    return Test{name.value().value, prog.value()};
+    return Test{name.value().value, prog};
 }
 
 std::vector<Instruction>

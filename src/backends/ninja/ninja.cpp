@@ -12,6 +12,7 @@
 #include <variant>
 #include <vector>
 
+#include "common/backend.hpp"
 #include "entry.hpp"
 #include "exceptions.hpp"
 #include "fir/fir.hpp"
@@ -253,13 +254,17 @@ void generate(const MIR::BasicBlock & block, const MIR::State::Persistant & psta
         << "build PHONY: phony\n\n"
         << "# Build rules for targets\n\n";
 
-    const auto & rules = FIR::mir_to_fir(block, pstate);
+    auto && [rules, tests] = FIR::mir_to_fir(block, pstate);
     for (const auto & r : rules) {
         write_build_rule(r, out);
     }
 
     out.flush();
     out.close();
+
+    if (!tests.empty()) {
+        Common::serialize_tests(tests, pstate.build_root / "tests.serialized");
+    }
 }
 
 } // namespace Backends::Ninja
