@@ -1,5 +1,5 @@
-// SPDX-license-identifier: Apache-2.0
-// Copyright © 2022 Dylan Baker
+// SPDX-License-Identifier: Apache-2.0
+// Copyright © 2022-2024 Intel Corporation
 
 #include <cstdlib>
 #include <fstream>
