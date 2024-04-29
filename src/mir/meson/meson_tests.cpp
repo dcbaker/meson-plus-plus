@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2022-2024 Intel Corporation
 
+#include "state/state.hpp"
+#include "version.hpp"
+
 #include <gtest/gtest.h>
 
-#include "version.hpp"
+#include <sstream>
 
 namespace V = MIR::Version;
 using V::to_string;
@@ -92,3 +95,24 @@ INSTANTIATE_TEST_SUITE_P(
         std::tuple("0.6.7+20150214+git3a710f9", "0.6.7", V::Operator::GT),
         std::tuple("15.8b", "15.8.0.1", V::Operator::LT),
         std::tuple("1.2rc1", "1.2.0", V::Operator::LT)));
+
+TEST(persistant_state, load) {
+    std::istringstream is{"name:foo\nsource root:/foo\nbuild root:/foo/build"};
+    MIR::State::Persistant pstate = MIR::State::load(is);
+    ASSERT_EQ(pstate.name, "foo");
+    ASSERT_EQ(pstate.source_root, "/foo");
+    ASSERT_EQ(pstate.build_root, "/foo/build");
+}
+
+TEST(persistant_state, serialize) {
+    MIR::State::Persistant pstate{};
+    pstate.name = "foo";
+    pstate.source_root = "/foo";
+    pstate.build_root = "/foo/build";
+
+    std::ostringstream out{};
+
+    pstate.serialize(out);
+
+    ASSERT_EQ(out.str(), "name:foo\nsource root:/foo\nbuild root:/foo/build\n");
+}

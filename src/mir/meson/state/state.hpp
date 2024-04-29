@@ -20,7 +20,12 @@ namespace MIR::State {
  */
 class Persistant {
   public:
+    Persistant();
     Persistant(std::filesystem::path, std::filesystem::path);
+
+    /// @brief Serialize the Persistant state
+    /// @param out A stream to write the serialized state to
+    void serialize(std::ostream & out) const;
 
     // This must be mutable because of `add_language`
     /// A mapping of language : machine : toolchain
@@ -34,10 +39,10 @@ class Persistant {
     Machines::PerMachine<Machines::Info> machines;
 
     /// absolute path to the source tree
-    const std::filesystem::path source_root;
+    std::filesystem::path source_root;
 
     /// absolute path to the build tree
-    const std::filesystem::path build_root;
+    std::filesystem::path build_root;
 
     /// The name of the project
     std::string name;
@@ -50,5 +55,7 @@ class Persistant {
      */
     Machines::PerMachine<std::unordered_map<std::string, fs::path>> programs;
 };
+
+Persistant load(std::istream & in);
 
 } // namespace MIR::State
