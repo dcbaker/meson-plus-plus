@@ -1,12 +1,13 @@
-# SPDX-license-identifier: Apache-2.0
-# Copyright © 2021 Dylan Baker
-# Copyright © 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2021
+# Copyright © 2021-2024 Intel Corporation
 
 libutil = static_library(
   'util',
   [
     'log.cpp',
     'process.cpp',
+    'utils.cpp',
   ],
 )
 
