@@ -21,6 +21,7 @@ void Test::serialize(std::ostream & stream) const {
     stream << "  name:" << name << '\n';
     stream << "  exe:" << (exe.has_parent_path() ? std::string{exe} : ("./" + std::string{exe}))
            << '\n';
+    stream << "  xfail:" << int{should_fail} << '\n';
     stream << "END_TEST\n";
 }
 
@@ -66,6 +67,8 @@ std::vector<Test> deserialize_tests(std::istream & in) {
                 test.name = v;
             } else if (k == "exe") {
                 test.exe = v;
+            } else if (k == "xfail") {
+                test.should_fail = v == "1";
             } else {
                 throw std::runtime_error{"not yet implemented"};
             }

@@ -35,16 +35,26 @@ class Jobs {
             std::string result;
             switch (ret) {
                 case 0:
-                    results.success++;
-                    result = Util::Log::green("OK");
+                    if (test.should_fail) {
+                        results.xpass++;
+                        result = Util::Log::red("XPASS");
+                    } else {
+                        results.success++;
+                        result = Util::Log::green("OK");
+                    }
                     break;
                 case 127:
                     results.skipped++;
                     result = Util::Log::yellow("SKIP");
                     break;
                 default:
-                    result = Util::Log::red("FAIL");
-                    results.failures++;
+                    if (test.should_fail) {
+                        result = Util::Log::green("XFAIL");
+                        results.xfail++;
+                    } else {
+                        result = Util::Log::red("FAIL");
+                        results.failures++;
+                    }
             }
 
             // TODO: need to calculate lengths
@@ -58,12 +68,14 @@ class Jobs {
 
     void report() const {
         std::cout << std::endl;
-        std::cout << "Ok:      " << results.success << std::endl;
-        std::cout << "Fail:    " << results.failures << std::endl;
-        std::cout << "Skipped: " << results.skipped << std::endl;
+        std::cout << "Ok:              " << results.success << std::endl;
+        std::cout << "Fail:            " << results.failures << std::endl;
+        std::cout << "Skipped:         " << results.skipped << std::endl;
+        std::cout << "Expected Fail:   " << results.xfail << std::endl;
+        std::cout << "Unexpected Pass: " << results.xpass << std::endl;
     }
 
-    int status() const { return results.failures > 0 ? 1 : 0; }
+    int status() const { return (results.failures > 0 || results.xpass > 0) ? 1 : 0; }
 
   private:
     size_t count;
@@ -74,6 +86,8 @@ class Jobs {
         size_t success{0};
         size_t failures{0};
         size_t skipped{0};
+        size_t xfail{0};
+        size_t xpass{0};
     } results;
 
     std::mutex job_lock{};
@@ -93,10 +107,10 @@ class Jobs {
 } // namespace
 
 int run_tests(const std::vector<bs::Test> & tests, const fs::path & builddir) {
-    std::array<std::thread, 1> threads;
+    std::array<std::thread, 8> threads;
     Jobs jobs{tests};
 
-    for (unsigned i = 0; i < 1; ++i) {
+    for (unsigned i = 0; i < 8; ++i) {
         threads[i] = std::thread([&] { jobs.run(builddir); });
     }
 

@@ -1,3 +1,6 @@
+# SPDX-License-Indentifier: Apache-2.0
+# Copyright © 2024 Intel Corporation
+
 project(
   '04 static and exe link',
   'cpp',

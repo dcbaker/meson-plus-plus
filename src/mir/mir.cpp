@@ -367,12 +367,13 @@ std::string Dependency::print() const {
            "; type = " + to_string(type) + " }";
 }
 
-Test::Test(std::string n, Callable exe) : name{std::move(n)}, executable{exe} {};
+Test::Test(std::string n, Callable exe, bool xfail)
+    : name{std::move(n)}, executable{exe}, should_fail{xfail} {};
 
 std::string Test::print() const {
-    return "Test { name = " + name + "; executable = " +
-           std::visit([](auto && arg) { return arg.print(); }, executable) +
-           " }";
+    return "Test { name = " + name +
+           "; executable = " + std::visit([](auto && arg) { return arg.print(); }, executable) +
+           "; should_fail = " + (should_fail ? "true" : "false") + " }";
 }
 
 } // namespace MIR

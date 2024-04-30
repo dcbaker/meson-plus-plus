@@ -15,7 +15,8 @@ namespace fs = std::filesystem;
 class Test {
   public:
     Test() = default;
-    Test(std::string n, fs::path e) : name{std::move(n)}, exe{std::move(e)} {};
+    Test(std::string n, fs::path e, bool xf)
+        : name{std::move(n)}, exe{std::move(e)}, should_fail{xf} {};
     // Test(const char * serial);
 
     /// The name of the test
@@ -23,6 +24,9 @@ class Test {
 
     /// Path to the executable to be built
     fs::path exe;
+
+    /// @brief If this test is expected to fail
+    bool should_fail;
 
     /// @brief Convert the test into a byte stream suitable for serialization
     /// @return a byte stream
