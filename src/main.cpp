@@ -16,6 +16,7 @@
 #include "lower.hpp"
 #include "options.hpp"
 #include "state/state.hpp"
+#include "test/test.hpp"
 #include "version.hpp"
 
 namespace fs = std::filesystem;
@@ -79,8 +80,20 @@ int configure(const Options::ConfigureOptions & opts) {
     return 0;
 };
 
+int test(const Options::TestOptions & opts) {
+    auto && path = opts.builddir / "tests.serialized";
+    if (!fs::exists(path)) {
+        std::cout << "No tests defined" << std::endl;
+        return 0;
+    }
+
+    auto && tests = Backends::Common::load_tests(path);
+    return Test::run_tests(tests, fs::absolute(opts.builddir));
+}
+
 struct OptionHandler {
     int operator()(const Options::ConfigureOptions & opts) { return configure(opts); }
+    int operator()(const Options::TestOptions & opts) { return test(opts); }
 };
 
 } // namespace

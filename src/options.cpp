@@ -24,6 +24,10 @@ Usage:
 Description:
     Meson++ is an implementation of the Meson build system, written in C++
 
+Options:
+    -h, --help
+        Display this message and exit.
+
 Verbs:
     Configure:
         Usage:
@@ -32,12 +36,16 @@ Verbs:
         setup a new build directory, or change the configuration of a build directory
 
         Options:
-            -h, --help
-                Display this message and exit.
             -s, --source-dir
                 The source directory to configure, defaults to '.'
             -D, --define
                 Set a Meson built-in or project option
+
+    Test:
+        Usage:
+            meson++ test <builddir> [options]
+
+        Run tests on a new build directory.
 
 )EOF";
 // clang-format on
@@ -48,6 +56,9 @@ Verb get_verb(int & argc, const char * const argv[]) {
 
         if (v == "configure") {
             return Verb::CONFIGURE;
+        }
+        if (v == "test") {
+            return Verb::TEST;
         }
 
         std::cerr << "Unknown action:" << v << std::endl;
@@ -118,6 +129,44 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
     return conf;
 }
 
+TestOptions get_test_options(int argc, char * argv[]) {
+    TestOptions opts{};
+
+    static const char * const short_opts = "hs:D:";
+    static const option long_opts[] = {
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr},
+    };
+
+    int c;
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
+        switch (c) {
+            case 'h':
+            default:
+                std::cout << usage << std::endl;
+                exit(0);
+        }
+    }
+
+    // ++ here to pass the verb
+    int i = ++optind;
+    if (i >= argc) {
+        std::cerr << "missing required positional argument to 'meson++ test': <builddir>"
+                  << std::endl;
+        std::cout << usage << std::endl;
+        exit(1);
+    }
+    opts.builddir = fs::path{argv[i++]};
+    if (i < argc) {
+        // TODO: better error message
+        std::cerr << "Got extra arguments." << std::endl;
+        std::cout << usage << std::endl;
+        exit(1);
+    }
+
+    return opts;
+}
+
 } // namespace
 
 OptionV parse_opts(int argc, char * argv[]) {
@@ -131,6 +180,8 @@ OptionV parse_opts(int argc, char * argv[]) {
     switch (verb) {
         case Verb::CONFIGURE:
             return get_config_options(argc, argv);
+        case Verb::TEST:
+            return get_test_options(argc, argv);
         default:
             // TODO: should be unreachable
             throw std::runtime_error{"Unhandled verb"};
