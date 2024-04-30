@@ -23,6 +23,7 @@ namespace Options {
 /// Which action we're taking
 enum class Verb {
     CONFIGURE,
+    TEST,
 };
 
 /**
@@ -34,7 +35,14 @@ struct ConfigureOptions {
     std::unordered_map<std::string, std::string> options;
 };
 
-using OptionV = std::variant<ConfigureOptions>;
+/**
+ * Options for the test subcommand
+ */
+struct TestOptions {
+    fs::path builddir;
+};
+
+using OptionV = std::variant<ConfigureOptions, TestOptions>;
 
 /// Parse options and return an Options object
 OptionV parse_opts(int argc, char * argv[]);
