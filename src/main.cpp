@@ -52,9 +52,7 @@ bool emit_messages(MIR::BasicBlock & block) {
     return errors;
 }
 
-} // namespace
-
-static int configure(const Options::ConfigureOptions & opts) {
+int configure(const Options::ConfigureOptions & opts) {
     std::cout << Util::Log::bold("The Meson++ build system") << std::endl
               << "Version: " << version::VERSION << std::endl
               << "Source dir: " << Util::Log::bold(fs::absolute(opts.sourcedir)) << std::endl
@@ -80,6 +78,8 @@ static int configure(const Options::ConfigureOptions & opts) {
 
     return 0;
 };
+
+} // namespace
 
 int main(int argc, char * argv[]) {
     const auto opts = Options::parse_opts(argc, argv);
