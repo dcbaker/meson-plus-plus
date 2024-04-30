@@ -79,24 +79,20 @@ int configure(const Options::ConfigureOptions & opts) {
     return 0;
 };
 
+struct OptionHandler {
+    int operator()(const Options::ConfigureOptions & opts) { return configure(opts); }
+};
+
 } // namespace
 
 int main(int argc, char * argv[]) {
-    const auto opts = Options::parse_opts(argc, argv);
-
-    int ret = 1;
+    auto && opts = Options::parse_opts(argc, argv);
 
     try {
-        switch (opts.verb) {
-            case Options::Verb::CONFIGURE:
-                ret = configure(opts.config);
-                break;
-        };
+        return std::visit(OptionHandler{}, opts);
     } catch (Util::Exceptions::MesonException & e) {
         std::cerr << "Meson++ error: " << e.what() << std::endl;
     } catch (std::exception & e) {
         std::cerr << "Uncaught general exceptions: " << e.what() << std::endl;
     }
-
-    return ret;
 }

@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 namespace {
 
@@ -33,16 +34,9 @@ struct ConfigureOptions {
     std::unordered_map<std::string, std::string> options;
 };
 
-/**
- * Commandline options to execute
- */
-struct Options {
-    Verb verb;
-    // TODO: probably this should be stored in a union of some kind?
-    ConfigureOptions config;
-};
+using OptionV = std::variant<ConfigureOptions>;
 
 /// Parse options and return an Options object
-Options parse_opts(int argc, char * argv[]);
+OptionV parse_opts(int argc, char * argv[]);
 
 } // namespace Options
