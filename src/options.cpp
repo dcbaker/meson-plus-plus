@@ -120,21 +120,21 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
 
 } // namespace
 
-Options parse_opts(int argc, char * argv[]) {
+OptionV parse_opts(int argc, char * argv[]) {
     if (argc < 1) {
         std::cerr << "Not enough arguments" << std::endl;
         std::cout << usage << std::endl;
     }
     // First we want to find which verb we're parsing
-    Options opts{};
-    opts.verb = get_verb(argc, argv);
+    auto && verb = get_verb(argc, argv);
 
-    switch (opts.verb) {
+    switch (verb) {
         case Verb::CONFIGURE:
-            opts.config = get_config_options(argc, argv);
+            return get_config_options(argc, argv);
+        default:
+            // TODO: should be unreachable
+            throw std::runtime_error{"Unhandled verb"};
     }
-
-    return opts;
 }
 
 } // namespace Options
