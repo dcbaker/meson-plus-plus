@@ -168,7 +168,7 @@ struct TestVisitor {
 Common::Test target_test(const MIR::Test & t, const MIR::State::Persistant & pstate) {
     TestVisitor visitor{};
     fs::path && output = std::visit(visitor, t.executable);
-    return Common::Test{t.name, output};
+    return Common::Test{t.name, output, t.should_fail};
 }
 
 } // namespace

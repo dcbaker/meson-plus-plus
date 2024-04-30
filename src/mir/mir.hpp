@@ -368,10 +368,11 @@ class Program {
 
 class Test {
   public:
-    Test(std::string n, Callable exe);
+    Test(std::string n, Callable exe, bool xfail);
 
     const std::string name;
     const Callable executable;
+    const bool should_fail;
 
     /// Print a human readable version of this
     std::string print() const;

@@ -362,7 +362,11 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
         extract_positional_argument_v<MIR::File, MIR::Program, MIR::Executable>(f.pos_args.at(1));
     const Callable & prog = std::visit(CallableReducer{}, prog_v);
 
-    return Test{name.value().value, prog};
+    const bool xfail = extract_keyword_argument<MIR::Boolean>(f.kw_args, "should_fail")
+                           .value_or(MIR::Boolean{false})
+                           .value;
+
+    return Test{name.value().value, prog, xfail};
 }
 
 std::vector<Instruction>
