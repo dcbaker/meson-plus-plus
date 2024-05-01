@@ -358,15 +358,19 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
     if (!name) {
         throw Util::Exceptions::InvalidArguments("test: first argument must be a string");
     }
+    // TODO: should also allow CustomTarget and Jar
     auto && prog_v =
         extract_positional_argument_v<MIR::File, MIR::Program, MIR::Executable>(f.pos_args.at(1));
     const Callable & prog = std::visit(CallableReducer{}, prog_v);
+
+    // TODO: Also allows targets
+    auto && arguments = extract_keyword_argument_av<MIR::String, MIR::File>(f.kw_args, "args");
 
     const bool xfail = extract_keyword_argument<MIR::Boolean>(f.kw_args, "should_fail")
                            .value_or(MIR::Boolean{false})
                            .value;
 
-    return Test{name.value().value, prog, xfail};
+    return Test{name.value().value, prog, arguments, xfail};
 }
 
 std::vector<Instruction>
