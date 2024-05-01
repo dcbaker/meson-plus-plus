@@ -14,4 +14,10 @@ namespace Util {
 /// @return A vector of strings
 std::vector<std::string> split(std::string_view input, std::string_view delim = "\n");
 
+/// @brief Join a vector of strings with a given delimiter
+/// @param strs the vector to join
+/// @param delim the delimiter to use
+/// @return a string
+std::string join(const std::vector<std::string> & strs, std::string_view delim = "");
+
 } // namespace Util
