@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2022 Intel Corporation
+# Copyright © 2022-2024 Intel Corporation
 
 prog_runner = find_program('runner.sh', dirs : meson.current_source_dir())
 
@@ -15,6 +15,7 @@ test_cases = {
     '08 custom_target',
     '09 string methods',
     '10 dependency methods',
+    '11 test types',
   ],
 }
 

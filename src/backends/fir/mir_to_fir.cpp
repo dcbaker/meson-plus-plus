@@ -165,10 +165,23 @@ struct TestVisitor {
     fs::path operator()(const MIR::Program & callable) { return callable.path; };
 };
 
+struct ToStringVisitor {
+    std::string operator()(const MIR::File & f) { return f.relative_to_build_dir(); }
+    std::string operator()(const MIR::String & f) { return f.value; }
+    std::string operator()(const std::monostate &) { return ""; }
+};
+
 Common::Test target_test(const MIR::Test & t, const MIR::State::Persistant & pstate) {
     TestVisitor visitor{};
+    ToStringVisitor str_visitor{};
     fs::path && output = std::visit(visitor, t.executable);
-    return Common::Test{t.name, output, t.should_fail};
+    std::vector<std::string> arguments;
+    for (auto && a : t.arguments) {
+        if (std::string arg = std::visit(str_visitor, a); !arg.empty()) {
+            arguments.emplace_back(arg);
+        }
+    }
+    return Common::Test{t.name, output, arguments, t.should_fail};
 }
 
 } // namespace

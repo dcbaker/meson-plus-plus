@@ -15,15 +15,17 @@ namespace fs = std::filesystem;
 class Test {
   public:
     Test() = default;
-    Test(std::string n, fs::path e, bool xf)
-        : name{std::move(n)}, exe{std::move(e)}, should_fail{xf} {};
-    // Test(const char * serial);
+    Test(std::string n, fs::path e, std::vector<std::string> args, bool xf)
+        : name{std::move(n)}, exe{std::move(e)}, arguments{std::move(args)}, should_fail{xf} {};
 
     /// The name of the test
     std::string name;
 
     /// Path to the executable to be built
     fs::path exe;
+
+    /// @brief  Arguments to pass to this test, with paths expanded
+    std::vector<std::string> arguments;
 
     /// @brief If this test is expected to fail
     bool should_fail;

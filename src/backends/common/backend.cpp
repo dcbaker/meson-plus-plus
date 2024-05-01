@@ -13,7 +13,7 @@ namespace {
 
 const int64_t SERALIZE_VERSION = 0;
 
-}
+} // namespace
 
 void Test::serialize(std::ostream & stream) const {
     // Write out the test arguments in a serialized form
@@ -21,6 +21,7 @@ void Test::serialize(std::ostream & stream) const {
     stream << "  name:" << name << '\n';
     stream << "  exe:" << (exe.has_parent_path() ? std::string{exe} : ("./" + std::string{exe}))
            << '\n';
+    stream << "  arguments:" << Util::join(arguments, "|") << '\n';
     stream << "  xfail:" << int{should_fail} << '\n';
     stream << "END_TEST\n";
 }
@@ -67,6 +68,8 @@ std::vector<Test> deserialize_tests(std::istream & in) {
                 test.name = v;
             } else if (k == "exe") {
                 test.exe = v;
+            } else if (k == "arguments") {
+                test.arguments = Util::split(v, "|");
             } else if (k == "xfail") {
                 test.should_fail = v == "1";
             } else {
