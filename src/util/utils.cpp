@@ -3,6 +3,8 @@
 
 #include "utils.hpp"
 
+#include <sstream>
+
 namespace Util {
 
 std::vector<std::string> split(std::string_view input, std::string_view delim) {
@@ -16,6 +18,22 @@ std::vector<std::string> split(std::string_view input, std::string_view delim) {
     out.emplace_back(input.substr(last));
 
     return out;
+}
+
+std::string join(const std::vector<std::string> & strs, std::string_view delim) {
+    if (strs.empty()) {
+        return "";
+    }
+    std::stringstream ss{};
+
+    auto itr = strs.begin();
+    for (; itr < (strs.end() - 1); ++itr) {
+        ss << *itr << delim;
+    }
+    // Insert the last element without the delimiter
+    ss << *itr;
+
+    return ss.str();
 }
 
 } // namespace Util
