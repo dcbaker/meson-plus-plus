@@ -15,3 +15,13 @@ idep_util = declare_dependency(
   link_with : libutil,
   include_directories : include_directories('.'),
 )
+
+test(
+  'utils',
+  executable(
+    'utils_test',
+    'utils_test.cpp',
+    dependencies : [dep_gtest, idep_util]
+  ),
+  protocol : 'gtest',
+)
