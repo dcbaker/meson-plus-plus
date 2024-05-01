@@ -12,8 +12,8 @@ lib = static_library('lib', 'lib.cpp', cpp_args : ['-Duseless'])
 main = executable('main', 'main.cpp', link_with : lib)
 
 # TODO: not implemented yet
-#test(
-#  'main',
-#  main,
-#  should_fail : true,
-#)
+test(
+  'main',
+  main,
+  should_fail : true,
+)
