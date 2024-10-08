@@ -26,9 +26,9 @@ std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
              */
 
             if (obj.var) {
-                data[obj.var] = Variable{found->second.name, found->second.version};
+                data[obj.var] = Variable{found->second.name, found->second.gvn};
             }
-            return Instruction{Identifier{found->second.name, found->second.version}, obj.var};
+            return Instruction{Identifier{found->second.name, found->second.gvn}, obj.var};
         }
         if (obj.var) {
             data[obj.var] = new_var;

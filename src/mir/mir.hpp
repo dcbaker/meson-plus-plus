@@ -49,7 +49,7 @@ class Variable {
     std::string name;
 
     /// The version as used by value numbering, 0 means unset
-    uint32_t version;
+    uint32_t gvn;
 
     explicit operator bool() const;
     bool operator<(const Variable &) const;

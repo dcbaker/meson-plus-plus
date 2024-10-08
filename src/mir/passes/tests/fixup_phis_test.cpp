@@ -36,7 +36,7 @@ TEST(fixup_phi, simple) {
     {
         const auto & id_obj = irlist.instructions.front();
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 2);
+        ASSERT_EQ(id_obj.var.gvn, 2);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
@@ -46,7 +46,7 @@ TEST(fixup_phi, simple) {
     {
         const auto & id_obj = irlist.instructions.back();
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 3);
+        ASSERT_EQ(id_obj.var.gvn, 3);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -84,7 +84,7 @@ TEST(fixup_phi, three_branches) {
     {
         const auto & id_obj = *it;
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
@@ -93,7 +93,7 @@ TEST(fixup_phi, three_branches) {
 
     {
         const auto & id_obj = *(++it);
-        ASSERT_EQ(id_obj.var.version, 4);
+        ASSERT_EQ(id_obj.var.gvn, 4);
         ASSERT_EQ(id_obj.var.name, "x");
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
@@ -104,7 +104,7 @@ TEST(fixup_phi, three_branches) {
     {
         const auto & id_obj = *(++it);
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 5);
+        ASSERT_EQ(id_obj.var.gvn, 5);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -144,7 +144,7 @@ TEST(fixup_phi, nested_branches) {
     {
         const auto & id_obj = *it;
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
@@ -156,7 +156,7 @@ TEST(fixup_phi, nested_branches) {
     {
         const auto & id_obj = *it;
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 3);
+        ASSERT_EQ(id_obj.var.gvn, 3);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
@@ -168,7 +168,7 @@ TEST(fixup_phi, nested_branches) {
     {
         const auto & id_obj = *it;
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 4);
+        ASSERT_EQ(id_obj.var.gvn, 4);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -180,7 +180,7 @@ TEST(fixup_phi, nested_branches) {
     {
         const auto & id_obj = *it;
         ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.version, 5);
+        ASSERT_EQ(id_obj.var.gvn, 5);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);

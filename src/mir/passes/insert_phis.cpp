@@ -18,7 +18,9 @@ struct PhiComparator {
     };
 };
 
-template <typename T> struct reversion_wrapper { T & iterable; };
+template <typename T> struct reversion_wrapper {
+    T & iterable;
+};
 
 template <typename T> auto begin(reversion_wrapper<T> w) { return std::rbegin(w.iterable); }
 
@@ -83,15 +85,15 @@ bool insert_phis(BasicBlock & block, ValueTable & values) {
             for (const auto & i : reverse(p->instructions)) {
                 if (const auto & var = i.var) {
                     if (last) {
-                        auto phi = Instruction{Phi{last, var.version}, Variable{name}};
+                        auto phi = Instruction{Phi{last, var.gvn}, Variable{name}};
                         if (!existing_phis.count(&phi)) {
                             // Only set the version if we're actually using this phi
-                            phi.var.version = ++values[name];
-                            last = phi.var.version;
+                            phi.var.gvn = ++values[name];
+                            last = phi.var.gvn;
                             phis.emplace_back(phi);
                         }
                     } else {
-                        last = var.version;
+                        last = var.gvn;
                     }
                     break;
                 }
@@ -118,11 +120,11 @@ bool fixup_phis(BasicBlock & block) {
                 for (const Instruction & i : p->instructions) {
                     const auto & var = i.var;
                     if (var.name == it->var.name) {
-                        if (var.version == phi.left) {
+                        if (var.gvn == phi.left) {
                             left = true;
                             break;
                         }
-                        if (var.version == phi.right) {
+                        if (var.gvn == phi.right) {
                             right = true;
                             break;
                         }
@@ -148,8 +150,8 @@ bool fixup_phis(BasicBlock & block) {
             // treat the second one as the truth
             for (auto it2 = block.instructions.begin(); it2 != it; ++it2) {
                 if (it->var.name == it2->var.name) {
-                    left = it2->var.version == phi.left;
-                    right = it2->var.version == phi.right;
+                    left = it2->var.gvn == phi.left;
+                    right = it2->var.gvn == phi.right;
                 }
             }
 

@@ -166,22 +166,22 @@ std::string Compiler::print() const {
            "; id = " + toolchain->compiler->id() + " }";
 }
 
-Variable::Variable() : version{0} {};
-Variable::Variable(std::string n) : name{std::move(n)}, version{0} {};
-Variable::Variable(std::string n, const uint32_t & v) : name{std::move(n)}, version{v} {};
+Variable::Variable() : gvn{0} {};
+Variable::Variable(std::string n) : name{std::move(n)}, gvn{0} {};
+Variable::Variable(std::string n, const uint32_t & v) : name{std::move(n)}, gvn{v} {};
 
 Variable::operator bool() const { return !name.empty(); };
 
 bool Variable::operator<(const Variable & other) const {
-    return name < other.name || (name == other.name && version < other.version);
+    return name < other.name || (name == other.name && gvn < other.gvn);
 }
 
 bool Variable::operator==(const Variable & other) const {
-    return name == other.name && version == other.version;
+    return name == other.name && gvn == other.gvn;
 }
 
 std::string Variable::print() const {
-    return "Variable { name = " + name + "; version = " + to_string(version) + " }";
+    return "Variable { name = " + name + "; gvn = " + to_string(gvn) + " }";
 }
 
 File::File(std::string name_, fs::path sdir, const bool & built_, fs::path sr_, fs::path br_)

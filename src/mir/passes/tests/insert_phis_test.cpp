@@ -30,7 +30,7 @@ TEST(insert_phi, simple) {
 
     MIR::Instruction instr = fin->instructions.front();
     ASSERT_EQ(instr.var.name, "x");
-    ASSERT_EQ(instr.var.version, 3); // because value_numbering will run again
+    ASSERT_EQ(instr.var.gvn, 3); // because value_numbering will run again
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*instr.obj_ptr));
     const auto & phi = std::get<MIR::Phi>(*instr.obj_ptr);
@@ -61,7 +61,7 @@ TEST(insert_phi, three_branches) {
 
     auto it = fin->instructions.begin();
     ASSERT_EQ(it->var.name, "x");
-    ASSERT_EQ(it->var.version, 4);
+    ASSERT_EQ(it->var.gvn, 4);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it->obj_ptr));
     const auto & phi = std::get<MIR::Phi>(*it->obj_ptr);
@@ -71,7 +71,7 @@ TEST(insert_phi, three_branches) {
     it++;
 
     ASSERT_EQ(it->var.name, "x");
-    ASSERT_EQ(it->var.version, 5);
+    ASSERT_EQ(it->var.gvn, 5);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it->obj_ptr));
     const auto & phi2 = std::get<MIR::Phi>(*it->obj_ptr);
@@ -104,7 +104,7 @@ TEST(insert_phi, nested_branches) {
         ASSERT_EQ(fin->instructions.size(), 1);
         const auto & it = fin->instructions.front();
         ASSERT_EQ(it.var.name, "x");
-        ASSERT_EQ(it.var.version, 4);
+        ASSERT_EQ(it.var.gvn, 4);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it.obj_ptr));
         const auto & phi = std::get<MIR::Phi>(*it.obj_ptr);
@@ -117,7 +117,7 @@ TEST(insert_phi, nested_branches) {
         ASSERT_EQ(fin->instructions.size(), 1);
         const auto & it = fin->instructions.front();
         ASSERT_EQ(it.var.name, "x");
-        ASSERT_EQ(it.var.version, 5);
+        ASSERT_EQ(it.var.gvn, 5);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it.obj_ptr));
         const auto & phi = std::get<MIR::Phi>(*it.obj_ptr);
