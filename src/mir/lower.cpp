@@ -26,6 +26,7 @@ uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, uint64_t pas
                 [&](BasicBlock & b) { return Passes::lower_free_functions(b, pstate); },
                 Passes::delete_unreachable,
                 [&](BasicBlock & b) { return Passes::value_numbering(b, value_number_data); },
+                [&](BasicBlock & b) { return Passes::insert_phis(b, value_number_data); },
                 Passes::branch_pruning,
                 Passes::join_blocks,
                 Passes::fixup_phis,
