@@ -62,8 +62,9 @@ void lower(BasicBlock & block, State::Persistant & pstate) {
     // like find_program(), Then run the main loop again until we've lowered it
     // all away
     uint64_t pass = lower_impl(block, pstate);
-    Passes::threaded_lowering(block, pstate);
-    lower_impl(block, pstate, pass);
+    if (Passes::threaded_lowering(block, pstate)) {
+        lower_impl(block, pstate, pass);
+    }
 }
 
 } // namespace MIR
