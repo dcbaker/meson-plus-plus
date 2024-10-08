@@ -98,9 +98,12 @@ struct UsageNumbering {
 bool insert_phis(BasicBlock &, ValueTable &);
 bool fixup_phis(BasicBlock &);
 
-using ReplacementTable = std::map<Variable, Variable>;
-
-bool constant_folding(BasicBlock &, ReplacementTable &);
+struct ConstantFolding {
+    bool operator()(BasicBlock &);
+  private:
+    std::map<Variable, Variable> data;
+    std::optional<Instruction> impl(const Instruction &);
+};
 
 using PropTable = std::map<Variable, Instruction *>;
 

@@ -15,7 +15,6 @@ TEST(constant_folding, simple) {
         message(y)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::ReplacementTable rt{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
@@ -23,7 +22,7 @@ TEST(constant_folding, simple) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    MIR::Passes::ConstantFolding{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -51,7 +50,6 @@ TEST(constant_folding, with_phi) {
         message(y)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::ReplacementTable rt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
@@ -60,14 +58,13 @@ TEST(constant_folding, with_phi) {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                 });
-    MIR::Passes::block_walker(
-        irlist, {
-                    MIR::Passes::branch_pruning,
-                    MIR::Passes::join_blocks,
-                    MIR::Passes::fixup_phis,
-                    MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
-                });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::branch_pruning,
+                                          MIR::Passes::join_blocks,
+                                          MIR::Passes::fixup_phis,
+                                          MIR::Passes::UsageNumbering{},
+                                          MIR::Passes::ConstantFolding{},
+                                      });
 
     auto it = irlist.instructions.begin();
 
@@ -122,7 +119,6 @@ TEST(constant_folding, three_statements) {
         message(z)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::ReplacementTable rpt{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
@@ -130,7 +126,7 @@ TEST(constant_folding, three_statements) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
+                    MIR::Passes::ConstantFolding{},
                 });
 
     const auto & func_obj = irlist.instructions.back();
@@ -153,7 +149,6 @@ TEST(constant_folding, redefined_value) {
         message(y)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::ReplacementTable rpt{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
@@ -161,7 +156,7 @@ TEST(constant_folding, redefined_value) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
+                    MIR::Passes::ConstantFolding{},
                 });
 
     const auto & func_obj = irlist.instructions.back();
@@ -183,7 +178,6 @@ TEST(constant_folding, in_array) {
         y = [y]
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::ReplacementTable rpt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
@@ -191,7 +185,7 @@ TEST(constant_folding, in_array) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
+                    MIR::Passes::ConstantFolding{},
                 });
 
     auto it = irlist.instructions.begin();

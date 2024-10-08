@@ -159,7 +159,6 @@ TEST(find_program, found) {
     )EOF");
     MIR::Passes::ValueTable vt{};
     MIR::Passes::PropTable pt{};
-    MIR::Passes::ReplacementTable rt{};
     MIR::State::Persistant pstate{src_root, build_root};
 
     MIR::Passes::block_walker(
@@ -171,7 +170,7 @@ TEST(find_program, found) {
         {
             [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
             MIR::Passes::UsageNumbering{},
-            [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+            MIR::Passes::ConstantFolding{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },
         });
