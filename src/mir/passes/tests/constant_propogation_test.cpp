@@ -18,7 +18,6 @@ TEST(constant_propogation, phi_should_not_propogate) {
         endif
         message(x)
         )EOF");
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
@@ -29,7 +28,7 @@ TEST(constant_propogation, phi_should_not_propogate) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, vt); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
@@ -63,7 +62,6 @@ TEST(constant_propogation, function_arguments) {
         endif
         message(x)
         )EOF");
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
@@ -77,7 +75,7 @@ TEST(constant_propogation, function_arguments) {
                     MIR::Passes::branch_pruning,
                     MIR::Passes::join_blocks,
                     MIR::Passes::fixup_phis,
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
@@ -103,7 +101,6 @@ TEST(constant_propogation, array) {
         endif
         y = [x]
         )EOF");
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
@@ -117,7 +114,7 @@ TEST(constant_propogation, array) {
                     MIR::Passes::branch_pruning,
                     MIR::Passes::join_blocks,
                     MIR::Passes::fixup_phis,
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
@@ -139,7 +136,6 @@ TEST(constant_propogation, method_holder) {
         x = find_program('sh')
         x.found()
         )EOF");
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
@@ -152,7 +148,7 @@ TEST(constant_propogation, method_holder) {
     bool progress = MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
@@ -175,7 +171,6 @@ TEST(constant_propogation, into_function_call) {
         x = find_program('sh', required : false)
         assert(x.found())
         )EOF");
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
@@ -189,7 +184,7 @@ TEST(constant_propogation, into_function_call) {
         irlist,
         {
             [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
-            [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+            MIR::Passes::UsageNumbering{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
             [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },

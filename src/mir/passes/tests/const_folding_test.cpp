@@ -15,7 +15,6 @@ TEST(constant_folding, simple) {
         message(y)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
 
     // We do this in two walks because we don't have all of passes necissary to
@@ -23,7 +22,7 @@ TEST(constant_folding, simple) {
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                 });
 
@@ -52,7 +51,6 @@ TEST(constant_folding, with_phi) {
         message(y)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable lst{};
     MIR::Passes::ReplacementTable rt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
@@ -67,7 +65,7 @@ TEST(constant_folding, with_phi) {
                     MIR::Passes::branch_pruning,
                     MIR::Passes::join_blocks,
                     MIR::Passes::fixup_phis,
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lst); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
                 });
 
@@ -124,7 +122,6 @@ TEST(constant_folding, three_statements) {
         message(z)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
     MIR::Passes::ReplacementTable rpt{};
 
     // We do this in two walks because we don't have all of passes necissary to
@@ -132,7 +129,7 @@ TEST(constant_folding, three_statements) {
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
                 });
 
@@ -156,7 +153,6 @@ TEST(constant_folding, redefined_value) {
         message(y)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
     MIR::Passes::ReplacementTable rpt{};
 
     // We do this in two walks because we don't have all of passes necissary to
@@ -164,7 +160,7 @@ TEST(constant_folding, redefined_value) {
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
                 });
 
@@ -187,7 +183,6 @@ TEST(constant_folding, in_array) {
         y = [y]
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
     MIR::Passes::ReplacementTable rpt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
@@ -195,7 +190,7 @@ TEST(constant_folding, in_array) {
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rpt); },
                 });
 

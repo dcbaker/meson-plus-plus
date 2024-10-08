@@ -158,7 +158,6 @@ TEST(find_program, found) {
         x.found()
     )EOF");
     MIR::Passes::ValueTable vt{};
-    MIR::Passes::LastSeenTable lt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ReplacementTable rt{};
     MIR::State::Persistant pstate{src_root, build_root};
@@ -171,7 +170,7 @@ TEST(find_program, found) {
         irlist,
         {
             [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
-            [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, lt); },
+            MIR::Passes::UsageNumbering{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
             [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },

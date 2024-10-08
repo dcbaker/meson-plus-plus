@@ -77,14 +77,13 @@ TEST(number_uses, simple) {
         y = x
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
@@ -121,7 +120,6 @@ TEST(number_uses, with_phi) {
         y = x
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
@@ -130,13 +128,12 @@ TEST(number_uses, with_phi) {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
                 });
-    MIR::Passes::block_walker(
-        irlist, {
-                    MIR::Passes::branch_pruning,
-                    MIR::Passes::join_blocks,
-                    MIR::Passes::fixup_phis,
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
-                });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::branch_pruning,
+                                          MIR::Passes::join_blocks,
+                                          MIR::Passes::fixup_phis,
+                                          MIR::Passes::UsageNumbering{},
+                                      });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
@@ -172,7 +169,6 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
         message(x)
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
@@ -180,7 +176,7 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                 });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
@@ -213,7 +209,6 @@ TEST(number_uses, with_phi_no_pruning) {
         y = x
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
@@ -221,7 +216,7 @@ TEST(number_uses, with_phi_no_pruning) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                 });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
@@ -251,14 +246,13 @@ TEST(number_uses, three_statements) {
         z = y
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -282,14 +276,13 @@ TEST(number_uses, redefined_value) {
         y = x
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -313,14 +306,13 @@ TEST(number_uses, in_array) {
         y = [y]
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::LastSeenTable rt{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::block_walker(
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::usage_numbering(b, rt); },
+                    MIR::Passes::UsageNumbering{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
