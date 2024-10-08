@@ -9,7 +9,7 @@ namespace MIR::Passes {
 namespace {
 
 /// Does this block have only one parent?
-inline bool is_strictly_dominated(const BasicBlock & block) { return block.parents.size() == 1; }
+inline bool is_strictly_dominated(const BasicBlock & block) { return block.parents.size() <= 1; }
 
 /// Allows comparing Phi pointers, using the value comparisons
 struct PhiComparator {
