@@ -25,11 +25,17 @@ bool number(Instruction & obj, std::unordered_map<std::string, uint32_t> & data)
     return true;
 }
 
+} // namespace
+
+bool value_numbering(BasicBlock & block, std::unordered_map<std::string, uint32_t> & data) {
+    return function_walker(block, {[&](Instruction & obj) { return number(obj, data); }});
+}
+
 // Annotate usages of identifiers, so know if we need to replace them
-bool number_uses(const uint32_t & index, Instruction & obj, LastSeenTable & tab) {
+bool UsageNumbering::number_instructions(Instruction & obj, const uint32_t index) {
     bool progress = false;
 
-    auto & table = tab[index];
+    auto & table = data[index];
 
     if (std::holds_alternative<Identifier>(*obj.obj_ptr)) {
         auto & id = std::get<Identifier>(*obj.obj_ptr);
@@ -45,7 +51,7 @@ bool number_uses(const uint32_t & index, Instruction & obj, LastSeenTable & tab)
             }
         }
         progress |= function_argument_walker(
-            obj, [&](Instruction & i) { return number_uses(index, i, tab); });
+            obj, [&index, this](Instruction & i) { return this->number_instructions(i, index); });
     }
 
     if (obj.var) {
@@ -55,21 +61,14 @@ bool number_uses(const uint32_t & index, Instruction & obj, LastSeenTable & tab)
     return progress;
 }
 
-} // namespace
-
-bool value_numbering(BasicBlock & block, std::unordered_map<std::string, uint32_t> & data) {
-    return function_walker(block, {[&](Instruction & obj) { return number(obj, data); }});
-}
-
-bool usage_numbering(BasicBlock & block, LastSeenTable & table) {
-    const auto number = [&](Instruction & obj) { return number_uses(block.index, obj, table); };
-
-    table[block.index] = {};
-    for (const auto & p : block.parents) {
-        table[block.index].merge(table[p->index]);
+bool UsageNumbering::operator()(BasicBlock & block) {
+    data[block.index] = {};
+    for (auto && p : block.parents) {
+        data[block.index].merge(data[p->index]);
     }
-
-    return function_walker(block, number);
+    return function_walker(block, [this, &block](Instruction & obj) {
+        return this->number_instructions(obj, block.index);
+    });
 }
 
 } // namespace MIR::Passes

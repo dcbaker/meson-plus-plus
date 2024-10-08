@@ -79,13 +79,18 @@ bool lower_free_functions(BasicBlock &, const State::Persistant &);
 bool flatten(BasicBlock &, const State::Persistant &);
 
 using ValueTable = std::unordered_map<std::string, uint32_t>;
-using LastSeenTable = std::map<uint32_t, std::map<std::string, uint32_t>>;
 
 /**
  * number each use of a variable
  */
 bool value_numbering(BasicBlock &, ValueTable &);
-bool usage_numbering(BasicBlock &, LastSeenTable &);
+
+struct UsageNumbering {
+    bool operator()(BasicBlock &);
+  private:
+    std::map<uint32_t, std::map<std::string, uint32_t>> data;
+    bool number_instructions(Instruction &, const uint32_t index);
+};
 
 /**
  * Insert phi nodes along dominance frontiers
