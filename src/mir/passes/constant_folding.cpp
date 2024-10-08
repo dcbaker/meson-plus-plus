@@ -8,15 +8,12 @@
 
 namespace MIR::Passes {
 
-namespace {
-
-std::optional<Instruction> constant_folding_impl(const Instruction & obj,
-                                                 ReplacementTable & table) {
+std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
     auto id = std::get_if<Identifier>(obj.obj_ptr.get());
     if (id != nullptr) {
         const Variable new_var{id->value, id->version};
 
-        if (const auto & found = table.find(new_var); found != table.end()) {
+        if (const auto & found = data.find(new_var); found != data.end()) {
             /* If the id is already in the table we want to map the alias
              * directly such as:
              *
@@ -29,22 +26,19 @@ std::optional<Instruction> constant_folding_impl(const Instruction & obj,
              */
 
             if (obj.var) {
-                table[obj.var] = Variable{found->second.name, found->second.version};
+                data[obj.var] = Variable{found->second.name, found->second.version};
             }
             return Instruction{Identifier{found->second.name, found->second.version}, obj.var};
         }
         if (obj.var) {
-            table[obj.var] = new_var;
+            data[obj.var] = new_var;
         }
     }
     return std::nullopt;
 }
 
-} // namespace
-
-bool constant_folding(BasicBlock & block, ReplacementTable & table) {
-    return function_walker(
-        block, {[&](const Instruction & o) { return constant_folding_impl(o, table); }});
-}
+bool ConstantFolding::operator()(BasicBlock & block) {
+    return function_walker(block, [this](Instruction & i) { return this->impl(i); });
+};
 
 } // namespace MIR::Passes

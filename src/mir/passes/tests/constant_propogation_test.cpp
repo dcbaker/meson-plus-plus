@@ -18,7 +18,6 @@ TEST(constant_propogation, phi_should_not_propogate) {
         endif
         message(x)
         )EOF");
-    MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
 
@@ -29,7 +28,7 @@ TEST(constant_propogation, phi_should_not_propogate) {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, vt); },
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    MIR::Passes::ConstantFolding{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
 
@@ -62,7 +61,6 @@ TEST(constant_propogation, function_arguments) {
         endif
         message(x)
         )EOF");
-    MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
 
@@ -76,7 +74,7 @@ TEST(constant_propogation, function_arguments) {
                     MIR::Passes::join_blocks,
                     MIR::Passes::fixup_phis,
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    MIR::Passes::ConstantFolding{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
 
@@ -101,7 +99,6 @@ TEST(constant_propogation, array) {
         endif
         y = [x]
         )EOF");
-    MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
 
@@ -115,7 +112,7 @@ TEST(constant_propogation, array) {
                     MIR::Passes::join_blocks,
                     MIR::Passes::fixup_phis,
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    MIR::Passes::ConstantFolding{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
 
@@ -136,7 +133,6 @@ TEST(constant_propogation, method_holder) {
         x = find_program('sh')
         x.found()
         )EOF");
-    MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
     MIR::State::Persistant pstate{"foo", "bar"};
@@ -149,7 +145,7 @@ TEST(constant_propogation, method_holder) {
         irlist, {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
                     MIR::Passes::UsageNumbering{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+                    MIR::Passes::ConstantFolding{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
                 });
 
@@ -171,7 +167,6 @@ TEST(constant_propogation, into_function_call) {
         x = find_program('sh', required : false)
         assert(x.found())
         )EOF");
-    MIR::Passes::ReplacementTable rt{};
     MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
     MIR::State::Persistant pstate{"foo", "bar"};
@@ -185,7 +180,7 @@ TEST(constant_propogation, into_function_call) {
         {
             [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
             MIR::Passes::UsageNumbering{},
-            [&](MIR::BasicBlock & b) { return MIR::Passes::constant_folding(b, rt); },
+            MIR::Passes::ConstantFolding{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },
         });

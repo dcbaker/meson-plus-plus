@@ -12,7 +12,6 @@ namespace {
 
 uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, uint64_t pass = 0) {
     std::unordered_map<std::string, uint32_t> value_number_data{};
-    Passes::ReplacementTable rt{};
     Passes::PropTable pt{};
 
     // Print the initial MIR we get from the AST -> MIR conversion
@@ -32,7 +31,7 @@ uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, uint64_t pas
                 Passes::join_blocks,
                 Passes::fixup_phis,
                 Passes::UsageNumbering{},
-                [&](BasicBlock & b) { return Passes::constant_folding(b, rt); },
+                Passes::ConstantFolding{},
                 [&](BasicBlock & b) { return Passes::constant_propogation(b, pt); },
                 [&](BasicBlock & b) { return Passes::lower_program_objects(b, pstate); },
                 [&](BasicBlock & b) { return Passes::lower_string_objects(b, pstate); },
