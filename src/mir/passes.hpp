@@ -87,6 +87,7 @@ bool value_numbering(BasicBlock &, ValueTable &);
 
 struct UsageNumbering {
     bool operator()(BasicBlock &);
+
   private:
     std::map<uint32_t, std::map<std::string, uint32_t>> data;
     bool number_instructions(Instruction &, const uint32_t index);
@@ -100,17 +101,25 @@ bool fixup_phis(BasicBlock &);
 
 struct ConstantFolding {
     bool operator()(BasicBlock &);
+
   private:
     std::map<Variable, Variable> data;
     std::optional<Instruction> impl(const Instruction &);
 };
 
-using PropTable = std::map<Variable, Instruction *>;
-
 /**
  * push variables out of assignments into their uses
  */
-bool constant_propogation(BasicBlock &, PropTable &);
+struct ConstantPropagation {
+    bool operator()(BasicBlock &);
+
+  private:
+    std::map<Variable, Instruction *> data;
+    bool update_data(Instruction &);
+    std::optional<Instruction> get(const Identifier & id) const;
+    std::optional<Instruction> impl(const Instruction & obj) const;
+    bool impl(Instruction & obj) const;
+};
 
 /**
  * Do work that can be more optimally handled in threads.

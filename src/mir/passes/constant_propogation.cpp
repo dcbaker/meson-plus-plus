@@ -9,24 +9,22 @@
 
 namespace MIR::Passes {
 
-namespace {
-
-bool identifier_to_object_mapper(Instruction & obj, PropTable & table) {
+bool ConstantPropagation::update_data(Instruction & obj) {
     if (!std::holds_alternative<Identifier>(*obj.obj_ptr) &&
         !std::holds_alternative<Phi>(*obj.obj_ptr) &&
         !std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
 
         if (obj.var) {
-            table[obj.var] = &obj;
+            data.emplace(obj.var, &obj);
         }
     }
 
     return false;
 }
 
-std::optional<Instruction> get_value(const Identifier & id, const PropTable & table) {
+std::optional<Instruction> ConstantPropagation::get(const Identifier & id) const {
     const Variable var{id.value, id.version};
-    if (const auto & val = table.find(var); val != table.end()) {
+    if (const auto & val = data.find(var); val != data.end()) {
         auto & v = *val->second;
         const Object & obj = *v.obj_ptr;
         if (std::holds_alternative<Number>(obj) || std::holds_alternative<String>(obj) ||
@@ -51,52 +49,45 @@ std::optional<Instruction> get_value(const Identifier & id, const PropTable & ta
     return std::nullopt;
 }
 
-std::optional<Instruction> constant_propogation_impl(const Instruction & obj,
-                                                     const PropTable & table) {
+std::optional<Instruction> ConstantPropagation::impl(const Instruction & obj) const {
     auto * id = std::get_if<Identifier>(obj.obj_ptr.get());
     if (id != nullptr && !obj.var) {
-        return get_value(*id, table);
+        return get(*id);
     }
     return std::nullopt;
 }
 
-bool constant_propogation_holder_impl(Instruction & obj, const PropTable & table) {
+bool ConstantPropagation::impl(Instruction & obj) const {
     bool progress = false;
 
     auto * func = std::get_if<FunctionCall>(obj.obj_ptr.get());
     if (func != nullptr) {
         auto * holder = std::get_if<Identifier>(func->holder.obj_ptr.get());
         if (holder != nullptr) {
-            if (auto v = get_value(*holder, table)) {
+            if (auto v = get(*holder)) {
                 func->holder = v.value();
                 progress |= true;
             }
         }
-        progress |= function_argument_walker(
-            obj, [&](const Instruction & i) { return constant_propogation_impl(i, table); });
-        progress |= function_argument_walker(
-            obj, [&](Instruction & i) { return constant_propogation_holder_impl(i, table); });
+        progress |=
+            function_argument_walker(obj, [this](const Instruction & i) { return this->impl(i); });
+        progress |=
+            function_argument_walker(obj, [this](Instruction & i) { return this->impl(i); });
     }
 
     return progress;
 }
 
-} // namespace
-
-bool constant_propogation(BasicBlock & block, PropTable & table) {
-    const auto & prop = [&](const Instruction & obj) {
-        return constant_propogation_impl(obj, table);
-    };
-    const auto & prop_h = [&](Instruction & obj) {
-        return constant_propogation_holder_impl(obj, table);
-    };
-
+bool ConstantPropagation::operator()(BasicBlock & block) {
     // We have to break this into two walkers because we need to run this furst,
     // then the replacement
-    bool progress = instruction_walker(
-        block, {
-                   [&](Instruction & obj) { return identifier_to_object_mapper(obj, table); },
-               });
+    bool progress =
+        instruction_walker(block, {
+                                      [this](Instruction & obj) { return this->update_data(obj); },
+                                  });
+
+    auto && prop = [this](const Instruction & obj) { return this->impl(obj); };
+    auto && prop_h = [this](Instruction & obj) { return this->impl(obj); };
 
     progress |= instruction_walker(
         block,

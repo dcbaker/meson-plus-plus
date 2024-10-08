@@ -18,7 +18,6 @@ TEST(constant_propogation, phi_should_not_propogate) {
         endif
         message(x)
         )EOF");
-    MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
 
     // We do this in two walks because we don't have all of passes necissary to
@@ -29,7 +28,7 @@ TEST(constant_propogation, phi_should_not_propogate) {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, vt); },
                     MIR::Passes::UsageNumbering{},
                     MIR::Passes::ConstantFolding{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                    MIR::Passes::ConstantPropagation{},
                 });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
@@ -61,7 +60,6 @@ TEST(constant_propogation, function_arguments) {
         endif
         message(x)
         )EOF");
-    MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
 
     // We do this in two walks because we don't have all of passes necissary to
@@ -75,7 +73,7 @@ TEST(constant_propogation, function_arguments) {
                     MIR::Passes::fixup_phis,
                     MIR::Passes::UsageNumbering{},
                     MIR::Passes::ConstantFolding{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                    MIR::Passes::ConstantPropagation{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
@@ -99,7 +97,6 @@ TEST(constant_propogation, array) {
         endif
         y = [x]
         )EOF");
-    MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
 
     // We do this in two walks because we don't have all of passes necissary to
@@ -113,7 +110,7 @@ TEST(constant_propogation, array) {
                     MIR::Passes::fixup_phis,
                     MIR::Passes::UsageNumbering{},
                     MIR::Passes::ConstantFolding{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                    MIR::Passes::ConstantPropagation{},
                 });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
@@ -133,7 +130,6 @@ TEST(constant_propogation, method_holder) {
         x = find_program('sh')
         x.found()
         )EOF");
-    MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
     MIR::State::Persistant pstate{"foo", "bar"};
 
@@ -146,7 +142,7 @@ TEST(constant_propogation, method_holder) {
                     [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
                     MIR::Passes::UsageNumbering{},
                     MIR::Passes::ConstantFolding{},
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                    MIR::Passes::ConstantPropagation{},
                 });
 
     ASSERT_TRUE(progress);
@@ -167,7 +163,6 @@ TEST(constant_propogation, into_function_call) {
         x = find_program('sh', required : false)
         assert(x.found())
         )EOF");
-    MIR::Passes::PropTable pt{};
     MIR::Passes::ValueTable vt{};
     MIR::State::Persistant pstate{"foo", "bar"};
 
@@ -181,7 +176,7 @@ TEST(constant_propogation, into_function_call) {
             [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
             MIR::Passes::UsageNumbering{},
             MIR::Passes::ConstantFolding{},
-            [&](MIR::BasicBlock & b) { return MIR::Passes::constant_propogation(b, pt); },
+                    MIR::Passes::ConstantPropagation{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },
         });
 
