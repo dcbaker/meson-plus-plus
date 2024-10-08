@@ -17,8 +17,8 @@ TEST(value_numbering, simple) {
     std::unordered_map<std::string, uint32_t> data{};
     MIR::Passes::value_numbering(irlist, data);
 
-    ASSERT_EQ(irlist.instructions.front().var.version, 1);
-    ASSERT_EQ(irlist.instructions.back().var.version, 2);
+    ASSERT_EQ(irlist.instructions.front().var.gvn, 1);
+    ASSERT_EQ(irlist.instructions.back().var.gvn, 2);
 }
 
 TEST(value_numbering, branching) {
@@ -35,14 +35,14 @@ TEST(value_numbering, branching) {
     MIR::Passes::block_walker(
         irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
 
-    ASSERT_EQ(irlist.instructions.front().var.version, 1);
-    ASSERT_EQ(irlist.instructions.back().var.version, 2);
+    ASSERT_EQ(irlist.instructions.front().var.gvn, 1);
+    ASSERT_EQ(irlist.instructions.back().var.gvn, 2);
 
     const auto & bb1 = get_con(irlist.next)->if_false;
-    ASSERT_EQ(bb1->instructions.front().var.version, 3);
+    ASSERT_EQ(bb1->instructions.front().var.gvn, 3);
 
     const auto & bb2 = get_con(irlist.next)->if_true;
-    ASSERT_EQ(bb2->instructions.front().var.version, 4);
+    ASSERT_EQ(bb2->instructions.front().var.gvn, 4);
 }
 
 TEST(value_numbering, three_branch) {
@@ -60,15 +60,15 @@ TEST(value_numbering, three_branch) {
         irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
 
     const auto & bb1 = get_con(irlist.next)->if_true;
-    ASSERT_EQ(bb1->instructions.front().var.version, 1);
+    ASSERT_EQ(bb1->instructions.front().var.gvn, 1);
 
     const auto & con2 = get_con(get_con(irlist.next)->if_false->next);
 
     const auto & bb2 = con2->if_false;
-    ASSERT_EQ(bb2->instructions.front().var.version, 2);
+    ASSERT_EQ(bb2->instructions.front().var.gvn, 2);
 
     const auto & bb3 = con2->if_true;
-    ASSERT_EQ(bb3->instructions.front().var.version, 3);
+    ASSERT_EQ(bb3->instructions.front().var.gvn, 3);
 }
 
 TEST(number_uses, simple) {
@@ -91,7 +91,7 @@ TEST(number_uses, simple) {
     {
         const auto & num_obj = irlist.instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
-        ASSERT_EQ(num_obj.var.version, 1);
+        ASSERT_EQ(num_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
         const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
@@ -101,7 +101,7 @@ TEST(number_uses, simple) {
     {
         const auto & id_obj = irlist.instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -140,7 +140,7 @@ TEST(number_uses, with_phi) {
     {
         const auto & num_obj = irlist.instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
-        ASSERT_EQ(num_obj.var.version, 2);
+        ASSERT_EQ(num_obj.var.gvn, 2);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
         const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
@@ -150,7 +150,7 @@ TEST(number_uses, with_phi) {
     {
         const auto & id_obj = irlist.instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -230,7 +230,7 @@ TEST(number_uses, with_phi_no_pruning) {
     {
         const auto & id_obj = fin->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -260,7 +260,7 @@ TEST(number_uses, three_statements) {
     {
         const auto & id_obj = irlist.instructions.back();
         ASSERT_EQ(id_obj.var.name, "z");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -290,7 +290,7 @@ TEST(number_uses, redefined_value) {
     {
         const auto & id_obj = irlist.instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.version, 1);
+        ASSERT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -320,7 +320,7 @@ TEST(number_uses, in_array) {
     {
         const auto & num_obj = irlist.instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
-        ASSERT_EQ(num_obj.var.version, 1);
+        ASSERT_EQ(num_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
         const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);

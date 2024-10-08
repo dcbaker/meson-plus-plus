@@ -68,7 +68,7 @@ TEST(constant_folding, with_phi) {
 
     auto it = irlist.instructions.begin();
 
-    ASSERT_EQ(it->var.version, 2);
+    ASSERT_EQ(it->var.gvn, 2);
     ASSERT_EQ(it->var.name, "x");
 
     const auto & num_obj = *(it);
@@ -79,7 +79,7 @@ TEST(constant_folding, with_phi) {
     // This was the Phi
     const auto & phi_obj = *(++it);
     ASSERT_EQ(it->var.name, "x");
-    ASSERT_EQ(it->var.version, 3);
+    ASSERT_EQ(it->var.gvn, 3);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*phi_obj.obj_ptr));
     const auto & phi = std::get<MIR::Identifier>(*phi_obj.obj_ptr);
@@ -89,7 +89,7 @@ TEST(constant_folding, with_phi) {
     {
         const auto & id_obj = *(++it);
         ASSERT_EQ(it->var.name, "y");
-        ASSERT_EQ(it->var.version, 1);
+        ASSERT_EQ(it->var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
@@ -193,7 +193,7 @@ TEST(constant_folding, in_array) {
         const auto & id_obj = *it;
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         ASSERT_EQ(it->var.name, "x");
-        ASSERT_EQ(it->var.version, 1);
+        ASSERT_EQ(it->var.gvn, 1);
     }
 
     {

@@ -16,11 +16,11 @@ bool number(Instruction & obj, std::unordered_map<std::string, uint32_t> & data)
     // We never revalue a number, otherwise we might end up in a situation where
     // we change the number in the assignment, but then the users point to the
     // wrong thing
-    if (obj.var.version > 0) {
+    if (obj.var.gvn > 0) {
         return false;
     }
 
-    obj.var.version = ++data[obj.var.name];
+    obj.var.gvn = ++data[obj.var.name];
 
     return true;
 }
@@ -55,7 +55,7 @@ bool UsageNumbering::number_instructions(Instruction & obj, const uint32_t index
     }
 
     if (obj.var) {
-        table[obj.var.name] = obj.var.version;
+        table[obj.var.name] = obj.var.gvn;
     }
 
     return progress;

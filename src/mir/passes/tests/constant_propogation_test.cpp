@@ -38,7 +38,7 @@ TEST(constant_propogation, phi_should_not_propogate) {
     const auto & phi_obj = fin->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     ASSERT_EQ(phi_obj.var.name, "x");
-    ASSERT_EQ(phi_obj.var.version, 3);
+    ASSERT_EQ(phi_obj.var.gvn, 3);
 
     const auto & func_obj = fin->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
@@ -176,7 +176,7 @@ TEST(constant_propogation, into_function_call) {
             [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
             MIR::Passes::UsageNumbering{},
             MIR::Passes::ConstantFolding{},
-                    MIR::Passes::ConstantPropagation{},
+            MIR::Passes::ConstantPropagation{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },
         });
 

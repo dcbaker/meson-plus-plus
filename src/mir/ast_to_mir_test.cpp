@@ -596,7 +596,7 @@ TEST(ast_to_ir, assign) {
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
     ASSERT_EQ(obj.var.name, "a");
-    ASSERT_EQ(obj.var.version, 0);
+    ASSERT_EQ(obj.var.gvn, 0);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Number>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::Number>(*obj.obj_ptr);
@@ -608,7 +608,7 @@ TEST(ast_to_ir, assign_from_id) {
     ASSERT_EQ(irlist.instructions.size(), 1);
     const auto & obj = irlist.instructions.front();
     ASSERT_EQ(obj.var.name, "a");
-    ASSERT_EQ(obj.var.version, 0);
+    ASSERT_EQ(obj.var.gvn, 0);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::Identifier>(*obj.obj_ptr);
