@@ -157,18 +157,16 @@ TEST(find_program, found) {
         x = find_program('sh')
         x.found()
     )EOF");
-    MIR::Passes::ValueTable vt{};
     MIR::State::Persistant pstate{src_root, build_root};
 
     MIR::Passes::block_walker(
         irlist, {
+                    MIR::Passes::GlobalValueNumbering{},
                     [&](MIR::BasicBlock & b) { return MIR::Passes::threaded_lowering(b, pstate); },
                 });
     bool progress = MIR::Passes::block_walker(
         irlist,
         {
-            [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, vt); },
-            MIR::Passes::UsageNumbering{},
             MIR::Passes::ConstantFolding{},
             MIR::Passes::ConstantPropagation{},
             [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },

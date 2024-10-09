@@ -11,8 +11,6 @@ namespace MIR {
 namespace {
 
 uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, const uint32_t pass = 0) {
-    std::unordered_map<std::string, uint32_t> value_number_data{};
-
     // Print the initial MIR we get from the AST -> MIR conversion
     Passes::Printer printer{pass};
     printer(block);
@@ -21,24 +19,20 @@ uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, const uint32
     while (progress) {
         printer.increment();
         progress = Passes::block_walker(
-            block,
-            {
-                [&](BasicBlock & b) { return Passes::flatten(b, pstate); },
-                [&](BasicBlock & b) { return Passes::lower_free_functions(b, pstate); },
-                Passes::delete_unreachable,
-                [&](BasicBlock & b) { return Passes::value_numbering(b, value_number_data); },
-                [&](BasicBlock & b) { return Passes::insert_phis(b, value_number_data); },
-                Passes::branch_pruning,
-                Passes::join_blocks,
-                Passes::fixup_phis,
-                Passes::UsageNumbering{},
-                Passes::ConstantFolding{},
-                Passes::ConstantPropagation{},
-                [&](BasicBlock & b) { return Passes::lower_program_objects(b, pstate); },
-                [&](BasicBlock & b) { return Passes::lower_string_objects(b, pstate); },
-                [&](BasicBlock & b) { return Passes::lower_dependency_objects(b, pstate); },
-                std::ref(printer),
-            });
+            block, {
+                       [&](BasicBlock & b) { return Passes::flatten(b, pstate); },
+                       [&](BasicBlock & b) { return Passes::lower_free_functions(b, pstate); },
+                       Passes::delete_unreachable,
+                       Passes::branch_pruning,
+                       Passes::join_blocks,
+                       Passes::fixup_phis,
+                       Passes::ConstantFolding{},
+                       Passes::ConstantPropagation{},
+                       [&](BasicBlock & b) { return Passes::lower_program_objects(b, pstate); },
+                       [&](BasicBlock & b) { return Passes::lower_string_objects(b, pstate); },
+                       [&](BasicBlock & b) { return Passes::lower_dependency_objects(b, pstate); },
+                       std::ref(printer),
+                   });
     }
 
     return printer.pass;
@@ -49,12 +43,18 @@ uint64_t lower_impl(BasicBlock & block, State::Persistant & pstate, const uint32
 void lower(BasicBlock & block, State::Persistant & pstate) {
 
     // Early lowering
-    // we can insert compilers and repalce machine calls early, and once, and
-    // never worry about them again
-    Passes::block_walker(block, {[&](BasicBlock & b) {
-                             return Passes::machine_lower(b, pstate.machines) ||
-                                    Passes::insert_compilers(b, pstate.toolchains);
-                         }});
+    //
+    // Some passes just only need to be run once for the whole program,
+    // lowering `*_machine`, and doing our global value numbering and phi
+    // insertion pass
+    // TODO: compilers may need to be run again if `add_language` is called
+    Passes::block_walker(block, {
+                                    [&](BasicBlock & b) {
+                                        return Passes::machine_lower(b, pstate.machines) ||
+                                               Passes::insert_compilers(b, pstate.toolchains);
+                                    },
+                                    Passes::GlobalValueNumbering{},
+                                });
 
     // Run the main lowering loop until it cannot lower any more, then do the
     // threaded lowering, which we run across the entire program to lower things

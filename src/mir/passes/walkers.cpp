@@ -244,12 +244,9 @@ bool function_walker(BasicBlock & block, const MutationCallback & cb) {
 };
 
 bool block_walker(BasicBlock & root, const std::vector<BlockWalkerCb> & callbacks) {
-    // TODO: This might be solvable by a depth first search?
-    BlockIterator iter{&root};
     bool progress = false;
 
-    // Insert an item into the todo list only if it's
-
+    BlockIterator iter{&root};
     do {
         BasicBlock * current = iter.get();
         assert(current != nullptr);

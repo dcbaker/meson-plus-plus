@@ -17,13 +17,10 @@ TEST(insert_phi, simple) {
             x = 10
         endif
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                      });
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 1);
@@ -50,33 +47,29 @@ TEST(insert_phi, three_branches) {
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
 
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
     ASSERT_EQ(fin->instructions.size(), 2);
 
     auto it = fin->instructions.begin();
-    ASSERT_EQ(it->var.name, "x");
-    ASSERT_EQ(it->var.gvn, 4);
+    EXPECT_EQ(it->var.name, "x");
+    EXPECT_EQ(it->var.gvn, 4);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it->obj_ptr));
     const auto & phi = std::get<MIR::Phi>(*it->obj_ptr);
-    ASSERT_EQ(phi.left, 1);
-    ASSERT_EQ(phi.right, 3);
+    EXPECT_EQ(phi.left, 3);
+    EXPECT_EQ(phi.right, 2);
 
     it++;
 
-    ASSERT_EQ(it->var.name, "x");
-    ASSERT_EQ(it->var.gvn, 5);
+    EXPECT_EQ(it->var.name, "x");
+    EXPECT_EQ(it->var.gvn, 5);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it->obj_ptr));
     const auto & phi2 = std::get<MIR::Phi>(*it->obj_ptr);
-    ASSERT_EQ(phi2.left, 4);
-    ASSERT_EQ(phi2.right, 2);
+    EXPECT_EQ(phi2.left, 4);
+    ASSERT_EQ(phi2.right, 1);
 }
 
 TEST(insert_phi, nested_branches) {
@@ -90,13 +83,7 @@ TEST(insert_phi, nested_branches) {
             endif
         endif
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
-
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     {
         const auto & fin =
