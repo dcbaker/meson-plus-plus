@@ -79,25 +79,16 @@ bool lower_free_functions(BasicBlock &, const State::Persistant &);
  */
 bool flatten(BasicBlock &, const State::Persistant &);
 
-using ValueTable = std::unordered_map<std::string, uint32_t>;
-
-/**
- * number each use of a variable
- */
-bool value_numbering(BasicBlock &, ValueTable &);
-
-struct UsageNumbering {
+struct GlobalValueNumbering {
     bool operator()(BasicBlock &);
 
   private:
-    std::map<uint32_t, std::map<std::string, uint32_t>> data;
-    bool number_instructions(Instruction &, const uint32_t index);
+    std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>> data;
+    std::unordered_map<std::string, uint32_t> gvn;
+    bool number(Instruction &, const uint32_t);
+    bool insert_phis(BasicBlock &);
 };
 
-/**
- * Insert phi nodes along dominance frontiers
- */
-bool insert_phis(BasicBlock &, ValueTable &);
 bool fixup_phis(BasicBlock &);
 
 struct ConstantFolding {

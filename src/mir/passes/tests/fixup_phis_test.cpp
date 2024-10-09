@@ -20,11 +20,7 @@ TEST(fixup_phi, simple) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
     MIR::Passes::block_walker(irlist, {
                                           MIR::Passes::branch_pruning,
                                           MIR::Passes::join_blocks,
@@ -66,11 +62,7 @@ TEST(fixup_phi, three_branches) {
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
 
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
     MIR::Passes::block_walker(irlist, {
                                           MIR::Passes::branch_pruning,
                                           MIR::Passes::join_blocks,
@@ -83,32 +75,32 @@ TEST(fixup_phi, three_branches) {
 
     {
         const auto & id_obj = *it;
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 3);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, 9);
+        EXPECT_EQ(id.value, 9);
     }
 
     {
         const auto & id_obj = *(++it);
-        ASSERT_EQ(id_obj.var.gvn, 4);
-        ASSERT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 4);
+        EXPECT_EQ(id_obj.var.name, "x");
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.version, 1);
+        EXPECT_EQ(id.version, 3);
     }
 
     {
         const auto & id_obj = *(++it);
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 5);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 5);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.version, 4);
+        EXPECT_EQ(id.version, 4);
     }
 }
 
@@ -127,14 +119,12 @@ TEST(fixup_phi, nested_branches) {
 
     bool progress = true;
     while (progress) {
-        progress = MIR::Passes::block_walker(
-            irlist, {
-                        [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                        [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                        MIR::Passes::branch_pruning,
-                        MIR::Passes::join_blocks,
-                        MIR::Passes::fixup_phis,
-                    });
+        progress = MIR::Passes::block_walker(irlist, {
+                                                         MIR::Passes::GlobalValueNumbering{},
+                                                         MIR::Passes::branch_pruning,
+                                                         MIR::Passes::join_blocks,
+                                                         MIR::Passes::fixup_phis,
+                                                     });
     }
 
     ASSERT_TRUE(std::holds_alternative<std::monostate>(irlist.next));

@@ -14,8 +14,7 @@ TEST(value_numbering, simple) {
         x = 7
         x = 8
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::value_numbering(irlist, data);
+    MIR::Passes::GlobalValueNumbering{}(irlist);
 
     ASSERT_EQ(irlist.instructions.front().var.gvn, 1);
     ASSERT_EQ(irlist.instructions.back().var.gvn, 2);
@@ -31,9 +30,7 @@ TEST(value_numbering, branching) {
             x = 10
         endif
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::block_walker(
-        irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     ASSERT_EQ(irlist.instructions.front().var.gvn, 1);
     ASSERT_EQ(irlist.instructions.back().var.gvn, 2);
@@ -55,20 +52,18 @@ TEST(value_numbering, three_branch) {
             x = 11
         endif
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
-    MIR::Passes::block_walker(
-        irlist, {[&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); }});
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & bb1 = get_con(irlist.next)->if_true;
-    ASSERT_EQ(bb1->instructions.front().var.gvn, 1);
+    EXPECT_EQ(bb1->instructions.front().var.gvn, 3);
 
     const auto & con2 = get_con(get_con(irlist.next)->if_false->next);
 
     const auto & bb2 = con2->if_false;
-    ASSERT_EQ(bb2->instructions.front().var.gvn, 2);
+    EXPECT_EQ(bb2->instructions.front().var.gvn, 1);
 
     const auto & bb3 = con2->if_true;
-    ASSERT_EQ(bb3->instructions.front().var.gvn, 3);
+    ASSERT_EQ(bb3->instructions.front().var.gvn, 2);
 }
 
 TEST(number_uses, simple) {
@@ -76,15 +71,12 @@ TEST(number_uses, simple) {
         x = 9
         y = x
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    MIR::Passes::UsageNumbering{},
-                });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                      });
 
     ASSERT_EQ(irlist.instructions.size(), 2);
 
@@ -119,20 +111,16 @@ TEST(number_uses, with_phi) {
         endif
         y = x
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                      });
     MIR::Passes::block_walker(irlist, {
                                           MIR::Passes::branch_pruning,
                                           MIR::Passes::join_blocks,
                                           MIR::Passes::fixup_phis,
-                                          MIR::Passes::UsageNumbering{},
                                       });
 
     ASSERT_EQ(irlist.instructions.size(), 3);
@@ -168,16 +156,10 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
         endif
         message(x)
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                    MIR::Passes::UsageNumbering{},
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 2);
@@ -208,16 +190,10 @@ TEST(number_uses, with_phi_no_pruning) {
         endif
         y = x
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::insert_phis(b, data); },
-                    MIR::Passes::UsageNumbering{},
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 2);
@@ -245,15 +221,10 @@ TEST(number_uses, three_statements) {
         y = x
         z = y
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    MIR::Passes::UsageNumbering{},
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
@@ -275,15 +246,10 @@ TEST(number_uses, redefined_value) {
         x = 10
         y = x
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    MIR::Passes::UsageNumbering{},
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
@@ -305,15 +271,10 @@ TEST(number_uses, in_array) {
         y = x
         y = [y]
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(
-        irlist, {
-                    [&](MIR::BasicBlock & b) { return MIR::Passes::value_numbering(b, data); },
-                    MIR::Passes::UsageNumbering{},
-                });
+    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     ASSERT_EQ(irlist.instructions.size(), 3);
 
