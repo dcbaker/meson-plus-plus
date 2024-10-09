@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2024 Intel Corporation
 
-#include <deque>
-#include <set>
-
 #include "exceptions.hpp"
 #include "private.hpp"
+
+#include <deque>
+#include <set>
+#include <utility>
 
 namespace MIR::Passes {
 
@@ -22,6 +23,55 @@ bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback 
     }
     return progress;
 }
+
+class BlockIterator {
+  public:
+    BlockIterator(BasicBlock * c) : current{c} { seen.emplace(current); };
+    BasicBlock * get() { return current; }
+
+    bool next() {
+        if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
+            const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
+            add_todo(con.if_true);
+            add_todo(con.if_false);
+        } else if (std::holds_alternative<std::shared_ptr<BasicBlock>>(current->next)) {
+            auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
+            add_todo(bb);
+        }
+
+        while (!todo.empty()) {
+            current = todo.back().lock().get();
+            todo.pop_back();
+            if (current != nullptr) {
+                assert(!block_worked(current));
+                seen.emplace(current);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool empty() const { return current == nullptr && todo.empty(); }
+
+  private:
+    BasicBlock * current;
+    std::vector<std::weak_ptr<BasicBlock>> todo;
+    std::set<const BasicBlock *, BBComparitor> seen;
+
+    void add_todo(std::shared_ptr<BasicBlock> b) {
+        if (b != nullptr && !block_worked(b.get()) && all_parents_seen(b.get())) {
+            todo.emplace_back(b);
+        }
+    }
+
+    bool all_parents_seen(const BasicBlock * b) const {
+        return std::all_of(b->parents.begin(), b->parents.end(),
+                           [this](const BasicBlock * p) { return this->block_worked(p); });
+    }
+
+    bool block_worked(const BasicBlock * b) const { return seen.find(b) != seen.end(); }
+};
 
 } // namespace
 
@@ -194,44 +244,19 @@ bool function_walker(BasicBlock & block, const MutationCallback & cb) {
 };
 
 bool block_walker(BasicBlock & root, const std::vector<BlockWalkerCb> & callbacks) {
-    std::deque<BasicBlock *> todo{};
-    BasicBlock * current = &root;
+    // TODO: This might be solvable by a depth first search?
+    BlockIterator iter{&root};
     bool progress = false;
 
-    while (true) {
-        // It's possible that we need to walk over the same block twice in a
-        // loop because the block has been mutated such that running the same
-        // test on it will result in a different result.
+    // Insert an item into the todo list only if it's
+
+    do {
+        BasicBlock * current = iter.get();
+        assert(current != nullptr);
         for (const auto & cb : callbacks) {
             progress |= cb(*current);
         }
-
-        if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
-            const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
-            if (con.if_false != nullptr) {
-                todo.push_front(con.if_false.get());
-            }
-            if (con.if_true != nullptr) {
-                todo.push_front(con.if_true.get());
-            }
-        } else if (std::holds_alternative<std::shared_ptr<BasicBlock>>(current->next)) {
-            auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
-            if (bb != nullptr) {
-                todo.push_front(bb.get());
-            }
-        }
-
-        if (todo.empty()) {
-            break;
-        }
-
-        // Grab the next block, if we haven't visited all of it's parents, then
-        // skip it and come back after we've visited the remaining parent(s).
-        // It's safe to just drop it off the todo stack, as it will be added
-        // back after visiting the next parent.
-        current = todo.back();
-        todo.pop_back();
-    }
+    } while (iter.next());
 
     return progress;
 }
