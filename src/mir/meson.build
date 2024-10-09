@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021 Dylan Baker
+# Copyright © 2021-2024 Intel Corporation
 
 subdir('meson')
 
@@ -82,6 +82,7 @@ test(
       'passes/tests/machine_lower_test.cpp',
       'passes/tests/test_utils.cpp',
       'passes/tests/value_numbering_test.cpp',
+      'passes/tests/walker_tests.cpp',
       locations_hpp,
     ],
     dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
