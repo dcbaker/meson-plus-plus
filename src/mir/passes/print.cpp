@@ -12,29 +12,17 @@ namespace MIR::Passes {
 
 namespace {
 
-void printer_impl(const BasicBlock & block, const uint64_t pass,
-                  std::unordered_set<uint64_t> & seen, std::ofstream & stream);
-
-void condition_printer(const Condition & cond, const uint64_t pass,
-                       std::unordered_set<uint64_t> & seen, std::ofstream & stream) {
+void condition_printer(const Condition & cond, std::ofstream & stream) {
     stream << "    "
            << "Condition { condition = " << cond.condition.print()
            << "; if_true = " << cond.if_true->index << "; if_false = " << cond.if_false->index
            << " }"
            << "\n"
            << "  }\n";
-    printer_impl(*cond.if_true, pass, seen, stream);
-    printer_impl(*cond.if_false, pass, seen, stream);
 }
 
-void printer_impl(const BasicBlock & block, const uint64_t pass,
-                  std::unordered_set<uint64_t> & seen, std::ofstream & stream) {
+void printer_impl(const BasicBlock & block, std::ofstream & stream) {
     // Only print a given block once
-    if (seen.find(block.index) != seen.end()) {
-        return;
-    }
-    seen.emplace(block.index);
-
     stream << "  BasicBlock " << block.index << " {\n";
     for (auto && i : block.instructions) {
         stream << "    " << i.print() << "\n";
@@ -43,11 +31,10 @@ void printer_impl(const BasicBlock & block, const uint64_t pass,
         [&](auto && n) {
             using T = std::decay_t<decltype(n)>;
             if constexpr (std::is_same_v<T, std::unique_ptr<Condition>>) {
-                condition_printer(*n, pass, seen, stream);
+                condition_printer(*n, stream);
             } else if constexpr (std::is_same_v<T, std::shared_ptr<BasicBlock>>) {
-                stream << "    next block: " << n->index << "\n";
-                printer_impl(*n, pass, seen, stream);
-                stream << "  }\n";
+                stream << "    next block: " << n->index << "\n"
+                       << "  }\n";
             } else {
                 static_assert(std::is_same_v<T, std::monostate>);
                 stream << "    [[exit]]\n";
@@ -58,14 +45,33 @@ void printer_impl(const BasicBlock & block, const uint64_t pass,
 
 } // namespace
 
-bool printer(const BasicBlock & block, const uint64_t pass) {
+Printer::Printer(uint32_t p) : pass{p} {
     const char * print = std::getenv("MESONPP_DEBUG_PRINT_MIR");
     if (print != nullptr) { // TODO: [[unlikely]]
-        std::unordered_set<uint64_t> seen{};
-        std::ofstream out(print, std::ios::app);
-        out << "pass " << pass << " {\n";
-        printer_impl(block, pass, seen, out);
-        out << "}" << std::endl;
+        out.open(print, std::ios::app);
+        increment();
+    }
+}
+
+Printer::~Printer() {
+    if (out.is_open()) {
+        out << "  }\n" << "}" << std::endl;
+        out.close();
+    }
+}
+
+void Printer::increment() {
+    if (out.is_open()) {
+        if (pass != 0) {
+            out << "}\n";
+        }
+        out << "pass " << ++pass << " {" << std::endl;
+    }
+}
+
+bool Printer::operator()(const BasicBlock & block) {
+    if (out.is_open()) {
+        printer_impl(block, out);
     }
 
     // Always return false, because the print pass doesn't ever make an progress
