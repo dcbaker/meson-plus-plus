@@ -7,12 +7,13 @@
 
 #pragma once
 
-#include <map>
-
 #include "machines.hpp"
 #include "mir.hpp"
 #include "state/state.hpp"
 #include "toolchains/toolchain.hpp"
+
+#include <fstream>
+#include <map>
 
 namespace MIR::Passes {
 
@@ -150,6 +151,16 @@ bool delete_unreachable(BasicBlock & block);
 /// Debugging pass that dumps a human readable text representation of the IR to
 /// a file.
 /// controlled by setting the MESONPP_DEBUG_PRINT_MIR environment variable
-bool printer(const BasicBlock & block, const uint64_t pass);
+class Printer {
+  public:
+    Printer(uint32_t p = 0);
+    ~Printer();
+    bool operator()(const BasicBlock &);
+    void increment();
+    uint32_t pass;
+
+  private:
+    std::ofstream out{};
+};
 
 } // namespace MIR::Passes
