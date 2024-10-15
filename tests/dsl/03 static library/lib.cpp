@@ -3,6 +3,4 @@
 
 #include <string>
 
-std::string func() {
-    return "A String";
-}
+std::string func() { return "A String"; }

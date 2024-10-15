@@ -3,6 +3,4 @@
 
 #include "lib.hpp"
 
-int func() {
-    return 5;
-}
+int func() { return 5; }

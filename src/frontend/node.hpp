@@ -46,8 +46,8 @@ using ExpressionList = std::vector<ExpressionV>;
 class Location {
   public:
     Location(const location & l)
-        : column_start{l.begin.column}, column_end{l.end.column},
-          line_start{l.begin.line}, line_end{l.end.line}, filename{*l.begin.filename} {};
+        : column_start{l.begin.column}, column_end{l.end.column}, line_start{l.begin.line},
+          line_end{l.end.line}, filename{*l.begin.filename} {};
     virtual ~Location() = default;
     Location(const Location &) = default;
 
@@ -89,8 +89,8 @@ class String {
     String(std::string str, const bool & t, const bool & f, const location & l)
         : value{std::move(str)}, is_triple{t}, is_fstring{f}, loc{l} {};
     String(String && s) noexcept
-        : value{std::move(s.value)}, is_triple{s.is_triple},
-          is_fstring{s.is_fstring}, loc{s.loc} {};
+        : value{std::move(s.value)}, is_triple{s.is_triple}, is_fstring{s.is_fstring},
+          loc{s.loc} {};
     String(const String &) = delete;
     ~String() = default;
 
@@ -488,8 +488,8 @@ class IfStatement {
     IfStatement(IfBlock && ib, std::vector<ElifBlock> && ef, ElseBlock && eb)
         : ifblock{std::move(ib)}, efblock{std::move(ef)}, eblock{std::move(eb)} {};
     IfStatement(IfStatement && i) noexcept
-        : ifblock{std::move(i.ifblock)}, efblock{std::move(i.efblock)}, eblock{
-                                                                            std::move(i.eblock)} {};
+        : ifblock{std::move(i.ifblock)}, efblock{std::move(i.efblock)},
+          eblock{std::move(i.eblock)} {};
     IfStatement(const IfStatement &) = delete;
     ~IfStatement() = default;
 
@@ -508,8 +508,8 @@ class ForeachStatement {
                      std::unique_ptr<CodeBlock> && b)
         : id{std::move(i)}, id2{std::move(j)}, expr{std::move(e)}, block{std::move(b)} {};
     ForeachStatement(ForeachStatement && f) noexcept
-        : id{std::move(f.id)}, id2{std::move(f.id2)}, expr{std::move(f.expr)}, block{std::move(
-                                                                                   f.block)} {};
+        : id{std::move(f.id)}, id2{std::move(f.id2)}, expr{std::move(f.expr)},
+          block{std::move(f.block)} {};
     ForeachStatement(const ForeachStatement &) = delete;
     ~ForeachStatement() = default;
 
