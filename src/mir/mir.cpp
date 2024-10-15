@@ -301,8 +301,8 @@ FunctionCall::FunctionCall(std::string _name, std::vector<Instruction> && _pos,
       holder{std::make_shared<Object>(std::monostate{})}, source_dir{std::move(_sd)} {};
 
 std::string FunctionCall::print() const {
-    return "FunctionCall { name = " + name + "; args = " + to_string(pos_args) +
-           "; kwargs = " + to_string(kw_args) + " }";
+    return "FunctionCall { name = " + name + "; holder = { " + holder.print() + " }; args = { " +
+           to_string(pos_args) + " }; kwargs = { " + to_string(kw_args) + " } }";
 }
 
 String::String(std::string f) : value{std::move(f)} {};
