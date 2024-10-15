@@ -35,7 +35,7 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
         // Only schedule one finder for this program
         {
             std::lock_guard l{lock};
-            const auto & [ it, inserted ] = programs.insert(name);
+            const auto & [it, inserted] = programs.insert(name);
             if (!inserted) {
                 continue;
             }
@@ -48,7 +48,8 @@ void find_program(const std::vector<std::string> & names, std::mutex & lock,
             auto l = p.find(':');
             auto dirname = p.substr(0, std::min(p.length(), l));
 
-            p.remove_prefix(dirname.length() + (l != p.npos)); // skip dirname and separator (if there is one)
+            p.remove_prefix(dirname.length() +
+                            (l != p.npos)); // skip dirname and separator (if there is one)
 
             if (dirname.empty())
                 continue;

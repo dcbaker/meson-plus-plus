@@ -55,7 +55,8 @@ Printer::Printer(uint32_t p) : pass{p} {
 
 Printer::~Printer() {
     if (out.is_open()) {
-        out << "  }\n" << "}" << std::endl;
+        out << "  }\n"
+            << "}" << std::endl;
         out.close();
     }
 }
