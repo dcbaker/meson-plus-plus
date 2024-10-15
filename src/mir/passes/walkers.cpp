@@ -4,6 +4,7 @@
 #include "exceptions.hpp"
 #include "private.hpp"
 
+#include <algorithm>
 #include <deque>
 #include <set>
 #include <utility>

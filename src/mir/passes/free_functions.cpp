@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2024 Intel Corporation
 
-#include <iostream>
-#include <vector>
-
 #include "argument_extractors.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "passes.hpp"
 #include "private.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <vector>
 
 namespace MIR::Passes {
 
