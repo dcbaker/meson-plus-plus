@@ -73,8 +73,7 @@ template <typename T> class PerMachine {
         : _build{std::move(_b)}, _host{std::move(_h)}, _target{std::nullopt} {};
     PerMachine(T && _b) : _build{std::move(_b)}, _host{std::nullopt}, _target{std::nullopt} {};
     PerMachine(PerMachine<T> && t) noexcept
-        : _build{std::move(t._build)}, _target{std::move(t._target)},
-          _host{std::move(t._target)} {};
+        : _build{std::move(t._build)}, _host{std::move(t._host)}, _target{std::move(t._target)} {};
     ~PerMachine() = default;
 
     PerMachine<T> & operator=(PerMachine<T> && t) noexcept {
