@@ -53,6 +53,7 @@ void lower(BasicBlock & block, State::Persistant & pstate) {
                                         return Passes::machine_lower(b, pstate.machines) ||
                                                Passes::insert_compilers(b, pstate.toolchains);
                                     },
+                                    Passes::custom_target_program_replacement,
                                     Passes::GlobalValueNumbering{},
                                 });
 
