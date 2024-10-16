@@ -2,7 +2,6 @@
 Checks:          'clang-diagnostic-*,clang-analyzer-*,bugprone-*,performance-faster-string-find,performance-unnecessary-value-param,modernize-raw-string-literal,modernize-pass-by-value,modernize-loop-convert,modernize-use-nullptr,modernize-use-using,readability-redundant-member-init,readability-const-return-type,readability-else-after-return,readability-container-size-empty,readability-redundant-string-init,readability-use-anyofallof,readability-redundant-smartptr-get'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            dylan
 CheckOptions:

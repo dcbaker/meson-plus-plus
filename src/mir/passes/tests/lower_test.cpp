@@ -20,7 +20,7 @@ TEST(lower, after_files) {
         custom_target(
             'gen',
             output : 'gen.c',
-            command : ['prog', files('foo'), '@OUTPUT@']
+            command : ['cp', files('foo'), '@OUTPUT@']
         )
         )EOF");
     MIR::State::Persistant pstate{src_root, build_root};

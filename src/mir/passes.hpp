@@ -51,6 +51,12 @@ bool insert_compilers(BasicBlock &,
                           MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
 
 /**
+ * Find string arguments to custom_target's program space (intput[0]), and
+ * replace it with a call to `find_program()`
+ */
+bool custom_target_program_replacement(BasicBlock &);
+
+/**
  * Lowering for free functions
  *
  * This lowers free standing functions (those not part of an object/namespace).
