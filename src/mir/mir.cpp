@@ -94,6 +94,7 @@ Instruction::Instruction(Executable val) : obj_ptr{std::make_shared<Object>(std:
 Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Test val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(AddArguments val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 
 std::string Instruction::print() const {
     const std::string i = std::visit(
@@ -376,6 +377,25 @@ std::string Test::print() const {
     return "Test { name = " + name +
            "; executable = " + std::visit([](auto && arg) { return arg.print(); }, executable) +
            "; should_fail = " + (should_fail ? "true" : "false") + " }";
+}
+
+AddArguments::AddArguments(ArgMap && args, bool global)
+    : arguments{std::move(args)}, is_global{global} {};
+
+std::string AddArguments::print() const {
+    std::stringstream ss{};
+
+    ss << "AddArguments { arguments = { ";
+    for (auto && [lang, args] : arguments) {
+        ss << to_string(lang) << " = { ";
+        for (auto && arg : args) {
+            ss << arg.print() << ", ";
+        }
+        ss << " },";
+    }
+    ss << " is_global = { " << is_global << " } }";
+
+    return ss.str();
 }
 
 } // namespace MIR
