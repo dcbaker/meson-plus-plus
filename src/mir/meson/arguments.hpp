@@ -28,6 +28,9 @@ enum class Type {
 
     /// An argument we don't know how to classify, proxy it along
     RAW,
+
+    /// @brief  A raw linker argument
+    RAW_LINK,
 };
 
 /**

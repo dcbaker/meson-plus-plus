@@ -15,11 +15,12 @@ std::vector<std::string> GnuBFD::specialize_argument(const Arguments::Argument &
             return {"-l", arg.value()};
         case Arguments::Type::LINK_SEARCH:
             return {"-L", arg.value()};
+        case Arguments::Type::RAW_LINK:
+            return {arg.value()};
         case Arguments::Type::DEFINE:
         case Arguments::Type::INCLUDE:
-            return {};
         case Arguments::Type::RAW:
-            return {arg.value()};
+            return {};
         default:
             throw std::exception{}; // should be unreachable
     }
