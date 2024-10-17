@@ -73,6 +73,8 @@ class Argument {
     /// Include type specialization
     IncludeType include_type() const;
 
+    std::string print() const;
+
     bool operator==(const Argument &) const;
 };
 
