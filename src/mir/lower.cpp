@@ -62,6 +62,16 @@ void main(MIR::BasicBlock & block, State::Persistant & pstate, Passes::Printer &
     }
 }
 
+void late(MIR::BasicBlock & block, State::Persistant & pstate, Passes::Printer & printer) {
+    const std::vector<MIR::Passes::BlockWalkerCb> loop{
+        MIR::Passes::combine_add_arguments,
+        std::ref(printer),
+    };
+
+    printer.increment();
+    Passes::block_walker(block, std::ref(loop));
+}
+
 } // namespace
 
 void lower(BasicBlock & block, State::Persistant & pstate) {
@@ -72,6 +82,7 @@ void lower(BasicBlock & block, State::Persistant & pstate) {
 
     early(block, pstate, printer);
     main(block, pstate, printer);
+    late(block, pstate, printer);
 }
 
 } // namespace MIR
