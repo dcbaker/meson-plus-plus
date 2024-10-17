@@ -160,4 +160,9 @@ class Printer {
     std::ofstream out{};
 };
 
+/// @brief Move AddArgument nodes to the top of the program
+/// @param block The block to operate on
+/// @return true if any work is done, otherwise false
+bool combine_add_arguments(BasicBlock & block);
+
 } // namespace MIR::Passes
