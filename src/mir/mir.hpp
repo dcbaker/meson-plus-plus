@@ -59,6 +59,7 @@ class Variable {
     std::string print() const;
 };
 
+class AddArguments;
 class FunctionCall;
 class String;
 class Boolean;
@@ -82,7 +83,7 @@ class Test;
 using Object =
     std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
                  Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
-                 Program, Empty, CustomTarget, Dependency, Test>;
+                 Program, Empty, CustomTarget, Dependency, Test, AddArguments>;
 
 using Callable = std::variant<File, Executable, Program>;
 
@@ -116,6 +117,7 @@ class Instruction {
     Instruction(Phi val);
     Instruction(Program val);
     Instruction(Test val);
+    Instruction(AddArguments val);
 
     Instruction & operator=(const Instruction &) = default;
 
@@ -526,6 +528,17 @@ class Dict {
 
     /// Print a human readable version of this
     std::string print() const;
+};
+
+class AddArguments {
+  public:
+    AddArguments(ArgMap &&, bool global);
+
+    /// Print a human readable version of this
+    std::string print() const;
+
+    ArgMap arguments;
+    bool is_global;
 };
 
 class BasicBlock;
