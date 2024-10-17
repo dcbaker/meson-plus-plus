@@ -42,7 +42,9 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
         // TODO: or .so.X.Y.Z, .so.X.Y, .so.X
         return {arg, Arguments::Type::LINK};
     }
-    // TODO: Need to differnentiate RAW_COMPILE and RAW_LINK arguments
+    if (arg.substr(0, 4) == "-Wl,") {
+        return {arg, Arguments::Type::RAW_LINK};
+    }
     return {arg, Arguments::Type::RAW};
 }
 
@@ -78,6 +80,7 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
         }
         case Arguments::Type::RAW:
             return {arg.value()};
+        case Arguments::Type::RAW_LINK:
         case Arguments::Type::LINK:
         case Arguments::Type::LINK_SEARCH:
             return {};

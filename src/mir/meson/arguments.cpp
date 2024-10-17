@@ -21,7 +21,9 @@ std::string to_string(const Type type) {
         case Type::LINK_SEARCH:
             return "Linker Search paths";
         case Type::RAW:
-            return "Raw compiler/linker argument";
+            return "Raw compiler argument";
+        case Type::RAW_LINK:
+            return "Raw linker argument";
         default:
             assert(0);
     }
