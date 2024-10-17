@@ -441,3 +441,135 @@ TEST(add_global_link_arguments, simple) {
     EXPECT_EQ(arg.type(), MIR::Arguments::Type::LINK_SEARCH);
     EXPECT_EQ(arg.value(), "bar");
 }
+
+TEST(add_global_link_arguments, combine) {
+    auto irlist = lower(R"EOF(
+        add_global_link_arguments('-Lbar', language : 'cpp')
+        add_global_link_arguments('-lfoo', language : 'cpp')
+    )EOF");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    MIR::Passes::Printer printer{};
+    printer(irlist);
+    printer.increment();
+
+    {
+        const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        printer(irlist);
+        printer.increment();
+        ASSERT_TRUE(progress);
+    }
+    {
+        const bool progress = MIR::Passes::combine_add_arguments(irlist);
+        printer(irlist);
+        ASSERT_TRUE(progress);
+    }
+
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & ir = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
+
+    using MIR::Toolchain::Language;
+
+    const auto & add = std::get<MIR::AddArguments>(*ir.obj_ptr);
+    ASSERT_TRUE(add.arguments.find(Language::CPP) != add.arguments.end());
+    const auto & args = add.arguments.at(Language::CPP);
+    EXPECT_TRUE(add.is_global);
+    ASSERT_EQ(args.size(), 2);
+
+    {
+        const auto & arg = args.front();
+        EXPECT_EQ(arg.type(), MIR::Arguments::Type::LINK_SEARCH);
+        EXPECT_EQ(arg.value(), "bar");
+    }
+    {
+        const auto & arg = args.back();
+        EXPECT_EQ(arg.type(), MIR::Arguments::Type::LINK);
+        EXPECT_EQ(arg.value(), "foo");
+    }
+}
+
+TEST(add_global_link_arguments, combine_complex) {
+    auto irlist = lower(R"EOF(
+        add_global_link_arguments('-Lbar', language : 'cpp')
+        add_global_arguments('-Dfoo', language : 'cpp')
+    )EOF");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    MIR::Passes::Printer printer{};
+    printer(irlist);
+    printer.increment();
+
+    {
+        const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        printer(irlist);
+        printer.increment();
+        ASSERT_TRUE(progress);
+    }
+    {
+        const bool progress = MIR::Passes::combine_add_arguments(irlist);
+        printer(irlist);
+        ASSERT_TRUE(progress);
+    }
+
+    ASSERT_EQ(irlist.instructions.size(), 1);
+    const auto & ir = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
+
+    using MIR::Toolchain::Language;
+
+    const auto & add = std::get<MIR::AddArguments>(*ir.obj_ptr);
+    ASSERT_TRUE(add.arguments.find(Language::CPP) != add.arguments.end());
+    const auto & args = add.arguments.at(Language::CPP);
+    EXPECT_TRUE(add.is_global);
+    ASSERT_EQ(args.size(), 2);
+
+    {
+        const auto & arg = args.front();
+        EXPECT_EQ(arg.type(), MIR::Arguments::Type::LINK_SEARCH);
+        EXPECT_EQ(arg.value(), "bar");
+    }
+    {
+        const auto & arg = args.back();
+        EXPECT_EQ(arg.type(), MIR::Arguments::Type::DEFINE);
+        EXPECT_EQ(arg.value(), "foo");
+    }
+}
+
+TEST(add_global_link_arguments, dont_combine) {
+    auto irlist = lower(R"EOF(
+        add_global_link_arguments('-Lbar', language : 'cpp')
+        add_project_link_arguments('-lfoo', language : 'cpp')
+    )EOF");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    MIR::Passes::Printer printer{};
+    printer(irlist);
+    printer.increment();
+
+    {
+        const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        printer(irlist);
+        printer.increment();
+        EXPECT_TRUE(progress);
+    }
+    {
+        const bool progress = MIR::Passes::combine_add_arguments(irlist);
+        printer(irlist);
+        EXPECT_FALSE(progress);
+    }
+
+    ASSERT_EQ(irlist.instructions.size(), 2);
+}
