@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2024 Intel Corporation
 
-#include <gtest/gtest.h>
-
 #include "arguments.hpp"
 #include "passes.hpp"
 #include "passes/private.hpp"
 #include "state/state.hpp"
+#include "test_utils.hpp"
 #include "toolchains/archiver.hpp"
 #include "toolchains/common.hpp"
 #include "toolchains/compilers/cpp/cpp.hpp"
 #include "toolchains/linker.hpp"
 
-#include "test_utils.hpp"
+#include <gtest/gtest.h>
 
 TEST(files, simple) {
     auto irlist = lower("x = files('foo.c')");
@@ -333,4 +332,112 @@ TEST(declare_dependency, recursive) {
     ASSERT_EQ(d.arguments.size(), 1);
     ASSERT_EQ(d.arguments[0].value(), "foo");
     ASSERT_EQ(d.arguments[0].type(), MIR::Arguments::Type::DEFINE);
+}
+
+TEST(add_project_arguments, simple) {
+    auto irlist = lower("add_project_arguments('-DFOO', language : 'cpp')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    ASSERT_TRUE(progress);
+
+    const auto & ir = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
+
+    using MIR::Toolchain::Language;
+
+    const auto & add = std::get<MIR::AddArguments>(*ir.obj_ptr);
+    ASSERT_TRUE(add.arguments.find(Language::CPP) != add.arguments.end());
+    const auto & args = add.arguments.at(Language::CPP);
+    EXPECT_FALSE(add.is_global);
+    ASSERT_EQ(add.arguments.size(), 1);
+    const auto & arg = args.front();
+
+    EXPECT_EQ(arg.type(), MIR::Arguments::Type::DEFINE);
+    EXPECT_EQ(arg.value(), "FOO");
+}
+
+TEST(add_project_link_arguments, simple) {
+    auto irlist = lower("add_project_link_arguments('-Wl,-foo', language : 'cpp')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    ASSERT_TRUE(progress);
+
+    const auto & ir = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
+
+    using MIR::Toolchain::Language;
+
+    const auto & add = std::get<MIR::AddArguments>(*ir.obj_ptr);
+    ASSERT_TRUE(add.arguments.find(Language::CPP) != add.arguments.end());
+    const auto & args = add.arguments.at(Language::CPP);
+    EXPECT_FALSE(add.is_global);
+    ASSERT_EQ(add.arguments.size(), 1);
+    const auto & arg = args.front();
+
+    EXPECT_EQ(arg.type(), MIR::Arguments::Type::RAW_LINK);
+    EXPECT_EQ(arg.value(), "-Wl,-foo");
+}
+
+TEST(add_global_arguments, simple) {
+    auto irlist = lower("add_global_arguments('-Wno-foo', language : 'cpp')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    ASSERT_TRUE(progress);
+
+    const auto & ir = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
+
+    using MIR::Toolchain::Language;
+
+    const auto & add = std::get<MIR::AddArguments>(*ir.obj_ptr);
+    ASSERT_TRUE(add.arguments.find(Language::CPP) != add.arguments.end());
+    const auto & args = add.arguments.at(Language::CPP);
+    EXPECT_TRUE(add.is_global);
+    ASSERT_EQ(add.arguments.size(), 1);
+    const auto & arg = args.front();
+
+    EXPECT_EQ(arg.type(), MIR::Arguments::Type::RAW);
+    EXPECT_EQ(arg.value(), "-Wno-foo");
+}
+
+TEST(add_global_link_arguments, simple) {
+    auto irlist = lower("add_global_link_arguments('-Lbar', language : 'cpp')");
+
+    MIR::State::Persistant pstate{src_root, build_root};
+    pstate.toolchains[MIR::Toolchain::Language::CPP] =
+        std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
+            MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
+
+    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    ASSERT_TRUE(progress);
+
+    const auto & ir = irlist.instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
+
+    using MIR::Toolchain::Language;
+
+    const auto & add = std::get<MIR::AddArguments>(*ir.obj_ptr);
+    ASSERT_TRUE(add.arguments.find(Language::CPP) != add.arguments.end());
+    const auto & args = add.arguments.at(Language::CPP);
+    EXPECT_TRUE(add.is_global);
+    ASSERT_EQ(add.arguments.size(), 1);
+    const auto & arg = args.front();
+
+    EXPECT_EQ(arg.type(), MIR::Arguments::Type::LINK_SEARCH);
+    EXPECT_EQ(arg.value(), "bar");
 }

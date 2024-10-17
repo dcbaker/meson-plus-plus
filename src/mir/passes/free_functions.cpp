@@ -492,6 +492,43 @@ std::optional<Instruction> lower_custom_target(const FunctionCall & func,
     return CustomTarget{name, inputs, outputs, command, func.source_dir};
 }
 
+enum class ArgumentScope {
+    project_comp,
+    project_link,
+    global_comp,
+    global_link,
+};
+
+std::optional<Instruction> lower_add_arguments(const FunctionCall & func, const ArgumentScope scope,
+                                               const State::Persistant & pstate) {
+
+    const std::vector<MIR::String> langs =
+        extract_keyword_argument_a<MIR::String>(func.kw_args, "language");
+    if (langs.empty()) {
+        throw Util::Exceptions::MesonException(func.name + ": missing required kwarg 'language'");
+    }
+
+    const std::vector<MIR::String> arguments =
+        extract_variadic_arguments<MIR::String>(func.pos_args.begin(), func.pos_args.end());
+    // Meson allows this, so if we don't get any arguments, just return an empty to delete the node
+    if (arguments.empty()) {
+        return Empty{};
+    }
+
+    ArgMap mapping;
+    for (auto && s : langs) {
+        const Toolchain::Language lang = Toolchain::from_string(s.value);
+        if (const auto & tc = pstate.toolchains.find(lang); tc != pstate.toolchains.end()) {
+            for (auto && arg : arguments) {
+                mapping[lang].emplace_back(
+                    tc->second.build()->compiler->generalize_argument(arg.value));
+            }
+        }
+    }
+
+    return AddArguments{std::move(mapping), func.name.substr(0, 10) == "add_global"};
+};
+
 bool holds_reduced(const Instruction & obj);
 
 bool holds_reduced_array(const Instruction & obj) {
@@ -572,6 +609,14 @@ std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
         i = lower_declare_dependency(f, pstate);
     } else if (f.name == "test") {
         i = lower_test(f, pstate);
+    } else if (f.name == "add_project_arguments") {
+        i = lower_add_arguments(f, ArgumentScope::project_comp, pstate);
+    } else if (f.name == "add_project_link_arguments") {
+        i = lower_add_arguments(f, ArgumentScope::project_link, pstate);
+    } else if (f.name == "add_global_arguments") {
+        i = lower_add_arguments(f, ArgumentScope::global_comp, pstate);
+    } else if (f.name == "add_global_link_arguments") {
+        i = lower_add_arguments(f, ArgumentScope::global_link, pstate);
     } else if (f.name == "find_program" || f.name == "dependency") {
         // These are handled elsewhere
         return std::nullopt;
