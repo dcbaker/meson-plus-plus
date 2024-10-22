@@ -2,29 +2,48 @@
 // Copyright © 2021-2024 Intel Corporation
 
 #include "fir.hpp"
+#include "meson/arguments.hpp"
+
+#include <vector>
 
 namespace Backends::FIR {
 
 namespace {
 
+/// @brief FIR backend state
+struct State {
+    /// @brief Combined global and project arguments for each project
+    /// TODO: currently stored as a vector because there are no projects
+    /// implemented, but eventually needs to be stored as a map?
+    MIR::ArgMap arguments;
+};
+
 template <typename T>
-std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & pstate) {
+std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & pstate,
+                                const State & state) {
     static_assert(std::is_base_of<MIR::Executable, T>::value ||
                       std::is_base_of<MIR::StaticLibrary, T>::value,
                   "Must be derived from a build target");
 
+    const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
+
     std::vector<std::string> cpp_args{};
-    if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
-        const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
-        for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
-            const auto & args =
+    if (state.arguments.find(MIR::Toolchain::Language::CPP) != state.arguments.end()) {
+        for (const auto & a : state.arguments.at(MIR::Toolchain::Language::CPP)) {
+            auto args =
                 tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
-            std::copy(args.begin(), args.end(), std::back_inserter(cpp_args));
+            std::move(args.begin(), args.end(), std::back_inserter(cpp_args));
+        }
+    }
+    if (e.arguments.find(MIR::Toolchain::Language::CPP) != e.arguments.end()) {
+        for (const auto & a : e.arguments.at(MIR::Toolchain::Language::CPP)) {
+            auto args =
+                tc.build()->compiler->specialize_argument(a, pstate.source_root, pstate.build_root);
+            std::move(args.begin(), args.end(), std::back_inserter(cpp_args));
         }
     }
 
     std::vector<Target> rules{};
-    const auto & tc = pstate.toolchains.at(MIR::Toolchain::Language::CPP);
 
     // These are the same on each iteration
     const auto & always_args = tc.build()->compiler->always_args();
@@ -33,7 +52,7 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
     auto lincs = tc.build()->compiler->specialize_argument(
         MIR::Arguments::Argument(e.subdir, MIR::Arguments::Type::INCLUDE), pstate.source_root,
         pstate.build_root);
-    std::copy(lincs.begin(), lincs.end(), std::back_inserter(cpp_args));
+    std::move(lincs.begin(), lincs.end(), std::back_inserter(cpp_args));
 
     std::vector<std::string> order_deps{};
     for (const auto & f : e.sources) {
@@ -133,7 +152,8 @@ std::vector<Target> target_rule(const T & e, const MIR::State::Persistant & psta
 
 template <>
 std::vector<Target> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
-                                                   const MIR::State::Persistant & pstate) {
+                                                   const MIR::State::Persistant & pstate,
+                                                   const State & state) {
     std::vector<std::string> outs{};
     for (const auto & o : e.outputs) {
         outs.emplace_back(o.relative_to_build_dir());
@@ -188,19 +208,32 @@ Common::Test target_test(const MIR::Test & t, const MIR::State::Persistant & pst
 
 std::tuple<std::vector<Target>, std::vector<Common::Test>>
 mir_to_fir(const MIR::BasicBlock & block, const MIR::State::Persistant & pstate) {
+    State state{};
+    // Process the instructions that alter state
+    for (const auto & i : block.instructions) {
+        if (std::holds_alternative<MIR::AddArguments>(*i.obj_ptr)) {
+            // TODO: actually handle global vs per-project
+            const auto & argmap = std::get<MIR::AddArguments>(*i.obj_ptr);
+            for (auto && [lang, args] : argmap.arguments) {
+                state.arguments[lang].insert(state.arguments[lang].begin(), args.begin(),
+                                             args.end());
+            }
+        }
+    }
+
     // A list of all rules
     std::vector<Target> rules{};
     std::vector<Common::Test> tests{};
 
     for (const auto & i : block.instructions) {
         if (std::holds_alternative<MIR::Executable>(*i.obj_ptr)) {
-            auto r = target_rule(std::get<MIR::Executable>(*i.obj_ptr), pstate);
+            auto r = target_rule(std::get<MIR::Executable>(*i.obj_ptr), pstate, state);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
         } else if (std::holds_alternative<MIR::StaticLibrary>(*i.obj_ptr)) {
-            auto r = target_rule(std::get<MIR::StaticLibrary>(*i.obj_ptr), pstate);
+            auto r = target_rule(std::get<MIR::StaticLibrary>(*i.obj_ptr), pstate, state);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
         } else if (std::holds_alternative<MIR::CustomTarget>(*i.obj_ptr)) {
-            auto r = target_rule(std::get<MIR::CustomTarget>(*i.obj_ptr), pstate);
+            auto r = target_rule(std::get<MIR::CustomTarget>(*i.obj_ptr), pstate, state);
             std::move(r.begin(), r.end(), std::back_inserter(rules));
         } else if (std::holds_alternative<MIR::Test>(*i.obj_ptr)) {
             tests.emplace_back(target_test(std::get<MIR::Test>(*i.obj_ptr), pstate));

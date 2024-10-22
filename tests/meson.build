@@ -16,6 +16,7 @@ test_cases = {
     '09 string methods',
     '10 dependency methods',
     '11 test types',
+    '12 add arguments',
   ],
 }
 
