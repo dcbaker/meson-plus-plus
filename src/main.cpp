@@ -17,6 +17,7 @@
 #include "options.hpp"
 #include "state/state.hpp"
 #include "tools/test.hpp"
+#include "tools/vcs_tag.hpp"
 #include "version.hpp"
 
 namespace fs = std::filesystem;
@@ -94,6 +95,9 @@ int test(const Options::TestOptions & opts) {
 struct OptionHandler {
     int operator()(const Options::ConfigureOptions & opts) { return configure(opts); }
     int operator()(const Options::TestOptions & opts) { return test(opts); }
+    int operator()(const Options::VCSTagOptions & opts) {
+        return Tools::generate_vcs_tag(opts.infile, opts.outfile, opts.version, opts.replacement);
+    }
 };
 
 } // namespace

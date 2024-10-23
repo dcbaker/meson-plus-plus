@@ -47,6 +47,11 @@ Verbs:
 
         Run tests on a new build directory.
 
+    *:
+        Any additional verbs that are not documented here are considered
+        implementation details, and are subject to change at any time without
+        warning.
+
 )EOF";
 // clang-format on
 
@@ -59,6 +64,9 @@ Verb get_verb(int & argc, const char * const argv[]) {
         }
         if (v == "test") {
             return Verb::TEST;
+        }
+        if (v == "vcs_tag") {
+            return Verb::VCS_TAG;
         }
 
         std::cerr << "Unknown action:" << v << std::endl;
@@ -166,6 +174,48 @@ TestOptions get_test_options(int argc, char * argv[]) {
     return opts;
 }
 
+VCSTagOptions get_vcs_tag_options(int argc, char * argv[]) {
+
+    static const char * const short_opts = "h";
+    static const option long_opts[] = {
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr},
+    };
+
+    int c;
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
+        switch (c) {
+            case 'h':
+            default:
+                std::cout << usage << std::endl;
+                exit(0);
+        }
+    }
+
+    VCSTagOptions opts{};
+    // ++ here to pass the verb
+    int i = ++optind;
+    if (argc - i < 4) {
+        std::cerr << "meson++ vcs_tag command missing required command line options" << std::endl;
+        std::cout << usage << std::endl;
+        exit(1);
+    }
+
+    opts.infile = fs::path{argv[i++]};
+    opts.outfile = fs::path{argv[i++]};
+    opts.version = std::string{argv[i++]};
+    opts.replacement = std::string{argv[i++]};
+
+    if (i < argc) {
+        // TODO: better error message
+        std::cerr << "Got extra arguments." << std::endl;
+        std::cout << usage << std::endl;
+        exit(1);
+    }
+
+    return opts;
+}
+
 } // namespace
 
 OptionV parse_opts(int argc, char * argv[]) {
@@ -181,6 +231,8 @@ OptionV parse_opts(int argc, char * argv[]) {
             return get_config_options(argc, argv);
         case Verb::TEST:
             return get_test_options(argc, argv);
+        case Verb::VCS_TAG:
+            return get_vcs_tag_options(argc, argv);
         default:
             // TODO: should be unreachable
             throw std::runtime_error{"Unhandled verb"};
