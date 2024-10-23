@@ -145,11 +145,16 @@ void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
             throw std::exception{}; // should be unreachable
     }
 
+    // writes out the main build line in the form:
+    //`build {outputs}: {rule} {inputs} | {deps} || {order deps}`
     out << "build";
+    // Write outputs
     for (const auto & o : rule.output) {
         out << " " << escape(o);
     }
+    // rule name
     out << ": " << rule_name;
+    // inputs
     for (const auto & o : rule.input) {
         out << " " << escape(o);
     }
@@ -170,6 +175,7 @@ void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
 
     out << "\n";
 
+    // Write out the arguments to be used by the rule
     out << "  ARGS =";
     for (const auto & a : rule.arguments) {
         out << " " << escape(a, true);
