@@ -16,7 +16,7 @@
 #include "lower.hpp"
 #include "options.hpp"
 #include "state/state.hpp"
-#include "test/test.hpp"
+#include "tools/test.hpp"
 #include "version.hpp"
 
 namespace fs = std::filesystem;
@@ -88,7 +88,7 @@ int test(const Options::TestOptions & opts) {
     }
 
     auto && tests = Backends::Common::load_tests(path);
-    return Test::run_tests(tests, fs::absolute(opts.builddir));
+    return Tools::run_tests(tests, fs::absolute(opts.builddir));
 }
 
 struct OptionHandler {

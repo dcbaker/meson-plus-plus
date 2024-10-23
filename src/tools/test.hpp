@@ -8,9 +8,9 @@
 
 #include <filesystem>
 
-namespace Test {
+namespace Tools {
 
 int run_tests(const std::vector<Backends::Common::Test> & tests,
               const std::filesystem::path & builddir);
 
-} // namespace Test
+} // namespace Tools

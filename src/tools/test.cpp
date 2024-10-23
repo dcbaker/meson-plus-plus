@@ -1,7 +1,7 @@
 // SPDX-License-Indentifier: Apache-2.0
 // Copyright © 2024 Intel Corporation
 
-#include "test/test.hpp"
+#include "tools/test.hpp"
 #include "util/log.hpp"
 
 #include <array>
@@ -10,7 +10,7 @@
 #include <optional>
 #include <thread>
 
-namespace Test {
+namespace Tools {
 
 namespace {
 
@@ -125,4 +125,4 @@ int run_tests(const std::vector<bs::Test> & tests, const fs::path & builddir) {
     return jobs.status();
 }
 
-} // namespace Test
+} // namespace Tools
