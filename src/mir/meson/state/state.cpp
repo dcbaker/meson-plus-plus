@@ -19,9 +19,10 @@ Persistant::Persistant(std::filesystem::path sr_, std::filesystem::path br_)
       build_root{std::move(br_)} {};
 
 void Persistant::serialize(std::ostream & out) const {
-    out << "name:" << name << '\n';
-    out << "source root:" << std::string{source_root} << '\n';
-    out << "build root:" << std::string{build_root} << '\n';
+    out << "name:" << name << '\n'
+        << "source root:" << std::string{source_root} << '\n'
+        << "build root:" << std::string{build_root} << '\n'
+        << "project_version:" << std::string{project_version} << '\n';
     // TODO: toolchains
     // TODO: machines
     // TODO: programs
@@ -46,6 +47,8 @@ Persistant load(std::istream & in) {
             pstate.build_root = v;
         } else if (k == "name") {
             pstate.name = v;
+        } else if (k == "project_version") {
+            pstate.project_version = v;
         }
     }
 
