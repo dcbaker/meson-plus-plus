@@ -27,11 +27,11 @@ Result process(const std::vector<std::string> & cmd) {
     int err_pipes[2];
     if (pipe(out_pipes) != 0) {
         // Do something reall
-        throw std::exception{};
+        throw std::runtime_error{"failed to create stdout pipes"};
     }
     if (pipe(err_pipes) != 0) {
         // Do something reall
-        throw std::exception{};
+        throw std::runtime_error{"failes to create stderr pipes"};
     }
 
     pid_t pid = fork();
@@ -76,7 +76,7 @@ Result process(const std::vector<std::string> & cmd) {
                 close(f.fd);
             }
             // XXX: do something less silly here.
-            throw std::exception{};
+            throw std::runtime_error{"timeout of 5 seconds elapsed"};
         }
 
         if (fds[0].revents & POLLIN) {
