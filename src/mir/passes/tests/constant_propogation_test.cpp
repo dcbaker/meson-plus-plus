@@ -118,7 +118,7 @@ TEST(constant_propogation, method_holder) {
         x = find_program('sh')
         x.found()
         )EOF");
-    MIR::State::Persistant pstate{"foo", "bar"};
+    MIR::State::Persistant pstate = make_pstate();
     MIR::Passes::Printer printer{};
 
     bool progress =
@@ -157,7 +157,7 @@ TEST(constant_propogation, into_function_call) {
         x = find_program('sh', required : false)
         assert(x.found())
         )EOF");
-    MIR::State::Persistant pstate{"foo", "bar"};
+    MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::block_walker(
         irlist, {

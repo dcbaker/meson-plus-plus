@@ -16,7 +16,7 @@
 TEST(files, simple) {
     auto irlist = lower("x = files('foo.c')");
 
-    const MIR::State::Persistant pstate{src_root, build_root};
+    const MIR::State::Persistant pstate = make_pstate();
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
@@ -37,7 +37,7 @@ TEST(files, simple) {
 TEST(executable, simple) {
     auto irlist = lower("x = executable('exe', 'source.c', cpp_args : ['-Dfoo'])");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -64,7 +64,7 @@ TEST(executable, simple) {
 TEST(static_library, simple) {
     auto irlist = lower("x = static_library('exe', 'source.c', cpp_args : '-Dfoo')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -90,14 +90,14 @@ TEST(static_library, simple) {
 
 TEST(project, valid) {
     auto irlist = lower("project('foo')");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     MIR::Passes::lower_project(irlist, pstate);
     ASSERT_EQ(pstate.name, "foo");
 }
 
 TEST(project, vararg_array) {
     auto irlist = lower("project('foo', ['cpp'])");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     MIR::Passes::lower_project(irlist, pstate);
     ASSERT_EQ(pstate.name, "foo");
     ASSERT_TRUE(pstate.toolchains.find(MIR::Toolchain::Language::CPP) != pstate.toolchains.end());
@@ -105,7 +105,7 @@ TEST(project, vararg_array) {
 
 TEST(messages, simple) {
     auto irlist = lower("message('foo')");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
 
     ASSERT_TRUE(progress);
@@ -121,7 +121,7 @@ TEST(messages, simple) {
 
 TEST(messages, two_args) {
     auto irlist = lower("warning('foo', 'bar')");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
 
     ASSERT_TRUE(progress);
@@ -137,7 +137,7 @@ TEST(messages, two_args) {
 
 TEST(assert, simple) {
     auto irlist = lower("assert(false)");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
 
     ASSERT_TRUE(progress);
@@ -156,7 +156,7 @@ TEST(find_program, found) {
         x = find_program('sh')
         x.found()
     )EOF");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::block_walker(
         irlist, {
@@ -183,7 +183,7 @@ TEST(find_program, found) {
 
 TEST(not, simple) {
     auto irlist = lower("not false");
-    const MIR::State::Persistant pstate{src_root, build_root};
+    const MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -197,7 +197,7 @@ TEST(not, simple) {
 
 TEST(neg, simple) {
     auto irlist = lower("-5");
-    const MIR::State::Persistant pstate{src_root, build_root};
+    const MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist.instructions.size(), 1);
@@ -213,7 +213,7 @@ TEST(custom_target, simple) {
     auto irlist =
         lower("custom_target('foo', input : 'bar.in', output : 'bar.cpp', command : 'thing')");
 
-    const MIR::State::Persistant pstate{src_root, build_root};
+    const MIR::State::Persistant pstate = make_pstate();
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
@@ -230,7 +230,7 @@ TEST(custom_target, simple) {
 static inline bool test_equality(const std::string & expr) {
     auto irlist = lower(expr);
 
-    const MIR::State::Persistant pstate{src_root, build_root};
+    const MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::lower_free_functions(irlist, pstate);
     const auto & r = irlist.instructions.front();
@@ -256,7 +256,7 @@ TEST(eq, boolean_true) { ASSERT_TRUE(test_equality("false == false")); }
 TEST(version_compare, simple) {
     auto irlist = lower("'3.6'.version_compare('< 3.7')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
 
     bool progress = MIR::Passes::lower_string_objects(irlist, pstate);
     ASSERT_TRUE(progress);
@@ -272,7 +272,7 @@ TEST(version_compare, simple) {
 TEST(declare_dependency, string_include_dirs) {
     auto irlist = lower("x = declare_dependency(include_directories : 'foo')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -292,7 +292,7 @@ TEST(declare_dependency, string_include_dirs) {
 TEST(declare_dependency, compile_args) {
     auto irlist = lower("x = declare_dependency(compile_args : '-Dfoo')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -314,7 +314,7 @@ TEST(declare_dependency, recursive) {
     auto irlist =
         lower("x = declare_dependency(dependencies : declare_dependency(compile_args : '-Dfoo'))");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -337,7 +337,7 @@ TEST(declare_dependency, recursive) {
 TEST(add_project_arguments, simple) {
     auto irlist = lower("add_project_arguments('-DFOO', language : 'cpp')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -364,7 +364,7 @@ TEST(add_project_arguments, simple) {
 TEST(add_project_link_arguments, simple) {
     auto irlist = lower("add_project_link_arguments('-Wl,-foo', language : 'cpp')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -391,7 +391,7 @@ TEST(add_project_link_arguments, simple) {
 TEST(add_global_arguments, simple) {
     auto irlist = lower("add_global_arguments('-Wno-foo', language : 'cpp')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -418,7 +418,7 @@ TEST(add_global_arguments, simple) {
 TEST(add_global_link_arguments, simple) {
     auto irlist = lower("add_global_link_arguments('-Lbar', language : 'cpp')");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -448,7 +448,7 @@ TEST(add_global_link_arguments, combine) {
         add_global_link_arguments('-lfoo', language : 'cpp')
     )EOF");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -499,7 +499,7 @@ TEST(add_global_link_arguments, combine_complex) {
         add_global_arguments('-Dfoo', language : 'cpp')
     )EOF");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
@@ -550,7 +550,7 @@ TEST(add_global_link_arguments, dont_combine) {
         add_project_link_arguments('-lfoo', language : 'cpp')
     )EOF");
 
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     pstate.toolchains[MIR::Toolchain::Language::CPP] =
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
