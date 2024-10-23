@@ -24,6 +24,7 @@ namespace Options {
 enum class Verb {
     CONFIGURE,
     TEST,
+    VCS_TAG,
 };
 
 /**
@@ -42,7 +43,21 @@ struct TestOptions {
     fs::path builddir;
 };
 
-using OptionV = std::variant<ConfigureOptions, TestOptions>;
+/**
+ * @brief Options for the vcs_tag command
+ */
+struct VCSTagOptions {
+    /// @brief the input template file
+    fs::path infile;
+    /// @brief the output file name
+    fs::path outfile;
+    /// @brief the version string to use
+    std::string version;
+    /// @brief the string to be replaced
+    std::string replacement;
+};
+
+using OptionV = std::variant<ConfigureOptions, TestOptions, VCSTagOptions>;
 
 /// Parse options and return an Options object
 OptionV parse_opts(int argc, char * argv[]);

@@ -7,8 +7,8 @@ subdir('mir')
 subdir('backends')
 
 version_hpp = vcs_tag(
-  input : 'version.hpp.in',
-  output : 'version.hpp',
+  input: 'version.hpp.in',
+  output: 'version.hpp',
 )
 
 mesonpp = executable(
@@ -17,17 +17,18 @@ mesonpp = executable(
     'main.cpp',
     'options.cpp',
     'tools/test.cpp',
+    'tools/vcs_tag.cpp',
     version_hpp,
     locations_hpp,
   ],
-  cpp_args : [
-    '-D_GNU_SOURCE',  # for getopt
+  cpp_args: [
+    '-D_GNU_SOURCE', # for getopt
   ],
-  dependencies : [
+  dependencies: [
     idep_frontend,
     idep_mir,
     idep_util,
     idep_backend,
   ],
-  install : true,
+  install: true,
 )
