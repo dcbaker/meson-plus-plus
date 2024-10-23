@@ -3,14 +3,15 @@
 
 #pragma once
 
-#include <filesystem>
-#include <memory>
-
 #include "ast_to_mir.hpp"
 #include "driver.hpp"
 #include "exceptions.hpp"
 #include "lower.hpp"
+#include "meson/state/state.hpp"
 #include "mir.hpp"
+
+#include <filesystem>
+#include <memory>
 
 static const std::filesystem::path src_root = "/home/test user/src/test project/";
 static const std::filesystem::path build_root = "/home/test user/src/test project/builddir/";
@@ -38,3 +39,5 @@ inline const std::unique_ptr<MIR::Condition> & get_con(const MIR::NextType & nex
 inline bool is_empty(const MIR::NextType & next) {
     return std::holds_alternative<std::monostate>(next);
 }
+
+MIR::State::Persistant make_pstate();

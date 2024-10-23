@@ -16,7 +16,7 @@ TEST(unreachable_code, clear_dead_instructions) {
         warning('should be deleted')
         )EOF");
 
-    MIR::State::Persistant pstate{"", ""};
+    MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::block_walker(irlist, {
                                           [&](MIR::BasicBlock & b) {
@@ -48,7 +48,7 @@ TEST(unreachable_code, clear_next) {
         message(x)
         )EOF");
 
-    MIR::State::Persistant pstate{"", ""};
+    MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::block_walker(irlist, {
                                           [&](MIR::BasicBlock & b) {

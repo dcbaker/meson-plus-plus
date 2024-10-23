@@ -10,7 +10,7 @@
 
 TEST(lower, trivial) {
     auto irlist = lower("project('foo')");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     MIR::Passes::lower_project(irlist, pstate);
     MIR::lower(irlist, pstate);
 }
@@ -23,7 +23,7 @@ TEST(lower, after_files) {
             command : ['cp', files('foo'), '@OUTPUT@']
         )
         )EOF");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     // MIR::Passes::lower_project(irlist, pstate);
     MIR::lower(irlist, pstate);
 
@@ -47,7 +47,7 @@ TEST(lower, simple_real) {
             t_files,
         )
     )EOF");
-    MIR::State::Persistant pstate{src_root, build_root};
+    MIR::State::Persistant pstate = make_pstate();
     MIR::Passes::lower_project(irlist, pstate);
     MIR::lower(irlist, pstate);
 }

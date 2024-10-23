@@ -12,6 +12,8 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
 
 MIR::BasicBlock lower(const std::string & in) {
     auto block = parse(in);
-    const MIR::State::Persistant pstate{src_root, build_root};
+    const MIR::State::Persistant pstate = make_pstate();
     return MIR::lower_ast(block, pstate);
 }
+
+MIR::State::Persistant make_pstate() { return MIR::State::Persistant{src_root, build_root}; }
