@@ -78,7 +78,7 @@ Verb get_verb(int & argc, const char * const argv[]) {
 
 ConfigureOptions get_config_options(int argc, char * argv[]) {
     ConfigureOptions conf{
-        .program = argv[0],
+        .program = fs::absolute(argv[0]),
         .sourcedir = fs::current_path(),
     };
 

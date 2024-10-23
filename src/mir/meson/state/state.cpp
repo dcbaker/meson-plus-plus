@@ -14,9 +14,9 @@ namespace MIR::State {
 
 Persistant::Persistant() : machines{Machines::detect_build()} {};
 
-Persistant::Persistant(std::filesystem::path sr_, std::filesystem::path br_)
-    : machines{Machines::detect_build()}, source_root{std::move(sr_)},
-      build_root{std::move(br_)} {};
+Persistant::Persistant(std::filesystem::path sr_, std::filesystem::path br_, std::string mpp)
+    : machines{Machines::detect_build()}, source_root{std::move(sr_)}, build_root{std::move(br_)},
+      mesonpp{std::move(mpp)} {};
 
 void Persistant::serialize(std::ostream & out) const {
     out << "name:" << name << '\n'

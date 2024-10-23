@@ -64,7 +64,7 @@ int configure(const Options::ConfigureOptions & opts) {
     Frontend::Driver drv{};
     auto block = drv.parse(opts.sourcedir / "meson.build");
 
-    MIR::State::Persistant pstate{opts.sourcedir, opts.builddir};
+    MIR::State::Persistant pstate{opts.sourcedir, opts.builddir, opts.program};
 
     // Create IR from the AST, then run our lowering passes on it
     auto irlist = MIR::lower_ast(block, pstate);
