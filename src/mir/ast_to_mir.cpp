@@ -15,20 +15,7 @@ namespace {
 /// Get just the subdir, without the source_root
 fs::path get_subdir(const fs::path & full_path, const State::Persistant & pstate) {
     // This works for our case, but is probably wrong in a generic sense
-    auto itr = full_path.begin();
-    for (const auto & seg : pstate.source_root) {
-        if (*itr == seg) {
-            ++itr;
-        } else {
-            break;
-        }
-    }
-
-    fs::path fin = *itr;
-    while (++itr != full_path.end()) {
-        fin = fin / *itr;
-    }
-    return fin;
+    return fs::relative(full_path, pstate.source_root).parent_path();
 }
 
 /**
@@ -72,12 +59,11 @@ struct ExpressionLowering {
             kwargs[key] = std::visit(*this, v);
         }
 
-        fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
+        const fs::path subdir = get_subdir(fs::path{expr->loc.filename}, pstate);
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return FunctionCall{fname, std::move(pos), std::move(kwargs),
-                            fs::relative(path.parent_path(), pstate.build_root)};
+        return FunctionCall{fname, std::move(pos), std::move(kwargs), std::move(subdir)};
     };
 
     Instruction operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
@@ -155,8 +141,7 @@ struct ExpressionLowering {
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return FunctionCall{name, std::move(pos),
-                            fs::relative(path.parent_path(), pstate.build_root)};
+        return FunctionCall{name, std::move(pos), path};
     };
 
     Instruction operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
@@ -203,8 +188,7 @@ struct ExpressionLowering {
         }
         fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
 
-        return FunctionCall{func_name, std::move(pos),
-                            fs::relative(path.parent_path(), pstate.build_root)};
+        return FunctionCall{func_name, std::move(pos), path};
     };
 
     Instruction operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
