@@ -16,4 +16,4 @@ MIR::BasicBlock lower(const std::string & in) {
     return MIR::lower_ast(block, pstate);
 }
 
-MIR::State::Persistant make_pstate() { return MIR::State::Persistant{src_root, build_root}; }
+MIR::State::Persistant make_pstate() { return MIR::State::Persistant{src_root, build_root, ""}; }

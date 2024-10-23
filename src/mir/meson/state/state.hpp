@@ -21,7 +21,7 @@ namespace MIR::State {
 class Persistant {
   public:
     Persistant();
-    Persistant(std::filesystem::path, std::filesystem::path);
+    Persistant(std::filesystem::path, std::filesystem::path, std::string);
 
     /// @brief Serialize the Persistant state
     /// @param out A stream to write the serialized state to
