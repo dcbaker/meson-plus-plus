@@ -585,6 +585,53 @@ std::optional<Instruction> lower_add_arguments(const FunctionCall & func, const 
     return AddArguments{std::move(mapping), func.name.substr(0, 10) == "add_global"};
 };
 
+std::optional<Instruction> lower_vcs_tag(const FunctionCall & f, const State::Persistant & p) {
+    if (!f.pos_args.empty()) {
+        throw Util::Exceptions::InvalidArguments(
+            "vcs_tag: does not take any positional arguments.");
+    }
+    if (f.kw_args.find("input") == f.kw_args.end()) {
+        throw Util::Exceptions::InvalidArguments(
+            "vcs_tag: missing required keyword argument input.");
+    }
+    if (f.kw_args.find("output") == f.kw_args.end()) {
+        throw Util::Exceptions::InvalidArguments(
+            "vcs_tag: missing required keyword argument output.");
+    }
+    if (f.kw_args.find("command") != f.kw_args.end()) {
+        throw Util::Exceptions::MesonException(
+            "Not implemented: vcs_tag 'command' keyword argument");
+    }
+
+    Instruction input = src_to_file(f.kw_args.find("input")->second, p, f.source_dir);
+    auto output = extract_keyword_argument<MIR::String>(f.kw_args, "output",
+                                                        f.name + ": 'output' must be a string")
+                      .value();
+    // TODO: get version from project() call
+    auto fallback = extract_keyword_argument<MIR::String>(f.kw_args, "fallback",
+                                                          f.name + ": 'fallback' must be a string")
+                        .value_or(MIR::String{p.project_version});
+    auto replace_string =
+        extract_keyword_argument<MIR::String>(f.kw_args, "replace_string",
+                                              f.name + ": 'replace_string' must be a string")
+            .value_or(MIR::String{"@VCS_TAG@"});
+
+    File outfile{output.value, f.source_dir, true, p.source_root, p.build_root};
+    const auto & src = std::get<File>(*src_to_file(input, p, f.source_dir).obj_ptr);
+
+    std::vector<std::string> command{
+        p.mesonpp,
+        "vcs_tag",
+        src.relative_to_build_dir(),
+        outfile.relative_to_build_dir(),
+        fallback.value,
+        replace_string.value,
+    };
+
+    return CustomTarget{
+        outfile.name, {std::move(input)}, {std::move(outfile)}, command, f.source_dir};
+}
+
 bool holds_reduced(const Instruction & obj);
 
 bool holds_reduced_array(const Instruction & obj) {
@@ -663,6 +710,8 @@ std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
         i = lower_build_target<StaticLibrary>(f, pstate);
     } else if (f.name == "declare_dependency") {
         i = lower_declare_dependency(f, pstate);
+    } else if (f.name == "vcs_tag") {
+        i = lower_vcs_tag(f, pstate);
     } else if (f.name == "test") {
         i = lower_test(f, pstate);
     } else if (f.name == "add_project_arguments") {
