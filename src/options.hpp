@@ -31,8 +31,9 @@ enum class Verb {
  * Options for the configure command
  */
 struct ConfigureOptions {
-    fs::path builddir;
+    std::string program;
     fs::path sourcedir;
+    fs::path builddir;
     std::unordered_map<std::string, std::string> options;
 };
 
