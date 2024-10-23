@@ -17,6 +17,7 @@ test_cases = {
     '10 dependency methods',
     '11 test types',
     '12 add arguments',
+    '13 vcs_tag',
   ],
 }
 
