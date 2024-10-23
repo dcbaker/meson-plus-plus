@@ -16,7 +16,7 @@ mesonpp = executable(
   [
     'main.cpp',
     'options.cpp',
-    'test/test.cpp',
+    'tools/test.cpp',
     version_hpp,
     locations_hpp,
   ],
