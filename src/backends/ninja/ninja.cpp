@@ -111,7 +111,7 @@ std::string escape(const std::string & str, const bool & quote = false) {
     std::string new_s{};
     bool needs_quote = false;
     for (const auto & s : str) {
-        if (s == ' ') {
+        if (s == ' ' || s == '$') {
             new_s.push_back('$');
             new_s.push_back(s);
             needs_quote = true;
