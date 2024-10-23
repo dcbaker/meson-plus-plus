@@ -701,7 +701,7 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
 
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         throw Util::Exceptions::MesonException{
-            "First non-whitespace, non-comment must be a call to project()"};
+            "First non-whitespace, non-lower_projectcomment must be a call to project()"};
     }
     const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 
@@ -747,7 +747,12 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
                   << ")" << std::endl;
     }
 
-    // TODO: handle keyword arguments
+    auto version = extract_keyword_argument<MIR::String>(f.kw_args, "version",
+                                                         "project: 'version' must be a string")
+                       .value_or(MIR::String{"unknown"});
+    pstate.project_version = version.value;
+
+    // TODO: handle remaining keyword arguments
 
     // Remove the valid project() call so we don't accidently find it later when
     // looking for invalid function calls.

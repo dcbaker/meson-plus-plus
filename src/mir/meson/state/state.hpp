@@ -47,7 +47,13 @@ class Persistant {
     /// The name of the project
     std::string name;
 
-    /**
+    /// @brief The Version of the project being built
+    std::string project_version;
+
+    /// @brief The path to the Meson++ binary
+    std::string mesonpp;
+
+    /*
      * Programs found by the `find_program` function. These are cached across re-runs
      *
      * These are stored int [str: path] format, an actual representation has to

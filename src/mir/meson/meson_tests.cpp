@@ -109,10 +109,11 @@ TEST(persistant_state, serialize) {
     pstate.name = "foo";
     pstate.source_root = "/foo";
     pstate.build_root = "/foo/build";
+    pstate.project_version = "1.0";
 
     std::ostringstream out{};
 
     pstate.serialize(out);
 
-    ASSERT_EQ(out.str(), "name:foo\nsource root:/foo\nbuild root:/foo/build\n");
+    ASSERT_EQ(out.str(), "name:foo\nsource root:/foo\nbuild root:/foo/build\nproject_version:1.0\n");
 }
