@@ -69,7 +69,9 @@ Verb get_verb(int & argc, const char * const argv[]) {
 }
 
 ConfigureOptions get_config_options(int argc, char * argv[]) {
-    ConfigureOptions conf{};
+    ConfigureOptions conf{
+        .sourcedir = fs::current_path(),
+    };
 
     static const char * const short_opts = "hs:D:";
     static const option long_opts[] = {
@@ -79,14 +81,11 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
         {nullptr},
     };
 
-    // Initialize the sourcedir
-    conf.sourcedir = fs::path{"."};
-
     int c;
     while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
         switch (c) {
             case 's':
-                conf.sourcedir = fs::path{optarg};
+                conf.sourcedir = fs::absolute(optarg);
                 break;
             case 'D': {
                 const std::string d{optarg};
@@ -118,7 +117,7 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
         std::cout << usage << std::endl;
         exit(1);
     }
-    conf.builddir = fs::path{argv[i++]};
+    conf.builddir = fs::absolute(argv[i++]);
     if (i < argc) {
         // TODO: better error message
         std::cerr << "Got extra arguments." << std::endl;
