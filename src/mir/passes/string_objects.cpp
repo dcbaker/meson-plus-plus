@@ -24,7 +24,8 @@ std::optional<Instruction> lower_version_compare_method(const FunctionCall & f) 
     }
 
     // XXX: really need to check that this has a value...
-    const auto c = extract_positional_argument<String>(f.pos_args[0]).value();
+    const auto c = extract_positional_argument<String>(
+        f.pos_args[0], "string.version_compare: First argument was not a string");
     const auto & s = std::get<String>(*f.holder.obj_ptr);
 
     std::string cval{};

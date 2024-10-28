@@ -164,7 +164,7 @@ void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
 std::optional<Instruction> replace_find_program(const FunctionCall & f, State::Persistant & state) {
     // We know this is safe since we've already processed this call before (hopefully)
     // We only need the first name, as all of the names should be in the mapping
-    auto name = extract_positional_argument<String>(f.pos_args[0]).value().value;
+    auto name = extract_positional_argument<String>(f.pos_args[0], f.name + ": first argument was not a string").value;
 
     fs::path exe;
     try {

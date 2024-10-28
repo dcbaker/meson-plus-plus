@@ -59,7 +59,7 @@ TEST(custom_target_program_replacement, array) {
     EXPECT_EQ(cmd0.name, "find_program");
 
     ASSERT_EQ(cmd0.pos_args.size(), 1);
-    const auto & arg_o = MIR::Passes::extract_positional_argument<MIR::String>(cmd0.pos_args.at(0));
-    ASSERT_TRUE(arg_o.has_value());
-    ASSERT_EQ(arg_o.value().value, "foo.py");
+    const auto & arg_o =
+        MIR::Passes::extract_positional_argument<MIR::String>(cmd0.pos_args.at(0), "Error!");
+    ASSERT_EQ(arg_o.value, "foo.py");
 }
