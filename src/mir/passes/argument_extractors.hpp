@@ -7,18 +7,21 @@
 
 #pragma once
 
+#include "mir.hpp"
+
 #include <optional>
 #include <variant>
 
-#include "mir.hpp"
-
 namespace MIR::Passes {
 
+/// @brief Destructure an Instruction
+/// @tparam T The type to excract
+/// @param arg the Instruction to extract from
+/// @return either the value if it is of that type, or a nullopt
 template <typename T> std::optional<T> extract_positional_argument(const Instruction & arg) {
     if (std::holds_alternative<T>(*arg.obj_ptr)) {
         return std::get<T>(*arg.obj_ptr);
     }
-    // TODO: this ignores invalid arguments
     return std::nullopt;
 }
 
@@ -43,6 +46,11 @@ std::variant<std::monostate, T, Args...> extract_positional_argument_v(const Ins
     return _extract_positional_argument_v<std::variant<std::monostate, T, Args...>, Args...>(arg);
 }
 
+/// @brief Extract a variadic number of arguments
+/// @tparam T The type to extract
+/// @param start The beging iterator to extract from
+/// @param end the end iterator to extract from
+/// @return A vector of values
 template <typename T>
 std::vector<T> extract_variadic_arguments(std::vector<Instruction>::const_iterator start,
                                           std::vector<Instruction>::const_iterator end) {
@@ -63,6 +71,11 @@ std::vector<T> extract_variadic_arguments(std::vector<Instruction>::const_iterat
     return nobjs;
 }
 
+/// @brief Extract a keyword argument from a mapping
+/// @tparam T The type to extract
+/// @param kwargs The mapping to extract from
+/// @param name the name to get
+/// @return the value associated with that name
 template <typename T>
 std::optional<T>
 extract_keyword_argument(const std::unordered_map<std::string, Instruction> & kwargs,
@@ -78,6 +91,12 @@ extract_keyword_argument(const std::unordered_map<std::string, Instruction> & kw
     return std::get<T>(*found->second.obj_ptr);
 }
 
+/// @brief Extract a keyword argument that has a variant type
+/// @tparam T The first variant type to extract
+/// @tparam ...Args additional variant types
+/// @param kwargs The mapping to extract from
+/// @param name the name to get
+/// @return the value associated with that name
 template <typename T, typename... Args>
 std::variant<std::monostate, T, Args...>
 extract_keyword_argument_v(const std::unordered_map<std::string, Instruction> & kwargs,
@@ -91,6 +110,11 @@ extract_keyword_argument_v(const std::unordered_map<std::string, Instruction> & 
     return extract_positional_argument_v<T, Args...>(found->second);
 }
 
+/// @brief Extract a keyword argument that is an array of type
+/// @tparam T The type to extract
+/// @param kwargs The mapping to extract from
+/// @param name the name to get
+/// @return the value associated with that name
 template <typename T>
 std::vector<T>
 extract_keyword_argument_a(const std::unordered_map<std::string, Instruction> & kwargs,
@@ -117,6 +141,12 @@ extract_keyword_argument_a(const std::unordered_map<std::string, Instruction> & 
     return {};
 }
 
+/// @brief Extract a keyword argument that is an array of variant types
+/// @tparam T The first variant type to extract
+/// @tparam ...Args additional variant types
+/// @param kwargs The mapping to extract from
+/// @param name the name to get
+/// @return the value associated with that name
 template <typename... Args>
 std::vector<std::variant<std::monostate, Args...>>
 extract_keyword_argument_av(const std::unordered_map<std::string, Instruction> & kwargs,
