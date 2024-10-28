@@ -68,10 +68,8 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
 
     auto pos_itr = f.pos_args.begin();
 
-    const auto & name = extract_positional_argument<String>(*pos_itr->obj_ptr);
-    if (!name) {
-        throw Util::Exceptions::InvalidArguments{f.name + " first argument must be a string"};
-    }
+    const auto & name = extract_positional_argument<String>(
+        *pos_itr->obj_ptr, f.name + " first argument must be a string");
     ++pos_itr;
 
     // skip the first argument
@@ -121,7 +119,7 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
     }
 
     // TODO: machine parameter needs to be set from the native kwarg
-    return T{name.value().value, srcs, Machines::Machine::BUILD, f.source_dir, args, slink};
+    return T{name.value, srcs, Machines::Machine::BUILD, f.source_dir, args, slink};
 }
 
 std::optional<Instruction> lower_include_dirs(const FunctionCall & f,
@@ -175,9 +173,10 @@ std::optional<Instruction> lower_assert(const FunctionCall & f) {
                                                  std::to_string(f.pos_args.size()));
     }
 
-    const auto & value = extract_positional_argument<Boolean>(f.pos_args[0]);
+    const auto & value = extract_positional_argument<Boolean>(
+        f.pos_args[0], f.name + ": First argument did not resolve to boolean");
 
-    if (!value.value().value) {
+    if (!value.value) {
         // TODO: maye have an assert level of message?
         // TODO, how to get the original values of this?
         std::string message;
@@ -198,9 +197,10 @@ std::optional<Instruction> lower_not(const FunctionCall & f) {
                                                  std::to_string(f.pos_args.size()));
     }
 
-    const auto & value = extract_positional_argument<Boolean>(f.pos_args[0]);
+    const auto & value = extract_positional_argument<Boolean>(
+        f.pos_args[0], f.name + ": attempted to negate a value that did not resolve to a boolean");
 
-    return Boolean{!value.value().value};
+    return Boolean{!value.value};
 }
 
 std::optional<Instruction> lower_neg(const FunctionCall & f) {
@@ -210,9 +210,10 @@ std::optional<Instruction> lower_neg(const FunctionCall & f) {
                                                  std::to_string(f.pos_args.size()));
     }
 
-    const auto & value = extract_positional_argument<Number>(f.pos_args[0]);
+    const auto & value = extract_positional_argument<Number>(
+        f.pos_args[0], f.name + ": attempted to negate a value that did not resolve to a number");
 
-    return Number{-value.value().value};
+    return Number{-value.value};
 }
 
 std::optional<Instruction> lower_eq(const FunctionCall & f) {
@@ -355,10 +356,9 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
         throw Util::Exceptions::InvalidArguments("test: takes 2 positional arguments.");
     }
 
-    auto && name = extract_positional_argument<String>(f.pos_args.at(0));
-    if (!name) {
-        throw Util::Exceptions::InvalidArguments("test: first argument must be a string");
-    }
+    auto && name = extract_positional_argument<String>(
+        f.pos_args.at(0), f.name + ": first argument must be a string");
+
     // TODO: should also allow CustomTarget and Jar
     auto && prog_v =
         extract_positional_argument_v<MIR::File, MIR::Program, MIR::Executable>(f.pos_args.at(1));
@@ -371,7 +371,7 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
                            .value_or(MIR::Boolean{false})
                            .value;
 
-    return Test{name.value().value, prog, arguments, xfail};
+    return Test{name.value, prog, arguments, xfail};
 }
 
 std::vector<Instruction>

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "exceptions.hpp"
 #include "mir.hpp"
 
 #include <optional>
@@ -25,6 +26,20 @@ template <typename T> std::optional<T> extract_positional_argument(const Instruc
     return std::nullopt;
 }
 
+/// @brief Extract a positional argument or fail
+/// @tparam T The type to extract
+/// @param arg the Instruction to extract from
+/// @param err_msg The error message to throw if this fails
+/// @return A copy of the instruction
+template <typename T>
+T extract_positional_argument(const Instruction & arg, const std::string & err_msg) {
+    try {
+        return std::get<T>(*arg.obj_ptr);
+    } catch (const std::bad_variant_access &) {
+        throw Util::Exceptions::InvalidArguments{err_msg};
+    }
+}
+
 template <typename R> R _extract_positional_argument_v(const Instruction & arg) {
     return std::monostate{};
 }
@@ -38,7 +53,7 @@ R _extract_positional_argument_v(const Instruction & arg) {
 }
 
 template <typename T, typename... Args>
-std::variant<std::monostate, T, Args...> extract_positional_argument_v(const Instruction & arg) {
+std::variant<T, Args...> extract_positional_argument_v(const Instruction & arg) {
     if (std::holds_alternative<T>(*arg.obj_ptr)) {
         return std::get<T>(*arg.obj_ptr);
     }
