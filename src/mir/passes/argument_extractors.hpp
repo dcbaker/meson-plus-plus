@@ -155,7 +155,7 @@ extract_keyword_argument_v(const std::unordered_map<std::string, Instruction> & 
 template <typename T>
 std::vector<T>
 extract_keyword_argument_a(const std::unordered_map<std::string, Instruction> & kwargs,
-                           const std::string & name, const bool & as_list = false) {
+                           const std::string & name) {
     auto found = kwargs.find(name);
     if (found == kwargs.end()) {
         return {};
