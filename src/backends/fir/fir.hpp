@@ -41,9 +41,9 @@ class Target {
         : input{std::move(in)}, output{out}, type{r}, lang{l}, machine{m},
           arguments{std::move(args)}, deps{std::move(d)}, order_deps{std::move(o)} {};
     Target(std::vector<std::string> in, std::vector<std::string> out, const TargetType & r,
-           std::vector<std::string> a)
+           std::vector<std::string> a, std::vector<std::string> d)
         : input{std::move(in)}, output{std::move(out)}, type{r}, lang{}, machine{},
-          arguments{std::move(a)}, deps{}, order_deps{} {};
+          arguments{std::move(a)}, deps{std::move(d)}, order_deps{} {};
 
     /// The input for this rule
     const std::vector<std::string> input;
