@@ -22,11 +22,13 @@ namespace Util {
 using Result = std::tuple<int8_t, std::string, std::string>;
 
 /**
- * Run an external process in a thread, and return the output, stdout, and stderr
+ * @brief Run an external process in a thread, and return the output, stdout, and stderr
  *
  * Can be configured to not return stdout and stderr, in which case it will
  * just surpress them
+ *
+ * @param cwd An optional directory to change into before running the command
  */
-Result process(const std::vector<std::string> &);
+Result process(const std::vector<std::string> &, const char * cwd = nullptr);
 
 }; // namespace Util
