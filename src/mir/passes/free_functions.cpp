@@ -102,8 +102,7 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
         slink.emplace_back(StaticLinkMode::NORMAL, s);
     }
 
-    auto raw_inc =
-        extract_keyword_argument_a<IncludeDirectories>(f.kw_args, "include_directories", true);
+    auto raw_inc = extract_keyword_argument_a<IncludeDirectories>(f.kw_args, "include_directories");
     for (const auto & i : raw_inc) {
         for (const auto & d : i.directories) {
             args[Toolchain::Language::CPP].emplace_back(d, Arguments::Type::INCLUDE,
