@@ -151,31 +151,27 @@ extract_keyword_argument_v(const std::unordered_map<std::string, Instruction> & 
 /// @tparam T The type to extract
 /// @param kwargs The mapping to extract from
 /// @param name the name to get
+/// @param err_msg The message to display if the type is incorrect
 /// @return the value associated with that name
 template <typename T>
-std::vector<T>
+std::optional<std::vector<T>>
 extract_keyword_argument_a(const std::unordered_map<std::string, Instruction> & kwargs,
-                           const std::string & name) {
+                           const std::string & name, const std::string & err_msg) {
     auto found = kwargs.find(name);
     if (found == kwargs.end()) {
-        return {};
+        return std::nullopt;
     }
     if (auto v = std::get_if<T>(found->second.obj_ptr.get())) {
-        return {*v};
+        return std::vector{*v};
     }
     if (auto v = std::get_if<Array>(found->second.obj_ptr.get())) {
         std::vector<T> ret{};
         for (const auto & a : v->value) {
-            auto arg = extract_positional_argument<T>(a);
-            // XXX: also ignores invalid arguments
-            if (arg) {
-                ret.emplace_back(arg.value());
-            }
+            ret.emplace_back(extract_positional_argument<T>(a, err_msg));
         }
         return ret;
     }
-    // XXX: This ignores invalid arguments
-    return {};
+    throw Util::Exceptions::InvalidArguments{err_msg};
 }
 
 /// @brief Extract a keyword argument that is an array of variant types
