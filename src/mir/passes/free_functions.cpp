@@ -360,8 +360,8 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
         f.pos_args.at(0), f.name + ": first argument must be a string");
 
     // TODO: should also allow CustomTarget and Jar
-    auto && prog_v =
-        extract_positional_argument_v<MIR::File, MIR::Program, MIR::Executable>(f.pos_args.at(1));
+    auto && prog_v = extract_positional_argument_v<MIR::File, MIR::Program, MIR::Executable>(
+        f.pos_args.at(1), f.name + ": got an invalid type for program");
     const Callable & prog = std::visit(CallableReducer{}, prog_v);
 
     // TODO: Also allows targets

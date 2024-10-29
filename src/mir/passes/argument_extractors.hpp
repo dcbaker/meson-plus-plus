@@ -41,7 +41,6 @@ T extract_positional_argument(const Instruction & arg, const std::string & err_m
 }
 
 template <typename R> R _extract_positional_argument_v(const Instruction & arg) {
-    // TODO: this ignores invalid arguments
     return std::monostate{};
 }
 
@@ -60,7 +59,33 @@ R _extract_positional_argument_v(const Instruction & arg) {
 /// @return The argument or a mononstate if the type is missing
 template <typename T, typename... Args>
 std::variant<std::monostate, T, Args...> extract_positional_argument_v(const Instruction & arg) {
-    return _extract_positional_argument_v<std::variant<std::monostate, T, Args...>, T, Args...>(arg);
+    return _extract_positional_argument_v<std::variant<std::monostate, T, Args...>, T, Args...>(
+        arg);
+}
+
+template <typename R>
+R _extract_positional_argument_v(const Instruction & arg, const std::string & err_msg) {
+    throw Util::Exceptions::InvalidArguments{err_msg};
+}
+
+template <typename R, typename T, typename... Args>
+R _extract_positional_argument_v(const Instruction & arg, const std::string & err_msg) {
+    if (std::holds_alternative<T>(*arg.obj_ptr)) {
+        return std::get<T>(*arg.obj_ptr);
+    }
+    return _extract_positional_argument_v<R, Args...>(arg, err_msg);
+}
+
+/// @brief Extract a positional argument that is a variadic type
+/// @tparam T The first type to try
+/// @tparam ...Args additional types to try
+/// @param arg The Instruction to extract from
+/// @param err_msg a message to add to an exception if the variant cannot be found
+/// @return The argument or a mononstate if the type is missing
+template <typename T, typename... Args>
+std::variant<T, Args...> extract_positional_argument_v(const Instruction & arg,
+                                                       const std::string & err_msg) {
+    return _extract_positional_argument_v<std::variant<T, Args...>, T, Args...>(arg, err_msg);
 }
 
 /// @brief Extract a variadic number of arguments
