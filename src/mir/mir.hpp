@@ -370,12 +370,11 @@ class Program {
 
 class Test {
   public:
-    Test(std::string n, Callable exe, std::vector<std::variant<std::monostate, String, File>> args,
-         bool xfail);
+    Test(std::string n, Callable exe, std::vector<std::variant<String, File>> args, bool xfail);
 
     const std::string name;
     const Callable executable;
-    const std::vector<std::variant<std::monostate, String, File>> arguments;
+    const std::vector<std::variant<String, File>> arguments;
     const bool should_fail;
 
     /// Print a human readable version of this

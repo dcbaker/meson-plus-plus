@@ -368,8 +368,7 @@ std::string Dependency::print() const {
            "; type = " + to_string(type) + " }";
 }
 
-Test::Test(std::string n, Callable exe,
-           std::vector<std::variant<std::monostate, String, File>> args, bool xfail)
+Test::Test(std::string n, Callable exe, std::vector<std::variant<String, File>> args, bool xfail)
     : name{std::move(n)}, executable{std::move(exe)}, arguments{std::move(args)},
       should_fail{xfail} {};
 
