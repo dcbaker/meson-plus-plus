@@ -138,7 +138,9 @@ std::optional<Instruction> lower_include_dirs(const FunctionCall & f,
     }
 
     auto is_system =
-        extract_keyword_argument<Boolean>(f.kw_args, "is_system").value_or(Boolean{false});
+        extract_keyword_argument<Boolean>(
+            f.kw_args, "is_system", "include_directories: 'is_system' argument must be a boolean")
+            .value_or(Boolean{false});
 
     return IncludeDirectories{dirs, is_system.value};
 }
@@ -294,7 +296,10 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
     }
 
     std::string version =
-        extract_keyword_argument<String>(f.kw_args, "version").value_or(String("unknown")).value;
+        extract_keyword_argument<String>(
+            f.kw_args, "version", "declare_dependency: 'version' keyword argument must be a string")
+            .value_or(String("unknown"))
+            .value;
 
     std::vector<Arguments::Argument> args{};
     const auto & raw_comp_args = extract_keyword_argument_a<String>(f.kw_args, "compile_args");
@@ -369,9 +374,11 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
     // TODO: Also allows targets
     auto && arguments = extract_keyword_argument_av<MIR::String, MIR::File>(f.kw_args, "args");
 
-    const bool xfail = extract_keyword_argument<MIR::Boolean>(f.kw_args, "should_fail")
-                           .value_or(MIR::Boolean{false})
-                           .value;
+    const bool xfail =
+        extract_keyword_argument<MIR::Boolean>(f.kw_args, "should_fail",
+                                               "test: 'should_fail' argument must be a boolean")
+            .value_or(MIR::Boolean{false})
+            .value;
 
     return Test{name.value, prog, arguments, xfail};
 }

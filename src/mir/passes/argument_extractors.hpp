@@ -115,20 +115,17 @@ std::vector<T> extract_variadic_arguments(std::vector<Instruction>::const_iterat
 /// @tparam T The type to extract
 /// @param kwargs The mapping to extract from
 /// @param name the name to get
+/// @param err_msg The message to throw if the argument is of the incorrect type
 /// @return the value associated with that name
 template <typename T>
 std::optional<T>
 extract_keyword_argument(const std::unordered_map<std::string, Instruction> & kwargs,
-                         const std::string & name) {
+                         const std::string & name, const std::string & err_msg) {
     const auto & found = kwargs.find(name);
     if (found == kwargs.end()) {
         return std::nullopt;
     }
-    if (!std::holds_alternative<T>(*found->second.obj_ptr)) {
-        // XXX: this is just going to ignore invalid arguments…
-        return std::nullopt;
-    }
-    return std::get<T>(*found->second.obj_ptr);
+    return extract_positional_argument<T>(found->second, err_msg);
 }
 
 /// @brief Extract a keyword argument that has a variant type

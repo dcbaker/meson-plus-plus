@@ -21,8 +21,7 @@ TEST(custom_target_program_replacement, string) {
     const auto & fc = std::get<MIR::FunctionCall>(*fc_obj.obj_ptr);
 
     const auto & commands_o =
-        MIR::Passes::extract_keyword_argument<MIR::Array>(fc.kw_args, "command");
-    ASSERT_TRUE(commands_o.has_value());
+        MIR::Passes::extract_keyword_argument<MIR::Array>(fc.kw_args, "command", "Error!");
 
     const auto & commands = commands_o.value();
     ASSERT_EQ(commands.value.size(), 1);
@@ -49,7 +48,7 @@ TEST(custom_target_program_replacement, array) {
     const auto & fc = std::get<MIR::FunctionCall>(*fc_obj.obj_ptr);
 
     const auto & commands_o =
-        MIR::Passes::extract_keyword_argument<MIR::Array>(fc.kw_args, "command");
+        MIR::Passes::extract_keyword_argument<MIR::Array>(fc.kw_args, "command", "Error!");
     ASSERT_TRUE(commands_o.has_value());
 
     const auto & commands = commands_o.value();
