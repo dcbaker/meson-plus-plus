@@ -106,7 +106,8 @@ class FindList {
 };
 
 bool search_find_program(const FunctionCall & f, State::Persistant & pstate, FindList & jobs) {
-    auto names = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
+    auto names = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end(),
+                                                    "find_program: names must be strings");
 
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
@@ -164,7 +165,9 @@ void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
 std::optional<Instruction> replace_find_program(const FunctionCall & f, State::Persistant & state) {
     // We know this is safe since we've already processed this call before (hopefully)
     // We only need the first name, as all of the names should be in the mapping
-    auto name = extract_positional_argument<String>(f.pos_args[0], f.name + ": first argument was not a string").value;
+    auto name = extract_positional_argument<String>(f.pos_args[0],
+                                                    f.name + ": first argument was not a string")
+                    .value;
 
     fs::path exe;
     try {
