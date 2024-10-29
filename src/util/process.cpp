@@ -21,7 +21,7 @@ namespace Util {
 
 namespace {}
 
-Result process(const std::vector<std::string> & cmd) {
+Result process(const std::vector<std::string> & cmd, const char * cwd) {
     std::string out{}, err{};
     int out_pipes[2];
     int err_pipes[2];
@@ -49,6 +49,9 @@ Result process(const std::vector<std::string> & cmd) {
         }
         c_cmd[cmd.size()] = nullptr;
 
+        if (cwd != nullptr) {
+            chdir(cwd);
+        }
         execvp(c_cmd[0], c_cmd);
         std::cerr << "Program failed to execute: " << strerror(errno) << std::endl;
         _exit(127);
