@@ -378,6 +378,18 @@ class CallableReducer {
     Callable operator()(const MIR::Program & f) { return f; }
 };
 
+struct OutputReducer {
+    std::vector<std::variant<MIR::String, MIR::File>> operator()(MIR::String s) { return {s}; }
+    std::vector<std::variant<MIR::String, MIR::File>> operator()(MIR::File f) { return {f}; }
+    std::vector<std::variant<MIR::String, MIR::File>> operator()(const MIR::CustomTarget & t) {
+        std::vector<std::variant<MIR::String, MIR::File>> out;
+        for (auto && o : t.outputs) {
+            out.push_back(o);
+        }
+        return out;
+    }
+};
+
 std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persistant & pstate) {
     if (f.pos_args.size() != 2) {
         throw Util::Exceptions::InvalidArguments("test: takes 2 positional arguments.");
@@ -392,10 +404,17 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
     const Callable & prog = std::visit(CallableReducer{}, prog_v);
 
     // TODO: Also allows targets
-    auto && arguments =
-        extract_keyword_argument_av<MIR::String, MIR::File>(
-            f.kw_args, "args", f.name + ": 'args' keyword arguments must be strings or files")
-            .value_or(std::vector<std::variant<String, File>>{});
+    auto && raw_args =
+        extract_keyword_argument_av<MIR::String, MIR::File, MIR::CustomTarget>(
+            f.kw_args, "args",
+            f.name + ": 'args' keyword arguments must be strings, files, or custom_target objects")
+            .value_or(std::vector<std::variant<MIR::String, MIR::File, MIR::CustomTarget>>{});
+    std::vector<std::variant<MIR::String, MIR::File>> arguments;
+    for (auto && a : raw_args) {
+        for (auto && n : std::visit(OutputReducer{}, a)) {
+            arguments.push_back(n);
+        }
+    }
 
     const bool xfail =
         extract_keyword_argument<MIR::Boolean>(f.kw_args, "should_fail",
