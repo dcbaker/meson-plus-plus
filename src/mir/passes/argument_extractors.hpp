@@ -95,19 +95,17 @@ std::variant<T, Args...> extract_positional_argument_v(const Instruction & arg,
 /// @return A vector of values
 template <typename T>
 std::vector<T> extract_variadic_arguments(std::vector<Instruction>::const_iterator start,
-                                          std::vector<Instruction>::const_iterator end) {
+                                          std::vector<Instruction>::const_iterator end,
+                                          const std::string & err_msg) {
     std::vector<T> nobjs{};
     for (; start != end; start++) {
         if (std::holds_alternative<Array>(*start->obj_ptr)) {
             const auto & arr = std::get<Array>(*start->obj_ptr);
-            const auto & nvals = extract_variadic_arguments<T>(arr.value.begin(), arr.value.end());
+            const auto & nvals =
+                extract_variadic_arguments<T>(arr.value.begin(), arr.value.end(), err_msg);
             nobjs.insert(nobjs.end(), nvals.begin(), nvals.end());
         } else {
-            // TODO: this is going to ignore invalid arghuments
-            std::optional<T> arg = extract_positional_argument<T>(*start->obj_ptr);
-            if (arg) {
-                nobjs.emplace_back(arg.value());
-            }
+            nobjs.emplace_back(extract_positional_argument<T>(*start->obj_ptr, err_msg));
         }
     }
     return nobjs;

@@ -16,7 +16,8 @@ namespace MIR::Passes {
 namespace {
 
 std::optional<Instruction> lower_files(const FunctionCall & f, const State::Persistant & pstate) {
-    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
+    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end(),
+                                                   "files: arguments must be strings");
     std::vector<Instruction> files{};
     files.reserve(args.size());
     std::transform(args.begin(), args.end(), std::back_inserter(files), [&](const String & v) {
@@ -154,7 +155,8 @@ std::optional<Instruction> lower_messages(const FunctionCall & f) {
 
     // TODO: Meson accepts anything as a message bascially, without flattening.
     // Currently, Meson++ flattens everything so I'm only going to allow strings for the moment.
-    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end());
+    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end(),
+                                                   "message: arguments must be strings");
 
     std::string message{};
     for (const auto & a : args) {
@@ -508,8 +510,9 @@ std::optional<Instruction> lower_add_arguments(const FunctionCall & func, const 
         throw Util::Exceptions::MesonException(func.name + ": missing required kwarg 'language'");
     }
 
-    const std::vector<MIR::String> arguments =
-        extract_variadic_arguments<MIR::String>(func.pos_args.begin(), func.pos_args.end());
+    const std::vector<MIR::String> arguments = extract_variadic_arguments<MIR::String>(
+        func.pos_args.begin(), func.pos_args.end(),
+        func.name + ": positional arguments must be strings");
     // Meson allows this, so if we don't get any arguments, just return an empty to delete the node
     if (arguments.empty()) {
         return Empty{};
@@ -665,7 +668,8 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
     // TODO: I don't want this in here, I'd rather have this all done in the backend, I think
     std::cout << "Project name: " << Util::Log::bold(pstate.name) << std::endl;
 
-    const auto & langs = extract_variadic_arguments<String>(++pos, f.pos_args.end());
+    const auto & langs = extract_variadic_arguments<String>(
+        ++pos, f.pos_args.end(), "project: Language arguments must be strings");
     for (const auto & lang : langs) {
         const auto l = Toolchain::from_string(lang.value);
 
