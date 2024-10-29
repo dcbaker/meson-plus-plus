@@ -177,7 +177,10 @@ std::optional<Instruction> replace_find_program(const FunctionCall & f, State::P
     }
 
     bool required =
-        extract_keyword_argument<Boolean>(f.kw_args, "required").value_or(Boolean{true}).value;
+        extract_keyword_argument<Boolean>(
+            f.kw_args, "required", "find_program: 'required' keyword argument must be a boolean")
+            .value_or(Boolean{true})
+            .value;
     if (required && exe == "") {
         throw Util::Exceptions::MesonException("Could not find required program \"" + name + "\"");
     }
