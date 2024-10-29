@@ -172,7 +172,12 @@ std::vector<Target> target_rule<MIR::CustomTarget>(const MIR::CustomTarget & e,
         }
     }
 
-    return {Target{ins, outs, TargetType::CUSTOM, e.command}};
+    std::vector<std::string> depends;
+    for (auto && d : e.depends) {
+        depends.emplace_back(d.relative_to_build_dir());
+    }
+
+    return {Target{ins, outs, TargetType::CUSTOM, e.command, depends}};
 }
 
 struct TestVisitor {

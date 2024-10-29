@@ -544,7 +544,7 @@ std::optional<Instruction> lower_custom_target(const FunctionCall & func,
     // TODO: output and input substitution
     const auto & command = extract_ct_command(func.kw_args, inputs, outputs);
 
-    return CustomTarget{name, inputs, outputs, command, func.source_dir};
+    return CustomTarget{name, inputs, outputs, command, func.source_dir, {}};
 }
 
 enum class ArgumentScope {
@@ -628,8 +628,8 @@ std::optional<Instruction> lower_vcs_tag(const FunctionCall & f, const State::Pe
         replace_string.value,
     };
 
-    return CustomTarget{
-        outfile.name, {std::move(input)}, {std::move(outfile)}, command, f.source_dir};
+    return CustomTarget{outfile.name, {std::move(input)}, {std::move(outfile)},
+                        command,      f.source_dir,       {}};
 }
 
 bool holds_reduced(const Instruction & obj);
