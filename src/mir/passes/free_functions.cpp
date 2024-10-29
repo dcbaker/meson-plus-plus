@@ -88,7 +88,9 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
     }
 
     const auto & comp = comp_at->second.build()->compiler;
-    auto raw_args = extract_keyword_argument_a<String>(f.kw_args, "cpp_args");
+    auto raw_args = extract_keyword_argument_a<String>(f.kw_args, "cpp_args",
+                                                       f.name + ": cpp_arguments must be strings")
+                        .value_or(std::vector<String>{});
     for (const auto & ra : raw_args) {
         args[Toolchain::Language::CPP].emplace_back(comp->generalize_argument(ra.value));
     }
@@ -96,13 +98,21 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
     // XXX: is this going to work, or are we going to end up taking a pointer to a temporary?
     // TODO: validation
     std::vector<StaticLinkage> slink{};
-    auto raw_link_with = extract_keyword_argument_a<StaticLibrary>(f.kw_args, "link_with");
+    auto raw_link_with =
+        extract_keyword_argument_a<StaticLibrary>(
+            f.kw_args, "link_with",
+            f.name + ": 'link_with' keyword argument must be StaticLibrary objects")
+            .value_or(std::vector<StaticLibrary>{});
     slink.reserve(raw_link_with.size());
     for (const auto & s : raw_link_with) {
         slink.emplace_back(StaticLinkMode::NORMAL, s);
     }
 
-    auto raw_inc = extract_keyword_argument_a<IncludeDirectories>(f.kw_args, "include_directories");
+    auto raw_inc =
+        extract_keyword_argument_a<IncludeDirectories>(
+            f.kw_args, "include_directories",
+            f.name + ": include_directories keyword argument must be IncludeDirectory objects")
+            .value_or(std::vector<IncludeDirectories>{});
     for (const auto & i : raw_inc) {
         for (const auto & d : i.directories) {
             args[Toolchain::Language::CPP].emplace_back(d, Arguments::Type::INCLUDE,
@@ -111,7 +121,10 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
         }
     }
 
-    const auto & deps = extract_keyword_argument_a<Dependency>(f.kw_args, "dependencies");
+    const auto & deps = extract_keyword_argument_a<Dependency>(
+                            f.kw_args, "dependencies",
+                            f.name + ": dependencies keyword argument must be Dependency objects")
+                            .value_or(std::vector<Dependency>{});
     for (const auto & d : deps) {
         for (const auto & a : d.arguments) {
             args[Toolchain::Language::CPP].emplace_back(a);
@@ -301,8 +314,9 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
             .value;
 
     std::vector<Arguments::Argument> args{};
-    const auto & raw_comp_args = extract_keyword_argument_a<String>(f.kw_args, "compile_args");
-    if (!raw_comp_args.empty()) {
+    const auto & raw_comp_args = extract_keyword_argument_a<String>(
+        f.kw_args, "compile_args", f.name + ": 'compile_args' keyword argument must be strings");
+    if (raw_comp_args) {
         // XXX: this assumes C++
         // should this always use gcc/g++?
         const auto & comp_at = pstate.toolchains.find(Toolchain::Language::CPP);
@@ -313,7 +327,7 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
         }
         const auto & comp = comp_at->second.build()->compiler;
 
-        for (const auto & ra : raw_comp_args) {
+        for (const auto & ra : raw_comp_args.value()) {
             args.emplace_back(comp->generalize_argument(ra.value));
         }
     }
@@ -335,7 +349,11 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
         }
     }
 
-    const auto & raw_deps = extract_keyword_argument_a<Dependency>(f.kw_args, "dependencies");
+    const auto & raw_deps =
+        extract_keyword_argument_a<Dependency>(
+            f.kw_args, "dependencies",
+            f.name + ": 'dependencies' keyword argument must be Dependency objects")
+            .value_or(std::vector<Dependency>{});
     for (const auto & d : raw_deps) {
         auto dargs = d.arguments;
         std::copy(dargs.begin(), dargs.end(), std::back_inserter(args));
@@ -487,7 +505,11 @@ std::optional<Instruction> lower_custom_target(const FunctionCall & func,
     const auto & inputs = extract_source_inputs(func.kw_args, "input", func.source_dir, pstate);
 
     std::vector<File> outputs{};
-    for (const auto & a : extract_keyword_argument_a<String>(func.kw_args, "output")) {
+    auto && raw_outs =
+        extract_keyword_argument_a<String>(func.kw_args, "output",
+                                           "custom_target: output arguments must be strings")
+            .value_or(std::vector<String>{});
+    for (const auto & a : raw_outs) {
         outputs.emplace_back(a.value, func.source_dir, true, pstate.source_root, pstate.build_root);
     }
 
@@ -510,9 +532,9 @@ enum class ArgumentScope {
 std::optional<Instruction> lower_add_arguments(const FunctionCall & func, const ArgumentScope scope,
                                                const State::Persistant & pstate) {
 
-    const std::vector<MIR::String> langs =
-        extract_keyword_argument_a<MIR::String>(func.kw_args, "language");
-    if (langs.empty()) {
+    const auto langs = extract_keyword_argument_a<MIR::String>(
+        func.kw_args, "language", func.name + ": 'language' keyword argument must be strings");
+    if (!langs) {
         throw Util::Exceptions::MesonException(func.name + ": missing required kwarg 'language'");
     }
 
@@ -525,7 +547,7 @@ std::optional<Instruction> lower_add_arguments(const FunctionCall & func, const 
     }
 
     ArgMap mapping;
-    for (auto && s : langs) {
+    for (auto && s : langs.value()) {
         const Toolchain::Language lang = Toolchain::from_string(s.value);
         if (const auto & tc = pstate.toolchains.find(lang); tc != pstate.toolchains.end()) {
             for (auto && arg : arguments) {
