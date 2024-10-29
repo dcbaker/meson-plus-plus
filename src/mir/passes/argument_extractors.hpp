@@ -181,24 +181,23 @@ extract_keyword_argument_a(const std::unordered_map<std::string, Instruction> & 
 /// @param name the name to get
 /// @return the value associated with that name
 template <typename... Args>
-std::vector<std::variant<std::monostate, Args...>>
+std::optional<std::vector<std::variant<Args...>>>
 extract_keyword_argument_av(const std::unordered_map<std::string, Instruction> & kwargs,
-                            const std::string & name) {
-    // FIXME: this has the same problem as the other version, which is that you
-    // can't distinguish between "not present" and "not a valid type"
+                            const std::string & name, const std::string & err_msg) {
     const auto & found = kwargs.find(name);
     if (found == kwargs.end()) {
-        return {};
+        return std::nullopt;
     }
     if (auto v = std::get_if<Array>(found->second.obj_ptr.get())) {
-        std::vector<std::variant<std::monostate, Args...>> ret{};
+        std::vector<std::variant<Args...>> ret{};
         for (const auto & a : v->value) {
             // XXX: also ignores invalid arguments
-            ret.emplace_back(extract_positional_argument_v<Args...>(a));
+            ret.emplace_back(extract_positional_argument_v<Args...>(a, err_msg));
         }
         return ret;
     }
-    return {extract_positional_argument_v<Args...>(found->second)};
+    return std::vector<std::variant<Args...>>{
+        extract_positional_argument_v<Args...>(found->second, err_msg)};
 }
 
 } // namespace MIR::Passes

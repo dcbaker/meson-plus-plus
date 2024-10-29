@@ -333,7 +333,10 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
     }
 
     const auto & raw_inc_args =
-        extract_keyword_argument_av<String, IncludeDirectories>(f.kw_args, "include_directories");
+        extract_keyword_argument_av<String, IncludeDirectories>(
+            f.kw_args, "include_directories",
+            f.name + ": 'include_directories' must be strings or IncludeDirectories objects")
+            .value_or(std::vector<std::variant<String, IncludeDirectories>>{});
 
     for (const auto & i : raw_inc_args) {
         if (std::holds_alternative<String>(i)) {
@@ -389,7 +392,10 @@ std::optional<Instruction> lower_test(const FunctionCall & f, const State::Persi
     const Callable & prog = std::visit(CallableReducer{}, prog_v);
 
     // TODO: Also allows targets
-    auto && arguments = extract_keyword_argument_av<MIR::String, MIR::File>(f.kw_args, "args");
+    auto && arguments =
+        extract_keyword_argument_av<MIR::String, MIR::File>(
+            f.kw_args, "args", f.name + ": 'args' keyword arguments must be strings or files")
+            .value_or(std::vector<std::variant<String, File>>{});
 
     const bool xfail =
         extract_keyword_argument<MIR::Boolean>(f.kw_args, "should_fail",
