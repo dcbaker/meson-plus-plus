@@ -30,7 +30,7 @@ class Jobs {
             auto && test = m_test.value();
             std::vector<std::string> cmd{test.exe};
             cmd.insert(cmd.end(), test.arguments.begin(), test.arguments.end());
-            auto && [ret, out, err] = Util::process(cmd);
+            auto && [ret, out, err] = Util::process(cmd, builddir.c_str());
 
             std::lock_guard l{print_lock};
 
