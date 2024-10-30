@@ -20,4 +20,11 @@ std::vector<std::string> split(std::string_view input, std::string_view delim = 
 /// @return a string
 std::string join(const std::vector<std::string> & strs, std::string_view delim = "");
 
+/// @brief Replace a substring with another one, returning a new string
+/// @param src  The string to be modified
+/// @param replace  The target value to be replaced
+/// @param with  The value to replace with
+/// @return A new string with all instances of `replace` replaced by `with`
+std::string replace(std::string src, std::string_view replace, std::string_view with);
+
 } // namespace Util

@@ -36,4 +36,18 @@ std::string join(const std::vector<std::string> & strs, std::string_view delim) 
     return ss.str();
 }
 
+std::string replace(std::string src, std::string_view replace, std::string_view with) {
+    size_t index = 0;
+    while (true) {
+        index = src.find(replace, index);
+        if (index == src.npos) {
+            break;
+        }
+
+        src.replace(index, replace.size(), with);
+        index += with.size();
+    }
+    return src;
+}
+
 } // namespace Util
