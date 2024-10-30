@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2022-2024 Intel Corporation
 
-#include <algorithm>
-#include <array>
-#include <future>
-#include <iostream>
-#include <mutex>
-#include <string_view>
-
 #include "argument_extractors.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "passes.hpp"
 #include "private.hpp"
+
+#include <algorithm>
+#include <array>
+#include <future>
+#include <iostream>
+#include <mutex>
+#include <optional>
+#include <string_view>
 
 namespace MIR::Passes {
 
@@ -92,13 +93,11 @@ class FindList {
         jobs.emplace_back(t, std::move(v));
     }
 
-    bool empty() {
+    std::optional<std::tuple<Type, std::vector<std::string>>> get() {
         std::lock_guard l{lock};
-        return jobs.empty();
-    }
-
-    std::tuple<Type, std::vector<std::string>> get() {
-        std::lock_guard l{lock};
+        if (jobs.empty()) {
+            return std::nullopt;
+        }
         auto out = std::move(jobs.back());
         jobs.pop_back();
         return out;
@@ -120,14 +119,12 @@ bool search_find_program(const FunctionCall & f, State::Persistant & pstate, Fin
 void worker(FindList & jobs, std::mutex & state_lock, State::Persistant & pstate,
             std::set<std::string> & programs) {
     while (true) {
-        Type job;
-        std::vector<std::string> names;
-        {
-            if (jobs.empty()) {
-                return;
-            }
-            std::tie(job, names) = jobs.get();
+        auto got = jobs.get();
+        if (!got) {
+            return;
         }
+        auto [job, names] = got.value();
+
         switch (job) {
             case Type::PROGRAM:
                 find_program(names, state_lock, pstate, programs);
