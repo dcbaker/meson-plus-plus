@@ -18,6 +18,7 @@ test_cases = {
     '11 test types',
     '12 add arguments',
     '13 vcs_tag',
+    '14 vcs_tag git',
   ],
 }
 
