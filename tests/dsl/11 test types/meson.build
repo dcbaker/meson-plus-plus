@@ -5,6 +5,6 @@ project('test options', 'cpp')
 
 main = executable('main', 'main.cpp')
 
-test('good', main, arguments : ['0'])
-test('xfail', main, arguments : ['1'], should_fail : true)
-test('skip', main, arguments : ['127'])
+test('good', main, args : ['0'])
+test('xfail', main, args : ['1'], should_fail : true)
+test('skip', main, args : ['127'])
