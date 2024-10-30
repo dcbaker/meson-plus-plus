@@ -342,9 +342,10 @@ std::string Array::print() const { return "Array { value = " + to_string(value) 
 std::string Dict::print() const { return "Dict { value = " + to_string(value) + " }"; }
 
 CustomTarget::CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
-                           std::vector<std::string> c, fs::path s, std::vector<File> d)
+                           std::vector<std::string> c, fs::path s, std::vector<File> d,
+                           std::optional<std::string> df)
     : name{std::move(n)}, inputs{std::move(i)}, outputs{std::move(o)}, command{std::move(c)},
-      subdir{std::move(s)}, depends{std::move(d)} {};
+      subdir{std::move(s)}, depends{std::move(d)}, depfile{std::move(df)} {};
 
 std::string CustomTarget::print() const {
     // TODO: arguments, static_linkage

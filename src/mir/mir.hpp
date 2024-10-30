@@ -176,7 +176,8 @@ class File {
 class CustomTarget {
   public:
     CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
-                 std::vector<std::string> c, fs::path s, std::vector<File> d);
+                 std::vector<std::string> c, fs::path s, std::vector<File> d,
+                 std::optional<std::string> df);
 
     const std::string name;
     const std::vector<Instruction> inputs;
@@ -184,6 +185,7 @@ class CustomTarget {
     const std::vector<std::string> command;
     const fs::path subdir;
     std::vector<File> depends;
+    std::optional<std::string> depfile;
 
     /// Print a human readable version of this
     std::string print() const;
