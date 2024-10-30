@@ -58,6 +58,8 @@ struct VCSTagOptions {
     std::string replacement;
     /// @brief  The absolute path to the source dir
     fs::path source_dir;
+    /// @brief  Where to write a depfile
+    std::string depfile;
 };
 
 using OptionV = std::variant<ConfigureOptions, TestOptions, VCSTagOptions>;

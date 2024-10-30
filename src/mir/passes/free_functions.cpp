@@ -619,6 +619,10 @@ std::optional<Instruction> lower_vcs_tag(const FunctionCall & f, const State::Pe
     File outfile{output.value, f.source_dir, true, p.source_root, p.build_root};
     const auto & src = std::get<File>(*src_to_file(input, p, f.source_dir).obj_ptr);
 
+    const std::string depfile = outfile.relative_to_build_dir().string() + ".d";
+
+    // TODO: we'd really like to put the depfile in private dir, but we can't
+    // resolve the private dir at the MIR level.
     std::vector<std::string> command{
         p.mesonpp,
         "vcs_tag",
@@ -627,11 +631,12 @@ std::optional<Instruction> lower_vcs_tag(const FunctionCall & f, const State::Pe
         fallback.value,
         replace_string.value,
         p.source_root,
+        depfile,
     };
 
-    return CustomTarget{outfile.name, {std::move(input)}, {std::move(outfile)},
-                        command,      f.source_dir,       {},
-                        std::nullopt};
+    return CustomTarget{
+        outfile.name, {std::move(input)}, {std::move(outfile)}, command, f.source_dir, {}, depfile,
+    };
 }
 
 bool holds_reduced(const Instruction & obj);

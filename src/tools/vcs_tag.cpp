@@ -55,7 +55,7 @@ std::string get_version(const std::optional<VCSData> & vcs_o, std::string_view f
 
 int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem::path & outfile,
                      std::string_view fallback, std::string_view replacement,
-                     const std::filesystem::path & source_dir) {
+                     const std::filesystem::path & source_dir, const std::string & depfile) {
     // We assume that the infile exists and has been validated by the
     // transpiler, but for debug builds we can assert here.
     assert(fs::is_regular_file(infile));
@@ -100,7 +100,13 @@ int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem
         }
     }
 
-    // TODO: emit depfile for git
+    // Always write the file, it simplifies things
+    std::ofstream out_depfile{depfile};
+    out_depfile << Util::makefile_quote(outfile) << ": ";
+    if (vcs) {
+        out_depfile << Util::makefile_quote(vcs.value().dep);
+    }
+    out_depfile << std::endl;
 
     std::ofstream out{outfile};
     out << ostream.str();
