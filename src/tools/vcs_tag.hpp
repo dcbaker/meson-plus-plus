@@ -12,8 +12,10 @@ namespace Tools {
 /// @param outfile the name of the file to write to
 /// @param version  a version to use if we can't get one from VCS
 /// @param replacement  the tag to replace
+/// @param source_dir  The absolute path to the source directory
 /// @return An integer value with 0 on success
 int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem::path & outfile,
-                     std::string_view version, std::string_view replacement);
+                     std::string_view version, std::string_view replacement,
+                     const std::filesystem::path & source_dir);
 
 } // namespace Tools

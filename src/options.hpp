@@ -56,6 +56,8 @@ struct VCSTagOptions {
     std::string version;
     /// @brief the string to be replaced
     std::string replacement;
+    /// @brief  The absolute path to the source dir
+    fs::path source_dir;
 };
 
 using OptionV = std::variant<ConfigureOptions, TestOptions, VCSTagOptions>;

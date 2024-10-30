@@ -96,7 +96,8 @@ struct OptionHandler {
     int operator()(const Options::ConfigureOptions & opts) { return configure(opts); }
     int operator()(const Options::TestOptions & opts) { return test(opts); }
     int operator()(const Options::VCSTagOptions & opts) {
-        return Tools::generate_vcs_tag(opts.infile, opts.outfile, opts.version, opts.replacement);
+        return Tools::generate_vcs_tag(opts.infile, opts.outfile, opts.version, opts.replacement,
+                                       opts.source_dir);
     }
 };
 

@@ -626,6 +626,7 @@ std::optional<Instruction> lower_vcs_tag(const FunctionCall & f, const State::Pe
         outfile.relative_to_build_dir(),
         fallback.value,
         replace_string.value,
+        p.source_root,
     };
 
     return CustomTarget{outfile.name, {std::move(input)}, {std::move(outfile)},
