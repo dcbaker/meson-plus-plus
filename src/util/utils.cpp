@@ -50,4 +50,11 @@ std::string replace(std::string src, std::string_view replace, std::string_view 
     return src;
 }
 
+std::string makefile_quote(std::string src) {
+    src = replace(src, " ", "\\ ");
+    src = replace(src, "#", "\\#");
+    src = replace(src, "$", "$$");
+    return src;
+}
+
 } // namespace Util

@@ -27,4 +27,9 @@ std::string join(const std::vector<std::string> & strs, std::string_view delim =
 /// @return A new string with all instances of `replace` replaced by `with`
 std::string replace(std::string src, std::string_view replace, std::string_view with);
 
+/// @brief Quote a string to be Makefile compatible
+/// @param src The string to be quoted
+/// @return a new string that is properly quoted
+std::string makefile_quote(std::string src);
+
 } // namespace Util
