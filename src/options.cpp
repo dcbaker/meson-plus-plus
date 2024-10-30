@@ -196,7 +196,7 @@ VCSTagOptions get_vcs_tag_options(int argc, char * argv[]) {
     VCSTagOptions opts{};
     // ++ here to pass the verb
     int i = ++optind;
-    if (argc - i < 5) {
+    if (argc - i < 6) {
         std::cerr << "meson++ vcs_tag command missing required command line options" << std::endl;
         std::cout << usage << std::endl;
         exit(1);
@@ -207,6 +207,7 @@ VCSTagOptions get_vcs_tag_options(int argc, char * argv[]) {
     opts.version = std::string{argv[i++]};
     opts.replacement = std::string{argv[i++]};
     opts.source_dir = fs::path{argv[i++]};
+    opts.depfile = fs::path{argv[i++]};
 
     if (i < argc) {
         // TODO: better error message
