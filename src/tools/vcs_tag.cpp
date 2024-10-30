@@ -14,7 +14,8 @@ namespace Tools {
 namespace fs = std::filesystem;
 
 int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem::path & outfile,
-                     std::string_view version, std::string_view replacement) {
+                     std::string_view version, std::string_view replacement,
+                     const std::filesystem::path & source_dir) {
     // We assume that the infile exists and has been validated by the
     // transpiler, but for debug builds we can assert here.
     assert(fs::is_regular_file(infile));
