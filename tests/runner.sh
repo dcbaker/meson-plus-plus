@@ -12,5 +12,6 @@ trap cleanup exit
 
 ${MESONPP} configure "${BUILDDIR}" -s "${TESTDIR}"
 ninja -C "${BUILDDIR}"
+${MESONPP} test "${BUILDDIR}"
 
 exit 0
