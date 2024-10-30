@@ -2,19 +2,59 @@
 // Copyright © 2024 Intel Corporation
 
 #include "vcs_tag.hpp"
+#include "util/process.hpp"
 #include "util/utils.hpp"
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
+#include <vector>
 
 namespace Tools {
 
 namespace fs = std::filesystem;
 
+namespace {
+
+struct VCSData {
+    std::vector<std::string> command;
+    fs::path dep;
+};
+
+std::optional<VCSData> find_vcs(const fs::path & source_dir) {
+    // TODO: HG, Subversion, bazaar
+    const fs::path gitdir = source_dir / ".git";
+
+    if (fs::is_directory(gitdir)) {
+        return VCSData{
+            .command = {"git", "-C", source_dir, "describe", "--dirty=+", "--always"},
+            .dep = gitdir / "logs" / "HEAD", // TODO: This doesn't work for git work trees
+        };
+    }
+
+    return std::nullopt;
+}
+
+std::string get_version(const std::optional<VCSData> & vcs_o, std::string_view fallback) {
+    if (!vcs_o) {
+        return std::string{fallback};
+    }
+
+    const VCSData & vcs = vcs_o.value();
+    auto [rc, out, err] = Util::process(vcs.command);
+    if (rc != 0) {
+        throw std::runtime_error{"TODO: " + err};
+    }
+    out.pop_back();
+    return out;
+}
+
+} // namespace
+
 int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem::path & outfile,
-                     std::string_view version, std::string_view replacement,
+                     std::string_view fallback, std::string_view replacement,
                      const std::filesystem::path & source_dir) {
     // We assume that the infile exists and has been validated by the
     // transpiler, but for debug builds we can assert here.
@@ -22,6 +62,9 @@ int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem
 
     std::ifstream istream{infile};
     std::stringstream ostream{};
+
+    const std::optional<VCSData> vcs = find_vcs(source_dir);
+    const std::string version = get_version(vcs, fallback);
 
     for (std::string line; std::getline(istream, line);) {
         ostream << Util::replace(line, replacement, version) << std::endl;
@@ -56,6 +99,8 @@ int generate_vcs_tag(const std::filesystem::path & infile, const std::filesystem
             return 0;
         }
     }
+
+    // TODO: emit depfile for git
 
     std::ofstream out{outfile};
     out << ostream.str();
