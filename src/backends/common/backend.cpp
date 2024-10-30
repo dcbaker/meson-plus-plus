@@ -1,11 +1,11 @@
 // SPDX-License-Indentifier: Apache-2.0
 // Copyright © 2024 Intel Corporation
 
-#include <cstdint>
-
 #include "backend.hpp"
 #include "exceptions.hpp"
 #include "utils.hpp"
+
+#include <cstdint>
 
 namespace Backends::Common {
 
