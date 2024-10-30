@@ -139,7 +139,11 @@ void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
             rule_name = "cpp_archiver_for_build";
             break;
         case FIR::TargetType::CUSTOM:
-            rule_name = "custom_command";
+            if (rule.depfile) {
+                rule_name = "custom_command_dep";
+            } else {
+                rule_name = "custom_command";
+            }
             break;
         default:
             throw std::exception{}; // should be unreachable
@@ -192,6 +196,9 @@ void write_build_rule(const FIR::Target & rule, std::ofstream & out) {
     if (rule.type == FIR::TargetType::CUSTOM) {
         out << "  DESCRIPTION = " << escape("generating ") << escape(rule.output[0])
             << escape(" with ") << escape(rule.arguments[0]) << "\n";
+        if (rule.depfile) {
+            out << "  DEPFILE_UNQUOTED = " << rule.depfile.value() << "\n";
+        }
     }
     out << std::endl;
 }
@@ -254,6 +261,13 @@ void generate(const MIR::BasicBlock & block, const MIR::State::Persistant & psta
     out << "rule custom_command\n"
         << "  command = $ARGS\n"
         << "  description = $DESCRIPTION\n"
+        << "  restat = 1\n\n";
+
+    out << "rule custom_command_dep\n"
+        << "  command = $ARGS\n"
+        << "  description = $DESCRIPTION\n"
+        << "  deps = gcc\n"
+        << "  depfile = $DEPFILE_UNQUOTED\n"
         << "  restat = 1\n\n";
 
     out << "# Phony build target, always out of date\n\n"
