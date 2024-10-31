@@ -79,11 +79,12 @@ class Empty;
 class CustomTarget;
 class Dependency;
 class Test;
+class Jump;
 
 using Object =
     std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
                  Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
-                 Program, Empty, CustomTarget, Dependency, Test, AddArguments>;
+                 Program, Empty, CustomTarget, Dependency, Test, AddArguments, Jump>;
 
 using Callable = std::variant<File, Executable, Program>;
 
@@ -118,6 +119,7 @@ class Instruction {
     Instruction(Program val);
     Instruction(Test val);
     Instruction(AddArguments val);
+    Instruction(Jump val);
 
     Instruction & operator=(const Instruction &) = default;
 
@@ -544,6 +546,24 @@ class AddArguments {
 };
 
 class CFGNode;
+
+/// @brief Jump to another block
+class Jump {
+  public:
+    Jump(std::shared_ptr<CFGNode> t);
+    Jump(std::shared_ptr<CFGNode> t, std::shared_ptr<Instruction> p);
+
+    /// @brief Print a human readable version of this instruction
+    /// @return A string representing the instructions
+    std::string print() const;
+
+    /// @brief The block to jump to
+    std::shared_ptr<CFGNode> target;
+
+    /// @brief A potential predicate of the jump
+    /// If this is a nullptr it is considered unconditional
+    std::shared_ptr<Instruction> predicate;
+};
 
 /**
  * A think that creates A conditional web.
