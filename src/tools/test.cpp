@@ -34,12 +34,14 @@ class Jobs {
 
             std::lock_guard l{print_lock};
 
+            bool print_captured = false;
             std::string result;
             switch (ret) {
                 case 0:
                     if (test.should_fail) {
                         results.xpass++;
                         result = Util::Log::red("XPASS");
+                        print_captured = true;
                     } else {
                         results.success++;
                         result = Util::Log::green("OK");
@@ -56,7 +58,13 @@ class Jobs {
                     } else {
                         result = Util::Log::red("FAIL");
                         results.failures++;
+                        print_captured = true;
                     }
+            }
+
+            if (print_captured) {
+                std::cout << out << std::endl;
+                std::cerr << err << std::endl;
             }
 
             // TODO: need to calculate lengths
