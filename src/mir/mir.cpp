@@ -95,6 +95,7 @@ Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Test val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(AddArguments val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Jump val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 
 std::string Instruction::print() const {
     const std::string i = std::visit(
@@ -405,6 +406,15 @@ std::string AddArguments::print() const {
     ss << " is_global = { " << is_global << " } }";
 
     return ss.str();
+}
+
+Jump::Jump(std::shared_ptr<CFGNode> t) : target{std::move(t)} {};
+Jump::Jump(std::shared_ptr<CFGNode> t, std::shared_ptr<Instruction> p)
+    : target{std::move(t)}, predicate{std::move(p)} {};
+
+std::string Jump::print() const {
+    return "jump = { target = { " + std::to_string(target->index) + " }, predicate = { " +
+           (predicate == nullptr ? "always" : predicate->print()) + " } }";
 }
 
 } // namespace MIR
