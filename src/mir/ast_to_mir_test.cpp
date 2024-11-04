@@ -19,7 +19,7 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     return block;
 }
 
-MIR::BasicBlock lower(const std::string & in) {
+std::shared_ptr<MIR::BasicBlock> lower(const std::string & in) {
     auto block = parse(in);
     const MIR::State::Persistant pstate{"foo/src", "foo/build", ""};
     auto ir = MIR::lower_ast(block, pstate);
@@ -46,8 +46,8 @@ inline const std::unique_ptr<MIR::Condition> & get_con(const MIR::NextType & nex
 
 TEST(ast_to_ir, number) {
     auto irlist = lower("7");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Number>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::Number>(*obj.obj_ptr);
     ASSERT_EQ(ir.value, 7);
@@ -55,8 +55,8 @@ TEST(ast_to_ir, number) {
 
 TEST(ast_to_ir, boolean) {
     auto irlist = lower("true");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::Boolean>(*obj.obj_ptr);
     ASSERT_EQ(ir.value, true);
@@ -64,8 +64,8 @@ TEST(ast_to_ir, boolean) {
 
 TEST(ast_to_ir, string) {
     auto irlist = lower("'true'");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::String>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::String>(*obj.obj_ptr);
     ASSERT_EQ(ir.value, "true");
@@ -73,8 +73,8 @@ TEST(ast_to_ir, string) {
 
 TEST(ast_to_ir, array) {
     auto irlist = lower("['a', 'b', 1, [2]]");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Array>(*obj.obj_ptr));
 
     const auto & arr = std::get<MIR::Array>(*obj.obj_ptr);
@@ -95,8 +95,8 @@ TEST(ast_to_ir, array) {
 
 TEST(ast_to_ir, dict) {
     auto irlist = lower("{'str': 1}");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Dict>(*obj.obj_ptr));
 
     const auto & dict = std::get<MIR::Dict>(*obj.obj_ptr);
@@ -107,8 +107,8 @@ TEST(ast_to_ir, dict) {
 
 TEST(ast_to_ir, simple_function) {
     auto irlist = lower("has_no_args()");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
 
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
@@ -119,8 +119,8 @@ TEST(ast_to_ir, simple_function) {
 
 TEST(ast_to_ir, simple_method) {
     auto irlist = lower("obj.method()");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
 
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
@@ -134,8 +134,8 @@ TEST(ast_to_ir, simple_method) {
 
 TEST(ast_to_ir, chained_method) {
     auto irlist = lower("obj.method().chained()");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
 
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
@@ -165,8 +165,8 @@ TEST(ast_to_ir, method_in_function) {
 
 TEST(ast_to_ir, function_positional_arguments_only) {
     auto irlist = lower("has_args(1, 2, 3)");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
 
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
@@ -181,8 +181,8 @@ TEST(ast_to_ir, function_positional_arguments_only) {
 
 TEST(ast_to_ir, function_keyword_arguments_only) {
     auto irlist = lower("has_args(a : 1, b : '2')");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
 
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
@@ -203,8 +203,8 @@ TEST(ast_to_ir, function_keyword_arguments_only) {
 
 TEST(ast_to_ir, function_both_arguments) {
     auto irlist = lower("both_args(1, a, a : 1)");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
 
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
@@ -223,8 +223,8 @@ TEST(ast_to_ir, function_both_arguments) {
 
 TEST(ast_to_ir, if_only) {
     auto irlist = lower("if true\n 7\nendif\n");
-    ASSERT_TRUE(is_con(irlist.next));
-    auto const & con = get_con(irlist.next);
+    ASSERT_TRUE(is_con(irlist->next));
+    auto const & con = get_con(irlist->next);
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
     auto const & if_true = con->if_true->instructions;
@@ -242,8 +242,8 @@ TEST(ast_to_ir, if_branch_join) {
         endif
         8
         )EOF");
-    ASSERT_TRUE(is_con(irlist.next));
-    auto const & con = get_con(irlist.next);
+    ASSERT_TRUE(is_con(irlist->next));
+    auto const & con = get_con(irlist->next);
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
     auto const & if_true = con->if_true->instructions;
@@ -278,14 +278,14 @@ TEST(ast_to_ir, if_else_more) {
         y = x
         )EOF");
 
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    ASSERT_TRUE(is_con(irlist.next));
-    auto const & con = get_con(irlist.next);
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_TRUE(is_con(irlist->next));
+    auto const & con = get_con(irlist->next);
 
     ASSERT_EQ(con->if_true->instructions.size(), 1);
-    ASSERT_TRUE(con->if_true->predecessors.count(&irlist));
+    ASSERT_TRUE(con->if_true->predecessors.count(irlist.get()));
     ASSERT_EQ(con->if_false->instructions.size(), 1);
-    ASSERT_TRUE(con->if_false->predecessors.count(&irlist));
+    ASSERT_TRUE(con->if_false->predecessors.count(irlist.get()));
 
     ASSERT_TRUE(is_bb(con->if_true->next));
     ASSERT_EQ(get_bb(con->if_true->next), get_bb(con->if_false->next));
@@ -306,11 +306,11 @@ TEST(ast_to_ir, if_elif_else_more) {
         y = x     # 4
         )EOF");
     // block 0
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    ASSERT_TRUE(is_con(irlist.next));
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_TRUE(is_con(irlist->next));
 
     // block 1
-    auto const & con = get_con(irlist.next);
+    auto const & con = get_con(irlist->next);
     ASSERT_EQ(con->if_true->instructions.size(), 1);
     ASSERT_TRUE(is_bb(con->if_true->next));
 
@@ -328,8 +328,8 @@ TEST(ast_to_ir, if_elif_else_more) {
 
 TEST(ast_to_ir, if_else) {
     auto irlist = lower("if true\n 7\nelse\n8\nendif\n");
-    ASSERT_TRUE(is_con(irlist.next));
-    auto const & con = get_con(irlist.next);
+    ASSERT_TRUE(is_con(irlist->next));
+    auto const & con = get_con(irlist->next);
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
     auto const & if_true = con->if_true->instructions;
@@ -355,8 +355,8 @@ TEST(ast_to_ir, if_elif) {
           9
         endif
         )EOF");
-    ASSERT_TRUE(is_con(irlist.next));
-    auto const & con = get_con(irlist.next);
+    ASSERT_TRUE(is_con(irlist->next));
+    auto const & con = get_con(irlist->next);
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
     {
@@ -405,8 +405,8 @@ TEST(ast_to_ir, if_elif_else) {
     )EOF");
 
     // block 0
-    ASSERT_TRUE(is_con(irlist.next));
-    auto const & con = get_con(irlist.next);
+    ASSERT_TRUE(is_con(irlist->next));
+    auto const & con = get_con(irlist->next);
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
     // block 1
@@ -451,8 +451,8 @@ TEST(ast_to_ir, nested_if) {
         endif
         22
     )EOF");
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Condition>>(irlist.next));
-    auto const & con = std::get<std::unique_ptr<MIR::Condition>>(irlist.next);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Condition>>(irlist->next));
+    auto const & con = std::get<std::unique_ptr<MIR::Condition>>(irlist->next);
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
     {
@@ -506,9 +506,9 @@ TEST(ast_to_ir, nested_if_tail) {
         22               # 5
     )EOF");
 
-    ASSERT_TRUE(is_con(irlist.next));
+    ASSERT_TRUE(is_con(irlist->next));
 
-    const auto & con1 = get_con(irlist.next);
+    const auto & con1 = get_con(irlist->next);
     ASSERT_TRUE(is_con(con1->if_true->next));
 
     const auto & con2 = get_con(con1->if_true->next);
@@ -523,7 +523,7 @@ TEST(ast_to_ir, nested_if_tail) {
     ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
     ASSERT_EQ(last_block->predecessors.size(), 2);
     ASSERT_TRUE(last_block->predecessors.count(con2->if_false.get()));
-    ASSERT_TRUE(last_block->predecessors.count(&irlist));
+    ASSERT_TRUE(last_block->predecessors.count(irlist.get()));
 }
 
 TEST(ast_to_ir, nested_if_no_tail) {
@@ -539,9 +539,9 @@ TEST(ast_to_ir, nested_if_no_tail) {
         # 5
     )EOF");
 
-    ASSERT_TRUE(is_con(irlist.next));
+    ASSERT_TRUE(is_con(irlist->next));
 
-    const auto & con1 = get_con(irlist.next);
+    const auto & con1 = get_con(irlist->next);
     ASSERT_TRUE(is_con(con1->if_true->next));
 
     const auto & con2 = get_con(con1->if_true->next);
@@ -556,7 +556,7 @@ TEST(ast_to_ir, nested_if_no_tail) {
     ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
     ASSERT_EQ(last_block->predecessors.size(), 2);
     ASSERT_TRUE(last_block->predecessors.count(con2->if_false.get()));
-    ASSERT_TRUE(last_block->predecessors.count(&irlist));
+    ASSERT_TRUE(last_block->predecessors.count(irlist.get()));
 }
 
 TEST(ast_to_ir, nested_if_elif_tail) {
@@ -583,10 +583,10 @@ TEST(ast_to_ir, nested_if_elif_tail) {
         z = y      # 9
         )EOF");
 
-    const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
+    const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
 
     // block 2 (elif A)
-    const auto & con2 = get_con(irlist.next)->if_false;
+    const auto & con2 = get_con(irlist->next)->if_false;
     ASSERT_EQ(fin, get_bb(get_con(con2->next)->if_true->next));
 
     // block 3 (else)
@@ -603,8 +603,8 @@ TEST(ast_to_ir, nested_if_elif_tail) {
 
 TEST(ast_to_ir, assign) {
     auto irlist = lower("a = 5");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_EQ(obj.var.name, "a");
     ASSERT_EQ(obj.var.gvn, 0);
 
@@ -615,8 +615,8 @@ TEST(ast_to_ir, assign) {
 
 TEST(ast_to_ir, assign_from_id) {
     auto irlist = lower("a = b");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_EQ(obj.var.name, "a");
     ASSERT_EQ(obj.var.gvn, 0);
 
@@ -627,8 +627,8 @@ TEST(ast_to_ir, assign_from_id) {
 
 TEST(ast_to_ir, not_simple) {
     auto irlist = lower("not true");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
     ASSERT_EQ(ir.name, "unary_not");
@@ -637,8 +637,8 @@ TEST(ast_to_ir, not_simple) {
 
 TEST(ast_to_ir, not_method) {
     auto irlist = lower("not x.method()");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*ir.pos_args[0].obj_ptr));
@@ -646,8 +646,8 @@ TEST(ast_to_ir, not_method) {
 
 TEST(ast_to_ir, neg_simple) {
     auto irlist = lower("-5");
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & obj = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
     const auto & ir = std::get<MIR::FunctionCall>(*obj.obj_ptr);
     ASSERT_EQ(ir.name, "unary_neg");

@@ -25,7 +25,7 @@ TEST(block_walker, simple) {
         endif
         )EOF");
 
-    MIR::Passes::block_walker(irlist, {tester});
+    MIR::Passes::block_walker(*irlist, {tester});
     for (auto && [block_id, count] : seen) {
         EXPECT_EQ(count, 1) << "block " << block_id << " visited " << count
                             << " times instead of 1";
@@ -50,11 +50,11 @@ TEST(block_walker, predecessors_first) {
         a = 3
         )EOF");
 
-    MIR::Passes::block_walker(irlist, {tester});
+    MIR::Passes::block_walker(*irlist, {tester});
     ASSERT_EQ(seen.size(), 4);
-    EXPECT_EQ(seen[0], irlist.index);
+    EXPECT_EQ(seen[0], irlist->index);
 
-    auto & con = *std::get<std::unique_ptr<MIR::Condition>>(irlist.next);
+    auto & con = *std::get<std::unique_ptr<MIR::Condition>>(irlist->next);
     auto i = con.if_false.get()->index;
     EXPECT_TRUE(seen[1] == i || seen[2] == i);
     i = con.if_true.get()->index;

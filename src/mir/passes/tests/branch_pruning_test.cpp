@@ -10,12 +10,12 @@
 
 TEST(branch_pruning, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nendif\n");
-    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 1);
+    ASSERT_EQ(irlist->instructions.size(), 1);
 
-    ASSERT_TRUE(is_bb(irlist.next));
-    const auto & next = get_bb(irlist.next);
+    ASSERT_TRUE(is_bb(irlist->next));
+    const auto & next = get_bb(irlist->next);
     ASSERT_FALSE(is_con(next->next));
     ASSERT_EQ(next->instructions.size(), 1);
 }
@@ -28,15 +28,15 @@ TEST(branch_pruning, next_block) {
         endif
         y = x
         )EOF");
-    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    ASSERT_TRUE(is_bb(irlist.next));
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_TRUE(is_bb(irlist->next));
 
-    const auto & next = get_bb(irlist.next);
+    const auto & next = get_bb(irlist->next);
     ASSERT_EQ(next->instructions.size(), 1);
     ASSERT_EQ(next->predecessors.size(), 1);
-    ASSERT_TRUE(next->predecessors.count(&irlist));
+    ASSERT_TRUE(next->predecessors.count(irlist.get()));
 
     ASSERT_EQ(get_bb(next->next)->predecessors.count(next.get()), 1);
 }
@@ -50,13 +50,13 @@ TEST(branch_pruning, if_else) {
           x = 9
         endif
         )EOF");
-    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 1);
+    ASSERT_EQ(irlist->instructions.size(), 1);
 
-    ASSERT_TRUE(is_bb(irlist.next));
-    const auto & next = get_bb(irlist.next);
+    ASSERT_TRUE(is_bb(irlist->next));
+    const auto & next = get_bb(irlist->next);
     ASSERT_EQ(next->instructions.size(), 1);
 
     ASSERT_TRUE(is_bb(next->next));
@@ -73,12 +73,12 @@ TEST(branch_pruning, if_false) {
           y = 2
         endif
         )EOF");
-    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 1);
+    ASSERT_EQ(irlist->instructions.size(), 1);
 
-    ASSERT_TRUE(is_bb(irlist.next));
-    const auto & next = get_bb(irlist.next);
+    ASSERT_TRUE(is_bb(irlist->next));
+    const auto & next = get_bb(irlist->next);
     ASSERT_EQ(next->instructions.size(), 2);
 
     const auto & first = std::get<MIR::Number>(*next->instructions.front().obj_ptr);

@@ -14,10 +14,10 @@ TEST(value_numbering, simple) {
         x = 7
         x = 8
         )EOF");
-    MIR::Passes::GlobalValueNumbering{}(irlist);
+    MIR::Passes::GlobalValueNumbering{}(*irlist);
 
-    ASSERT_EQ(irlist.instructions.front().var.gvn, 1);
-    ASSERT_EQ(irlist.instructions.back().var.gvn, 2);
+    ASSERT_EQ(irlist->instructions.front().var.gvn, 1);
+    ASSERT_EQ(irlist->instructions.back().var.gvn, 2);
 }
 
 TEST(value_numbering, branching) {
@@ -30,15 +30,15 @@ TEST(value_numbering, branching) {
             x = 10
         endif
         )EOF");
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist.instructions.front().var.gvn, 1);
-    ASSERT_EQ(irlist.instructions.back().var.gvn, 2);
+    ASSERT_EQ(irlist->instructions.front().var.gvn, 1);
+    ASSERT_EQ(irlist->instructions.back().var.gvn, 2);
 
-    const auto & bb1 = get_con(irlist.next)->if_false;
+    const auto & bb1 = get_con(irlist->next)->if_false;
     ASSERT_EQ(bb1->instructions.front().var.gvn, 3);
 
-    const auto & bb2 = get_con(irlist.next)->if_true;
+    const auto & bb2 = get_con(irlist->next)->if_true;
     ASSERT_EQ(bb2->instructions.front().var.gvn, 4);
 }
 
@@ -52,12 +52,12 @@ TEST(value_numbering, three_branch) {
             x = 11
         endif
         )EOF");
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & bb1 = get_con(irlist.next)->if_true;
+    const auto & bb1 = get_con(irlist->next)->if_true;
     EXPECT_EQ(bb1->instructions.front().var.gvn, 3);
 
-    const auto & con2 = get_con(get_con(irlist.next)->if_false->next);
+    const auto & con2 = get_con(get_con(irlist->next)->if_false->next);
 
     const auto & bb2 = con2->if_false;
     EXPECT_EQ(bb2->instructions.front().var.gvn, 1);
@@ -74,14 +74,14 @@ TEST(number_uses, simple) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::block_walker(*irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                       });
 
-    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_EQ(irlist->instructions.size(), 2);
 
     {
-        const auto & num_obj = irlist.instructions.front();
+        const auto & num_obj = irlist->instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
         ASSERT_EQ(num_obj.var.gvn, 1);
 
@@ -91,7 +91,7 @@ TEST(number_uses, simple) {
     }
 
     {
-        const auto & id_obj = irlist.instructions.back();
+        const auto & id_obj = irlist->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -114,19 +114,19 @@ TEST(number_uses, with_phi) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::block_walker(*irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                       });
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::block_walker(*irlist, {
                                           MIR::Passes::branch_pruning,
                                           MIR::Passes::join_blocks,
                                           MIR::Passes::fixup_phis,
                                       });
 
-    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist->instructions.size(), 3);
 
     {
-        const auto & num_obj = irlist.instructions.front();
+        const auto & num_obj = irlist->instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
         ASSERT_EQ(num_obj.var.gvn, 2);
 
@@ -136,7 +136,7 @@ TEST(number_uses, with_phi) {
     }
 
     {
-        const auto & id_obj = irlist.instructions.back();
+        const auto & id_obj = irlist->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -159,9 +159,9 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
+    const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 2);
 
     {
@@ -193,9 +193,9 @@ TEST(number_uses, with_phi_no_pruning) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
+    const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 2);
 
     {
@@ -224,12 +224,12 @@ TEST(number_uses, three_statements) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist->instructions.size(), 3);
 
     {
-        const auto & id_obj = irlist.instructions.back();
+        const auto & id_obj = irlist->instructions.back();
         ASSERT_EQ(id_obj.var.name, "z");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -249,12 +249,12 @@ TEST(number_uses, redefined_value) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist->instructions.size(), 3);
 
     {
-        const auto & id_obj = irlist.instructions.back();
+        const auto & id_obj = irlist->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -274,12 +274,12 @@ TEST(number_uses, in_array) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist->instructions.size(), 3);
 
     {
-        const auto & num_obj = irlist.instructions.front();
+        const auto & num_obj = irlist->instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
         ASSERT_EQ(num_obj.var.gvn, 1);
 
@@ -289,7 +289,7 @@ TEST(number_uses, in_array) {
     }
 
     {
-        const auto & arr_obj = irlist.instructions.back();
+        const auto & arr_obj = irlist->instructions.back();
         ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arr_obj.obj_ptr));
         const auto & arr = std::get<MIR::Array>(*arr_obj.obj_ptr);
 
