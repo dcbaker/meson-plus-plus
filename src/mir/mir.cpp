@@ -141,6 +141,11 @@ bool BBComparitor::operator()(const BasicBlock * lhs, const BasicBlock * rhs) co
     return *lhs < *rhs;
 }
 
+bool BBComparitor::operator()(const std::shared_ptr<BasicBlock> & lhs,
+                              const std::shared_ptr<BasicBlock> & rhs) const {
+    return *lhs < *rhs;
+}
+
 Condition::Condition(Instruction && o)
     : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
 
