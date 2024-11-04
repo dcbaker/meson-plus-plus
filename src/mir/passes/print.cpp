@@ -70,9 +70,9 @@ void Printer::increment() {
     }
 }
 
-bool Printer::operator()(const BasicBlock & block) {
+bool Printer::operator()(const std::shared_ptr<BasicBlock> block) {
     if (out.is_open()) {
-        printer_impl(block, out);
+        printer_impl(*block, out);
     }
 
     // Always return false, because the print pass doesn't ever make an progress

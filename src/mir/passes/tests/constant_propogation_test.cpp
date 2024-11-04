@@ -21,11 +21,11 @@ TEST(constant_propogation, phi_should_not_propogate) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(*irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::ConstantFolding{},
-                                           MIR::Passes::ConstantPropagation{},
-                                       });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::ConstantFolding{},
+                                          MIR::Passes::ConstantPropagation{},
+                                      });
 
     const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
 
@@ -59,14 +59,14 @@ TEST(constant_propogation, function_arguments) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(*irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::branch_pruning,
-                                           MIR::Passes::join_blocks,
-                                           MIR::Passes::fixup_phis,
-                                           MIR::Passes::ConstantFolding{},
-                                           MIR::Passes::ConstantPropagation{},
-                                       });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::branch_pruning,
+                                          MIR::Passes::join_blocks,
+                                          MIR::Passes::fixup_phis,
+                                          MIR::Passes::ConstantFolding{},
+                                          MIR::Passes::ConstantPropagation{},
+                                      });
 
     ASSERT_EQ(irlist->instructions.size(), 2);
 
@@ -92,14 +92,14 @@ TEST(constant_propogation, array) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(*irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::branch_pruning,
-                                           MIR::Passes::join_blocks,
-                                           MIR::Passes::fixup_phis,
-                                           MIR::Passes::ConstantFolding{},
-                                           MIR::Passes::ConstantPropagation{},
-                                       });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::branch_pruning,
+                                          MIR::Passes::join_blocks,
+                                          MIR::Passes::fixup_phis,
+                                          MIR::Passes::ConstantFolding{},
+                                          MIR::Passes::ConstantPropagation{},
+                                      });
 
     ASSERT_EQ(irlist->instructions.size(), 2);
 
@@ -121,24 +121,24 @@ TEST(constant_propogation, method_holder) {
     MIR::State::Persistant pstate = make_pstate();
     MIR::Passes::Printer printer{};
 
-    bool progress = MIR::Passes::block_walker(
-        *irlist, {MIR::Passes::GlobalValueNumbering{}, std::ref(printer)});
+    bool progress =
+        MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}, std::ref(printer)});
     ASSERT_TRUE(progress) << "GVN did not make progress";
 
     printer.increment();
     progress = MIR::Passes::block_walker(
-        *irlist, {
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::threaded_lowering(b, pstate); },
-                     std::ref(printer),
-                 });
+        irlist, {
+                    [&](std::shared_ptr<MIR::BasicBlock> b) { return MIR::Passes::threaded_lowering(b, pstate); },
+                    std::ref(printer),
+                });
     ASSERT_TRUE(progress) << "threaded lowering did not make progress";
 
     printer.increment();
-    progress = MIR::Passes::block_walker(*irlist, {
-                                                      MIR::Passes::ConstantFolding{},
-                                                      MIR::Passes::ConstantPropagation{},
-                                                      std::ref(printer),
-                                                  });
+    progress = MIR::Passes::block_walker(irlist, {
+                                                     MIR::Passes::ConstantFolding{},
+                                                     MIR::Passes::ConstantPropagation{},
+                                                     std::ref(printer),
+                                                 });
     ASSERT_TRUE(progress) << "constant folding/propagation did not make progress";
     ASSERT_EQ(irlist->instructions.size(), 2);
 
@@ -159,18 +159,20 @@ TEST(constant_propogation, into_function_call) {
         )EOF");
     MIR::State::Persistant pstate = make_pstate();
 
-    MIR::Passes::block_walker(
-        *irlist, {
-                     MIR::Passes::GlobalValueNumbering{},
-                     [&](MIR::BasicBlock & b) { return MIR::Passes::threaded_lowering(b, pstate); },
-                 });
+    MIR::Passes::block_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          [&](std::shared_ptr<MIR::BasicBlock> b) {
+                                              return MIR::Passes::threaded_lowering(b, pstate);
+                                          },
+                                      });
     bool progress = MIR::Passes::block_walker(
-        *irlist,
-        {
-            MIR::Passes::ConstantFolding{},
-            MIR::Passes::ConstantPropagation{},
-            [&](MIR::BasicBlock & b) { return MIR::Passes::lower_program_objects(b, pstate); },
-        });
+        irlist, {
+                    MIR::Passes::ConstantFolding{},
+                    MIR::Passes::ConstantPropagation{},
+                    [&](std::shared_ptr<MIR::BasicBlock> b) {
+                        return MIR::Passes::lower_program_objects(b, pstate);
+                    },
+                });
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 2);

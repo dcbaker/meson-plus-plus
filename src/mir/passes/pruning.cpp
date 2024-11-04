@@ -9,21 +9,21 @@ namespace MIR::Passes {
 
 namespace {
 
-bool branch_pruning_impl(BasicBlock & ir) {
+bool branch_pruning_impl(std::shared_ptr<BasicBlock> ir) {
     // If we don't have a condition there's nothing to do
-    if (!std::holds_alternative<std::unique_ptr<Condition>>(ir.next)) {
+    if (!std::holds_alternative<std::unique_ptr<Condition>>(ir->next)) {
         return false;
     }
 
     // If the condition expression hasn't been reduced to a boolean then there's
     // nothing to do yet.
-    auto & con = *std::get<std::unique_ptr<Condition>>(ir.next);
+    auto & con = *std::get<std::unique_ptr<Condition>>(ir->next);
     if (!std::holds_alternative<Boolean>(*con.condition.obj_ptr)) {
         return false;
     }
 
     // worklist for cleaning up
-    std::vector<BasicBlock *> todo{};
+    std::vector<std::shared_ptr<BasicBlock>> todo{};
 
     // If the true branch is the one we want, move the next and condition to our
     // next and condition, otherwise move the `else` branch to be the main condition, and
@@ -33,24 +33,24 @@ bool branch_pruning_impl(BasicBlock & ir) {
     if (con_v) {
         assert(con.if_true != nullptr);
         next = con.if_true;
-        todo.emplace_back(con.if_false.get());
+        todo.emplace_back(con.if_false);
     } else {
         assert(con.if_false != nullptr);
         next = con.if_false;
-        todo.emplace_back(con.if_true.get());
+        todo.emplace_back(con.if_true);
     }
 
     // When we prune this, we need to all remove it from any successor blocks
     // predecessors' so that we dont reference a dangling pointer
 
     // Blocks that have already been visited
-    std::set<BasicBlock *, BBComparitor> visited{};
+    std::set<std::shared_ptr<BasicBlock>, BBComparitor> visited{};
 
     // Walk down the CFG of the block we're about to prune until we find a block
     // with predecessors that aren't visited or todo items, that is the convergance point
     // Then remove this path from that block's predecessors.
     while (!todo.empty()) {
-        auto * current = todo.back();
+        auto current = todo.back();
         todo.pop_back();
         visited.emplace(current);
 
@@ -63,31 +63,31 @@ bool branch_pruning_impl(BasicBlock & ir) {
         // block, then loop back through
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
             const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
-            todo.emplace_back(con.if_true.get());
-            todo.emplace_back(con.if_false.get());
+            todo.emplace_back(con.if_true);
+            todo.emplace_back(con.if_false);
             continue;
         }
 
         auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next).get();
 
-        std::set<BasicBlock *, BBComparitor> new_predecessors{};
+        std::set<std::weak_ptr<BasicBlock>, BBComparitor> new_predecessors{};
         for (const auto & p : bb->predecessors) {
-            if (!(visited.count(p) || std::count(todo.begin(), todo.end(), p))) {
+            if (!(visited.count(p.lock()) || std::count(todo.begin(), todo.end(), p.lock()))) {
                 new_predecessors.emplace(p);
             }
         }
         bb->predecessors = new_predecessors;
     }
 
-    next->predecessors = {&ir};
-    ir.next = next;
+    next->predecessors = {ir};
+    ir->next = next;
 
     return true;
 };
 
 } // namespace
 
-bool branch_pruning(BasicBlock & block) {
+bool branch_pruning(std::shared_ptr<BasicBlock> block) {
     bool progress = false;
     bool lprogress;
 

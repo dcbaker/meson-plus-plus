@@ -12,8 +12,8 @@
 TEST(block_walker, simple) {
     std::unordered_map<uint32_t, uint32_t> seen{};
 
-    auto && tester = [&seen](MIR::BasicBlock & b) -> bool {
-        seen[b.index]++;
+    auto && tester = [&seen](std::shared_ptr<MIR::BasicBlock> b) -> bool {
+        seen[b->index]++;
         return false;
     };
 
@@ -25,7 +25,7 @@ TEST(block_walker, simple) {
         endif
         )EOF");
 
-    MIR::Passes::block_walker(*irlist, {tester});
+    MIR::Passes::block_walker(irlist, {tester});
     for (auto && [block_id, count] : seen) {
         EXPECT_EQ(count, 1) << "block " << block_id << " visited " << count
                             << " times instead of 1";
@@ -35,8 +35,8 @@ TEST(block_walker, simple) {
 TEST(block_walker, predecessors_first) {
     std::vector<uint32_t> seen;
 
-    auto && tester = [&seen](MIR::BasicBlock & b) -> bool {
-        seen.emplace_back(b.index);
+    auto && tester = [&seen](std::shared_ptr<MIR::BasicBlock> b) -> bool {
+        seen.emplace_back(b->index);
         return false;
     };
 
@@ -50,7 +50,7 @@ TEST(block_walker, predecessors_first) {
         a = 3
         )EOF");
 
-    MIR::Passes::block_walker(*irlist, {tester});
+    MIR::Passes::block_walker(irlist, {tester});
     ASSERT_EQ(seen.size(), 4);
     EXPECT_EQ(seen[0], irlist->index);
 

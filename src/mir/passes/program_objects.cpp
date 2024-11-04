@@ -51,9 +51,9 @@ std::optional<Instruction> lower_program_methods_impl(const Instruction & obj,
 
 } // namespace
 
-bool lower_program_objects(BasicBlock & block, State::Persistant & pstate) {
+bool lower_program_objects(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
     return function_walker(
-        block, [&](const Instruction & obj) { return lower_program_methods_impl(obj, pstate); });
+        *block, [&](const Instruction & obj) { return lower_program_methods_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

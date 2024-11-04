@@ -137,8 +137,9 @@ BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
 
 bool BasicBlock::operator<(const BasicBlock & other) const { return index < other.index; }
 
-bool BBComparitor::operator()(const BasicBlock * lhs, const BasicBlock * rhs) const {
-    return *lhs < *rhs;
+bool BBComparitor::operator()(const std::weak_ptr<BasicBlock> lhs,
+                              const std::weak_ptr<BasicBlock> rhs) const {
+    return *lhs.lock() < *rhs.lock();
 }
 
 bool BBComparitor::operator()(const std::shared_ptr<BasicBlock> & lhs,

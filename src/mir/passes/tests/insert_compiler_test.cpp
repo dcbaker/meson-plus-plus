@@ -30,7 +30,7 @@ TEST(insert_compiler, simple) {
         MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>{tc};
 
     auto irlist = lower("x = meson.get_compiler('cpp')");
-    bool progress = MIR::Passes::insert_compilers(*irlist, tc_map);
+    bool progress = MIR::Passes::insert_compilers(irlist, tc_map);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 1);
 
@@ -48,7 +48,7 @@ TEST(insert_compiler, unknown_language) {
 
     auto irlist = lower("x = meson.get_compiler('cpp')");
     try {
-        (void)MIR::Passes::insert_compilers(*irlist, tc_map);
+        (void)MIR::Passes::insert_compilers(irlist, tc_map);
         FAIL();
     } catch (Util::Exceptions::MesonException & e) {
         std::string m{e.what()};

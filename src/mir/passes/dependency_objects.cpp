@@ -79,9 +79,10 @@ std::optional<Instruction> lower_dependency_methods_impl(const Instruction & obj
 
 } // namespace
 
-bool lower_dependency_objects(BasicBlock & block, State::Persistant & pstate) {
-    return function_walker(
-        block, [&](const Instruction & obj) { return lower_dependency_methods_impl(obj, pstate); });
+bool lower_dependency_objects(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
+    return function_walker(*block, [&](const Instruction & obj) {
+        return lower_dependency_methods_impl(obj, pstate);
+    });
 }
 
 } // namespace MIR::Passes

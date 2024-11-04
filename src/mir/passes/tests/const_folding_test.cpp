@@ -18,7 +18,7 @@ TEST(constant_folding, simple) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(*irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::GlobalValueNumbering{},
                                            MIR::Passes::ConstantFolding{},
                                        });
@@ -51,10 +51,10 @@ TEST(constant_folding, with_phi) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(*irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::GlobalValueNumbering{},
                                        });
-    MIR::Passes::block_walker(*irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::branch_pruning,
                                            MIR::Passes::join_blocks,
                                            MIR::Passes::fixup_phis,
@@ -117,7 +117,7 @@ TEST(constant_folding, three_statements) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(*irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::GlobalValueNumbering{},
                                            MIR::Passes::ConstantFolding{},
                                        });
@@ -145,7 +145,7 @@ TEST(constant_folding, redefined_value) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(*irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::GlobalValueNumbering{},
                                            MIR::Passes::ConstantFolding{},
                                        });
@@ -172,7 +172,7 @@ TEST(constant_folding, in_array) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(*irlist, {
+    MIR::Passes::block_walker(irlist, {
                                            MIR::Passes::GlobalValueNumbering{},
                                            MIR::Passes::ConstantFolding{},
                                        });

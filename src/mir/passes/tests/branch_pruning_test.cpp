@@ -10,7 +10,7 @@
 
 TEST(branch_pruning, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nendif\n");
-    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 1);
 
@@ -28,7 +28,7 @@ TEST(branch_pruning, next_block) {
         endif
         y = x
         )EOF");
-    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 1);
     ASSERT_TRUE(is_bb(irlist->next));
@@ -36,9 +36,9 @@ TEST(branch_pruning, next_block) {
     const auto & next = get_bb(irlist->next);
     ASSERT_EQ(next->instructions.size(), 1);
     ASSERT_EQ(next->predecessors.size(), 1);
-    ASSERT_TRUE(next->predecessors.count(irlist.get()));
+    ASSERT_TRUE(next->predecessors.count(irlist));
 
-    ASSERT_EQ(get_bb(next->next)->predecessors.count(next.get()), 1);
+    ASSERT_EQ(get_bb(next->next)->predecessors.count(next), 1);
 }
 
 TEST(branch_pruning, if_else) {
@@ -50,7 +50,7 @@ TEST(branch_pruning, if_else) {
           x = 9
         endif
         )EOF");
-    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 1);
@@ -73,7 +73,7 @@ TEST(branch_pruning, if_false) {
           y = 2
         endif
         )EOF");
-    bool progress = MIR::Passes::block_walker(*irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 1);
 

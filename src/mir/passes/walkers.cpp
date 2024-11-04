@@ -27,8 +27,8 @@ bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback 
 
 class BlockIterator {
   public:
-    BlockIterator(BasicBlock * c) : current{c} { seen.emplace(current); };
-    BasicBlock * get() { return current; }
+    BlockIterator(std::shared_ptr<BasicBlock> c) : current{c} { seen.emplace(current); };
+    std::shared_ptr<BasicBlock> get() { return current; }
 
     bool next() {
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
@@ -41,9 +41,9 @@ class BlockIterator {
         }
 
         while (!todo.empty()) {
-            current = todo.back().lock().get();
+            current = todo.back().lock();
             todo.pop_back();
-            if (current != nullptr) {
+            if (current) {
                 assert(!block_worked(current));
                 seen.emplace(current);
                 return true;
@@ -56,22 +56,25 @@ class BlockIterator {
     bool empty() const { return current == nullptr && todo.empty(); }
 
   private:
-    BasicBlock * current;
+    std::shared_ptr<BasicBlock> current;
     std::vector<std::weak_ptr<BasicBlock>> todo;
-    std::set<const BasicBlock *, BBComparitor> seen;
+    std::set<std::weak_ptr<BasicBlock>, BBComparitor> seen;
 
     void add_todo(std::shared_ptr<BasicBlock> b) {
-        if (b != nullptr && !block_worked(b.get()) && all_predecessors_seen(b.get())) {
+        if (b != nullptr && !block_worked(b) && all_predecessors_seen(b)) {
             todo.emplace_back(b);
         }
     }
 
-    bool all_predecessors_seen(const BasicBlock * b) const {
-        return std::all_of(b->predecessors.begin(), b->predecessors.end(),
-                           [this](const BasicBlock * p) { return this->block_worked(p); });
+    bool all_predecessors_seen(const std::shared_ptr<BasicBlock> b) const {
+        return std::all_of(
+            b->predecessors.begin(), b->predecessors.end(),
+            [this](const std::weak_ptr<BasicBlock> p) { return this->block_worked(p.lock()); });
     }
 
-    bool block_worked(const BasicBlock * b) const { return seen.find(b) != seen.end(); }
+    bool block_worked(const std::shared_ptr<BasicBlock> b) const {
+        return seen.find(b) != seen.end();
+    }
 };
 
 } // namespace
@@ -244,15 +247,15 @@ bool function_walker(BasicBlock & block, const MutationCallback & cb) {
     return progress;
 };
 
-bool block_walker(BasicBlock & root, const std::vector<BlockWalkerCb> & callbacks) {
+bool block_walker(std::shared_ptr<BasicBlock> root, const std::vector<BlockWalkerCb> & callbacks) {
     bool progress = false;
 
-    BlockIterator iter{&root};
+    BlockIterator iter{root};
     do {
-        BasicBlock * current = iter.get();
+        std::shared_ptr<BasicBlock> current = iter.get();
         assert(current != nullptr);
         for (const auto & cb : callbacks) {
-            progress |= cb(*current);
+            progress |= cb(current);
         }
     } while (iter.next());
 

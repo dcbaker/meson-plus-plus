@@ -752,8 +752,8 @@ bool all_args_reduced(const std::vector<Instruction> & pos_args,
                        [](auto && kw) { return holds_reduced(kw.second); });
 }
 
-void lower_project(BasicBlock & block, State::Persistant & pstate) {
-    const auto & obj = block.instructions.front();
+void lower_project(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
+    const auto & obj = block->instructions.front();
 
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         throw Util::Exceptions::MesonException{
@@ -812,12 +812,12 @@ void lower_project(BasicBlock & block, State::Persistant & pstate) {
 
     // Remove the valid project() call so we don't accidently find it later when
     // looking for invalid function calls.
-    block.instructions.pop_front();
+    block->instructions.pop_front();
 }
 
-bool lower_free_functions(BasicBlock & block, const State::Persistant & pstate) {
+bool lower_free_functions(std::shared_ptr<BasicBlock> block, const State::Persistant & pstate) {
     return function_walker(
-        block, [&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); });
+        *block, [&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); });
 }
 
 } // namespace MIR::Passes

@@ -231,7 +231,7 @@ std::optional<Instruction> replace_threaded(const Instruction & obj, State::Pers
 
 } // namespace
 
-bool threaded_lowering(BasicBlock & block, State::Persistant & pstate) {
+bool threaded_lowering(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
     bool progress = false;
     FindList jobs{};
 
@@ -239,19 +239,20 @@ bool threaded_lowering(BasicBlock & block, State::Persistant & pstate) {
     //  1. call the block walker to gather find_program, dependency, etc
     //  2. create the threads and send them to work on filling out those futures
     //  3. call the block walker again to fill in those values
-    progress |= block_walker(block, {
-                                        [&](BasicBlock & b) {
-                                            return function_walker(b, [&](const Instruction & obj) {
-                                                return search_threaded(obj, pstate, jobs);
-                                            });
-                                        },
+    progress |=
+        block_walker(block, {
+                                [&](std::shared_ptr<BasicBlock> b) {
+                                    return function_walker(*b, [&](const Instruction & obj) {
+                                        return search_threaded(obj, pstate, jobs);
                                     });
+                                },
+                            });
     if (progress) {
         search_for_threaded_impl(jobs, pstate);
         progress |=
             block_walker(block, {
-                                    [&](BasicBlock & b) {
-                                        return function_walker(b, [&](const Instruction & obj) {
+                                    [&](std::shared_ptr<BasicBlock> b) {
+                                        return function_walker(*b, [&](const Instruction & obj) {
                                             return replace_threaded(obj, pstate);
                                         });
                                     },

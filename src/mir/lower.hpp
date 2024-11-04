@@ -13,7 +13,7 @@
 
 namespace MIR {
 
-void lower(BasicBlock &, State::Persistant &);
+void lower(std::shared_ptr<BasicBlock>, State::Persistant &);
 
 namespace Passes {
 
@@ -24,7 +24,7 @@ namespace Passes {
  * meson.build file. later on, when we handle project() it will simply be an
  * error to have it, so right now we wnat to read it, and delete it.
  */
-void lower_project(BasicBlock & block, State::Persistant & pstate);
+void lower_project(std::shared_ptr<BasicBlock> block, State::Persistant & pstate);
 
 } // namespace Passes
 

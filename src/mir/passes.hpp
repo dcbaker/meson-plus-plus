@@ -24,7 +24,7 @@ namespace MIR::Passes {
  * to trim away dead branches and join the ir lists together so we end up with a
  * single flat list of Objects.
  */
-bool branch_pruning(BasicBlock &);
+bool branch_pruning(std::shared_ptr<BasicBlock>);
 
 /**
  * Join basic blocks together
@@ -32,7 +32,7 @@ bool branch_pruning(BasicBlock &);
  * Specifically for use after branch_pruning, when we have two continguous
  * blocks with no condition to move between thme
  */
-bool join_blocks(BasicBlock &);
+bool join_blocks(std::shared_ptr<BasicBlock>);
 
 /**
  * Lower away machine related information.
@@ -40,12 +40,13 @@ bool join_blocks(BasicBlock &);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-bool machine_lower(BasicBlock &, const MIR::Machines::PerMachine<MIR::Machines::Info> &);
+bool machine_lower(std::shared_ptr<BasicBlock>,
+                   const MIR::Machines::PerMachine<MIR::Machines::Info> &);
 
 /**
  * Run complier detection code and replace variables with compiler objects.
  */
-bool insert_compilers(BasicBlock &,
+bool insert_compilers(std::shared_ptr<BasicBlock>,
                       const std::unordered_map<
                           MIR::Toolchain::Language,
                           MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
@@ -54,14 +55,14 @@ bool insert_compilers(BasicBlock &,
  * Find string arguments to custom_target's program space (intput[0]), and
  * replace it with a call to `find_program()`
  */
-bool custom_target_program_replacement(BasicBlock &);
+bool custom_target_program_replacement(std::shared_ptr<BasicBlock>);
 
 /**
  * Lowering for free functions
  *
  * This lowers free standing functions (those not part of an object/namespace).
  */
-bool lower_free_functions(BasicBlock &, const State::Persistant &);
+bool lower_free_functions(std::shared_ptr<BasicBlock>, const State::Persistant &);
 
 /**
  * Flatten array arguments to functions.
@@ -83,10 +84,10 @@ bool lower_free_functions(BasicBlock &, const State::Persistant &);
  * Meson++ uses this pass to flatten arguments, building an idealized set of
  * arguments for each function.
  */
-bool flatten(BasicBlock &, const State::Persistant &);
+bool flatten(std::shared_ptr<BasicBlock>, const State::Persistant &);
 
 struct GlobalValueNumbering {
-    bool operator()(BasicBlock &);
+    bool operator()(std::shared_ptr<BasicBlock>);
 
   private:
     std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>> data;
@@ -95,10 +96,10 @@ struct GlobalValueNumbering {
     bool insert_phis(BasicBlock &);
 };
 
-bool fixup_phis(BasicBlock &);
+bool fixup_phis(std::shared_ptr<BasicBlock>);
 
 struct ConstantFolding {
-    bool operator()(BasicBlock &);
+    bool operator()(std::shared_ptr<BasicBlock>);
 
   private:
     std::map<Variable, Variable> data;
@@ -109,7 +110,7 @@ struct ConstantFolding {
  * push variables out of assignments into their uses
  */
 struct ConstantPropagation {
-    bool operator()(BasicBlock &);
+    bool operator()(std::shared_ptr<BasicBlock>);
 
   private:
     std::map<Variable, Instruction *> data;
@@ -129,21 +130,21 @@ struct ConstantPropagation {
  *
  * These can be done in parallel, using the cache
  */
-bool threaded_lowering(BasicBlock &, State::Persistant & pstate);
+bool threaded_lowering(std::shared_ptr<BasicBlock>, State::Persistant & pstate);
 
 /**
  * Lower Program objects and their methods
  */
-bool lower_program_objects(BasicBlock &, State::Persistant & pstate);
+bool lower_program_objects(std::shared_ptr<BasicBlock>, State::Persistant & pstate);
 
 /// Lower string object methods
-bool lower_string_objects(BasicBlock & block, State::Persistant & pstate);
+bool lower_string_objects(std::shared_ptr<BasicBlock> block, State::Persistant & pstate);
 
 /// Lower dependency object methods
-bool lower_dependency_objects(BasicBlock & block, State::Persistant & pstate);
+bool lower_dependency_objects(std::shared_ptr<BasicBlock> block, State::Persistant & pstate);
 
 /// Delete any code that has become unreachable
-bool delete_unreachable(BasicBlock & block);
+bool delete_unreachable(std::shared_ptr<BasicBlock> block);
 
 /// Debugging pass that dumps a human readable text representation of the IR to
 /// a file.
@@ -152,7 +153,7 @@ class Printer {
   public:
     Printer(uint32_t p = 0);
     ~Printer();
-    bool operator()(const BasicBlock &);
+    bool operator()(const std::shared_ptr<BasicBlock>);
     void increment();
     uint32_t pass;
 
@@ -163,6 +164,6 @@ class Printer {
 /// @brief Move AddArgument nodes to the top of the program
 /// @param block The block to operate on
 /// @return true if any work is done, otherwise false
-bool combine_add_arguments(BasicBlock & block);
+bool combine_add_arguments(std::shared_ptr<BasicBlock> block);
 
 } // namespace MIR::Passes

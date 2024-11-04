@@ -70,9 +70,9 @@ std::optional<Instruction> replace_compiler(const Instruction & obj, const Toolc
 
 } // namespace
 
-bool insert_compilers(BasicBlock & block, const ToolchainMap & toolchains) {
-    auto cb = [&](const Instruction & obj) { return replace_compiler(obj, toolchains); };
-    return function_walker(block, cb);
+bool insert_compilers(std::shared_ptr<BasicBlock> block, const ToolchainMap & toolchains) {
+    const auto cb = [&](const Instruction & obj) { return replace_compiler(obj, toolchains); };
+    return function_walker(*block, cb);
 };
 
 } // namespace MIR::Passes
