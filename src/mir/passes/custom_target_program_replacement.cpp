@@ -51,8 +51,8 @@ bool program_replacement_impl(Instruction & obj) {
 
 } // namespace
 
-bool custom_target_program_replacement(BasicBlock & block) {
-    return instruction_walker(block, {program_replacement_impl});
+bool custom_target_program_replacement(std::shared_ptr<BasicBlock> block) {
+    return instruction_walker(*block, {program_replacement_impl});
 }
 
 } // namespace MIR::Passes

@@ -6,13 +6,13 @@
 
 namespace MIR::Passes {
 
-bool combine_add_arguments(BasicBlock & block) {
+bool combine_add_arguments(std::shared_ptr<BasicBlock> block) {
     MIR::AddArguments * proj = nullptr;
     MIR::AddArguments * global = nullptr;
 
     bool progress = false;
 
-    for (auto it = block.instructions.begin(); it != block.instructions.end(); ++it) {
+    for (auto it = block->instructions.begin(); it != block->instructions.end(); ++it) {
         if (MIR::AddArguments * a = std::get_if<MIR::AddArguments>(it->obj_ptr.get())) {
             if (a->is_global && global == nullptr) {
                 global = a;
@@ -36,7 +36,7 @@ bool combine_add_arguments(BasicBlock & block) {
                 progress = true;
             }
             // We don't want to go over the same block twice
-            it = ++block.instructions.erase(it);
+            it = ++block->instructions.erase(it);
         }
     }
 

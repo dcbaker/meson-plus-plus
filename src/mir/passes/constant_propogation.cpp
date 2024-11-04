@@ -78,11 +78,11 @@ bool ConstantPropagation::impl(Instruction & obj) const {
     return progress;
 }
 
-bool ConstantPropagation::operator()(BasicBlock & block) {
+bool ConstantPropagation::operator()(std::shared_ptr<BasicBlock> block) {
     // We have to break this into two walkers because we need to run this furst,
     // then the replacement
     bool progress =
-        instruction_walker(block, {
+        instruction_walker(*block, {
                                       [this](Instruction & obj) { return this->update_data(obj); },
                                   });
 
@@ -90,7 +90,7 @@ bool ConstantPropagation::operator()(BasicBlock & block) {
     auto && prop_h = [this](Instruction & obj) { return this->impl(obj); };
 
     progress |= instruction_walker(
-        block,
+        *block,
         {
             [&](const Instruction & obj) { return array_walker(obj, prop); },
             [&](Instruction & obj) { return array_walker(obj, prop_h); },

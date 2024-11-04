@@ -37,8 +37,8 @@ std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
     return std::nullopt;
 }
 
-bool ConstantFolding::operator()(BasicBlock & block) {
-    return function_walker(block, [this](Instruction & i) { return this->impl(i); });
+bool ConstantFolding::operator()(std::shared_ptr<BasicBlock> block) {
+    return function_walker(*block, [this](Instruction & i) { return this->impl(i); });
 };
 
 } // namespace MIR::Passes

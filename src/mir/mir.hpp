@@ -590,7 +590,7 @@ using NextType =
 class BasicBlock;
 
 struct BBComparitor {
-    bool operator()(const BasicBlock * lhs, const BasicBlock * rhs) const;
+    bool operator()(const std::weak_ptr<BasicBlock> lhs, const std::weak_ptr<BasicBlock> rhs) const;
     bool operator()(const std::shared_ptr<BasicBlock> & lhs,
                     const std::shared_ptr<BasicBlock> & rhs) const;
 };
@@ -610,7 +610,7 @@ class BasicBlock {
     NextType next;
 
     /// All predecessors of this block
-    std::set<BasicBlock *, BBComparitor> predecessors;
+    std::set<std::weak_ptr<BasicBlock>, BBComparitor> predecessors;
 
     /// @brief All blocks that come after this one
     std::set<std::shared_ptr<BasicBlock>, BBComparitor> successors;

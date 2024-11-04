@@ -66,10 +66,10 @@ std::optional<Instruction> lower_functions(const MachineInfo & machines, const I
 
 } // namespace
 
-bool machine_lower(BasicBlock & block, const MachineInfo & machines) {
+bool machine_lower(std::shared_ptr<BasicBlock> block, const MachineInfo & machines) {
     const auto cb = [&](const Instruction & o) { return lower_functions(machines, o); };
 
-    return function_walker(block, cb);
+    return function_walker(*block, cb);
 };
 
 } // namespace MIR::Passes

@@ -198,7 +198,8 @@ struct ExpressionLowering {
 
 inline void link_blocks(std::shared_ptr<BasicBlock> predecessor,
                         std::shared_ptr<BasicBlock> successor) {
-    successor->predecessors.emplace(predecessor.get());
+    successor->predecessors.emplace(predecessor);
+    predecessor->successors.emplace(successor);
 }
 
 /**

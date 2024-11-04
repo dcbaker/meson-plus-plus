@@ -12,7 +12,8 @@ namespace MIR::Passes {
 
 bool GlobalValueNumbering::insert_phis(BasicBlock & b) {
     // Merge the data down, even for strictly dominated blocks
-    for (auto && p : b.predecessors) {
+    for (auto && r : b.predecessors) {
+        auto p = r.lock();
         for (auto && [var, value] : data[p->index]) {
             if (data[b.index].find(var) == data[b.index].end()) {
                 data[b.index][var] = value;
@@ -32,7 +33,8 @@ bool GlobalValueNumbering::insert_phis(BasicBlock & b) {
     std::vector<std::tuple<std::string, std::vector<uint32_t>>> convergence{};
     for (auto && [var, _] : data[b.index]) {
         std::vector<uint32_t> values;
-        for (auto && p : b.predecessors) {
+        for (auto && r : b.predecessors) {
+            auto p = r.lock();
             if (auto && i = data[p->index].find(var); i != data[p->index].end()) {
                 values.emplace_back(i->second);
             }
@@ -95,17 +97,17 @@ bool GlobalValueNumbering::number(Instruction & obj, const uint32_t block_index)
     return progress;
 }
 
-bool GlobalValueNumbering::operator()(BasicBlock & block) {
+bool GlobalValueNumbering::operator()(std::shared_ptr<BasicBlock> block) {
     // Don't run this pass on the same data twice
-    if (data.find(block.index) != data.end()) {
+    if (data.find(block->index) != data.end()) {
         return false;
     }
-    data[block.index] = {};
+    data[block->index] = {};
 
     bool progress = false;
-    progress |= insert_phis(block);
+    progress |= insert_phis(*block);
     progress |= instruction_walker(
-        block, {[this, &block](Instruction & i) { return number(i, block.index); }});
+        *block, {[this, &block](Instruction & i) { return number(i, block->index); }});
     return progress;
 }
 

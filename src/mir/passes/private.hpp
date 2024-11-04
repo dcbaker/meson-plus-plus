@@ -19,7 +19,7 @@ using ReplacementCallback = std::function<std::optional<Instruction>(Instruction
 using MutationCallback = std::function<bool(Instruction &)>;
 
 /// Callback to pass to a BlockWalker, probably an instruction_walker
-using BlockWalkerCb = std::function<bool(BasicBlock &)>;
+using BlockWalkerCb = std::function<bool(std::shared_ptr<BasicBlock>)>;
 
 /**
  * Walks each instruction in a basic block, calling each callback on each instruction
@@ -56,7 +56,7 @@ bool function_argument_walker(Instruction &, const MutationCallback &);
 /**
  * Walker over all basic blocks starting with the provided one, applying the given callbacks
  */
-bool block_walker(BasicBlock &, const std::vector<BlockWalkerCb> &);
+bool block_walker(std::shared_ptr<BasicBlock>, const std::vector<BlockWalkerCb> &);
 
 /// Check if all of the arguments have been reduced from ids
 bool all_args_reduced(const std::vector<Instruction> & pos_args,
