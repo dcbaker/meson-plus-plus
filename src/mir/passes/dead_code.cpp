@@ -18,12 +18,12 @@ bool delete_unreachable(BasicBlock & block) {
                 // Delete any children point to this block
                 if (std::holds_alternative<std::shared_ptr<BasicBlock>>(block.next)) {
                     auto & b = *std::get<std::shared_ptr<BasicBlock>>(block.next);
-                    b.parents.erase(&block);
+                    b.predecessors.erase(&block);
                     progress = true;
                 } else if (std::holds_alternative<std::unique_ptr<Condition>>(block.next)) {
                     const auto & con = *std::get<std::unique_ptr<Condition>>(block.next);
                     for (const auto & c : {con.if_true, con.if_false}) {
-                        c->parents.erase(&block);
+                        c->predecessors.erase(&block);
                     }
                     progress = true;
                 }

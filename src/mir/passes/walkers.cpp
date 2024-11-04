@@ -61,13 +61,13 @@ class BlockIterator {
     std::set<const BasicBlock *, BBComparitor> seen;
 
     void add_todo(std::shared_ptr<BasicBlock> b) {
-        if (b != nullptr && !block_worked(b.get()) && all_parents_seen(b.get())) {
+        if (b != nullptr && !block_worked(b.get()) && all_predecessors_seen(b.get())) {
             todo.emplace_back(b);
         }
     }
 
-    bool all_parents_seen(const BasicBlock * b) const {
-        return std::all_of(b->parents.begin(), b->parents.end(),
+    bool all_predecessors_seen(const BasicBlock * b) const {
+        return std::all_of(b->predecessors.begin(), b->predecessors.end(),
                            [this](const BasicBlock * p) { return this->block_worked(p); });
     }
 

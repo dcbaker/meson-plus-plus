@@ -41,14 +41,14 @@ bool branch_pruning_impl(BasicBlock & ir) {
     }
 
     // When we prune this, we need to all remove it from any successor blocks
-    // parents' so that we dont reference a dangling pointer
+    // predecessors' so that we dont reference a dangling pointer
 
     // Blocks that have already been visited
     std::set<BasicBlock *, BBComparitor> visited{};
 
     // Walk down the CFG of the block we're about to prune until we find a block
-    // with parents that aren't visited or todo items, that is the convergance point
-    // Then remove this path from that block's parents.
+    // with predecessors that aren't visited or todo items, that is the convergance point
+    // Then remove this path from that block's predecessors.
     while (!todo.empty()) {
         auto * current = todo.back();
         todo.pop_back();
@@ -70,16 +70,16 @@ bool branch_pruning_impl(BasicBlock & ir) {
 
         auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next).get();
 
-        std::set<BasicBlock *, BBComparitor> new_parents{};
-        for (const auto & p : bb->parents) {
+        std::set<BasicBlock *, BBComparitor> new_predecessors{};
+        for (const auto & p : bb->predecessors) {
             if (!(visited.count(p) || std::count(todo.begin(), todo.end(), p))) {
-                new_parents.emplace(p);
+                new_predecessors.emplace(p);
             }
         }
-        bb->parents = new_parents;
+        bb->predecessors = new_predecessors;
     }
 
-    next->parents = {&ir};
+    next->predecessors = {&ir};
     ir.next = next;
 
     return true;

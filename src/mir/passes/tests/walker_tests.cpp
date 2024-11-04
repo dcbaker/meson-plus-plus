@@ -32,7 +32,7 @@ TEST(block_walker, simple) {
     }
 }
 
-TEST(block_walker, parents_first) {
+TEST(block_walker, predecessors_first) {
     std::vector<uint32_t> seen;
 
     auto && tester = [&seen](MIR::BasicBlock & b) -> bool {

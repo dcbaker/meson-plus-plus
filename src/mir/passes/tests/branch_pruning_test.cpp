@@ -35,10 +35,10 @@ TEST(branch_pruning, next_block) {
 
     const auto & next = get_bb(irlist.next);
     ASSERT_EQ(next->instructions.size(), 1);
-    ASSERT_EQ(next->parents.size(), 1);
-    ASSERT_TRUE(next->parents.count(&irlist));
+    ASSERT_EQ(next->predecessors.size(), 1);
+    ASSERT_TRUE(next->predecessors.count(&irlist));
 
-    ASSERT_EQ(get_bb(next->next)->parents.count(next.get()), 1);
+    ASSERT_EQ(get_bb(next->next)->predecessors.count(next.get()), 1);
 }
 
 TEST(branch_pruning, if_else) {

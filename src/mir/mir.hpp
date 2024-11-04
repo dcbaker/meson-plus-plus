@@ -607,8 +607,8 @@ class BasicBlock {
     /// Either nothing, a pointer to another BasicBlock, or a pointer to a Condition
     NextType next;
 
-    /// All potential parents of this block
-    std::set<BasicBlock *, BBComparitor> parents;
+    /// All predecessors of this block
+    std::set<BasicBlock *, BBComparitor> predecessors;
 
     const uint32_t index;
 

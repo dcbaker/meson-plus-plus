@@ -17,7 +17,7 @@ bool join_blocks_impl(BasicBlock & block) {
 
     // If the next block has more than one parent we can't join them yet,
     // otherwise the other parent would end up with a pointer to an empty block
-    if (next->parents.size() > 1) {
+    if (next->predecessors.size() > 1) {
         return false;
     }
 
@@ -27,13 +27,13 @@ bool join_blocks_impl(BasicBlock & block) {
     auto nn = std::move(next->next);
     if (std::holds_alternative<std::shared_ptr<BasicBlock>>(nn)) {
         const auto & b = std::get<std::shared_ptr<BasicBlock>>(nn);
-        b->parents.erase(next.get());
-        b->parents.emplace(&block);
+        b->predecessors.erase(next.get());
+        b->predecessors.emplace(&block);
     } else if (std::holds_alternative<std::unique_ptr<Condition>>(nn)) {
         const auto & con = std::get<std::unique_ptr<Condition>>(nn);
         for (const auto & c : {con->if_true, con->if_false}) {
-            c->parents.erase(next.get());
-            c->parents.emplace(&block);
+            c->predecessors.erase(next.get());
+            c->predecessors.emplace(&block);
         }
     }
     block.next = std::move(nn);
