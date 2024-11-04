@@ -591,6 +591,8 @@ class BasicBlock;
 
 struct BBComparitor {
     bool operator()(const BasicBlock * lhs, const BasicBlock * rhs) const;
+    bool operator()(const std::shared_ptr<BasicBlock> & lhs,
+                    const std::shared_ptr<BasicBlock> & rhs) const;
 };
 
 /**
@@ -609,6 +611,9 @@ class BasicBlock {
 
     /// All predecessors of this block
     std::set<BasicBlock *, BBComparitor> predecessors;
+
+    /// @brief All blocks that come after this one
+    std::set<std::shared_ptr<BasicBlock>, BBComparitor> successors;
 
     const uint32_t index;
 
