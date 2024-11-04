@@ -18,11 +18,11 @@ TEST(insert_phi, simple) {
         endif
         )EOF");
 
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::block_walker(*irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                       });
 
-    const auto & fin = get_bb(get_con(irlist.next)->if_false->next);
+    const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
     ASSERT_EQ(fin->instructions.size(), 1);
 
     MIR::Instruction instr = fin->instructions.front();
@@ -47,9 +47,9 @@ TEST(insert_phi, three_branches) {
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
 
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist.next)->if_true->next);
+    const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
     ASSERT_EQ(fin->instructions.size(), 2);
 
     auto it = fin->instructions.begin();
@@ -83,11 +83,11 @@ TEST(insert_phi, nested_branches) {
             endif
         endif
         )EOF");
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::block_walker(*irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     {
         const auto & fin =
-            get_bb(get_bb(get_con(get_bb(get_con(irlist.next)->if_true)->next)->if_true)->next);
+            get_bb(get_bb(get_con(get_bb(get_con(irlist->next)->if_true)->next)->if_true)->next);
         ASSERT_EQ(fin->instructions.size(), 1);
         const auto & it = fin->instructions.front();
         ASSERT_EQ(it.var.name, "x");
@@ -100,7 +100,7 @@ TEST(insert_phi, nested_branches) {
     }
 
     {
-        const auto & fin = get_bb(get_con(irlist.next)->if_false);
+        const auto & fin = get_bb(get_con(irlist->next)->if_false);
         ASSERT_EQ(fin->instructions.size(), 1);
         const auto & it = fin->instructions.front();
         ASSERT_EQ(it.var.name, "x");

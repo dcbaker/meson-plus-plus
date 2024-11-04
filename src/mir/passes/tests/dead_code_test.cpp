@@ -18,21 +18,21 @@ TEST(unreachable_code, clear_dead_instructions) {
 
     MIR::State::Persistant pstate = make_pstate();
 
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::block_walker(*irlist, {
                                           [&](MIR::BasicBlock & b) {
                                               return MIR::Passes::lower_free_functions(b, pstate);
                                           },
                                           MIR::Passes::delete_unreachable,
                                       });
 
-    ASSERT_EQ(irlist.instructions.size(), 2);
+    ASSERT_EQ(irlist->instructions.size(), 2);
 
-    const auto & msg_obj = irlist.instructions.front();
+    const auto & msg_obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*msg_obj.obj_ptr));
     const auto & msg = std::get<MIR::Message>(*msg_obj.obj_ptr);
     ASSERT_EQ(msg.level, MIR::MessageLevel::MESSAGE);
 
-    const auto & err_obj = irlist.instructions.back();
+    const auto & err_obj = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*err_obj.obj_ptr));
     const auto & err = std::get<MIR::Message>(*err_obj.obj_ptr);
     ASSERT_EQ(err.level, MIR::MessageLevel::ERROR);
@@ -50,17 +50,17 @@ TEST(unreachable_code, clear_next) {
 
     MIR::State::Persistant pstate = make_pstate();
 
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::block_walker(*irlist, {
                                           [&](MIR::BasicBlock & b) {
                                               return MIR::Passes::lower_free_functions(b, pstate);
                                           },
                                           MIR::Passes::delete_unreachable,
                                       });
 
-    const auto & branch = *get_bb(get_con(irlist.next)->if_true);
+    const auto & branch = *get_bb(get_con(irlist->next)->if_true);
     ASSERT_EQ(branch.instructions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::monostate>(branch.next));
 
-    const auto & fin = *get_bb(get_bb(get_con(irlist.next)->if_false)->next);
+    const auto & fin = *get_bb(get_bb(get_con(irlist->next)->if_false)->next);
     ASSERT_EQ(fin.predecessors.size(), 1);
 }

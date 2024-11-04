@@ -18,7 +18,7 @@ static const std::filesystem::path build_root = "/home/test user/src/test projec
 
 std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in);
 
-MIR::BasicBlock lower(const std::string & in);
+std::shared_ptr<MIR::BasicBlock> lower(const std::string & in);
 
 inline bool is_bb(const MIR::NextType & next) {
     return std::holds_alternative<std::shared_ptr<MIR::BasicBlock>>(next);

@@ -68,15 +68,15 @@ int configure(const Options::ConfigureOptions & opts) {
 
     // Create IR from the AST, then run our lowering passes on it
     auto irlist = MIR::lower_ast(block, pstate);
-    MIR::Passes::lower_project(irlist, pstate);
-    MIR::lower(irlist, pstate);
+    MIR::Passes::lower_project(*irlist, pstate);
+    MIR::lower(*irlist, pstate);
 
-    const bool errors = emit_messages(irlist);
+    const bool errors = emit_messages(*irlist);
     if (errors) {
         throw Util::Exceptions::MesonException("Configure failed with errors.");
     }
 
-    Backends::Ninja::generate(irlist, pstate);
+    Backends::Ninja::generate(*irlist, pstate);
 
     return 0;
 };

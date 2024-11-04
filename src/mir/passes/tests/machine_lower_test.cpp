@@ -18,10 +18,10 @@ TEST(machine_lower, simple) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    bool progress = MIR::Passes::machine_lower(*irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 2);
-    const auto & r = irlist.instructions.back();
+    ASSERT_EQ(irlist->instructions.size(), 2);
+    const auto & r = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::String>(*r.obj_ptr));
     ASSERT_EQ(std::get<MIR::String>(*r.obj_ptr).value, "x86_64");
 }
@@ -31,10 +31,10 @@ TEST(machine_lower, in_array) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    bool progress = MIR::Passes::machine_lower(*irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & r = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & r = irlist->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::Array>(*r.obj_ptr));
     const auto & a = std::get<MIR::Array>(*r.obj_ptr).value;
@@ -49,10 +49,10 @@ TEST(machine_lower, in_function_args) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    bool progress = MIR::Passes::machine_lower(*irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 1);
-    const auto & r = irlist.instructions.front();
+    ASSERT_EQ(irlist->instructions.size(), 1);
+    const auto & r = irlist->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
     const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
@@ -67,12 +67,12 @@ TEST(machine_lower, in_condtion) {
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    bool progress = MIR::Passes::machine_lower(*irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist.instructions.size(), 0);
+    ASSERT_EQ(irlist->instructions.size(), 0);
 
-    ASSERT_TRUE(is_con(irlist.next));
-    const auto & con = get_con(irlist.next);
+    ASSERT_TRUE(is_con(irlist->next));
+    const auto & con = get_con(irlist->next);
     const auto & obj = con->condition;
     ASSERT_TRUE(std::holds_alternative<MIR::String>(*obj.obj_ptr));
     ASSERT_EQ(std::get<MIR::String>(*obj.obj_ptr).value, "x86_64");

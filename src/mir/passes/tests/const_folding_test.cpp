@@ -18,14 +18,14 @@ TEST(constant_folding, simple) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
-                                          MIR::Passes::ConstantFolding{},
-                                      });
+    MIR::Passes::block_walker(*irlist, {
+                                           MIR::Passes::GlobalValueNumbering{},
+                                           MIR::Passes::ConstantFolding{},
+                                       });
 
-    ASSERT_EQ(irlist.instructions.size(), 3);
+    ASSERT_EQ(irlist->instructions.size(), 3);
 
-    const auto & func_obj = irlist.instructions.back();
+    const auto & func_obj = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
     ASSERT_EQ(func.pos_args.size(), 1);
@@ -51,17 +51,17 @@ TEST(constant_folding, with_phi) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
-                                      });
-    MIR::Passes::block_walker(irlist, {
-                                          MIR::Passes::branch_pruning,
-                                          MIR::Passes::join_blocks,
-                                          MIR::Passes::fixup_phis,
-                                          MIR::Passes::ConstantFolding{},
-                                      });
+    MIR::Passes::block_walker(*irlist, {
+                                           MIR::Passes::GlobalValueNumbering{},
+                                       });
+    MIR::Passes::block_walker(*irlist, {
+                                           MIR::Passes::branch_pruning,
+                                           MIR::Passes::join_blocks,
+                                           MIR::Passes::fixup_phis,
+                                           MIR::Passes::ConstantFolding{},
+                                       });
 
-    auto it = irlist.instructions.begin();
+    auto it = irlist->instructions.begin();
 
     ASSERT_EQ(it->var.gvn, 2);
     ASSERT_EQ(it->var.name, "x");
@@ -117,12 +117,12 @@ TEST(constant_folding, three_statements) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
-                                          MIR::Passes::ConstantFolding{},
-                                      });
+    MIR::Passes::block_walker(*irlist, {
+                                           MIR::Passes::GlobalValueNumbering{},
+                                           MIR::Passes::ConstantFolding{},
+                                       });
 
-    const auto & func_obj = irlist.instructions.back();
+    const auto & func_obj = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
     ASSERT_EQ(func.pos_args.size(), 1);
@@ -145,12 +145,12 @@ TEST(constant_folding, redefined_value) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
-                                          MIR::Passes::ConstantFolding{},
-                                      });
+    MIR::Passes::block_walker(*irlist, {
+                                           MIR::Passes::GlobalValueNumbering{},
+                                           MIR::Passes::ConstantFolding{},
+                                       });
 
-    const auto & func_obj = irlist.instructions.back();
+    const auto & func_obj = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
     ASSERT_EQ(func.pos_args.size(), 1);
@@ -172,12 +172,12 @@ TEST(constant_folding, in_array) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
-                                          MIR::Passes::ConstantFolding{},
-                                      });
+    MIR::Passes::block_walker(*irlist, {
+                                           MIR::Passes::GlobalValueNumbering{},
+                                           MIR::Passes::ConstantFolding{},
+                                       });
 
-    auto it = irlist.instructions.begin();
+    auto it = irlist->instructions.begin();
     {
         const auto & id_obj = *it;
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));

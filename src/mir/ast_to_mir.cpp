@@ -205,8 +205,9 @@ struct StatementLowering {
 
     const MIR::State::Persistant & pstate;
 
-    BasicBlock * operator()(BasicBlock * list,
-                            const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
+    std::shared_ptr<BasicBlock>
+    operator()(std::shared_ptr<BasicBlock> list,
+               const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
         list->instructions.emplace_back(std::visit(l, stmt->expr));
@@ -214,8 +215,9 @@ struct StatementLowering {
         return list;
     };
 
-    BasicBlock * operator()(BasicBlock * list,
-                            const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
+    std::shared_ptr<BasicBlock>
+    operator()(std::shared_ptr<BasicBlock> list,
+               const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
         assert(list != nullptr);
         const ExpressionLowering l{pstate};
 
@@ -227,7 +229,7 @@ struct StatementLowering {
         auto next_block = std::make_shared<BasicBlock>();
 
         // The last block that was encountered, we need this to add the next block to it.
-        BasicBlock * last_block;
+        std::shared_ptr<BasicBlock> last_block;
 
         // Get the value of the coindition itself (`if <condition>\n`)
         assert(std::holds_alternative<std::monostate>(list->next));
@@ -235,8 +237,8 @@ struct StatementLowering {
 
         auto * cur = std::get<std::unique_ptr<Condition>>(list->next).get();
 
-        last_block = cur->if_true.get();
-        last_block->predecessors.emplace(list);
+        last_block = cur->if_true;
+        last_block->predecessors.emplace(list.get());
 
         // Walk over the statements, adding them to the if_true branch.
         for (const auto & i : stmt->ifblock.block->statements) {
@@ -251,7 +253,7 @@ struct StatementLowering {
         // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(std::holds_alternative<std::monostate>(last_block->next));
         last_block->next = next_block;
-        next_block->predecessors.emplace(last_block);
+        next_block->predecessors.emplace(last_block.get());
 
         // for each elif branch create a new condition in the `else` of the
         // Condition, then assign the condition to the `if_true`. Then go down
@@ -260,9 +262,9 @@ struct StatementLowering {
             for (const auto & el : stmt->efblock) {
                 cur->if_false = std::make_shared<BasicBlock>(
                     std::make_unique<Condition>(std::visit(l, el.condition)));
-                cur->if_false->predecessors.emplace(list);
+                cur->if_false->predecessors.emplace(list.get());
                 cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
-                last_block = cur->if_true.get();
+                last_block = cur->if_true;
 
                 for (const auto & i : el.block->statements) {
                     last_block = std::visit(
@@ -271,7 +273,7 @@ struct StatementLowering {
 
                 assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
                 last_block->next = next_block;
-                next_block->predecessors.emplace(last_block);
+                next_block->predecessors.emplace(last_block.get());
             }
         }
 
@@ -279,32 +281,33 @@ struct StatementLowering {
         if (stmt->eblock.block != nullptr) {
             assert(cur->if_false == nullptr);
             cur->if_false = std::make_shared<BasicBlock>();
-            last_block = cur->if_false.get();
-            last_block->predecessors.emplace(list);
+            last_block = cur->if_false;
+            last_block->predecessors.emplace(list.get());
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block =
                     std::visit([&](const auto & a) { return this->operator()(last_block, a); }, i);
             }
             assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
             last_block->next = next_block;
-            next_block->predecessors.emplace(last_block);
+            next_block->predecessors.emplace(last_block.get());
         } else {
             // If we don't have an else, create a false one by putting hte next
             // block in it. this means taht if we don't go down any of the
             // branches that we proceed on correctly
             assert(cur->if_false == nullptr);
             cur->if_false = next_block;
-            next_block->predecessors.emplace(list);
+            next_block->predecessors.emplace(list.get());
         }
 
         assert(std::holds_alternative<std::monostate>(next_block->next));
         // Return the raw pointer, which is fine because we're not giving the
         // caller ownership of the pointer, the other basic blocks are the owners.
-        return next_block.get();
+        return next_block;
     };
 
-    BasicBlock * operator()(BasicBlock * list,
-                            const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
+    std::shared_ptr<BasicBlock>
+    operator()(std::shared_ptr<BasicBlock> list,
+               const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
         auto target = std::visit(l, stmt->lhs);
@@ -327,18 +330,21 @@ struct StatementLowering {
     };
 
     // XXX: None of this is actually implemented
-    BasicBlock * operator()(BasicBlock * list,
-                            const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
+    std::shared_ptr<BasicBlock>
+    operator()(std::shared_ptr<BasicBlock> list,
+               const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
-    BasicBlock * operator()(BasicBlock * list,
-                            const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+    std::shared_ptr<BasicBlock>
+    operator()(std::shared_ptr<BasicBlock> list,
+               const std::unique_ptr<Frontend::AST::Break> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
-    BasicBlock * operator()(BasicBlock * list,
-                            const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
+    std::shared_ptr<BasicBlock>
+    operator()(std::shared_ptr<BasicBlock> list,
+               const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
@@ -349,16 +355,16 @@ struct StatementLowering {
 /**
  * Lower AST representation into MIR.
  */
-BasicBlock lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
-                     const MIR::State::Persistant & pstate) {
-    BasicBlock bl{};
-    BasicBlock * current_block = &bl;
+std::shared_ptr<BasicBlock> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
+                                      const MIR::State::Persistant & pstate) {
+    auto root_block = std::make_shared<BasicBlock>();
+    auto current_block = root_block;
     const StatementLowering lower{pstate};
     for (const auto & i : block->statements) {
         current_block = std::visit([&](const auto & a) { return lower(current_block, a); }, i);
     }
 
-    return bl;
+    return root_block;
 }
 
 } // namespace MIR

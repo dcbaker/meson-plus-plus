@@ -11,8 +11,8 @@
 TEST(lower, trivial) {
     auto irlist = lower("project('foo')");
     MIR::State::Persistant pstate = make_pstate();
-    MIR::Passes::lower_project(irlist, pstate);
-    MIR::lower(irlist, pstate);
+    MIR::Passes::lower_project(*irlist, pstate);
+    MIR::lower(*irlist, pstate);
 }
 
 TEST(lower, after_files) {
@@ -25,11 +25,11 @@ TEST(lower, after_files) {
         )EOF");
     MIR::State::Persistant pstate = make_pstate();
     // MIR::Passes::lower_project(irlist, pstate);
-    MIR::lower(irlist, pstate);
+    MIR::lower(*irlist, pstate);
 
-    ASSERT_EQ(irlist.instructions.size(), 1);
+    ASSERT_EQ(irlist->instructions.size(), 1);
 
-    const auto & ct_obj = irlist.instructions.front();
+    const auto & ct_obj = irlist->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::CustomTarget>(*ct_obj.obj_ptr));
 }
 

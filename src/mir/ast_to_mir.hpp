@@ -7,10 +7,12 @@
 #include "node.hpp"
 #include "state/state.hpp"
 
+#include <memory>
+
 namespace MIR {
 
 /// Lower AST to IR
-BasicBlock lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &,
-                     const MIR::State::Persistant &);
+std::shared_ptr<BasicBlock> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &,
+                                      const MIR::State::Persistant &);
 
 }; // namespace MIR
