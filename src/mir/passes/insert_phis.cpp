@@ -13,7 +13,7 @@ bool fixup_phis(BasicBlock & block) {
             const auto & phi = std::get<Phi>(*it->obj_ptr);
             bool right = false;
             bool left = false;
-            for (const auto & p : block.parents) {
+            for (const auto & p : block.predecessors) {
                 for (const Instruction & i : p->instructions) {
                     const auto & var = i.var;
                     if (var.name == it->var.name) {

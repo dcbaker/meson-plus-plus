@@ -283,9 +283,9 @@ TEST(ast_to_ir, if_else_more) {
     auto const & con = get_con(irlist.next);
 
     ASSERT_EQ(con->if_true->instructions.size(), 1);
-    ASSERT_TRUE(con->if_true->parents.count(&irlist));
+    ASSERT_TRUE(con->if_true->predecessors.count(&irlist));
     ASSERT_EQ(con->if_false->instructions.size(), 1);
-    ASSERT_TRUE(con->if_false->parents.count(&irlist));
+    ASSERT_TRUE(con->if_false->predecessors.count(&irlist));
 
     ASSERT_TRUE(is_bb(con->if_true->next));
     ASSERT_EQ(get_bb(con->if_true->next), get_bb(con->if_false->next));
@@ -521,9 +521,9 @@ TEST(ast_to_ir, nested_if_tail) {
 
     // Block 4 and block 1 should both go to block 5
     ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
-    ASSERT_EQ(last_block->parents.size(), 2);
-    ASSERT_TRUE(last_block->parents.count(con2->if_false.get()));
-    ASSERT_TRUE(last_block->parents.count(&irlist));
+    ASSERT_EQ(last_block->predecessors.size(), 2);
+    ASSERT_TRUE(last_block->predecessors.count(con2->if_false.get()));
+    ASSERT_TRUE(last_block->predecessors.count(&irlist));
 }
 
 TEST(ast_to_ir, nested_if_no_tail) {
@@ -554,9 +554,9 @@ TEST(ast_to_ir, nested_if_no_tail) {
 
     // Block 4 and block 1 should both go to block 5
     ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
-    ASSERT_EQ(last_block->parents.size(), 2);
-    ASSERT_TRUE(last_block->parents.count(con2->if_false.get()));
-    ASSERT_TRUE(last_block->parents.count(&irlist));
+    ASSERT_EQ(last_block->predecessors.size(), 2);
+    ASSERT_TRUE(last_block->predecessors.count(con2->if_false.get()));
+    ASSERT_TRUE(last_block->predecessors.count(&irlist));
 }
 
 TEST(ast_to_ir, nested_if_elif_tail) {

@@ -75,12 +75,12 @@ TEST(join_blocks, nested_if_elif_else) {
                                                       });
     ASSERT_TRUE(progress);
 
-    // Check that the parents of the final block are correct
+    // Check that the predecessors of the final block are correct
     const auto & con1 = get_con(irlist.next);
     const auto & bb1 = con1->if_true;
 
     const auto & fin = get_bb(bb1->next);
     ASSERT_EQ(fin->instructions.size(), 2);
-    ASSERT_TRUE(fin->parents.count(bb1.get()));
-    ASSERT_EQ(fin->parents.size(), 2);
+    ASSERT_TRUE(fin->predecessors.count(bb1.get()));
+    ASSERT_EQ(fin->predecessors.size(), 2);
 }

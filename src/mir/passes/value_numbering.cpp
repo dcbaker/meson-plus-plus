@@ -12,7 +12,7 @@ namespace MIR::Passes {
 
 bool GlobalValueNumbering::insert_phis(BasicBlock & b) {
     // Merge the data down, even for strictly dominated blocks
-    for (auto && p : b.parents) {
+    for (auto && p : b.predecessors) {
         for (auto && [var, value] : data[p->index]) {
             if (data[b.index].find(var) == data[b.index].end()) {
                 data[b.index][var] = value;
@@ -22,17 +22,17 @@ bool GlobalValueNumbering::insert_phis(BasicBlock & b) {
         }
     }
 
-    if (b.parents.size() <= 1) {
+    if (b.predecessors.size() <= 1) {
         return false;
     }
 
     // Calculate all variables that have convergence
     //
-    // This is true if a variable is present in at least two parents
+    // This is true if a variable is present in at least two predecessors
     std::vector<std::tuple<std::string, std::vector<uint32_t>>> convergence{};
     for (auto && [var, _] : data[b.index]) {
         std::vector<uint32_t> values;
-        for (auto && p : b.parents) {
+        for (auto && p : b.predecessors) {
             if (auto && i = data[p->index].find(var); i != data[p->index].end()) {
                 values.emplace_back(i->second);
             }

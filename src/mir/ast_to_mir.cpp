@@ -236,7 +236,7 @@ struct StatementLowering {
         auto * cur = std::get<std::unique_ptr<Condition>>(list->next).get();
 
         last_block = cur->if_true.get();
-        last_block->parents.emplace(list);
+        last_block->predecessors.emplace(list);
 
         // Walk over the statements, adding them to the if_true branch.
         for (const auto & i : stmt->ifblock.block->statements) {
@@ -251,7 +251,7 @@ struct StatementLowering {
         // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(std::holds_alternative<std::monostate>(last_block->next));
         last_block->next = next_block;
-        next_block->parents.emplace(last_block);
+        next_block->predecessors.emplace(last_block);
 
         // for each elif branch create a new condition in the `else` of the
         // Condition, then assign the condition to the `if_true`. Then go down
@@ -260,7 +260,7 @@ struct StatementLowering {
             for (const auto & el : stmt->efblock) {
                 cur->if_false = std::make_shared<BasicBlock>(
                     std::make_unique<Condition>(std::visit(l, el.condition)));
-                cur->if_false->parents.emplace(list);
+                cur->if_false->predecessors.emplace(list);
                 cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
                 last_block = cur->if_true.get();
 
@@ -271,7 +271,7 @@ struct StatementLowering {
 
                 assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
                 last_block->next = next_block;
-                next_block->parents.emplace(last_block);
+                next_block->predecessors.emplace(last_block);
             }
         }
 
@@ -280,21 +280,21 @@ struct StatementLowering {
             assert(cur->if_false == nullptr);
             cur->if_false = std::make_shared<BasicBlock>();
             last_block = cur->if_false.get();
-            last_block->parents.emplace(list);
+            last_block->predecessors.emplace(list);
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block =
                     std::visit([&](const auto & a) { return this->operator()(last_block, a); }, i);
             }
             assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
             last_block->next = next_block;
-            next_block->parents.emplace(last_block);
+            next_block->predecessors.emplace(last_block);
         } else {
             // If we don't have an else, create a false one by putting hte next
             // block in it. this means taht if we don't go down any of the
             // branches that we proceed on correctly
             assert(cur->if_false == nullptr);
             cur->if_false = next_block;
-            next_block->parents.emplace(list);
+            next_block->predecessors.emplace(list);
         }
 
         assert(std::holds_alternative<std::monostate>(next_block->next));
