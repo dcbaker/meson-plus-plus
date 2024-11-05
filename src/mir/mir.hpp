@@ -80,11 +80,12 @@ class CustomTarget;
 class Dependency;
 class Test;
 class Jump;
+class Branch;
 
 using Object =
     std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
                  Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
-                 Program, Empty, CustomTarget, Dependency, Test, AddArguments, Jump>;
+                 Program, Empty, CustomTarget, Dependency, Test, AddArguments, Jump, Branch>;
 
 using Callable = std::variant<File, Executable, Program>;
 
@@ -120,6 +121,7 @@ class Instruction {
     Instruction(Test val);
     Instruction(AddArguments val);
     Instruction(Jump val);
+    Instruction(Branch val);
 
     Instruction & operator=(const Instruction &) = default;
 
@@ -563,6 +565,19 @@ class Jump {
     /// @brief A potential predicate of the jump
     /// If this is a nullptr it is considered unconditional
     std::shared_ptr<Instruction> predicate;
+};
+
+/// @brief An instruction for jumping to multiple targets based on conditions
+///
+/// This is mainly used as a high level if/elif/else construction,
+/// but we expect to later lower it to Jumps
+class Branch {
+  public:
+    Branch();
+
+    std::vector<std::tuple<Instruction, std::shared_ptr<CFGNode>>> branches;
+
+    std::string print() const;
 };
 
 /**
