@@ -19,7 +19,7 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
     return block;
 }
 
-std::shared_ptr<MIR::BasicBlock> lower(const std::string & in) {
+std::shared_ptr<MIR::CFGNode> lower(const std::string & in) {
     auto block = parse(in);
     const MIR::State::Persistant pstate{"foo/src", "foo/build", ""};
     auto ir = MIR::lower_ast(block, pstate);
@@ -27,11 +27,11 @@ std::shared_ptr<MIR::BasicBlock> lower(const std::string & in) {
 }
 
 inline bool is_bb(const MIR::NextType & next) {
-    return std::holds_alternative<std::shared_ptr<MIR::BasicBlock>>(next);
+    return std::holds_alternative<std::shared_ptr<MIR::CFGNode>>(next);
 }
 
-inline std::shared_ptr<MIR::BasicBlock> get_bb(const MIR::NextType & next) {
-    return std::get<std::shared_ptr<MIR::BasicBlock>>(next);
+inline std::shared_ptr<MIR::CFGNode> get_bb(const MIR::NextType & next) {
+    return std::get<std::shared_ptr<MIR::CFGNode>>(next);
 }
 
 inline bool is_con(const MIR::NextType & next) {

@@ -78,7 +78,7 @@ bool ConstantPropagation::impl(Instruction & obj) const {
     return progress;
 }
 
-bool ConstantPropagation::operator()(std::shared_ptr<BasicBlock> block) {
+bool ConstantPropagation::operator()(std::shared_ptr<CFGNode> block) {
     // We have to break this into two walkers because we need to run this furst,
     // then the replacement
     bool progress =

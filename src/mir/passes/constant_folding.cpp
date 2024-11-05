@@ -37,7 +37,7 @@ std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
     return std::nullopt;
 }
 
-bool ConstantFolding::operator()(std::shared_ptr<BasicBlock> block) {
+bool ConstantFolding::operator()(std::shared_ptr<CFGNode> block) {
     return function_walker(*block, [this](Instruction & i) { return this->impl(i); });
 };
 

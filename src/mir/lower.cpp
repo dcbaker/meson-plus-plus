@@ -16,10 +16,10 @@ namespace {
 // lowering `*_machine`, and doing our global value numbering and phi
 // insertion pass
 // TODO: compilers may need to be run again if `add_language` is called
-void early(std::shared_ptr<MIR::BasicBlock> block, State::Persistant & pstate,
+void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
            Passes::Printer & printer) {
     Passes::block_walker(block, {
-                                    [&](std::shared_ptr<BasicBlock> b) {
+                                    [&](std::shared_ptr<CFGNode> b) {
                                         return Passes::machine_lower(b, pstate.machines) ||
                                                Passes::insert_compilers(b, pstate.toolchains);
                                     },
@@ -29,20 +29,20 @@ void early(std::shared_ptr<MIR::BasicBlock> block, State::Persistant & pstate,
                                 });
 }
 
-void main(std::shared_ptr<MIR::BasicBlock> block, State::Persistant & pstate,
+void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
           Passes::Printer & printer) {
     const std::vector<MIR::Passes::BlockWalkerCb> main_loop{
-        [&](std::shared_ptr<BasicBlock> b) { return Passes::flatten(b, pstate); },
-        [&](std::shared_ptr<BasicBlock> b) { return Passes::lower_free_functions(b, pstate); },
+        [&](std::shared_ptr<CFGNode> b) { return Passes::flatten(b, pstate); },
+        [&](std::shared_ptr<CFGNode> b) { return Passes::lower_free_functions(b, pstate); },
         Passes::delete_unreachable,
         Passes::branch_pruning,
         Passes::join_blocks,
         Passes::fixup_phis,
         Passes::ConstantFolding{},
         Passes::ConstantPropagation{},
-        [&](std::shared_ptr<BasicBlock> b) { return Passes::lower_program_objects(b, pstate); },
-        [&](std::shared_ptr<BasicBlock> b) { return Passes::lower_string_objects(b, pstate); },
-        [&](std::shared_ptr<BasicBlock> b) { return Passes::lower_dependency_objects(b, pstate); },
+        [&](std::shared_ptr<CFGNode> b) { return Passes::lower_program_objects(b, pstate); },
+        [&](std::shared_ptr<CFGNode> b) { return Passes::lower_string_objects(b, pstate); },
+        [&](std::shared_ptr<CFGNode> b) { return Passes::lower_dependency_objects(b, pstate); },
         std::ref(printer),
     };
 
@@ -64,7 +64,7 @@ void main(std::shared_ptr<MIR::BasicBlock> block, State::Persistant & pstate,
     }
 }
 
-void late(std::shared_ptr<MIR::BasicBlock> block, State::Persistant & pstate,
+void late(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
           Passes::Printer & printer) {
     const std::vector<MIR::Passes::BlockWalkerCb> loop{
         MIR::Passes::combine_add_arguments,
@@ -77,7 +77,7 @@ void late(std::shared_ptr<MIR::BasicBlock> block, State::Persistant & pstate,
 
 } // namespace
 
-void lower(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
+void lower(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
     // Print the initial MIR we get from the AST -> MIR conversion
     Passes::Printer printer{};
     printer(block);

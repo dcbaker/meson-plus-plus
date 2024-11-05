@@ -7,7 +7,7 @@
 
 namespace MIR::Passes {
 
-bool delete_unreachable(std::shared_ptr<BasicBlock> block) {
+bool delete_unreachable(std::shared_ptr<CFGNode> block) {
     // If we see an Message object that is an error, that block will not return,
     // break it's next connection
     for (auto itr = block->instructions.begin(); itr != block->instructions.end(); ++itr) {
@@ -16,8 +16,8 @@ bool delete_unreachable(std::shared_ptr<BasicBlock> block) {
                 bool progress = false;
 
                 // Delete any children point to this block
-                if (std::holds_alternative<std::shared_ptr<BasicBlock>>(block->next)) {
-                    auto & b = *std::get<std::shared_ptr<BasicBlock>>(block->next);
+                if (std::holds_alternative<std::shared_ptr<CFGNode>>(block->next)) {
+                    auto & b = *std::get<std::shared_ptr<CFGNode>>(block->next);
                     b.predecessors.erase(block);
                     progress = true;
                 } else if (std::holds_alternative<std::unique_ptr<Condition>>(block->next)) {

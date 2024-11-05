@@ -78,6 +78,6 @@ class Target {
 };
 
 std::tuple<std::vector<Target>, std::vector<Common::Test>>
-mir_to_fir(const MIR::BasicBlock & block, const MIR::State::Persistant & pstate);
+mir_to_fir(const MIR::CFGNode & block, const MIR::State::Persistant & pstate);
 
 } // namespace Backends::FIR

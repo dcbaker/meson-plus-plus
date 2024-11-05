@@ -196,8 +196,7 @@ struct ExpressionLowering {
     };
 };
 
-inline void link_blocks(std::shared_ptr<BasicBlock> predecessor,
-                        std::shared_ptr<BasicBlock> successor) {
+inline void link_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
     successor->predecessors.emplace(predecessor);
     predecessor->successors.emplace(successor);
 }
@@ -211,8 +210,8 @@ struct StatementLowering {
 
     const MIR::State::Persistant & pstate;
 
-    std::shared_ptr<BasicBlock>
-    operator()(std::shared_ptr<BasicBlock> list,
+    std::shared_ptr<CFGNode>
+    operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
@@ -221,8 +220,8 @@ struct StatementLowering {
         return list;
     };
 
-    std::shared_ptr<BasicBlock>
-    operator()(std::shared_ptr<BasicBlock> list,
+    std::shared_ptr<CFGNode>
+    operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
         assert(list != nullptr);
         const ExpressionLowering l{pstate};
@@ -232,10 +231,10 @@ struct StatementLowering {
         // The blocks don't really rejoin, as this will just be empty and that's fine.
         //
         // This has the added bonus of giving us a place to put phi nodes?
-        auto next_block = std::make_shared<BasicBlock>();
+        auto next_block = std::make_shared<CFGNode>();
 
         // The last block that was encountered, we need this to add the next block to it.
-        std::shared_ptr<BasicBlock> last_block;
+        std::shared_ptr<CFGNode> last_block;
 
         // Get the value of the coindition itself (`if <condition>\n`)
         assert(std::holds_alternative<std::monostate>(list->next));
@@ -266,7 +265,7 @@ struct StatementLowering {
         // the `else` of that new block for the next `elif`
         if (!stmt->efblock.empty()) {
             for (const auto & el : stmt->efblock) {
-                cur->if_false = std::make_shared<BasicBlock>(
+                cur->if_false = std::make_shared<CFGNode>(
                     std::make_unique<Condition>(std::visit(l, el.condition)));
                 link_blocks(list, cur->if_false);
                 cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
@@ -286,7 +285,7 @@ struct StatementLowering {
         // Finally, handle an else block.
         if (stmt->eblock.block != nullptr) {
             assert(cur->if_false == nullptr);
-            cur->if_false = std::make_shared<BasicBlock>();
+            cur->if_false = std::make_shared<CFGNode>();
             last_block = cur->if_false;
             link_blocks(list, last_block);
             for (const auto & i : stmt->eblock.block->statements) {
@@ -311,8 +310,8 @@ struct StatementLowering {
         return next_block;
     };
 
-    std::shared_ptr<BasicBlock>
-    operator()(std::shared_ptr<BasicBlock> list,
+    std::shared_ptr<CFGNode>
+    operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
@@ -336,20 +335,19 @@ struct StatementLowering {
     };
 
     // XXX: None of this is actually implemented
-    std::shared_ptr<BasicBlock>
-    operator()(std::shared_ptr<BasicBlock> list,
+    std::shared_ptr<CFGNode>
+    operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
-    std::shared_ptr<BasicBlock>
-    operator()(std::shared_ptr<BasicBlock> list,
-               const std::unique_ptr<Frontend::AST::Break> & stmt) const {
+    std::shared_ptr<CFGNode> operator()(std::shared_ptr<CFGNode> list,
+                                        const std::unique_ptr<Frontend::AST::Break> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
-    std::shared_ptr<BasicBlock>
-    operator()(std::shared_ptr<BasicBlock> list,
+    std::shared_ptr<CFGNode>
+    operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
@@ -361,9 +359,9 @@ struct StatementLowering {
 /**
  * Lower AST representation into MIR.
  */
-std::shared_ptr<BasicBlock> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
-                                      const MIR::State::Persistant & pstate) {
-    auto root_block = std::make_shared<BasicBlock>();
+std::shared_ptr<CFGNode> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
+                                   const MIR::State::Persistant & pstate) {
+    auto root_block = std::make_shared<CFGNode>();
     auto current_block = root_block;
     const StatementLowering lower{pstate};
     for (const auto & i : block->statements) {

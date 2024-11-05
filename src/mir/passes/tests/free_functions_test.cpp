@@ -160,7 +160,7 @@ TEST(find_program, found) {
 
     MIR::Passes::block_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
-                                          [&](std::shared_ptr<MIR::BasicBlock> b) {
+                                          [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::threaded_lowering(b, pstate);
                                           },
                                       });
@@ -168,7 +168,7 @@ TEST(find_program, found) {
         irlist, {
                     MIR::Passes::ConstantFolding{},
                     MIR::Passes::ConstantPropagation{},
-                    [&](std::shared_ptr<MIR::BasicBlock> b) {
+                    [&](std::shared_ptr<MIR::CFGNode> b) {
                         return MIR::Passes::lower_program_objects(b, pstate);
                     },
                 });

@@ -6,7 +6,7 @@
 
 namespace MIR::Passes {
 
-bool combine_add_arguments(std::shared_ptr<BasicBlock> block) {
+bool combine_add_arguments(std::shared_ptr<CFGNode> block) {
     MIR::AddArguments * proj = nullptr;
     MIR::AddArguments * global = nullptr;
 

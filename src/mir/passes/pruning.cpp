@@ -9,7 +9,7 @@ namespace MIR::Passes {
 
 namespace {
 
-bool branch_pruning_impl(std::shared_ptr<BasicBlock> ir) {
+bool branch_pruning_impl(std::shared_ptr<CFGNode> ir) {
     // If we don't have a condition there's nothing to do
     if (!std::holds_alternative<std::unique_ptr<Condition>>(ir->next)) {
         return false;
@@ -23,13 +23,13 @@ bool branch_pruning_impl(std::shared_ptr<BasicBlock> ir) {
     }
 
     // worklist for cleaning up
-    std::vector<std::shared_ptr<BasicBlock>> todo{};
+    std::vector<std::shared_ptr<CFGNode>> todo{};
 
     // If the true branch is the one we want, move the next and condition to our
     // next and condition, otherwise move the `else` branch to be the main condition, and
     // continue
     const bool & con_v = std::get<Boolean>(*con.condition.obj_ptr).value;
-    std::shared_ptr<BasicBlock> next;
+    std::shared_ptr<CFGNode> next;
     if (con_v) {
         assert(con.if_true != nullptr);
         next = con.if_true;
@@ -44,7 +44,7 @@ bool branch_pruning_impl(std::shared_ptr<BasicBlock> ir) {
     // predecessors' so that we dont reference a dangling pointer
 
     // Blocks that have already been visited
-    std::set<std::shared_ptr<BasicBlock>, BBComparitor> visited{};
+    std::set<std::shared_ptr<CFGNode>, CFGComparitor> visited{};
 
     // Walk down the CFG of the block we're about to prune until we find a block
     // with predecessors that aren't visited or todo items, that is the convergance point
@@ -68,9 +68,9 @@ bool branch_pruning_impl(std::shared_ptr<BasicBlock> ir) {
             continue;
         }
 
-        auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next).get();
+        auto bb = std::get<std::shared_ptr<CFGNode>>(current->next).get();
 
-        std::set<std::weak_ptr<BasicBlock>, BBComparitor> new_predecessors{};
+        std::set<std::weak_ptr<CFGNode>, CFGComparitor> new_predecessors{};
         for (const auto & p : bb->predecessors) {
             if (!(visited.count(p.lock()) || std::count(todo.begin(), todo.end(), p.lock()))) {
                 new_predecessors.emplace(p);
@@ -87,7 +87,7 @@ bool branch_pruning_impl(std::shared_ptr<BasicBlock> ir) {
 
 } // namespace
 
-bool branch_pruning(std::shared_ptr<BasicBlock> block) {
+bool branch_pruning(std::shared_ptr<CFGNode> block) {
     bool progress = false;
     bool lprogress;
 

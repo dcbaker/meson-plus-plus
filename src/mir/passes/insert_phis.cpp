@@ -6,7 +6,7 @@
 
 namespace MIR::Passes {
 
-bool fixup_phis(std::shared_ptr<BasicBlock> block) {
+bool fixup_phis(std::shared_ptr<CFGNode> block) {
     bool progress = false;
     for (auto it = block->instructions.begin(); it != block->instructions.end(); ++it) {
         if (std::holds_alternative<Phi>(*it->obj_ptr)) {

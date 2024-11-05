@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 
 namespace {
 
-bool emit_messages(MIR::BasicBlock & block) {
+bool emit_messages(MIR::CFGNode & block) {
     static std::vector<MIR::MessageLevel> levels{MIR::MessageLevel::MESSAGE,
                                                  MIR::MessageLevel::WARN, MIR::MessageLevel::ERROR};
     bool errors = false;
