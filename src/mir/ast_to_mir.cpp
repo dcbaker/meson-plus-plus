@@ -196,11 +196,6 @@ struct ExpressionLowering {
     };
 };
 
-inline void link_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
-    successor->predecessors.emplace(predecessor);
-    predecessor->successors.emplace(successor);
-}
-
 /**
  * Lowers AST statements into MIR objects.
  */
