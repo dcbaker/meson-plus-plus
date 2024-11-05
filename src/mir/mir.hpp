@@ -617,9 +617,6 @@ class CFGNode {
     const uint32_t index;
 
     bool operator<(const CFGNode &) const;
-
-    /// Print a human readable version of this
-    std::string print() const;
 };
 
 class CFG {
