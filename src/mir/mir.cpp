@@ -417,4 +417,14 @@ std::string Jump::print() const {
            (predicate == nullptr ? "always" : predicate->print()) + " } }";
 }
 
+void link_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
+    successor->predecessors.emplace(predecessor);
+    predecessor->successors.emplace(successor);
+}
+
+void unlink_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
+    successor->predecessors.erase(predecessor);
+    predecessor->successors.erase(successor);
+}
+
 } // namespace MIR
