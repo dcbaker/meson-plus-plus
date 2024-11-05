@@ -130,27 +130,26 @@ std::string Phi::print() const {
     return "Phi { left = " + to_string(left) + "; right = " + to_string(right) + " }";
 }
 
-BasicBlock::BasicBlock() : next{std::monostate{}}, index{++bb_index} {};
+CFGNode::CFGNode() : next{std::monostate{}}, index{++bb_index} {};
 
-BasicBlock::BasicBlock(std::unique_ptr<Condition> && con)
-    : next{std::move(con)}, index{++bb_index} {};
+CFGNode::CFGNode(std::unique_ptr<Condition> && con) : next{std::move(con)}, index{++bb_index} {};
 
-bool BasicBlock::operator<(const BasicBlock & other) const { return index < other.index; }
+bool CFGNode::operator<(const CFGNode & other) const { return index < other.index; }
 
-bool BBComparitor::operator()(const std::weak_ptr<BasicBlock> lhs,
-                              const std::weak_ptr<BasicBlock> rhs) const {
+bool CFGComparitor::operator()(const std::weak_ptr<CFGNode> lhs,
+                               const std::weak_ptr<CFGNode> rhs) const {
     return *lhs.lock() < *rhs.lock();
 }
 
-bool BBComparitor::operator()(const std::shared_ptr<BasicBlock> & lhs,
-                              const std::shared_ptr<BasicBlock> & rhs) const {
+bool CFGComparitor::operator()(const std::shared_ptr<CFGNode> & lhs,
+                               const std::shared_ptr<CFGNode> & rhs) const {
     return *lhs < *rhs;
 }
 
 Condition::Condition(Instruction && o)
-    : condition{std::move(o)}, if_true{std::make_shared<BasicBlock>()}, if_false{nullptr} {};
+    : condition{std::move(o)}, if_true{std::make_shared<CFGNode>()}, if_false{nullptr} {};
 
-Condition::Condition(Instruction && o, std::shared_ptr<BasicBlock> s)
+Condition::Condition(Instruction && o, std::shared_ptr<CFGNode> s)
     : condition{std::move(o)}, if_true{std::move(s)}, if_false{nullptr} {};
 
 Compiler::Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc) : toolchain{std::move(tc)} {};

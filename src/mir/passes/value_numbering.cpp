@@ -10,7 +10,7 @@
 
 namespace MIR::Passes {
 
-bool GlobalValueNumbering::insert_phis(BasicBlock & b) {
+bool GlobalValueNumbering::insert_phis(CFGNode & b) {
     // Merge the data down, even for strictly dominated blocks
     for (auto && r : b.predecessors) {
         auto p = r.lock();
@@ -97,7 +97,7 @@ bool GlobalValueNumbering::number(Instruction & obj, const uint32_t block_index)
     return progress;
 }
 
-bool GlobalValueNumbering::operator()(std::shared_ptr<BasicBlock> block) {
+bool GlobalValueNumbering::operator()(std::shared_ptr<CFGNode> block) {
     // Don't run this pass on the same data twice
     if (data.find(block->index) != data.end()) {
         return false;

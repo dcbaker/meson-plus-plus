@@ -19,7 +19,7 @@ TEST(unreachable_code, clear_dead_instructions) {
     MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::block_walker(irlist, {
-                                          [&](std::shared_ptr<MIR::BasicBlock> b) {
+                                          [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::lower_free_functions(b, pstate);
                                           },
                                           MIR::Passes::delete_unreachable,
@@ -51,7 +51,7 @@ TEST(unreachable_code, clear_next) {
     MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::block_walker(irlist, {
-                                          [&](std::shared_ptr<MIR::BasicBlock> b) {
+                                          [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::lower_free_functions(b, pstate);
                                           },
                                           MIR::Passes::delete_unreachable,

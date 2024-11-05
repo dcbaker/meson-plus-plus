@@ -27,16 +27,16 @@ bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback 
 
 class BlockIterator {
   public:
-    BlockIterator(std::shared_ptr<BasicBlock> c) : current{c} { seen.emplace(current); };
-    std::shared_ptr<BasicBlock> get() { return current; }
+    BlockIterator(std::shared_ptr<CFGNode> c) : current{c} { seen.emplace(current); };
+    std::shared_ptr<CFGNode> get() { return current; }
 
     bool next() {
         if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
             const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
             add_todo(con.if_true);
             add_todo(con.if_false);
-        } else if (std::holds_alternative<std::shared_ptr<BasicBlock>>(current->next)) {
-            auto bb = std::get<std::shared_ptr<BasicBlock>>(current->next);
+        } else if (std::holds_alternative<std::shared_ptr<CFGNode>>(current->next)) {
+            auto bb = std::get<std::shared_ptr<CFGNode>>(current->next);
             add_todo(bb);
         }
 
@@ -56,38 +56,36 @@ class BlockIterator {
     bool empty() const { return current == nullptr && todo.empty(); }
 
   private:
-    std::shared_ptr<BasicBlock> current;
-    std::vector<std::weak_ptr<BasicBlock>> todo;
-    std::set<std::weak_ptr<BasicBlock>, BBComparitor> seen;
+    std::shared_ptr<CFGNode> current;
+    std::vector<std::weak_ptr<CFGNode>> todo;
+    std::set<std::weak_ptr<CFGNode>, CFGComparitor> seen;
 
-    void add_todo(std::shared_ptr<BasicBlock> b) {
+    void add_todo(std::shared_ptr<CFGNode> b) {
         if (b != nullptr && !block_worked(b) && all_predecessors_seen(b)) {
             todo.emplace_back(b);
         }
     }
 
-    bool all_predecessors_seen(const std::shared_ptr<BasicBlock> b) const {
+    bool all_predecessors_seen(const std::shared_ptr<CFGNode> b) const {
         return std::all_of(
             b->predecessors.begin(), b->predecessors.end(),
-            [this](const std::weak_ptr<BasicBlock> p) { return this->block_worked(p.lock()); });
+            [this](const std::weak_ptr<CFGNode> p) { return this->block_worked(p.lock()); });
     }
 
-    bool block_worked(const std::shared_ptr<BasicBlock> b) const {
-        return seen.find(b) != seen.end();
-    }
+    bool block_worked(const std::shared_ptr<CFGNode> b) const { return seen.find(b) != seen.end(); }
 };
 
 } // namespace
 
-bool instruction_walker(BasicBlock & block, const std::vector<MutationCallback> & fc) {
+bool instruction_walker(CFGNode & block, const std::vector<MutationCallback> & fc) {
     return instruction_walker(block, fc, {});
 }
 
-bool instruction_walker(BasicBlock & block, const std::vector<ReplacementCallback> & rc) {
+bool instruction_walker(CFGNode & block, const std::vector<ReplacementCallback> & rc) {
     return instruction_walker(block, {}, rc);
 }
 
-bool instruction_walker(BasicBlock & block, const std::vector<MutationCallback> & fc,
+bool instruction_walker(CFGNode & block, const std::vector<MutationCallback> & fc,
                         const std::vector<ReplacementCallback> & rc) {
     bool progress = false;
 
@@ -202,7 +200,7 @@ bool function_argument_walker(Instruction & obj, const MutationCallback & cb) {
     return progress;
 }
 
-bool function_walker(BasicBlock & block, const ReplacementCallback & cb) {
+bool function_walker(CFGNode & block, const ReplacementCallback & cb) {
     bool progress = instruction_walker(
         block,
         {
@@ -226,7 +224,7 @@ bool function_walker(BasicBlock & block, const ReplacementCallback & cb) {
     return progress;
 };
 
-bool function_walker(BasicBlock & block, const MutationCallback & cb) {
+bool function_walker(CFGNode & block, const MutationCallback & cb) {
     bool progress = instruction_walker(
         block,
         {
@@ -247,12 +245,12 @@ bool function_walker(BasicBlock & block, const MutationCallback & cb) {
     return progress;
 };
 
-bool block_walker(std::shared_ptr<BasicBlock> root, const std::vector<BlockWalkerCb> & callbacks) {
+bool block_walker(std::shared_ptr<CFGNode> root, const std::vector<BlockWalkerCb> & callbacks) {
     bool progress = false;
 
     BlockIterator iter{root};
     do {
-        std::shared_ptr<BasicBlock> current = iter.get();
+        std::shared_ptr<CFGNode> current = iter.get();
         assert(current != nullptr);
         for (const auto & cb : callbacks) {
             progress |= cb(current);

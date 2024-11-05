@@ -212,7 +212,7 @@ Common::Test target_test(const MIR::Test & t, const MIR::State::Persistant & pst
 } // namespace
 
 std::tuple<std::vector<Target>, std::vector<Common::Test>>
-mir_to_fir(const MIR::BasicBlock & block, const MIR::State::Persistant & pstate) {
+mir_to_fir(const MIR::CFGNode & block, const MIR::State::Persistant & pstate) {
     State state{};
     // Process the instructions that alter state
     for (const auto & i : block.instructions) {

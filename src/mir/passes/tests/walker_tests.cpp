@@ -12,7 +12,7 @@
 TEST(block_walker, simple) {
     std::unordered_map<uint32_t, uint32_t> seen{};
 
-    auto && tester = [&seen](std::shared_ptr<MIR::BasicBlock> b) -> bool {
+    auto && tester = [&seen](std::shared_ptr<MIR::CFGNode> b) -> bool {
         seen[b->index]++;
         return false;
     };
@@ -35,7 +35,7 @@ TEST(block_walker, simple) {
 TEST(block_walker, predecessors_first) {
     std::vector<uint32_t> seen;
 
-    auto && tester = [&seen](std::shared_ptr<MIR::BasicBlock> b) -> bool {
+    auto && tester = [&seen](std::shared_ptr<MIR::CFGNode> b) -> bool {
         seen.emplace_back(b->index);
         return false;
     };
@@ -60,6 +60,6 @@ TEST(block_walker, predecessors_first) {
     i = con.if_true.get()->index;
     EXPECT_TRUE(seen[1] == i || seen[2] == i);
 
-    auto & last = *std::get<std::shared_ptr<MIR::BasicBlock>>(con.if_true.get()->next);
+    auto & last = *std::get<std::shared_ptr<MIR::CFGNode>>(con.if_true.get()->next);
     ASSERT_EQ(seen[3], last.index);
 }

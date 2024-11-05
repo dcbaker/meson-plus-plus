@@ -543,7 +543,7 @@ class AddArguments {
     bool is_global;
 };
 
-class BasicBlock;
+class CFGNode;
 
 /**
  * A think that creates A conditional web.
@@ -569,55 +569,54 @@ class BasicBlock;
 class Condition {
   public:
     Condition(Instruction && o);
-    Condition(Instruction && o, std::shared_ptr<BasicBlock> s);
+    Condition(Instruction && o, std::shared_ptr<CFGNode> s);
 
     /// An object that is the condition
     Instruction condition;
 
     /// The block to go to if the condition is true
-    std::shared_ptr<BasicBlock> if_true;
+    std::shared_ptr<CFGNode> if_true;
 
     /// The block to go to if the condition is false
-    std::shared_ptr<BasicBlock> if_false;
+    std::shared_ptr<CFGNode> if_false;
 
     /// Print a human readable version of this
     std::string print() const;
 };
 
-using NextType =
-    std::variant<std::monostate, std::unique_ptr<Condition>, std::shared_ptr<BasicBlock>>;
+using NextType = std::variant<std::monostate, std::unique_ptr<Condition>, std::shared_ptr<CFGNode>>;
 
-class BasicBlock;
+class CFGNode;
 
-struct BBComparitor {
-    bool operator()(const std::weak_ptr<BasicBlock> lhs, const std::weak_ptr<BasicBlock> rhs) const;
-    bool operator()(const std::shared_ptr<BasicBlock> & lhs,
-                    const std::shared_ptr<BasicBlock> & rhs) const;
+struct CFGComparitor {
+    bool operator()(const std::weak_ptr<CFGNode> lhs, const std::weak_ptr<CFGNode> rhs) const;
+    bool operator()(const std::shared_ptr<CFGNode> & lhs,
+                    const std::shared_ptr<CFGNode> & rhs) const;
 };
 
 /**
  * Holds a list of instructions, and optionally a condition or next block
  */
-class BasicBlock {
+class CFGNode {
   public:
-    BasicBlock();
-    BasicBlock(std::unique_ptr<Condition> &&);
+    CFGNode();
+    CFGNode(std::unique_ptr<Condition> &&);
 
     /// The instructions in this block
     std::list<Instruction> instructions;
 
-    /// Either nothing, a pointer to another BasicBlock, or a pointer to a Condition
+    /// Either nothing, a pointer to another CFGNode, or a pointer to a Condition
     NextType next;
 
     /// All predecessors of this block
-    std::set<std::weak_ptr<BasicBlock>, BBComparitor> predecessors;
+    std::set<std::weak_ptr<CFGNode>, CFGComparitor> predecessors;
 
     /// @brief All blocks that come after this one
-    std::set<std::shared_ptr<BasicBlock>, BBComparitor> successors;
+    std::set<std::shared_ptr<CFGNode>, CFGComparitor> successors;
 
     const uint32_t index;
 
-    bool operator<(const BasicBlock &) const;
+    bool operator<(const CFGNode &) const;
 
     /// Print a human readable version of this
     std::string print() const;

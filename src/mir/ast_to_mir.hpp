@@ -12,7 +12,7 @@
 namespace MIR {
 
 /// Lower AST to IR
-std::shared_ptr<BasicBlock> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &,
-                                      const MIR::State::Persistant &);
+std::shared_ptr<CFGNode> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &,
+                                   const MIR::State::Persistant &);
 
 }; // namespace MIR

@@ -752,7 +752,7 @@ bool all_args_reduced(const std::vector<Instruction> & pos_args,
                        [](auto && kw) { return holds_reduced(kw.second); });
 }
 
-void lower_project(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
+void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
     const auto & obj = block->instructions.front();
 
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
@@ -815,7 +815,7 @@ void lower_project(std::shared_ptr<BasicBlock> block, State::Persistant & pstate
     block->instructions.pop_front();
 }
 
-bool lower_free_functions(std::shared_ptr<BasicBlock> block, const State::Persistant & pstate) {
+bool lower_free_functions(std::shared_ptr<CFGNode> block, const State::Persistant & pstate) {
     return function_walker(
         *block, [&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); });
 }

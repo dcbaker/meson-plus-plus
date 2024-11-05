@@ -7,13 +7,13 @@ namespace MIR::Passes {
 
 namespace {
 
-bool join_blocks_impl(std::shared_ptr<BasicBlock> block) {
+bool join_blocks_impl(std::shared_ptr<CFGNode> block) {
     // If there isn't a next block, then we obviously can't do anything
-    if (!std::holds_alternative<std::shared_ptr<BasicBlock>>(block->next)) {
+    if (!std::holds_alternative<std::shared_ptr<CFGNode>>(block->next)) {
         return false;
     }
 
-    auto & next = std::get<std::shared_ptr<BasicBlock>>(block->next);
+    auto & next = std::get<std::shared_ptr<CFGNode>>(block->next);
 
     // If the next block has more than one parent we can't join them yet,
     // otherwise the other parent would end up with a pointer to an empty block
@@ -25,8 +25,8 @@ bool join_blocks_impl(std::shared_ptr<BasicBlock> block) {
     // if neceissry, then make the next block the next->next block.
     block->instructions.splice(block->instructions.end(), next->instructions);
     auto nn = std::move(next->next);
-    if (std::holds_alternative<std::shared_ptr<BasicBlock>>(nn)) {
-        const auto & b = std::get<std::shared_ptr<BasicBlock>>(nn);
+    if (std::holds_alternative<std::shared_ptr<CFGNode>>(nn)) {
+        const auto & b = std::get<std::shared_ptr<CFGNode>>(nn);
         b->predecessors.erase(next);
         b->predecessors.emplace(block);
     } else if (std::holds_alternative<std::unique_ptr<Condition>>(nn)) {
@@ -43,7 +43,7 @@ bool join_blocks_impl(std::shared_ptr<BasicBlock> block) {
 
 } // namespace
 
-bool join_blocks(std::shared_ptr<BasicBlock> block) {
+bool join_blocks(std::shared_ptr<CFGNode> block) {
     bool progress = false;
     bool lprogress;
 

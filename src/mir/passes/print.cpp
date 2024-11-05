@@ -21,9 +21,9 @@ void condition_printer(const Condition & cond, std::ofstream & stream) {
            << "  }\n";
 }
 
-void printer_impl(const BasicBlock & block, std::ofstream & stream) {
+void printer_impl(const CFGNode & block, std::ofstream & stream) {
     // Only print a given block once
-    stream << "  BasicBlock " << block.index << " {\n";
+    stream << "  CFGNode " << block.index << " {\n";
     for (auto && i : block.instructions) {
         stream << "    " << i.print() << "\n";
     }
@@ -32,7 +32,7 @@ void printer_impl(const BasicBlock & block, std::ofstream & stream) {
             using T = std::decay_t<decltype(n)>;
             if constexpr (std::is_same_v<T, std::unique_ptr<Condition>>) {
                 condition_printer(*n, stream);
-            } else if constexpr (std::is_same_v<T, std::shared_ptr<BasicBlock>>) {
+            } else if constexpr (std::is_same_v<T, std::shared_ptr<CFGNode>>) {
                 stream << "    next block: " << n->index << "\n"
                        << "  }\n";
             } else {
@@ -70,7 +70,7 @@ void Printer::increment() {
     }
 }
 
-bool Printer::operator()(const std::shared_ptr<BasicBlock> block) {
+bool Printer::operator()(const std::shared_ptr<CFGNode> block) {
     if (out.is_open()) {
         printer_impl(*block, out);
     }

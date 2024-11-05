@@ -231,7 +231,7 @@ std::optional<Instruction> replace_threaded(const Instruction & obj, State::Pers
 
 } // namespace
 
-bool threaded_lowering(std::shared_ptr<BasicBlock> block, State::Persistant & pstate) {
+bool threaded_lowering(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
     bool progress = false;
     FindList jobs{};
 
@@ -241,7 +241,7 @@ bool threaded_lowering(std::shared_ptr<BasicBlock> block, State::Persistant & ps
     //  3. call the block walker again to fill in those values
     progress |=
         block_walker(block, {
-                                [&](std::shared_ptr<BasicBlock> b) {
+                                [&](std::shared_ptr<CFGNode> b) {
                                     return function_walker(*b, [&](const Instruction & obj) {
                                         return search_threaded(obj, pstate, jobs);
                                     });
@@ -251,7 +251,7 @@ bool threaded_lowering(std::shared_ptr<BasicBlock> block, State::Persistant & ps
         search_for_threaded_impl(jobs, pstate);
         progress |=
             block_walker(block, {
-                                    [&](std::shared_ptr<BasicBlock> b) {
+                                    [&](std::shared_ptr<CFGNode> b) {
                                         return function_walker(*b, [&](const Instruction & obj) {
                                             return replace_threaded(obj, pstate);
                                         });

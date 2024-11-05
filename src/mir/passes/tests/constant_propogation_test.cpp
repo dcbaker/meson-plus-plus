@@ -126,11 +126,13 @@ TEST(constant_propogation, method_holder) {
     ASSERT_TRUE(progress) << "GVN did not make progress";
 
     printer.increment();
-    progress = MIR::Passes::block_walker(
-        irlist, {
-                    [&](std::shared_ptr<MIR::BasicBlock> b) { return MIR::Passes::threaded_lowering(b, pstate); },
-                    std::ref(printer),
-                });
+    progress =
+        MIR::Passes::block_walker(irlist, {
+                                              [&](std::shared_ptr<MIR::CFGNode> b) {
+                                                  return MIR::Passes::threaded_lowering(b, pstate);
+                                              },
+                                              std::ref(printer),
+                                          });
     ASSERT_TRUE(progress) << "threaded lowering did not make progress";
 
     printer.increment();
@@ -161,7 +163,7 @@ TEST(constant_propogation, into_function_call) {
 
     MIR::Passes::block_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
-                                          [&](std::shared_ptr<MIR::BasicBlock> b) {
+                                          [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::threaded_lowering(b, pstate);
                                           },
                                       });
@@ -169,7 +171,7 @@ TEST(constant_propogation, into_function_call) {
         irlist, {
                     MIR::Passes::ConstantFolding{},
                     MIR::Passes::ConstantPropagation{},
-                    [&](std::shared_ptr<MIR::BasicBlock> b) {
+                    [&](std::shared_ptr<MIR::CFGNode> b) {
                         return MIR::Passes::lower_program_objects(b, pstate);
                     },
                 });

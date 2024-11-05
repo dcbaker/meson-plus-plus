@@ -19,25 +19,25 @@ using ReplacementCallback = std::function<std::optional<Instruction>(Instruction
 using MutationCallback = std::function<bool(Instruction &)>;
 
 /// Callback to pass to a BlockWalker, probably an instruction_walker
-using BlockWalkerCb = std::function<bool(std::shared_ptr<BasicBlock>)>;
+using BlockWalkerCb = std::function<bool(std::shared_ptr<CFGNode>)>;
 
 /**
  * Walks each instruction in a basic block, calling each callback on each instruction
  *
  * Returns true if any changes were made to the block.
  */
-bool instruction_walker(BasicBlock &, const std::vector<MutationCallback> &,
+bool instruction_walker(CFGNode &, const std::vector<MutationCallback> &,
                         const std::vector<ReplacementCallback> &);
-bool instruction_walker(BasicBlock &, const std::vector<MutationCallback> &);
-bool instruction_walker(BasicBlock &, const std::vector<ReplacementCallback> &);
+bool instruction_walker(CFGNode &, const std::vector<MutationCallback> &);
+bool instruction_walker(CFGNode &, const std::vector<ReplacementCallback> &);
 
 /**
  * Walks the isntructions of a basic block calling each callback on Function it fins
  *
  * It is the job of each function callback to only act on functions it means to.
  */
-bool function_walker(BasicBlock &, const ReplacementCallback &);
-bool function_walker(BasicBlock &, const MutationCallback &);
+bool function_walker(CFGNode &, const ReplacementCallback &);
+bool function_walker(CFGNode &, const MutationCallback &);
 
 /**
  * Walk each instruction in an array, recursively, calling the callbck on them.
@@ -56,7 +56,7 @@ bool function_argument_walker(Instruction &, const MutationCallback &);
 /**
  * Walker over all basic blocks starting with the provided one, applying the given callbacks
  */
-bool block_walker(std::shared_ptr<BasicBlock>, const std::vector<BlockWalkerCb> &);
+bool block_walker(std::shared_ptr<CFGNode>, const std::vector<BlockWalkerCb> &);
 
 /// Check if all of the arguments have been reduced from ids
 bool all_args_reduced(const std::vector<Instruction> & pos_args,

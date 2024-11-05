@@ -49,7 +49,7 @@ std::optional<Instruction> flatten_cb(const Instruction & obj) {
 
 } // namespace
 
-bool flatten(std::shared_ptr<BasicBlock> block, const State::Persistant & pstate) {
+bool flatten(std::shared_ptr<CFGNode> block, const State::Persistant & pstate) {
     // TODO: we need to skip this for message, error, and warning
     return function_walker(*block, flatten_cb);
 }
