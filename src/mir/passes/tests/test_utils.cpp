@@ -13,7 +13,7 @@ std::unique_ptr<Frontend::AST::CodeBlock> parse(const std::string & in) {
 std::shared_ptr<MIR::CFGNode> lower(const std::string & in) {
     auto block = parse(in);
     const MIR::State::Persistant pstate = make_pstate();
-    return MIR::lower_ast(block, pstate);
+    return MIR::lower_ast(block, pstate).root;
 }
 
 MIR::State::Persistant make_pstate() { return MIR::State::Persistant{src_root, build_root, ""}; }

@@ -622,4 +622,11 @@ class CFGNode {
     std::string print() const;
 };
 
+class CFG {
+  public:
+    CFG(std::shared_ptr<CFGNode> n);
+
+    std::shared_ptr<CFGNode> root;
+};
+
 } // namespace MIR

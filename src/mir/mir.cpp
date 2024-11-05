@@ -146,6 +146,8 @@ bool CFGComparitor::operator()(const std::shared_ptr<CFGNode> & lhs,
     return *lhs < *rhs;
 }
 
+CFG::CFG(std::shared_ptr<CFGNode> n) : root{n} {};
+
 Condition::Condition(Instruction && o)
     : condition{std::move(o)}, if_true{std::make_shared<CFGNode>()}, if_false{nullptr} {};
 

@@ -359,8 +359,8 @@ struct StatementLowering {
 /**
  * Lower AST representation into MIR.
  */
-std::shared_ptr<CFGNode> lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
-                                   const MIR::State::Persistant & pstate) {
+CFG lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
+              const MIR::State::Persistant & pstate) {
     auto root_block = std::make_shared<CFGNode>();
     auto current_block = root_block;
     const StatementLowering lower{pstate};
@@ -368,7 +368,7 @@ std::shared_ptr<CFGNode> lower_ast(const std::unique_ptr<Frontend::AST::CodeBloc
         current_block = std::visit([&](const auto & a) { return lower(current_block, a); }, i);
     }
 
-    return root_block;
+    return CFG{root_block};
 }
 
 } // namespace MIR
