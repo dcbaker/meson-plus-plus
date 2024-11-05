@@ -18,10 +18,10 @@ TEST(constant_folding, simple) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::ConstantFolding{},
-                                       });
+    MIR::Passes::graph_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::ConstantFolding{},
+                                      });
 
     ASSERT_EQ(irlist->instructions.size(), 3);
 
@@ -51,15 +51,15 @@ TEST(constant_folding, with_phi) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                       });
-    MIR::Passes::block_walker(irlist, {
-                                           MIR::Passes::branch_pruning,
-                                           MIR::Passes::join_blocks,
-                                           MIR::Passes::fixup_phis,
-                                           MIR::Passes::ConstantFolding{},
-                                       });
+    MIR::Passes::graph_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                      });
+    MIR::Passes::graph_walker(irlist, {
+                                          MIR::Passes::branch_pruning,
+                                          MIR::Passes::join_blocks,
+                                          MIR::Passes::fixup_phis,
+                                          MIR::Passes::ConstantFolding{},
+                                      });
 
     auto it = irlist->instructions.begin();
 
@@ -117,10 +117,10 @@ TEST(constant_folding, three_statements) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::ConstantFolding{},
-                                       });
+    MIR::Passes::graph_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::ConstantFolding{},
+                                      });
 
     const auto & func_obj = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
@@ -145,10 +145,10 @@ TEST(constant_folding, redefined_value) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::ConstantFolding{},
-                                       });
+    MIR::Passes::graph_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::ConstantFolding{},
+                                      });
 
     const auto & func_obj = irlist->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
@@ -172,10 +172,10 @@ TEST(constant_folding, in_array) {
 
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
-    MIR::Passes::block_walker(irlist, {
-                                           MIR::Passes::GlobalValueNumbering{},
-                                           MIR::Passes::ConstantFolding{},
-                                       });
+    MIR::Passes::graph_walker(irlist, {
+                                          MIR::Passes::GlobalValueNumbering{},
+                                          MIR::Passes::ConstantFolding{},
+                                      });
 
     auto it = irlist->instructions.begin();
     {

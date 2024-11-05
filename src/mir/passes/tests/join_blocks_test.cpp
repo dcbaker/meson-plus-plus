@@ -11,7 +11,7 @@
 
 TEST(join_blocks, simple) {
     auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\ny = x");
-    bool progress = MIR::Passes::block_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->instructions.size(), 1);
 
@@ -19,7 +19,7 @@ TEST(join_blocks, simple) {
     const auto & next = get_bb(irlist->next);
     ASSERT_EQ(next->instructions.size(), 1);
 
-    progress = MIR::Passes::block_walker(irlist, {MIR::Passes::join_blocks});
+    progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::join_blocks});
     ASSERT_TRUE(progress);
     ASSERT_TRUE(is_empty(irlist->next));
     ASSERT_EQ(irlist->instructions.size(), 3);
@@ -38,7 +38,7 @@ TEST(join_blocks, nested_if) {
         )EOF");
     bool progress = true;
     while (progress) {
-        progress = MIR::Passes::block_walker(irlist, {
+        progress = MIR::Passes::graph_walker(irlist, {
                                                          MIR::Passes::branch_pruning,
                                                          MIR::Passes::join_blocks,
                                                      });
@@ -69,7 +69,7 @@ TEST(join_blocks, nested_if_elif_else) {
         y = x
         z = y
         )EOF");
-    bool progress = MIR::Passes::block_walker(irlist, {
+    bool progress = MIR::Passes::graph_walker(irlist, {
                                                           MIR::Passes::branch_pruning,
                                                           MIR::Passes::join_blocks,
                                                       });
