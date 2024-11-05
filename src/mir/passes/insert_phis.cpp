@@ -8,13 +8,14 @@ namespace MIR::Passes {
 
 bool fixup_phis(std::shared_ptr<CFGNode> block) {
     bool progress = false;
-    for (auto it = block->instructions.begin(); it != block->instructions.end(); ++it) {
+    for (auto it = block->block->instructions.begin(); it != block->block->instructions.end();
+         ++it) {
         if (std::holds_alternative<Phi>(*it->obj_ptr)) {
             const auto & phi = std::get<Phi>(*it->obj_ptr);
             bool right = false;
             bool left = false;
             for (const auto & p : block->predecessors) {
-                for (const Instruction & i : p.lock()->instructions) {
+                for (const Instruction & i : p.lock()->block->instructions) {
                     const auto & var = i.var;
                     if (var.name == it->var.name) {
                         if (var.gvn == phi.left) {
@@ -36,8 +37,8 @@ bool fixup_phis(std::shared_ptr<CFGNode> block) {
                 progress = true;
                 auto id =
                     Instruction{Identifier{it->var.name, left ? phi.left : phi.right}, it->var};
-                it = block->instructions.erase(it);
-                it = block->instructions.emplace(it, std::move(id));
+                it = block->block->instructions.erase(it);
+                it = block->block->instructions.emplace(it, std::move(id));
                 continue;
             }
 
@@ -45,7 +46,7 @@ bool fixup_phis(std::shared_ptr<CFGNode> block) {
             // if one side was found, then the other is found that the first
             // found is dead code after the second, so we can ignore it and
             // treat the second one as the truth
-            for (auto it2 = block->instructions.begin(); it2 != it; ++it2) {
+            for (auto it2 = block->block->instructions.begin(); it2 != it; ++it2) {
                 if (it->var.name == it2->var.name) {
                     left = it2->var.gvn == phi.left;
                     right = it2->var.gvn == phi.right;
@@ -56,8 +57,8 @@ bool fixup_phis(std::shared_ptr<CFGNode> block) {
                 progress = true;
                 auto id =
                     Instruction{Identifier{it->var.name, left ? phi.left : phi.right}, it->var};
-                it = block->instructions.erase(it);
-                it = block->instructions.emplace(it, std::move(id));
+                it = block->block->instructions.erase(it);
+                it = block->block->instructions.emplace(it, std::move(id));
             }
         }
     }

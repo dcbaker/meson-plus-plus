@@ -39,7 +39,7 @@ bool emit_messages(MIR::CFGNode & block) {
         } else if (level == MIR::MessageLevel::DEBUG) {
             std::cout << Util::Log::bold("Debug information:") << std::endl;
         }
-        for (const auto & i : block.instructions) {
+        for (const auto & i : block.block->instructions) {
             if (std::holds_alternative<MIR::Message>(*i.obj_ptr)) {
                 const auto & m = std::get<MIR::Message>(*i.obj_ptr);
                 if (m.level == level) {

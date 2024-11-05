@@ -27,10 +27,10 @@ TEST(fixup_phi, simple) {
                                           MIR::Passes::fixup_phis,
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
     {
-        const auto & id_obj = irlist->instructions.front();
+        const auto & id_obj = irlist->block->instructions.front();
         ASSERT_EQ(id_obj.var.name, "x");
         ASSERT_EQ(id_obj.var.gvn, 2);
 
@@ -40,7 +40,7 @@ TEST(fixup_phi, simple) {
     }
 
     {
-        const auto & id_obj = irlist->instructions.back();
+        const auto & id_obj = irlist->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "x");
         ASSERT_EQ(id_obj.var.gvn, 3);
 
@@ -69,9 +69,9 @@ TEST(fixup_phi, three_branches) {
                                           MIR::Passes::fixup_phis,
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 3);
+    ASSERT_EQ(irlist->block->instructions.size(), 3);
 
-    auto it = irlist->instructions.begin();
+    auto it = irlist->block->instructions.begin();
 
     {
         const auto & id_obj = *it;
@@ -128,8 +128,8 @@ TEST(fixup_phi, nested_branches) {
     }
 
     ASSERT_TRUE(std::holds_alternative<std::monostate>(irlist->next));
-    ASSERT_EQ(irlist->instructions.size(), 4);
-    auto it = irlist->instructions.begin();
+    ASSERT_EQ(irlist->block->instructions.size(), 4);
+    auto it = irlist->block->instructions.begin();
 
     {
         const auto & id_obj = *it;

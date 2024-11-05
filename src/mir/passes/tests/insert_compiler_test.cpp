@@ -32,9 +32,9 @@ TEST(insert_compiler, simple) {
     auto irlist = lower("x = meson.get_compiler('cpp')");
     bool progress = MIR::Passes::insert_compilers(irlist, tc_map);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & e = irlist->instructions.front();
+    const auto & e = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Compiler>(*e.obj_ptr));
 
     const auto & c = std::get<MIR::Compiler>(*e.obj_ptr);

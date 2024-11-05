@@ -20,8 +20,8 @@ TEST(machine_lower, simple) {
                             MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 2);
-    const auto & r = irlist->instructions.back();
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
+    const auto & r = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::String>(*r.obj_ptr));
     ASSERT_EQ(std::get<MIR::String>(*r.obj_ptr).value, "x86_64");
 }
@@ -33,8 +33,8 @@ TEST(machine_lower, in_array) {
                             MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
-    const auto & r = irlist->instructions.front();
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    const auto & r = irlist->block->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::Array>(*r.obj_ptr));
     const auto & a = std::get<MIR::Array>(*r.obj_ptr).value;
@@ -51,8 +51,8 @@ TEST(machine_lower, in_function_args) {
                             MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
-    const auto & r = irlist->instructions.front();
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    const auto & r = irlist->block->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
     const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
@@ -69,7 +69,7 @@ TEST(machine_lower, in_condtion) {
                             MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 0);
+    ASSERT_EQ(irlist->block->instructions.size(), 0);
 
     ASSERT_TRUE(is_con(irlist->next));
     const auto & con = get_con(irlist->next);

@@ -23,9 +23,9 @@ TEST(insert_phi, simple) {
                                       });
 
     const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
-    ASSERT_EQ(fin->instructions.size(), 1);
+    ASSERT_EQ(fin->block->instructions.size(), 1);
 
-    MIR::Instruction instr = fin->instructions.front();
+    MIR::Instruction instr = fin->block->instructions.front();
     ASSERT_EQ(instr.var.name, "x");
     ASSERT_EQ(instr.var.gvn, 3); // because value_numbering will run again
 
@@ -50,9 +50,9 @@ TEST(insert_phi, three_branches) {
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
-    ASSERT_EQ(fin->instructions.size(), 2);
+    ASSERT_EQ(fin->block->instructions.size(), 2);
 
-    auto it = fin->instructions.begin();
+    auto it = fin->block->instructions.begin();
     EXPECT_EQ(it->var.name, "x");
     EXPECT_EQ(it->var.gvn, 4);
 
@@ -88,8 +88,8 @@ TEST(insert_phi, nested_branches) {
     {
         const auto & fin =
             get_bb(get_bb(get_con(get_bb(get_con(irlist->next)->if_true)->next)->if_true)->next);
-        ASSERT_EQ(fin->instructions.size(), 1);
-        const auto & it = fin->instructions.front();
+        ASSERT_EQ(fin->block->instructions.size(), 1);
+        const auto & it = fin->block->instructions.front();
         ASSERT_EQ(it.var.name, "x");
         ASSERT_EQ(it.var.gvn, 4);
 
@@ -101,8 +101,8 @@ TEST(insert_phi, nested_branches) {
 
     {
         const auto & fin = get_bb(get_con(irlist->next)->if_false);
-        ASSERT_EQ(fin->instructions.size(), 1);
-        const auto & it = fin->instructions.front();
+        ASSERT_EQ(fin->block->instructions.size(), 1);
+        const auto & it = fin->block->instructions.front();
         ASSERT_EQ(it.var.name, "x");
         ASSERT_EQ(it.var.gvn, 5);
 

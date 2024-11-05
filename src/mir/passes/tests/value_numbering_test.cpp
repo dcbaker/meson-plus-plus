@@ -16,8 +16,8 @@ TEST(value_numbering, simple) {
         )EOF");
     MIR::Passes::GlobalValueNumbering{}(irlist);
 
-    ASSERT_EQ(irlist->instructions.front().var.gvn, 1);
-    ASSERT_EQ(irlist->instructions.back().var.gvn, 2);
+    ASSERT_EQ(irlist->block->instructions.front().var.gvn, 1);
+    ASSERT_EQ(irlist->block->instructions.back().var.gvn, 2);
 }
 
 TEST(value_numbering, branching) {
@@ -32,14 +32,14 @@ TEST(value_numbering, branching) {
         )EOF");
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist->instructions.front().var.gvn, 1);
-    ASSERT_EQ(irlist->instructions.back().var.gvn, 2);
+    ASSERT_EQ(irlist->block->instructions.front().var.gvn, 1);
+    ASSERT_EQ(irlist->block->instructions.back().var.gvn, 2);
 
     const auto & bb1 = get_con(irlist->next)->if_false;
-    ASSERT_EQ(bb1->instructions.front().var.gvn, 3);
+    ASSERT_EQ(bb1->block->instructions.front().var.gvn, 3);
 
     const auto & bb2 = get_con(irlist->next)->if_true;
-    ASSERT_EQ(bb2->instructions.front().var.gvn, 4);
+    ASSERT_EQ(bb2->block->instructions.front().var.gvn, 4);
 }
 
 TEST(value_numbering, three_branch) {
@@ -55,15 +55,15 @@ TEST(value_numbering, three_branch) {
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & bb1 = get_con(irlist->next)->if_true;
-    EXPECT_EQ(bb1->instructions.front().var.gvn, 3);
+    EXPECT_EQ(bb1->block->instructions.front().var.gvn, 3);
 
     const auto & con2 = get_con(get_con(irlist->next)->if_false->next);
 
     const auto & bb2 = con2->if_false;
-    EXPECT_EQ(bb2->instructions.front().var.gvn, 1);
+    EXPECT_EQ(bb2->block->instructions.front().var.gvn, 1);
 
     const auto & bb3 = con2->if_true;
-    ASSERT_EQ(bb3->instructions.front().var.gvn, 2);
+    ASSERT_EQ(bb3->block->instructions.front().var.gvn, 2);
 }
 
 TEST(number_uses, simple) {
@@ -78,10 +78,10 @@ TEST(number_uses, simple) {
                                           MIR::Passes::GlobalValueNumbering{},
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
     {
-        const auto & num_obj = irlist->instructions.front();
+        const auto & num_obj = irlist->block->instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
         ASSERT_EQ(num_obj.var.gvn, 1);
 
@@ -91,7 +91,7 @@ TEST(number_uses, simple) {
     }
 
     {
-        const auto & id_obj = irlist->instructions.back();
+        const auto & id_obj = irlist->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -123,10 +123,10 @@ TEST(number_uses, with_phi) {
                                           MIR::Passes::fixup_phis,
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 3);
+    ASSERT_EQ(irlist->block->instructions.size(), 3);
 
     {
-        const auto & num_obj = irlist->instructions.front();
+        const auto & num_obj = irlist->block->instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
         ASSERT_EQ(num_obj.var.gvn, 2);
 
@@ -136,7 +136,7 @@ TEST(number_uses, with_phi) {
     }
 
     {
-        const auto & id_obj = irlist->instructions.back();
+        const auto & id_obj = irlist->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -162,15 +162,15 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
-    ASSERT_EQ(fin->instructions.size(), 2);
+    ASSERT_EQ(fin->block->instructions.size(), 2);
 
     {
-        const auto & phi_obj = fin->instructions.front();
+        const auto & phi_obj = fin->block->instructions.front();
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     }
 
     {
-        const auto & func_obj = fin->instructions.back();
+        const auto & func_obj = fin->block->instructions.back();
         ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
         const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
@@ -196,15 +196,15 @@ TEST(number_uses, with_phi_no_pruning) {
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
-    ASSERT_EQ(fin->instructions.size(), 2);
+    ASSERT_EQ(fin->block->instructions.size(), 2);
 
     {
-        const auto & phi_obj = fin->instructions.front();
+        const auto & phi_obj = fin->block->instructions.front();
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     }
 
     {
-        const auto & id_obj = fin->instructions.back();
+        const auto & id_obj = fin->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -226,10 +226,10 @@ TEST(number_uses, three_statements) {
     // get the state we want to test.
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist->instructions.size(), 3);
+    ASSERT_EQ(irlist->block->instructions.size(), 3);
 
     {
-        const auto & id_obj = irlist->instructions.back();
+        const auto & id_obj = irlist->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "z");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -251,10 +251,10 @@ TEST(number_uses, redefined_value) {
     // get the state we want to test.
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist->instructions.size(), 3);
+    ASSERT_EQ(irlist->block->instructions.size(), 3);
 
     {
-        const auto & id_obj = irlist->instructions.back();
+        const auto & id_obj = irlist->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 
@@ -276,10 +276,10 @@ TEST(number_uses, in_array) {
     // wrong thing
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist->instructions.size(), 3);
+    ASSERT_EQ(irlist->block->instructions.size(), 3);
 
     {
-        const auto & num_obj = irlist->instructions.front();
+        const auto & num_obj = irlist->block->instructions.front();
         ASSERT_EQ(num_obj.var.name, "x");
         ASSERT_EQ(num_obj.var.gvn, 1);
 
@@ -289,7 +289,7 @@ TEST(number_uses, in_array) {
     }
 
     {
-        const auto & arr_obj = irlist->instructions.back();
+        const auto & arr_obj = irlist->block->instructions.back();
         ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arr_obj.obj_ptr));
         const auto & arr = std::get<MIR::Array>(*arr_obj.obj_ptr);
 

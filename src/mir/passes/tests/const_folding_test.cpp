@@ -23,9 +23,9 @@ TEST(constant_folding, simple) {
                                           MIR::Passes::ConstantFolding{},
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 3);
+    ASSERT_EQ(irlist->block->instructions.size(), 3);
 
-    const auto & func_obj = irlist->instructions.back();
+    const auto & func_obj = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
     ASSERT_EQ(func.pos_args.size(), 1);
@@ -61,7 +61,7 @@ TEST(constant_folding, with_phi) {
                                           MIR::Passes::ConstantFolding{},
                                       });
 
-    auto it = irlist->instructions.begin();
+    auto it = irlist->block->instructions.begin();
 
     ASSERT_EQ(it->var.gvn, 2);
     ASSERT_EQ(it->var.name, "x");
@@ -122,7 +122,7 @@ TEST(constant_folding, three_statements) {
                                           MIR::Passes::ConstantFolding{},
                                       });
 
-    const auto & func_obj = irlist->instructions.back();
+    const auto & func_obj = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
     ASSERT_EQ(func.pos_args.size(), 1);
@@ -150,7 +150,7 @@ TEST(constant_folding, redefined_value) {
                                           MIR::Passes::ConstantFolding{},
                                       });
 
-    const auto & func_obj = irlist->instructions.back();
+    const auto & func_obj = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
     ASSERT_EQ(func.pos_args.size(), 1);
@@ -177,7 +177,7 @@ TEST(constant_folding, in_array) {
                                           MIR::Passes::ConstantFolding{},
                                       });
 
-    auto it = irlist->instructions.begin();
+    auto it = irlist->block->instructions.begin();
     {
         const auto & id_obj = *it;
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));

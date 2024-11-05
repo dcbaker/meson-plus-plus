@@ -588,6 +588,14 @@ using NextType = std::variant<std::monostate, std::unique_ptr<Condition>, std::s
 
 class CFGNode;
 
+class BasicBlock {
+  public:
+    BasicBlock() = default;
+
+    /// The instructions in this block
+    std::list<Instruction> instructions;
+};
+
 struct CFGComparitor {
     bool operator()(const std::weak_ptr<CFGNode> lhs, const std::weak_ptr<CFGNode> rhs) const;
     bool operator()(const std::shared_ptr<CFGNode> & lhs,
@@ -602,8 +610,8 @@ class CFGNode {
     CFGNode();
     CFGNode(std::unique_ptr<Condition> &&);
 
-    /// The instructions in this block
-    std::list<Instruction> instructions;
+    /// @brief The block instructions
+    std::unique_ptr<BasicBlock> block;
 
     /// Either nothing, a pointer to another CFGNode, or a pointer to a Condition
     NextType next;

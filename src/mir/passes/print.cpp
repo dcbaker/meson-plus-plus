@@ -24,7 +24,7 @@ void condition_printer(const Condition & cond, std::ofstream & stream) {
 void printer_impl(const CFGNode & block, std::ofstream & stream) {
     // Only print a given block once
     stream << "  CFGNode " << block.index << " {\n";
-    for (auto && i : block.instructions) {
+    for (auto && i : block.block->instructions) {
         stream << "    " << i.print() << "\n";
     }
     std::visit(

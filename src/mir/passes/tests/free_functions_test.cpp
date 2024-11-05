@@ -20,9 +20,9 @@ TEST(files, simple) {
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Array>(*r.obj_ptr));
 
     const auto & a = std::get<MIR::Array>(*r.obj_ptr).value;
@@ -44,9 +44,9 @@ TEST(executable, simple) {
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Executable>(*r.obj_ptr));
 
     const auto & e = std::get<MIR::Executable>(*r.obj_ptr);
@@ -71,9 +71,9 @@ TEST(static_library, simple) {
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::StaticLibrary>(*r.obj_ptr));
 
     const auto & e = std::get<MIR::StaticLibrary>(*r.obj_ptr);
@@ -109,9 +109,9 @@ TEST(messages, simple) {
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*r.obj_ptr));
 
     const auto & m = std::get<MIR::Message>(*r.obj_ptr);
@@ -125,9 +125,9 @@ TEST(messages, two_args) {
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*r.obj_ptr));
 
     const auto & m = std::get<MIR::Message>(*r.obj_ptr);
@@ -141,9 +141,9 @@ TEST(assert, simple) {
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*r.obj_ptr));
 
     const auto & m = std::get<MIR::Message>(*r.obj_ptr);
@@ -174,9 +174,9 @@ TEST(find_program, found) {
                 });
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
-    const auto & r = irlist->instructions.back();
+    const auto & r = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*r.obj_ptr));
 
     const auto & m = std::get<MIR::Boolean>(*r.obj_ptr);
@@ -188,9 +188,9 @@ TEST(not, simple) {
     const MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.back();
+    const auto & r = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*r.obj_ptr));
 
     const auto & m = std::get<MIR::Boolean>(*r.obj_ptr);
@@ -202,9 +202,9 @@ TEST(neg, simple) {
     const MIR::State::Persistant pstate = make_pstate();
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.back();
+    const auto & r = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::Number>(*r.obj_ptr));
 
     const auto & m = std::get<MIR::Number>(*r.obj_ptr);
@@ -219,9 +219,9 @@ TEST(custom_target, simple) {
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::CustomTarget>(*r.obj_ptr));
 
     const auto & ct = std::get<MIR::CustomTarget>(*r.obj_ptr);
@@ -235,7 +235,7 @@ static inline bool test_equality(const std::string & expr) {
     const MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::lower_free_functions(irlist, pstate);
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     const auto & value = std::get<MIR::Boolean>(*r.obj_ptr);
     return value.value;
 }
@@ -262,9 +262,9 @@ TEST(version_compare, simple) {
 
     bool progress = MIR::Passes::lower_string_objects(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*r.obj_ptr));
 
     const auto & ct = std::get<MIR::Boolean>(*r.obj_ptr);
@@ -281,9 +281,9 @@ TEST(declare_dependency, string_include_dirs) {
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Dependency>(*r.obj_ptr));
 
     const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
@@ -301,9 +301,9 @@ TEST(declare_dependency, compile_args) {
 
     bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Dependency>(*r.obj_ptr));
 
     const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
@@ -325,9 +325,9 @@ TEST(declare_dependency, recursive) {
     while (progress) {
         progress = MIR::Passes::lower_free_functions(irlist, pstate);
     }
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Dependency>(*r.obj_ptr));
 
     const auto & d = std::get<MIR::Dependency>(*r.obj_ptr);
@@ -347,7 +347,7 @@ TEST(add_project_arguments, simple) {
     const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
 
-    const auto & ir = irlist->instructions.front();
+    const auto & ir = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
 
     using MIR::Toolchain::Language;
@@ -374,7 +374,7 @@ TEST(add_project_link_arguments, simple) {
     const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
 
-    const auto & ir = irlist->instructions.front();
+    const auto & ir = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
 
     using MIR::Toolchain::Language;
@@ -401,7 +401,7 @@ TEST(add_global_arguments, simple) {
     const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
 
-    const auto & ir = irlist->instructions.front();
+    const auto & ir = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
 
     using MIR::Toolchain::Language;
@@ -428,7 +428,7 @@ TEST(add_global_link_arguments, simple) {
     const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
     ASSERT_TRUE(progress);
 
-    const auto & ir = irlist->instructions.front();
+    const auto & ir = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
 
     using MIR::Toolchain::Language;
@@ -471,8 +471,8 @@ TEST(add_global_link_arguments, combine) {
         ASSERT_TRUE(progress);
     }
 
-    ASSERT_EQ(irlist->instructions.size(), 1);
-    const auto & ir = irlist->instructions.front();
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    const auto & ir = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
 
     using MIR::Toolchain::Language;
@@ -522,8 +522,8 @@ TEST(add_global_link_arguments, combine_complex) {
         ASSERT_TRUE(progress);
     }
 
-    ASSERT_EQ(irlist->instructions.size(), 1);
-    const auto & ir = irlist->instructions.front();
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    const auto & ir = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::AddArguments>(*ir.obj_ptr));
 
     using MIR::Toolchain::Language;
@@ -573,5 +573,5 @@ TEST(add_global_link_arguments, dont_combine) {
         EXPECT_FALSE(progress);
     }
 
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 }

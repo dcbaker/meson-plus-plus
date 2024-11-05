@@ -89,12 +89,12 @@ bool instruction_walker(CFGNode & block, const std::vector<MutationCallback> & f
                         const std::vector<ReplacementCallback> & rc) {
     bool progress = false;
 
-    for (auto it = block.instructions.begin(); it != block.instructions.end(); ++it) {
+    for (auto it = block.block->instructions.begin(); it != block.block->instructions.end(); ++it) {
         for (const auto & cb : rc) {
             auto rt = cb(*it);
             if (rt.has_value()) {
-                it = block.instructions.erase(it);
-                it = block.instructions.insert(it, std::move(rt.value()));
+                it = block.block->instructions.erase(it);
+                it = block.block->instructions.insert(it, std::move(rt.value()));
                 progress |= true;
             }
         }

@@ -10,7 +10,7 @@ namespace MIR::Passes {
 bool delete_unreachable(std::shared_ptr<CFGNode> block) {
     // If we see an Message object that is an error, that block will not return,
     // break it's next connection
-    for (auto itr = block->instructions.begin(); itr != block->instructions.end(); ++itr) {
+    for (auto itr = block->block->instructions.begin(); itr != block->block->instructions.end(); ++itr) {
         if (auto * m = std::get_if<Message>(itr->obj_ptr.get())) {
             if (m->level == MessageLevel::ERROR) {
                 bool progress = false;
@@ -34,11 +34,11 @@ bool delete_unreachable(std::shared_ptr<CFGNode> block) {
                     block->next = std::monostate{};
                 }
 
-                if (++itr != block->instructions.end()) {
+                if (++itr != block->block->instructions.end()) {
                     // Delete all instructions after this message, they don't actually exists
                     // This may delete additional errors, but we can't be sure
                     // they're not spurious or caused by the first error
-                    block->instructions.erase(itr, block->instructions.end());
+                    block->block->instructions.erase(itr, block->block->instructions.end());
                     progress = true;
                 }
 

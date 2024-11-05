@@ -15,9 +15,9 @@ TEST(flatten, basic) {
     bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
     const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
@@ -37,9 +37,9 @@ TEST(flatten, already_flat) {
     bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_FALSE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
     const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
@@ -59,9 +59,9 @@ TEST(flatten, mixed_args) {
     bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
     const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
@@ -80,9 +80,9 @@ TEST(flatten, keyword_mixed) {
     bool progress = MIR::Passes::flatten(irlist, pstate);
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & r = irlist->instructions.front();
+    const auto & r = irlist->block->instructions.front();
 
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
     const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
