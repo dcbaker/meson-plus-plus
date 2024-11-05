@@ -753,7 +753,7 @@ bool all_args_reduced(const std::vector<Instruction> & pos_args,
 }
 
 void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
-    const auto & obj = block->instructions.front();
+    const auto & obj = block->block->instructions.front();
 
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         throw Util::Exceptions::MesonException{
@@ -812,7 +812,7 @@ void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
 
     // Remove the valid project() call so we don't accidently find it later when
     // looking for invalid function calls.
-    block->instructions.pop_front();
+    block->block->instructions.pop_front();
 }
 
 bool lower_free_functions(std::shared_ptr<CFGNode> block, const State::Persistant & pstate) {

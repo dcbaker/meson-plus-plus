@@ -215,7 +215,7 @@ struct StatementLowering {
                const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
         assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
-        list->instructions.emplace_back(std::visit(l, stmt->expr));
+        list->block->instructions.emplace_back(std::visit(l, stmt->expr));
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
@@ -329,7 +329,7 @@ struct StatementLowering {
         }
         value.var.name = name_ptr->value;
 
-        list->instructions.emplace_back(std::move(value));
+        list->block->instructions.emplace_back(std::move(value));
         assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };

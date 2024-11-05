@@ -27,9 +27,9 @@ TEST(lower, after_files) {
     // MIR::Passes::lower_project(irlist, pstate);
     MIR::lower(irlist, pstate);
 
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & ct_obj = irlist->instructions.front();
+    const auto & ct_obj = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::CustomTarget>(*ct_obj.obj_ptr));
 }
 

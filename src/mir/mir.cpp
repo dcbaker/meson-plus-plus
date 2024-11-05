@@ -130,9 +130,11 @@ std::string Phi::print() const {
     return "Phi { left = " + to_string(left) + "; right = " + to_string(right) + " }";
 }
 
-CFGNode::CFGNode() : next{std::monostate{}}, index{++bb_index} {};
+CFGNode::CFGNode()
+    : block{std::make_unique<BasicBlock>()}, next{std::monostate{}}, index{++bb_index} {};
 
-CFGNode::CFGNode(std::unique_ptr<Condition> && con) : next{std::move(con)}, index{++bb_index} {};
+CFGNode::CFGNode(std::unique_ptr<Condition> && con)
+    : block{std::make_unique<BasicBlock>()}, next{std::move(con)}, index{++bb_index} {};
 
 bool CFGNode::operator<(const CFGNode & other) const { return index < other.index; }
 

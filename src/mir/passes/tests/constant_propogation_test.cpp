@@ -29,14 +29,14 @@ TEST(constant_propogation, phi_should_not_propogate) {
 
     const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
 
-    ASSERT_EQ(fin->instructions.size(), 2);
+    ASSERT_EQ(fin->block->instructions.size(), 2);
 
-    const auto & phi_obj = fin->instructions.front();
+    const auto & phi_obj = fin->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     ASSERT_EQ(phi_obj.var.name, "x");
     ASSERT_EQ(phi_obj.var.gvn, 3);
 
-    const auto & func_obj = fin->instructions.back();
+    const auto & func_obj = fin->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
@@ -68,9 +68,9 @@ TEST(constant_propogation, function_arguments) {
                                           MIR::Passes::ConstantPropagation{},
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
-    const auto & func_obj = irlist->instructions.back();
+    const auto & func_obj = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
@@ -101,9 +101,9 @@ TEST(constant_propogation, array) {
                                           MIR::Passes::ConstantPropagation{},
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
-    const auto & func_obj = irlist->instructions.back();
+    const auto & func_obj = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::Array>(*func_obj.obj_ptr));
     const auto & func = std::get<MIR::Array>(*func_obj.obj_ptr);
 
@@ -142,12 +142,12 @@ TEST(constant_propogation, method_holder) {
                                                      std::ref(printer),
                                                  });
     ASSERT_TRUE(progress) << "constant folding/propagation did not make progress";
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
-    const auto & front = irlist->instructions.front();
+    const auto & front = irlist->block->instructions.front();
     EXPECT_TRUE(std::holds_alternative<MIR::Program>(*front.obj_ptr));
 
-    const auto & back = irlist->instructions.back();
+    const auto & back = irlist->block->instructions.back();
     EXPECT_TRUE(std::holds_alternative<MIR::FunctionCall>(*back.obj_ptr));
 
     const auto & f = std::get<MIR::FunctionCall>(*back.obj_ptr);
@@ -177,12 +177,12 @@ TEST(constant_propogation, into_function_call) {
                 });
 
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
-    const auto & front = irlist->instructions.front();
+    const auto & front = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Program>(*front.obj_ptr));
 
-    const auto & back = irlist->instructions.back();
+    const auto & back = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*back.obj_ptr));
 
     const auto & f = std::get<MIR::FunctionCall>(*back.obj_ptr);

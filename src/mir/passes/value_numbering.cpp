@@ -59,7 +59,7 @@ bool GlobalValueNumbering::insert_phis(CFGNode & b) {
         }
     }
 
-    b.instructions.splice(b.instructions.begin(), phis);
+    b.block->instructions.splice(b.block->instructions.begin(), phis);
 
     return true;
 };

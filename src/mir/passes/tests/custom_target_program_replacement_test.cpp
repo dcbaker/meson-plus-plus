@@ -15,9 +15,9 @@ TEST(custom_target_program_replacement, string) {
 
     MIR::Passes::graph_walker(irlist, {MIR::Passes::custom_target_program_replacement});
 
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & fc_obj = irlist->instructions.front();
+    const auto & fc_obj = irlist->block->instructions.front();
     const auto & fc = std::get<MIR::FunctionCall>(*fc_obj.obj_ptr);
 
     const auto & commands_o =
@@ -42,9 +42,9 @@ TEST(custom_target_program_replacement, array) {
 
     MIR::Passes::graph_walker(irlist, {MIR::Passes::custom_target_program_replacement});
 
-    ASSERT_EQ(irlist->instructions.size(), 1);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
-    const auto & fc_obj = irlist->instructions.front();
+    const auto & fc_obj = irlist->block->instructions.front();
     const auto & fc = std::get<MIR::FunctionCall>(*fc_obj.obj_ptr);
 
     const auto & commands_o =

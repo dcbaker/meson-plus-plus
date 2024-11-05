@@ -215,7 +215,7 @@ std::tuple<std::vector<Target>, std::vector<Common::Test>>
 mir_to_fir(const MIR::CFGNode & block, const MIR::State::Persistant & pstate) {
     State state{};
     // Process the instructions that alter state
-    for (const auto & i : block.instructions) {
+    for (const auto & i : block.block->instructions) {
         if (std::holds_alternative<MIR::AddArguments>(*i.obj_ptr)) {
             // TODO: actually handle global vs per-project
             const auto & argmap = std::get<MIR::AddArguments>(*i.obj_ptr);
@@ -230,7 +230,7 @@ mir_to_fir(const MIR::CFGNode & block, const MIR::State::Persistant & pstate) {
     std::vector<Target> rules{};
     std::vector<Common::Test> tests{};
 
-    for (const auto & i : block.instructions) {
+    for (const auto & i : block.block->instructions) {
         if (std::holds_alternative<MIR::Executable>(*i.obj_ptr)) {
             auto r = target_rule(std::get<MIR::Executable>(*i.obj_ptr), pstate, state);
             std::move(r.begin(), r.end(), std::back_inserter(rules));

@@ -25,14 +25,14 @@ TEST(unreachable_code, clear_dead_instructions) {
                                           MIR::Passes::delete_unreachable,
                                       });
 
-    ASSERT_EQ(irlist->instructions.size(), 2);
+    ASSERT_EQ(irlist->block->instructions.size(), 2);
 
-    const auto & msg_obj = irlist->instructions.front();
+    const auto & msg_obj = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*msg_obj.obj_ptr));
     const auto & msg = std::get<MIR::Message>(*msg_obj.obj_ptr);
     ASSERT_EQ(msg.level, MIR::MessageLevel::MESSAGE);
 
-    const auto & err_obj = irlist->instructions.back();
+    const auto & err_obj = irlist->block->instructions.back();
     ASSERT_TRUE(std::holds_alternative<MIR::Message>(*err_obj.obj_ptr));
     const auto & err = std::get<MIR::Message>(*err_obj.obj_ptr);
     ASSERT_EQ(err.level, MIR::MessageLevel::ERROR);
@@ -58,7 +58,7 @@ TEST(unreachable_code, clear_next) {
                                       });
 
     const auto & branch = *get_bb(get_con(irlist->next)->if_true);
-    ASSERT_EQ(branch.instructions.size(), 1);
+    ASSERT_EQ(branch.block->instructions.size(), 1);
     ASSERT_TRUE(std::holds_alternative<std::monostate>(branch.next));
 
     const auto & fin = *get_bb(get_bb(get_con(irlist->next)->if_false)->next);

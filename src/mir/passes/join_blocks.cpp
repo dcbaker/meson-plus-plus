@@ -23,7 +23,7 @@ bool join_blocks_impl(std::shared_ptr<CFGNode> block) {
 
     // Move the instructions of the next block into this one, then the condition
     // if neceissry, then make the next block the next->next block.
-    block->instructions.splice(block->instructions.end(), next->instructions);
+    block->block->instructions.splice(block->block->instructions.end(), next->block->instructions);
     auto nn = std::move(next->next);
     if (std::holds_alternative<std::shared_ptr<CFGNode>>(nn)) {
         const auto & b = std::get<std::shared_ptr<CFGNode>>(nn);
