@@ -63,46 +63,46 @@ TEST(constant_folding, with_phi) {
 
     auto it = irlist->block->instructions.begin();
 
-    ASSERT_EQ(it->var.gvn, 2);
-    ASSERT_EQ(it->var.name, "x");
+    EXPECT_EQ(it->var.gvn, 1);
+    EXPECT_EQ(it->var.name, "x");
 
     const auto & num_obj = *(it);
     ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
     const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
-    ASSERT_EQ(num.value, 9);
+    EXPECT_EQ(num.value, 9);
 
     // This was the Phi
     const auto & phi_obj = *(++it);
-    ASSERT_EQ(it->var.name, "x");
-    ASSERT_EQ(it->var.gvn, 3);
+    EXPECT_EQ(it->var.name, "x");
+    EXPECT_EQ(it->var.gvn, 3);
 
     ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*phi_obj.obj_ptr));
     const auto & phi = std::get<MIR::Identifier>(*phi_obj.obj_ptr);
-    ASSERT_EQ(phi.value, "x");
-    ASSERT_EQ(phi.version, 2);
+    EXPECT_EQ(phi.value, "x");
+    EXPECT_EQ(phi.version, 1);
 
     {
         const auto & id_obj = *(++it);
-        ASSERT_EQ(it->var.name, "y");
-        ASSERT_EQ(it->var.gvn, 1);
+        EXPECT_EQ(it->var.name, "y");
+        EXPECT_EQ(it->var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 2);
+        EXPECT_EQ(id.value, "x");
+        EXPECT_EQ(id.version, 1);
     }
 
     {
         const auto & func_obj = *(++it);
         ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
         const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
-        ASSERT_EQ(func.pos_args.size(), 1);
+        EXPECT_EQ(func.pos_args.size(), 1);
 
         const auto & arg_obj = func.pos_args.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
+        EXPECT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 2);
+        EXPECT_EQ(id.value, "x");
+        EXPECT_EQ(id.version, 1);
     }
 }
 

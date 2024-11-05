@@ -132,11 +132,7 @@ std::string Phi::print() const {
     return "Phi { left = " + to_string(left) + "; right = " + to_string(right) + " }";
 }
 
-CFGNode::CFGNode()
-    : block{std::make_unique<BasicBlock>()}, next{std::monostate{}}, index{++bb_index} {};
-
-CFGNode::CFGNode(std::unique_ptr<Condition> && con)
-    : block{std::make_unique<BasicBlock>()}, next{std::move(con)}, index{++bb_index} {};
+CFGNode::CFGNode() : block{std::make_unique<BasicBlock>()}, index{++bb_index} {};
 
 bool CFGNode::operator<(const CFGNode & other) const { return index < other.index; }
 
@@ -151,12 +147,6 @@ bool CFGComparitor::operator()(const std::shared_ptr<CFGNode> & lhs,
 }
 
 CFG::CFG(std::shared_ptr<CFGNode> n) : root{n} {};
-
-Condition::Condition(Instruction && o)
-    : condition{std::move(o)}, if_true{std::make_shared<CFGNode>()}, if_false{nullptr} {};
-
-Condition::Condition(Instruction && o, std::shared_ptr<CFGNode> s)
-    : condition{std::move(o)}, if_true{std::move(s)}, if_false{nullptr} {};
 
 Compiler::Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc) : toolchain{std::move(tc)} {};
 
@@ -414,7 +404,7 @@ Jump::Jump(std::shared_ptr<CFGNode> t, std::shared_ptr<Instruction> p)
     : target{std::move(t)}, predicate{std::move(p)} {};
 
 std::string Jump::print() const {
-    return "jump = { target = { " + std::to_string(target->index) + " }, predicate = { " +
+    return "jump { target = { " + std::to_string(target->index) + " }; predicate = { " +
            (predicate == nullptr ? "always" : predicate->print()) + " } }";
 }
 
@@ -426,7 +416,7 @@ std::string Branch::print() const {
     for (auto && [i, dest] : branches) {
         ss << "branch " << i.print() << " = { " << dest->index << " }, ";
     }
-    ss << " }" << std::endl;
+    ss << " }";
     return ss.str();
 }
 

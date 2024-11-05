@@ -40,7 +40,7 @@ TEST(graph_walker, predecessors_first) {
         return false;
     };
 
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         a = 0
         if true
             a = 1
@@ -50,16 +50,12 @@ TEST(graph_walker, predecessors_first) {
         a = 3
         )EOF");
 
-    MIR::Passes::graph_walker(irlist, {tester});
+    MIR::Passes::graph_walker(node, {tester});
     ASSERT_EQ(seen.size(), 4);
-    EXPECT_EQ(seen[0], irlist->index);
-
-    auto & con = *std::get<std::unique_ptr<MIR::Condition>>(irlist->next);
-    auto i = con.if_false.get()->index;
-    EXPECT_TRUE(seen[1] == i || seen[2] == i);
-    i = con.if_true.get()->index;
-    EXPECT_TRUE(seen[1] == i || seen[2] == i);
-
-    auto & last = *std::get<std::shared_ptr<MIR::CFGNode>>(con.if_true.get()->next);
-    ASSERT_EQ(seen[3], last.index);
+    EXPECT_EQ(seen[0], node->index);
+    auto s = node->successors.begin();
+    EXPECT_EQ(seen[1], (*s)->index);
+    EXPECT_EQ(seen[2], (*++s)->index);
+    const auto & last = std::get<MIR::Jump>(*(*s)->block->instructions.back().obj_ptr).target;
+    EXPECT_EQ(seen[3], last->index);
 }

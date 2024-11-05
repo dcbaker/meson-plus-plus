@@ -10,18 +10,33 @@
 #include "test_utils.hpp"
 
 TEST(join_blocks, simple) {
-    auto irlist = lower("x = 7\nif true\n x = 8\nelse\n x = 9\nendif\ny = x");
-    bool progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::branch_pruning});
-    ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    auto irlist = lower(R"EOF(
+        x = 7
+        if true
+          x = 8
+        else
+          x = 9
+        endif
+        y = x
+        )EOF");
 
-    ASSERT_TRUE(is_bb(irlist->next));
-    const auto & next = get_bb(irlist->next);
-    ASSERT_EQ(next->block->instructions.size(), 1);
+    MIR::Passes::Printer printer{};
+    MIR::Passes::graph_walker(irlist, {std::ref(printer)});
+    printer.increment();
 
-    progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::join_blocks});
-    ASSERT_TRUE(progress);
-    ASSERT_TRUE(is_empty(irlist->next));
+    bool progress = MIR::Passes::graph_walker(irlist, {
+                                                          std::ref(printer),
+                                                          MIR::Passes::branch_pruning,
+                                                          std::ref(printer),
+                                                          MIR::Passes::join_blocks,
+                                                            [&printer](std::shared_ptr<MIR::CFGNode> c) {
+                                                                printer(c);
+                                                                printer.increment();
+                                                                return false;
+                                                            },
+                                                      });
+    EXPECT_TRUE(progress);
+    EXPECT_TRUE(irlist->successors.empty());
     ASSERT_EQ(irlist->block->instructions.size(), 3);
 }
 
@@ -38,12 +53,10 @@ TEST(join_blocks, nested_if) {
         )EOF");
     bool progress = true;
     while (progress) {
-        progress = MIR::Passes::graph_walker(irlist, {
-                                                         MIR::Passes::branch_pruning,
-                                                         MIR::Passes::join_blocks,
-                                                     });
+        progress = MIR::Passes::graph_walker(
+            irlist, {MIR::Passes::branch_pruning, MIR::Passes::join_blocks});
     }
-    ASSERT_TRUE(std::holds_alternative<std::monostate>(irlist->next));
+    ASSERT_TRUE(irlist->successors.empty());
     ASSERT_EQ(irlist->block->instructions.size(), 2);
 }
 
@@ -76,11 +89,11 @@ TEST(join_blocks, nested_if_elif_else) {
     ASSERT_TRUE(progress);
 
     // Check that the predecessors of the final block are correct
-    const auto & con1 = get_con(irlist->next);
-    const auto & bb1 = con1->if_true;
+    const auto & arm = std::get<1>(
+        std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr).branches.at(0));
+    const auto & fin = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
 
-    const auto & fin = get_bb(bb1->next);
     ASSERT_EQ(fin->block->instructions.size(), 2);
-    ASSERT_TRUE(fin->predecessors.count(bb1));
+    ASSERT_TRUE(fin->predecessors.count(arm));
     ASSERT_EQ(fin->predecessors.size(), 2);
 }

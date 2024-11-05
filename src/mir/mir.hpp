@@ -580,49 +580,6 @@ class Branch {
     std::string print() const;
 };
 
-/**
- * A think that creates A conditional web.
- *
- * This works such that `if_true` will always point to a Basic block, and
- * `if_false` will either point to andother Condition or nothing. This means
- * that our web will always have a form like:
- *
- *    O --\
- *  /      \
- * O   O --\\
- *  \ /     \\
- *   O   O - O
- *    \ /   /
- *     O   /
- *      \ /
- *       O
- *
- * Because the false condition will itself be a condition.
- *
- * if_false is initialized to nullptr, and one needs to check for that.
- */
-class Condition {
-  public:
-    Condition(Instruction && o);
-    Condition(Instruction && o, std::shared_ptr<CFGNode> s);
-
-    /// An object that is the condition
-    Instruction condition;
-
-    /// The block to go to if the condition is true
-    std::shared_ptr<CFGNode> if_true;
-
-    /// The block to go to if the condition is false
-    std::shared_ptr<CFGNode> if_false;
-
-    /// Print a human readable version of this
-    std::string print() const;
-};
-
-using NextType = std::variant<std::monostate, std::unique_ptr<Condition>, std::shared_ptr<CFGNode>>;
-
-class CFGNode;
-
 class BasicBlock {
   public:
     BasicBlock() = default;
@@ -643,13 +600,9 @@ struct CFGComparitor {
 class CFGNode {
   public:
     CFGNode();
-    CFGNode(std::unique_ptr<Condition> &&);
 
     /// @brief The block instructions
     std::unique_ptr<BasicBlock> block;
-
-    /// Either nothing, a pointer to another CFGNode, or a pointer to a Condition
-    NextType next;
 
     /// All predecessors of this block
     std::set<std::weak_ptr<CFGNode>, CFGComparitor> predecessors;

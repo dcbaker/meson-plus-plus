@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2024 Intel Corporation
 
 #include <filesystem>
 
@@ -208,107 +208,84 @@ struct StatementLowering {
     std::shared_ptr<CFGNode>
     operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
-        assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
         list->block->instructions.emplace_back(std::visit(l, stmt->expr));
-        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
 
     std::shared_ptr<CFGNode>
-    operator()(std::shared_ptr<CFGNode> list,
+    operator()(std::shared_ptr<CFGNode> head,
                const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
-        assert(list != nullptr);
+        assert(head);
         const ExpressionLowering l{pstate};
 
-        // This is the block that all exists from the conditional web will flow
-        // back into if they don't exit. I think this is safe even for cases where
-        // The blocks don't really rejoin, as this will just be empty and that's fine.
-        //
-        // This has the added bonus of giving us a place to put phi nodes?
-        auto next_block = std::make_shared<CFGNode>();
+        // TODO: we could optimize here by deciding if we have any elif/else
+        // statements, and using a predicated jump?
 
-        // The last block that was encountered, we need this to add the next block to it.
-        std::shared_ptr<CFGNode> last_block;
+        // We will create a branch node, which will be placed at the end of the
+        // head node, this will, in turn, link to all of the subsequent nodes,
+        // which will return to a newly created tail node.
+        auto tail = std::make_shared<CFGNode>();
+        MIR::Branch branch{};
 
-        // Get the value of the coindition itself (`if <condition>\n`)
-        assert(std::holds_alternative<std::monostate>(list->next));
-        list->next = std::make_unique<Condition>(std::visit(l, stmt->ifblock.condition));
+        {
+            auto if_node = std::make_shared<CFGNode>();
+            link_nodes(head, if_node);
+            branch.branches.emplace_back(std::visit(l, stmt->ifblock.condition), if_node);
+            for (auto && i : stmt->ifblock.block->statements) {
+                if_node =
+                    std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
+            }
 
-        auto * cur = std::get<std::unique_ptr<Condition>>(list->next).get();
-
-        last_block = cur->if_true;
-        link_nodes(list, last_block);
-
-        // Walk over the statements, adding them to the if_true branch.
-        for (const auto & i : stmt->ifblock.block->statements) {
-            last_block = std::visit(
-                [&](const auto & a) {
-                    assert(cur != nullptr);
-                    return this->operator()(last_block, a);
-                },
-                i);
+            // Finally, insert a jump from the last block reached by the if
+            // pointing to our tail block.
+            if_node->block->instructions.emplace_back(Jump(tail));
+            link_nodes(if_node, tail);
         }
 
-        // We shouldn't have a condition here, this is where we wnat to put our next target
-        assert(std::holds_alternative<std::monostate>(last_block->next));
-        last_block->next = next_block;
-        link_nodes(last_block, next_block);
-
-        // for each elif branch create a new condition in the `else` of the
-        // Condition, then assign the condition to the `if_true`. Then go down
-        // the `else` of that new block for the next `elif`
         if (!stmt->efblock.empty()) {
             for (const auto & el : stmt->efblock) {
-                cur->if_false = std::make_shared<CFGNode>(
-                    std::make_unique<Condition>(std::visit(l, el.condition)));
-                link_nodes(list, cur->if_false);
-                cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
-                last_block = cur->if_true;
-
-                for (const auto & i : el.block->statements) {
-                    last_block = std::visit(
-                        [&](const auto & a) { return this->operator()(last_block, a); }, i);
+                auto if_node = std::make_shared<CFGNode>();
+                link_nodes(head, if_node);
+                branch.branches.emplace_back(std::visit(l, el.condition), if_node);
+                for (auto && i : el.block->statements) {
+                    if_node =
+                        std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
                 }
-
-                assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
-                last_block->next = next_block;
-                link_nodes(last_block, next_block);
+                // Finally, insert a jump from the last block reached by the if
+                // pointing to our tail block.
+                if_node->block->instructions.emplace_back(Jump(tail));
+                link_nodes(if_node, tail);
             }
         }
 
-        // Finally, handle an else block.
-        if (stmt->eblock.block != nullptr) {
-            assert(cur->if_false == nullptr);
-            cur->if_false = std::make_shared<CFGNode>();
-            last_block = cur->if_false;
-            link_nodes(list, last_block);
-            for (const auto & i : stmt->eblock.block->statements) {
-                last_block =
-                    std::visit([&](const auto & a) { return this->operator()(last_block, a); }, i);
+        if (stmt->eblock.block) {
+            auto if_node = std::make_shared<CFGNode>();
+            link_nodes(head, if_node);
+            branch.branches.emplace_back(Instruction{Boolean{true}}, if_node);
+            for (auto && i : stmt->eblock.block->statements) {
+                if_node =
+                    std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
             }
-            assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
-            last_block->next = next_block;
-            link_nodes(last_block, next_block);
+
+            // Finally, insert a jump from the last block reached by the if
+            // pointing to our tail block.
+            if_node->block->instructions.emplace_back(Jump(tail));
+            link_nodes(if_node, tail);
         } else {
-            // If we don't have an else, create a false one by putting hte next
-            // block in it. this means taht if we don't go down any of the
-            // branches that we proceed on correctly
-            assert(cur->if_false == nullptr);
-            cur->if_false = next_block;
-            link_nodes(list, next_block);
+            // This case there's an implicit else block, to jump to the tail
+            branch.branches.emplace_back(Instruction{Boolean{true}}, tail);
+            link_nodes(head, tail);
         }
+        head->block->instructions.insert(head->block->instructions.end(),
+                                         Instruction{std::move(branch)});
 
-        assert(std::holds_alternative<std::monostate>(next_block->next));
-        // Return the raw pointer, which is fine because we're not giving the
-        // caller ownership of the pointer, the other basic blocks are the owners.
-        return next_block;
+        return tail;
     };
 
     std::shared_ptr<CFGNode>
     operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
-        assert(std::holds_alternative<std::monostate>(list->next));
         const ExpressionLowering l{pstate};
         auto target = std::visit(l, stmt->lhs);
         auto value = std::visit(l, stmt->rhs);
@@ -325,7 +302,6 @@ struct StatementLowering {
         value.var.name = name_ptr->value;
 
         list->block->instructions.emplace_back(std::move(value));
-        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
 
@@ -333,18 +309,15 @@ struct StatementLowering {
     std::shared_ptr<CFGNode>
     operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
-        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
     std::shared_ptr<CFGNode> operator()(std::shared_ptr<CFGNode> list,
                                         const std::unique_ptr<Frontend::AST::Break> & stmt) const {
-        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
     std::shared_ptr<CFGNode>
     operator()(std::shared_ptr<CFGNode> list,
                const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
-        assert(std::holds_alternative<std::monostate>(list->next));
         return list;
     };
 };

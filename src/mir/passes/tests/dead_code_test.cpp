@@ -38,7 +38,7 @@ TEST(unreachable_code, clear_dead_instructions) {
     ASSERT_EQ(err.level, MIR::MessageLevel::ERROR);
 }
 
-TEST(unreachable_code, clear_next) {
+TEST(unreachable_code, no_jump_after_error) {
     auto irlist = lower(R"EOF(
         if some_var
             error('foo')
@@ -57,10 +57,15 @@ TEST(unreachable_code, clear_next) {
                                           MIR::Passes::delete_unreachable,
                                       });
 
-    const auto & branch = *get_bb(get_con(irlist->next)->if_true);
-    ASSERT_EQ(branch.block->instructions.size(), 1);
-    ASSERT_TRUE(std::holds_alternative<std::monostate>(branch.next));
+    EXPECT_EQ(irlist->successors.size(), 2);
 
-    const auto & fin = *get_bb(get_bb(get_con(irlist->next)->if_false)->next);
-    ASSERT_EQ(fin.predecessors.size(), 1);
+    const auto & branch = std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr);
+    const auto & dead_arm = std::get<1>(branch.branches.at(0));
+    EXPECT_TRUE(dead_arm->successors.empty());
+
+    const auto & live_arm = std::get<1>(branch.branches.at(1));
+    const auto & tail = std::get<MIR::Jump>(*live_arm->block->instructions.back().obj_ptr).target;
+
+    EXPECT_EQ(tail->predecessors.size(), 1);
+    ASSERT_NE(tail->predecessors.find(live_arm), tail->predecessors.end());
 }

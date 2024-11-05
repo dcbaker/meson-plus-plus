@@ -9,40 +9,27 @@
 #include "test_utils.hpp"
 
 TEST(branch_pruning, simple) {
-    auto irlist = lower("x = 7\nif true\n x = 8\nendif\n");
-    bool progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::branch_pruning});
-    ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
-
-    ASSERT_TRUE(is_bb(irlist->next));
-    const auto & next = get_bb(irlist->next);
-    ASSERT_FALSE(is_con(next->next));
-    ASSERT_EQ(next->block->instructions.size(), 1);
-}
-
-TEST(branch_pruning, next_block) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         x = 7
         if true
           x = 8
         endif
-        y = x
         )EOF");
-    bool progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::graph_walker(node, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
-    ASSERT_TRUE(is_bb(irlist->next));
+    ASSERT_EQ(node->block->instructions.size(), 2);
+    EXPECT_EQ(node->successors.size(), 1);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
 
-    const auto & next = get_bb(irlist->next);
-    ASSERT_EQ(next->block->instructions.size(), 1);
-    ASSERT_EQ(next->predecessors.size(), 1);
-    ASSERT_TRUE(next->predecessors.count(irlist));
-
-    ASSERT_EQ(get_bb(next->next)->predecessors.count(next), 1);
+    const auto & jump_i = node->block->instructions.back();
+    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*jump_i.obj_ptr));
+    const auto & target = std::get<MIR::Jump>(*jump_i.obj_ptr).target;
+    ASSERT_TRUE(node->successors.find(target) != node->successors.end());
+    ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
 }
 
 TEST(branch_pruning, if_else) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         x = 7
         if true
           x = 8
@@ -50,21 +37,23 @@ TEST(branch_pruning, if_else) {
           x = 9
         endif
         )EOF");
-    bool progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::branch_pruning});
-
+    bool progress = MIR::Passes::graph_walker(node, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    ASSERT_EQ(node->block->instructions.size(), 2);
+    EXPECT_EQ(node->successors.size(), 1);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
 
-    ASSERT_TRUE(is_bb(irlist->next));
-    const auto & next = get_bb(irlist->next);
-    ASSERT_EQ(next->block->instructions.size(), 1);
+    const auto & jump_i = node->block->instructions.back();
+    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*jump_i.obj_ptr));
+    const auto & target = std::get<MIR::Jump>(*jump_i.obj_ptr).target;
+    ASSERT_TRUE(node->successors.find(target) != node->successors.end());
+    ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
 
-    ASSERT_TRUE(is_bb(next->next));
-    ASSERT_TRUE(get_bb(next->next)->block->instructions.empty());
+    ASSERT_EQ(std::get<MIR::Number>(*target->block->instructions.front().obj_ptr).value, 8);
 }
 
 TEST(branch_pruning, if_false) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         x = 7
         if false
           x = 8
@@ -73,19 +62,17 @@ TEST(branch_pruning, if_false) {
           y = 2
         endif
         )EOF");
-    bool progress = MIR::Passes::graph_walker(irlist, {MIR::Passes::branch_pruning});
+    bool progress = MIR::Passes::graph_walker(node, {MIR::Passes::branch_pruning});
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
+    ASSERT_EQ(node->block->instructions.size(), 2);
+    EXPECT_EQ(node->successors.size(), 1);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
 
-    ASSERT_TRUE(is_bb(irlist->next));
-    const auto & next = get_bb(irlist->next);
-    ASSERT_EQ(next->block->instructions.size(), 2);
+    const auto & jump_i = node->block->instructions.back();
+    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*jump_i.obj_ptr));
+    const auto & target = std::get<MIR::Jump>(*jump_i.obj_ptr).target;
+    ASSERT_TRUE(node->successors.find(target) != node->successors.end());
+    ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
 
-    const auto & first = std::get<MIR::Number>(*next->block->instructions.front().obj_ptr);
-    ASSERT_EQ(first.value, 9);
-    ASSERT_EQ(next->block->instructions.front().var.name, "x");
-
-    const auto & last = std::get<MIR::Number>(*next->block->instructions.back().obj_ptr);
-    ASSERT_EQ(last.value, 2);
-    ASSERT_EQ(next->block->instructions.back().var.name, "y");
+    ASSERT_EQ(std::get<MIR::Number>(*target->block->instructions.front().obj_ptr).value, 9);
 }
