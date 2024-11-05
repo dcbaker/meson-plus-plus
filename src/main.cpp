@@ -67,16 +67,16 @@ int configure(const Options::ConfigureOptions & opts) {
     MIR::State::Persistant pstate{opts.sourcedir, opts.builddir, opts.program};
 
     // Create IR from the AST, then run our lowering passes on it
-    auto irlist = MIR::lower_ast(block, pstate);
-    MIR::Passes::lower_project(irlist, pstate);
-    MIR::lower(irlist, pstate);
+    MIR::CFG irlist = MIR::lower_ast(block, pstate);
+    MIR::Passes::lower_project(irlist.root, pstate);
+    MIR::lower(irlist.root, pstate);
 
-    const bool errors = emit_messages(*irlist);
+    const bool errors = emit_messages(*irlist.root);
     if (errors) {
         throw Util::Exceptions::MesonException("Configure failed with errors.");
     }
 
-    Backends::Ninja::generate(*irlist, pstate);
+    Backends::Ninja::generate(*irlist.root, pstate);
 
     return 0;
 };

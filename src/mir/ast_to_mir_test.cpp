@@ -23,7 +23,7 @@ std::shared_ptr<MIR::CFGNode> lower(const std::string & in) {
     auto block = parse(in);
     const MIR::State::Persistant pstate{"foo/src", "foo/build", ""};
     auto ir = MIR::lower_ast(block, pstate);
-    return ir;
+    return ir.root;
 }
 
 inline bool is_bb(const MIR::NextType & next) {
