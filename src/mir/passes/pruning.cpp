@@ -29,16 +29,17 @@ bool branch_pruning_impl(std::shared_ptr<CFGNode> ir) {
     // next and condition, otherwise move the `else` branch to be the main condition, and
     // continue
     const bool & con_v = std::get<Boolean>(*con.condition.obj_ptr).value;
-    std::shared_ptr<CFGNode> next;
+    std::shared_ptr<CFGNode> next, remove;
     if (con_v) {
         assert(con.if_true != nullptr);
         next = con.if_true;
-        todo.emplace_back(con.if_false);
+        remove = con.if_false;
     } else {
         assert(con.if_false != nullptr);
         next = con.if_false;
-        todo.emplace_back(con.if_true);
+        remove = con.if_true;
     }
+    todo.emplace_back(remove);
 
     // When we prune this, we need to all remove it from any successor blocks
     // predecessors' so that we dont reference a dangling pointer
@@ -80,6 +81,7 @@ bool branch_pruning_impl(std::shared_ptr<CFGNode> ir) {
     }
 
     next->predecessors = {ir};
+    ir->successors.erase(remove);
     ir->next = next;
 
     return true;

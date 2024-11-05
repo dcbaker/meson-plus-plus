@@ -417,12 +417,24 @@ std::string Jump::print() const {
            (predicate == nullptr ? "always" : predicate->print()) + " } }";
 }
 
-void link_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
+void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
     successor->predecessors.emplace(predecessor);
     predecessor->successors.emplace(successor);
 }
 
-void unlink_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
+void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
+    // If the successor only has one parent it will be freed. When this happens
+    // any blocks that consider it a predecessor will an expired weak_ptr.
+    //
+    // In order to avoid that situation, we look at the successor, and if it has
+    // only one predecessor (us), then we recursively unlink it down the chain
+    // as long as that is true.
+    if (successor->predecessors.size() == 1) {
+        for (auto && ss : successor->successors) {
+            unlink_nodes(successor, ss);
+        }
+    }
+
     successor->predecessors.erase(predecessor);
     predecessor->successors.erase(successor);
 }

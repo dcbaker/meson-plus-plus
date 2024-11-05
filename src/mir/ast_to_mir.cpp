@@ -238,7 +238,7 @@ struct StatementLowering {
         auto * cur = std::get<std::unique_ptr<Condition>>(list->next).get();
 
         last_block = cur->if_true;
-        link_blocks(list, last_block);
+        link_nodes(list, last_block);
 
         // Walk over the statements, adding them to the if_true branch.
         for (const auto & i : stmt->ifblock.block->statements) {
@@ -253,7 +253,7 @@ struct StatementLowering {
         // We shouldn't have a condition here, this is where we wnat to put our next target
         assert(std::holds_alternative<std::monostate>(last_block->next));
         last_block->next = next_block;
-        link_blocks(last_block, next_block);
+        link_nodes(last_block, next_block);
 
         // for each elif branch create a new condition in the `else` of the
         // Condition, then assign the condition to the `if_true`. Then go down
@@ -262,7 +262,7 @@ struct StatementLowering {
             for (const auto & el : stmt->efblock) {
                 cur->if_false = std::make_shared<CFGNode>(
                     std::make_unique<Condition>(std::visit(l, el.condition)));
-                link_blocks(list, cur->if_false);
+                link_nodes(list, cur->if_false);
                 cur = std::get<std::unique_ptr<Condition>>(cur->if_false->next).get();
                 last_block = cur->if_true;
 
@@ -273,7 +273,7 @@ struct StatementLowering {
 
                 assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
                 last_block->next = next_block;
-                link_blocks(last_block, next_block);
+                link_nodes(last_block, next_block);
             }
         }
 
@@ -282,21 +282,21 @@ struct StatementLowering {
             assert(cur->if_false == nullptr);
             cur->if_false = std::make_shared<CFGNode>();
             last_block = cur->if_false;
-            link_blocks(list, last_block);
+            link_nodes(list, last_block);
             for (const auto & i : stmt->eblock.block->statements) {
                 last_block =
                     std::visit([&](const auto & a) { return this->operator()(last_block, a); }, i);
             }
             assert(!std::holds_alternative<std::unique_ptr<Condition>>(last_block->next));
             last_block->next = next_block;
-            link_blocks(last_block, next_block);
+            link_nodes(last_block, next_block);
         } else {
             // If we don't have an else, create a false one by putting hte next
             // block in it. this means taht if we don't go down any of the
             // branches that we proceed on correctly
             assert(cur->if_false == nullptr);
             cur->if_false = next_block;
-            link_blocks(list, next_block);
+            link_nodes(list, next_block);
         }
 
         assert(std::holds_alternative<std::monostate>(next_block->next));
