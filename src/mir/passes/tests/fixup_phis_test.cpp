@@ -31,22 +31,22 @@ TEST(fixup_phi, simple) {
 
     {
         const auto & id_obj = irlist->block->instructions.front();
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 2);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, 9);
+        EXPECT_EQ(id.value, 9);
     }
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 3);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 3);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.version, 2);
+        EXPECT_EQ(id.version, 1);
     }
 }
 
@@ -76,7 +76,7 @@ TEST(fixup_phi, three_branches) {
     {
         const auto & id_obj = *it;
         EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 3);
+        EXPECT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
@@ -90,7 +90,7 @@ TEST(fixup_phi, three_branches) {
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.version, 3);
+        EXPECT_EQ(id.version, 1);
     }
 
     {
@@ -118,62 +118,63 @@ TEST(fixup_phi, nested_branches) {
     std::unordered_map<std::string, uint32_t> data{};
 
     bool progress = true;
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+
     while (progress) {
         progress = MIR::Passes::graph_walker(irlist, {
-                                                         MIR::Passes::GlobalValueNumbering{},
                                                          MIR::Passes::branch_pruning,
                                                          MIR::Passes::join_blocks,
                                                          MIR::Passes::fixup_phis,
                                                      });
     }
 
-    ASSERT_TRUE(std::holds_alternative<std::monostate>(irlist->next));
+    ASSERT_TRUE(irlist->successors.empty());
     ASSERT_EQ(irlist->block->instructions.size(), 4);
     auto it = irlist->block->instructions.begin();
 
     {
         const auto & id_obj = *it;
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, 9);
+        EXPECT_EQ(id.value, 9);
     }
 
     ++it;
 
     {
         const auto & id_obj = *it;
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 3);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 2);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, 11);
+        EXPECT_EQ(id.value, 11);
     }
 
     ++it;
 
     {
         const auto & id_obj = *it;
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 4);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 4);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.version, 3);
+        EXPECT_EQ(id.version, 2);
     }
 
     ++it;
 
     {
         const auto & id_obj = *it;
-        ASSERT_EQ(id_obj.var.name, "x");
-        ASSERT_EQ(id_obj.var.gvn, 5);
+        EXPECT_EQ(id_obj.var.name, "x");
+        EXPECT_EQ(id_obj.var.gvn, 5);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.version, 4);
+        EXPECT_EQ(id.version, 4);
     }
 }

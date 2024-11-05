@@ -26,53 +26,46 @@ bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback 
 }
 
 class BlockIterator {
-  public:
-    BlockIterator(std::shared_ptr<CFGNode> c) : current{c} { seen.emplace(current); };
-    std::shared_ptr<CFGNode> get() { return current; }
-
-    bool next() {
-        if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
-            const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
-            add_todo(con.if_true);
-            add_todo(con.if_false);
-        } else if (std::holds_alternative<std::shared_ptr<CFGNode>>(current->next)) {
-            auto bb = std::get<std::shared_ptr<CFGNode>>(current->next);
-            add_todo(bb);
-        }
-
-        while (!todo.empty()) {
-            current = todo.back().lock();
-            todo.pop_back();
-            if (current) {
-                assert(!block_worked(current));
-                seen.emplace(current);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool empty() const { return current == nullptr && todo.empty(); }
-
   private:
     std::shared_ptr<CFGNode> current;
-    std::vector<std::weak_ptr<CFGNode>> todo;
-    std::set<std::weak_ptr<CFGNode>, CFGComparitor> seen;
+    std::deque<std::weak_ptr<CFGNode>> todo;
+    std::set<uint32_t> seen;
 
     void add_todo(std::shared_ptr<CFGNode> b) {
-        if (b != nullptr && !block_worked(b) && all_predecessors_seen(b)) {
-            todo.emplace_back(b);
+        if (b && !block_worked(b->index) && all_predecessors_seen(b)) {
+            todo.emplace_front(b);
         }
     }
 
     bool all_predecessors_seen(const std::shared_ptr<CFGNode> b) const {
         return std::all_of(
             b->predecessors.begin(), b->predecessors.end(),
-            [this](const std::weak_ptr<CFGNode> p) { return this->block_worked(p.lock()); });
+            [this](const std::weak_ptr<CFGNode> p) { return this->block_worked(p.lock()->index); });
     }
 
-    bool block_worked(const std::shared_ptr<CFGNode> b) const { return seen.find(b) != seen.end(); }
+    bool block_worked(uint32_t b) const { return seen.find(b) != seen.end(); }
+
+  public:
+    BlockIterator(std::shared_ptr<CFGNode> c) { add_todo(c); };
+
+    std::shared_ptr<CFGNode> get() {
+        if (current) {
+            for (auto && c : current->successors) {
+                add_todo(c);
+            }
+        }
+
+        while (!todo.empty()) {
+            current = todo.back().lock();
+            todo.pop_back();
+            if (current) {
+                assert(!block_worked(current->index));
+                seen.emplace(current->index);
+                return current;
+            }
+        }
+        return nullptr;
+    }
 };
 
 } // namespace
@@ -211,15 +204,8 @@ bool function_walker(CFGNode & block, const ReplacementCallback & cb) {
         },
         {cb});
 
-    // Check if we have a condition, and try to lower that as well.
-    if (std::holds_alternative<std::unique_ptr<Condition>>(block.next)) {
-        auto & con = std::get<std::unique_ptr<Condition>>(block.next);
-        auto new_value = cb(con->condition);
-        if (new_value.has_value()) {
-            con->condition = new_value.value();
-            progress |= true;
-        }
-    }
+    // TODO: conditions where previously handled here
+    // What to do about predicated jumps?
 
     return progress;
 };
@@ -236,11 +222,8 @@ bool function_walker(CFGNode & block, const MutationCallback & cb) {
         },
         {});
 
-    // Check if we have a condition, and try to lower that as well.
-    if (std::holds_alternative<std::unique_ptr<Condition>>(block.next)) {
-        auto & con = std::get<std::unique_ptr<Condition>>(block.next);
-        progress |= cb(con->condition);
-    }
+    // TODO: conditions where previously handled here
+    // What to do about predicated jumps?
 
     return progress;
 };
@@ -249,13 +232,11 @@ bool graph_walker(std::shared_ptr<CFGNode> root, const std::vector<BlockWalkerCb
     bool progress = false;
 
     BlockIterator iter{root};
-    do {
-        std::shared_ptr<CFGNode> current = iter.get();
-        assert(current != nullptr);
+    while (std::shared_ptr<CFGNode> current = iter.get()) {
         for (const auto & cb : callbacks) {
             progress |= cb(current);
         }
-    } while (iter.next());
+    }
 
     return progress;
 }

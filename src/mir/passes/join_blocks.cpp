@@ -3,40 +3,39 @@
 
 #include "passes.hpp"
 
+#include <cassert>
+
 namespace MIR::Passes {
 
 namespace {
 
 bool join_blocks_impl(std::shared_ptr<CFGNode> block) {
-    // If there isn't a next block, then we obviously can't do anything
-    if (!std::holds_alternative<std::shared_ptr<CFGNode>>(block->next)) {
+    // If we don't have exactly one successor we can't join any blocks together
+    if (block->successors.size() != 1) {
         return false;
     }
 
-    auto & next = std::get<std::shared_ptr<CFGNode>>(block->next);
-
     // If the next block has more than one parent we can't join them yet,
     // otherwise the other parent would end up with a pointer to an empty block
+    std::shared_ptr<CFGNode> next = *block->successors.begin();
     if (next->predecessors.size() > 1) {
         return false;
     }
 
-    // Move the instructions of the next block into this one, then the condition
-    // if neceissry, then make the next block the next->next block.
-    block->block->instructions.splice(block->block->instructions.end(), next->block->instructions);
-    auto nn = std::move(next->next);
-    if (std::holds_alternative<std::shared_ptr<CFGNode>>(nn)) {
-        const auto & b = std::get<std::shared_ptr<CFGNode>>(nn);
-        unlink_nodes(next, b);
+    // Remove the jump block
+    // TODO: could be a branch block?
+    assert(std::holds_alternative<Jump>(*block->block->instructions.back().obj_ptr));
+    block->block->instructions.pop_back();
+
+    // Move the predecessors and successors from the next block to the curren
+    // tone
+    for (auto && b : next->successors) {
         link_nodes(block, b);
-    } else if (std::holds_alternative<std::unique_ptr<Condition>>(nn)) {
-        const auto & con = std::get<std::unique_ptr<Condition>>(nn);
-        for (const auto & c : {con->if_true, con->if_false}) {
-            unlink_nodes(next, c);
-            link_nodes(block, c);
-        }
+        unlink_nodes(next, b);
     }
-    block->next = std::move(nn);
+    // Move the instructions
+    block->block->instructions.splice(block->block->instructions.end(), next->block->instructions);
+    unlink_nodes(block, next);
 
     return true;
 }

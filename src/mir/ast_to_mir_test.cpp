@@ -26,22 +26,6 @@ std::shared_ptr<MIR::CFGNode> lower(const std::string & in) {
     return ir.root;
 }
 
-inline bool is_bb(const MIR::NextType & next) {
-    return std::holds_alternative<std::shared_ptr<MIR::CFGNode>>(next);
-}
-
-inline std::shared_ptr<MIR::CFGNode> get_bb(const MIR::NextType & next) {
-    return std::get<std::shared_ptr<MIR::CFGNode>>(next);
-}
-
-inline bool is_con(const MIR::NextType & next) {
-    return std::holds_alternative<std::unique_ptr<MIR::Condition>>(next);
-}
-
-inline const std::unique_ptr<MIR::Condition> & get_con(const MIR::NextType & next) {
-    return std::get<std::unique_ptr<MIR::Condition>>(next);
-}
-
 } // namespace
 
 TEST(ast_to_ir, number) {
@@ -203,6 +187,7 @@ TEST(ast_to_ir, function_keyword_arguments_only) {
 
 TEST(ast_to_ir, function_both_arguments) {
     auto irlist = lower("both_args(1, a, a : 1)");
+
     ASSERT_EQ(irlist->block->instructions.size(), 1);
     const auto & obj = irlist->block->instructions.front();
     ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
@@ -222,53 +207,77 @@ TEST(ast_to_ir, function_both_arguments) {
 }
 
 TEST(ast_to_ir, if_only) {
-    auto irlist = lower("if true\n 7\nendif\n");
-    ASSERT_TRUE(is_con(irlist->next));
-    auto const & con = get_con(irlist->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
+    auto node = lower("if true\n 7\nendif\n");
 
-    auto const & if_true = con->if_true->block->instructions;
-    ASSERT_EQ(if_true.size(), 1);
+    ASSERT_EQ(node->block->instructions.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::Branch>(*node->block->instructions.back().obj_ptr));
+    ASSERT_EQ(node->successors.size(), 2);
+    ASSERT_TRUE(node->predecessors.empty());
 
-    auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 7);
+    auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    ASSERT_EQ(branch.branches.size(), 2);
+
+    auto & con = std::get<MIR::Boolean>(*std::get<0>(branch.branches.at(0)).obj_ptr);
+    ASSERT_EQ(con.value, true);
+
+    auto target = std::get<1>(branch.branches.at(0));
+    ASSERT_EQ(target->successors.size(), 1);
+    ASSERT_TRUE(node->successors.find(target) != node->successors.end());
+    ASSERT_EQ(target->predecessors.size(), 1);
+    ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
+
+    ASSERT_EQ(target->block->instructions.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*target->block->instructions.front().obj_ptr));
+    ASSERT_EQ(std::get<MIR::Number>(*target->block->instructions.front().obj_ptr).value, 7);
+    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*target->block->instructions.back().obj_ptr));
+
+    auto fin = std::get<1>(branch.branches.at(1));
+    ASSERT_EQ(fin->predecessors.size(), 2);
+    ASSERT_TRUE(fin->successors.empty());
+    ASSERT_TRUE(fin->block->instructions.empty());
+    ASSERT_TRUE(fin->predecessors.find(node) != fin->predecessors.end());
+    ASSERT_TRUE(fin->predecessors.find(target) != fin->predecessors.end());
+    ASSERT_TRUE(node->successors.find(fin) != node->successors.end());
+    ASSERT_TRUE(target->successors.find(fin) != target->successors.end());
 }
 
 TEST(ast_to_ir, if_branch_join) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         if true
           7
         endif
         8
         )EOF");
-    ASSERT_TRUE(is_con(irlist->next));
-    auto const & con = get_con(irlist->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
-    auto const & if_true = con->if_true->block->instructions;
-    ASSERT_EQ(if_true.size(), 1);
+    EXPECT_EQ(node->successors.size(), 2);
+    EXPECT_EQ(node->block->instructions.size(), 1);
 
-    auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 7);
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.front().obj_ptr);
+    EXPECT_EQ(branch.branches.size(), 2);
 
-    ASSERT_NE(con->if_false, nullptr);
+    const auto & if_node = std::get<1>(branch.branches.at(0));
+    EXPECT_EQ(if_node->predecessors.size(), 1);
+    EXPECT_TRUE(node->successors.find(if_node) != node->successors.end());
+    EXPECT_TRUE(if_node->predecessors.find(node) != if_node->predecessors.end());
+    EXPECT_EQ(if_node->successors.size(), 1);
+    EXPECT_EQ(if_node->block->instructions.size(), 2);
+    EXPECT_EQ(std::get<MIR::Number>(*if_node->block->instructions.front().obj_ptr).value, 7);
 
-    auto const & block2 = con->if_false;
-    ASSERT_NE(block2, nullptr);
-    auto const & val2 = block2->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val2.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val2.obj_ptr).value, 8);
-
-    ASSERT_EQ(get_bb(con->if_true->next), block2);
+    const auto & fin_node = std::get<1>(branch.branches.at(1));
+    EXPECT_EQ(fin_node->predecessors.size(), 2);
+    EXPECT_TRUE(node->successors.find(fin_node) != node->successors.end());
+    EXPECT_TRUE(fin_node->predecessors.find(node) != fin_node->predecessors.end());
+    EXPECT_TRUE(fin_node->predecessors.find(if_node) != fin_node->predecessors.end());
+    EXPECT_EQ(fin_node->successors.size(), 0);
+    EXPECT_EQ(fin_node->block->instructions.size(), 1);
+    EXPECT_EQ(std::get<MIR::Number>(*fin_node->block->instructions.front().obj_ptr).value, 8);
 }
 
 TEST(ast_to_ir, if_else_more) {
-    // Here we're testing that the jupm value of both branches are the same, and
+    // Here we're testing that the jump value of both branches are the same, and
     // not nullptr. We should get one instruction in each branch, pluse one
     // instructino in the before and after blocks.
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         y = 0
         if true
           x = 7
@@ -278,23 +287,52 @@ TEST(ast_to_ir, if_else_more) {
         y = x
         )EOF");
 
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
-    ASSERT_TRUE(is_con(irlist->next));
-    auto const & con = get_con(irlist->next);
+    EXPECT_EQ(node->predecessors.size(), 0);
+    EXPECT_EQ(node->successors.size(), 2);
 
-    ASSERT_EQ(con->if_true->block->instructions.size(), 1);
-    ASSERT_TRUE(con->if_true->predecessors.count(irlist));
-    ASSERT_EQ(con->if_false->block->instructions.size(), 1);
-    ASSERT_TRUE(con->if_false->predecessors.count(irlist));
+    EXPECT_EQ(node->block->instructions.size(), 2);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::Branch>(*node->block->instructions.back().obj_ptr));
 
-    ASSERT_TRUE(is_bb(con->if_true->next));
-    ASSERT_EQ(get_bb(con->if_true->next), get_bb(con->if_false->next));
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    EXPECT_EQ(branch.branches.size(), 2);
 
-    ASSERT_EQ(get_bb(con->if_true->next)->block->instructions.size(), 1);
+    const auto & if_node = std::get<1>(branch.branches.at(0));
+    const auto & el_node = std::get<1>(branch.branches.at(1));
+
+    EXPECT_TRUE(node->successors.find(if_node) != node->successors.end());
+    EXPECT_TRUE(node->successors.find(el_node) != node->successors.end());
+    EXPECT_EQ(if_node->predecessors.size(), 1);
+    EXPECT_TRUE(if_node->predecessors.find(node) != if_node->predecessors.end());
+    EXPECT_EQ(el_node->predecessors.size(), 1);
+    EXPECT_TRUE(el_node->predecessors.find(node) != el_node->predecessors.end());
+
+    EXPECT_EQ(if_node->block->instructions.size(), 2);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*if_node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::Jump>(*if_node->block->instructions.back().obj_ptr));
+    EXPECT_EQ(if_node->block->instructions.size(), 2);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*if_node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::Jump>(*if_node->block->instructions.back().obj_ptr));
+    EXPECT_EQ(std::get<MIR::Number>(*if_node->block->instructions.front().obj_ptr).value, 7);
+
+    EXPECT_EQ(el_node->block->instructions.size(), 2);
+    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*el_node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::Jump>(*el_node->block->instructions.back().obj_ptr));
+    EXPECT_EQ(std::get<MIR::Number>(*el_node->block->instructions.front().obj_ptr).value, 8);
+
+    auto & tail = std::get<MIR::Jump>(*el_node->block->instructions.back().obj_ptr).target;
+    EXPECT_EQ(tail->predecessors.size(), 2);
+    EXPECT_EQ(tail->successors.size(), 0);
+    EXPECT_TRUE(tail->predecessors.find(if_node) != tail->predecessors.end());
+    EXPECT_TRUE(tail->predecessors.find(el_node) != tail->predecessors.end());
+    EXPECT_TRUE(if_node->successors.find(tail) != if_node->successors.end());
+    EXPECT_TRUE(el_node->successors.find(tail) != el_node->successors.end());
+    EXPECT_EQ(tail->block->instructions.size(), 1);
+    EXPECT_EQ(std::get<MIR::Identifier>(*tail->block->instructions.front().obj_ptr).value, "x");
 }
 
 TEST(ast_to_ir, if_elif_else_more) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         y = 0     # 0
         if true
           x = 7   # 1
@@ -305,48 +343,59 @@ TEST(ast_to_ir, if_elif_else_more) {
         endif
         y = x     # 4
         )EOF");
-    // block 0
-    ASSERT_EQ(irlist->block->instructions.size(), 1);
-    ASSERT_TRUE(is_con(irlist->next));
 
-    // block 1
-    auto const & con = get_con(irlist->next);
-    ASSERT_EQ(con->if_true->block->instructions.size(), 1);
-    ASSERT_TRUE(is_bb(con->if_true->next));
+    EXPECT_EQ(node->block->instructions.size(), 2);
+    EXPECT_EQ(node->successors.size(), 3);
+    EXPECT_EQ(node->predecessors.size(), 0);
 
-    // block 2
-    ASSERT_TRUE(is_con(con->if_false->next));
-    auto const & con1 = get_con(con->if_false->next);
-    ASSERT_EQ(con1->if_true->block->instructions.size(), 1);
-    ASSERT_TRUE(is_bb(con1->if_true->next));
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
 
-    // block 3
-    auto const & else_block = con1->if_false;
-    ASSERT_EQ(else_block->block->instructions.size(), 1);
-    ASSERT_TRUE(is_bb(else_block->next));
+    const auto & sub = std::get<1>(branch.branches.at(0));
+    const auto & tail = std::get<MIR::Jump>(*sub->block->instructions.back().obj_ptr).target;
+    EXPECT_EQ(tail->block->instructions.size(), 1);
+    ASSERT_EQ(std::get<MIR::Identifier>(*tail->block->instructions.front().obj_ptr).value, "x");
+    EXPECT_EQ(tail->successors.size(), 0);
+    EXPECT_EQ(tail->predecessors.size(), 3);
+
+    for (auto && [_, s] : branch.branches) {
+        EXPECT_EQ(s->predecessors.size(), 1);
+        EXPECT_NE(s->predecessors.find(node), s->predecessors.end());
+        EXPECT_NE(node->successors.find(s), node->successors.end());
+        EXPECT_EQ(s->successors.size(), 1);
+        EXPECT_NE(s->successors.find(tail), s->successors.end());
+        EXPECT_NE(tail->predecessors.find(s), tail->predecessors.end());
+    }
 }
 
 TEST(ast_to_ir, if_else) {
-    auto irlist = lower("if true\n 7\nelse\n8\nendif\n");
-    ASSERT_TRUE(is_con(irlist->next));
-    auto const & con = get_con(irlist->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
+    auto node = lower("if true\n 7\nelse\n8\nendif\n");
 
-    auto const & if_true = con->if_true->block->instructions;
-    ASSERT_EQ(if_true.size(), 1);
-    auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 7);
+    EXPECT_EQ(node->block->instructions.size(), 1);
+    EXPECT_EQ(node->successors.size(), 2);
+    EXPECT_EQ(node->predecessors.size(), 0);
 
-    auto const & if_false = con->if_false->block->instructions;
-    ASSERT_EQ(if_false.size(), 1);
-    auto const & val2 = if_false.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val2.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val2.obj_ptr).value, 8);
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
+
+    const auto & sub = std::get<1>(branch.branches.at(0));
+    const auto & tail = std::get<MIR::Jump>(*sub->block->instructions.back().obj_ptr).target;
+    EXPECT_EQ(tail->block->instructions.size(), 0);
+    EXPECT_EQ(tail->successors.size(), 0);
+    EXPECT_EQ(tail->predecessors.size(), 2);
+
+    for (auto && [_, s] : branch.branches) {
+        EXPECT_EQ(s->predecessors.size(), 1);
+        EXPECT_NE(s->predecessors.find(node), s->predecessors.end());
+        EXPECT_NE(node->successors.find(s), node->successors.end());
+        EXPECT_EQ(s->successors.size(), 1);
+        EXPECT_NE(s->successors.find(tail), s->successors.end());
+        EXPECT_NE(tail->predecessors.find(s), tail->predecessors.end());
+    }
 }
 
 TEST(ast_to_ir, if_elif) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         if true
           7
         elif false
@@ -355,44 +404,33 @@ TEST(ast_to_ir, if_elif) {
           9
         endif
         )EOF");
-    ASSERT_TRUE(is_con(irlist->next));
-    auto const & con = get_con(irlist->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
+    EXPECT_EQ(node->block->instructions.size(), 1);
+    EXPECT_EQ(node->successors.size(), 4);
+    EXPECT_EQ(node->predecessors.size(), 0);
 
-    {
-        auto const & if_true = con->if_true->block->instructions;
-        ASSERT_EQ(if_true.size(), 1);
-        auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 7);
-    }
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
 
-    ASSERT_NE(con->if_false, nullptr);
-    auto const & elcon = get_con(con->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*elcon->condition.obj_ptr));
+    const auto & tail = std::get<1>(branch.branches.back());
+    EXPECT_EQ(tail->block->instructions.size(), 0);
+    EXPECT_EQ(tail->successors.size(), 0);
+    EXPECT_EQ(tail->predecessors.size(), 4);
 
-    {
-        auto const & if_true = elcon->if_true->block->instructions;
-        ASSERT_EQ(if_true.size(), 1);
-        auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 8);
-    }
-
-    auto const & elcon2 = get_con(elcon->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*elcon2->condition.obj_ptr));
-
-    {
-        auto const & if_true = elcon2->if_true->block->instructions;
-        ASSERT_EQ(if_true.size(), 1);
-        auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 9);
+    for (auto && [_, s] : branch.branches) {
+        if (s->index == tail->index) {
+            continue;
+        }
+        EXPECT_EQ(s->predecessors.size(), 1);
+        EXPECT_NE(s->predecessors.find(node), s->predecessors.end());
+        EXPECT_NE(node->successors.find(s), node->successors.end());
+        EXPECT_EQ(s->successors.size(), 1);
+        EXPECT_NE(s->successors.find(tail), s->successors.end());
+        EXPECT_NE(tail->predecessors.find(s), tail->predecessors.end());
     }
 }
 
 TEST(ast_to_ir, if_elif_else) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
                    # 0
         if true
             7      # 1
@@ -404,41 +442,32 @@ TEST(ast_to_ir, if_elif_else) {
         22         # 4
     )EOF");
 
-    // block 0
-    ASSERT_TRUE(is_con(irlist->next));
-    auto const & con = get_con(irlist->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
+    EXPECT_EQ(node->block->instructions.size(), 1);
+    EXPECT_EQ(node->successors.size(), 3);
+    EXPECT_EQ(node->predecessors.size(), 0);
 
-    // block 1
-    {
-        auto const & if_true = con->if_true->block->instructions;
-        ASSERT_EQ(if_true.size(), 1);
-        auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 7);
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
+
+    const auto & sub = std::get<1>(branch.branches.at(0));
+    const auto & tail = std::get<MIR::Jump>(*sub->block->instructions.back().obj_ptr).target;
+    EXPECT_EQ(tail->block->instructions.size(), 1);
+    EXPECT_EQ(std::get<MIR::Number>(*tail->block->instructions.front().obj_ptr).value, 22);
+    EXPECT_EQ(tail->successors.size(), 0);
+    EXPECT_EQ(tail->predecessors.size(), 3);
+
+    for (auto && [_, s] : branch.branches) {
+        EXPECT_EQ(s->predecessors.size(), 1);
+        EXPECT_NE(s->predecessors.find(node), s->predecessors.end());
+        EXPECT_NE(node->successors.find(s), node->successors.end());
+        EXPECT_EQ(s->successors.size(), 1);
+        EXPECT_NE(s->successors.find(tail), s->successors.end());
+        EXPECT_NE(tail->predecessors.find(s), tail->predecessors.end());
     }
-
-    ASSERT_NE(con->if_false, nullptr);
-    auto const & elcon = get_con(con->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*elcon->condition.obj_ptr));
-
-    // /block 2
-    auto const & if_true = elcon->if_true->block->instructions;
-    ASSERT_EQ(if_true.size(), 1);
-    auto const & val = if_true.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 8);
-
-    // blcok 3
-    auto const & if_false = elcon->if_false->block->instructions;
-    ASSERT_EQ(if_false.size(), 1);
-    auto const & val2 = if_false.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val2.obj_ptr));
-    ASSERT_EQ(std::get<MIR::Number>(*val2.obj_ptr).value, 9);
 }
 
 TEST(ast_to_ir, nested_if) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         if true
             7
             if false
@@ -451,50 +480,18 @@ TEST(ast_to_ir, nested_if) {
         endif
         22
     )EOF");
-    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<MIR::Condition>>(irlist->next));
-    auto const & con = std::get<std::unique_ptr<MIR::Condition>>(irlist->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*con->condition.obj_ptr));
 
-    {
-        auto const & if_true = con->if_true->block->instructions;
-        ASSERT_EQ(if_true.size(), 1);
-        auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 7);
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    EXPECT_EQ(node->successors.size(), 3);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
 
-        auto const & con2 = get_con(con->if_true->next);
-        auto const & val2 = con2->if_true->block->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val2.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val2.obj_ptr).value, 10);
-
-        const auto & fin = get_bb(get_bb(con2->if_true->next)->next);
-        ASSERT_EQ(fin->block->instructions.size(), 1);
-        auto const & val3 = fin->block->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val3.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val3.obj_ptr).value, 22);
-    }
-
-    ASSERT_NE(con->if_false, nullptr);
-    auto const & elcon = get_con(con->if_false->next);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*elcon->condition.obj_ptr));
-
-    {
-        auto const & if_true = elcon->if_true->block->instructions;
-        ASSERT_EQ(if_true.size(), 1);
-        auto const & val = if_true.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val.obj_ptr).value, 8);
-
-        auto const & if_false = elcon->if_false->block->instructions;
-        ASSERT_EQ(if_false.size(), 1);
-        auto const & val2 = if_false.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*val2.obj_ptr));
-        ASSERT_EQ(std::get<MIR::Number>(*val2.obj_ptr).value, 9);
-    }
+    const auto & nested = std::get<1>(branch.branches.at(0));
+    EXPECT_EQ(nested->successors.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<MIR::Branch>(*nested->block->instructions.back().obj_ptr));
 }
 
 TEST(ast_to_ir, nested_if_tail) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         99               # 1
         if true
             7            # 2
@@ -506,28 +503,17 @@ TEST(ast_to_ir, nested_if_tail) {
         22               # 5
     )EOF");
 
-    ASSERT_TRUE(is_con(irlist->next));
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    EXPECT_EQ(node->successors.size(), 2);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
 
-    const auto & con1 = get_con(irlist->next);
-    ASSERT_TRUE(is_con(con1->if_true->next));
-
-    const auto & con2 = get_con(con1->if_true->next);
-    ASSERT_TRUE(is_bb(con2->if_true->next));
-
-    // block 3 and block 2 should both go to block 4
-    ASSERT_EQ(get_bb(con2->if_true->next), con2->if_false);
-
-    const auto & last_block = con1->if_false;
-
-    // Block 4 and block 1 should both go to block 5
-    ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
-    ASSERT_EQ(last_block->predecessors.size(), 2);
-    ASSERT_TRUE(last_block->predecessors.count(con2->if_false));
-    ASSERT_TRUE(last_block->predecessors.count(irlist));
+    const auto & nested = std::get<1>(branch.branches.at(0));
+    EXPECT_EQ(nested->successors.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<MIR::Branch>(*nested->block->instructions.back().obj_ptr));
 }
 
 TEST(ast_to_ir, nested_if_no_tail) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         99               # 1
         if true
             7            # 2
@@ -539,28 +525,17 @@ TEST(ast_to_ir, nested_if_no_tail) {
         # 5
     )EOF");
 
-    ASSERT_TRUE(is_con(irlist->next));
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    EXPECT_EQ(node->successors.size(), 2);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
 
-    const auto & con1 = get_con(irlist->next);
-    ASSERT_TRUE(is_con(con1->if_true->next));
-
-    const auto & con2 = get_con(con1->if_true->next);
-    ASSERT_TRUE(is_bb(con2->if_true->next));
-
-    // block 3 and block 2 should both go to block 4
-    ASSERT_EQ(get_bb(con2->if_true->next), con2->if_false);
-
-    const auto & last_block = con1->if_false;
-
-    // Block 4 and block 1 should both go to block 5
-    ASSERT_EQ(con1->if_false, get_bb(con2->if_false->next));
-    ASSERT_EQ(last_block->predecessors.size(), 2);
-    ASSERT_TRUE(last_block->predecessors.count(con2->if_false));
-    ASSERT_TRUE(last_block->predecessors.count(irlist));
+    const auto & nested = std::get<1>(branch.branches.at(0));
+    EXPECT_EQ(nested->successors.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<MIR::Branch>(*nested->block->instructions.back().obj_ptr));
 }
 
 TEST(ast_to_ir, nested_if_elif_tail) {
-    auto irlist = lower(R"EOF(
+    auto node = lower(R"EOF(
         x = 7      # 0
         if false
           x = 8    # 1
@@ -583,22 +558,12 @@ TEST(ast_to_ir, nested_if_elif_tail) {
         z = y      # 9
         )EOF");
 
-    const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
+    const auto & branch = std::get<MIR::Branch>(*node->block->instructions.back().obj_ptr);
+    EXPECT_EQ(node->successors.size(), 3);
+    ASSERT_EQ(branch.branches.size(), node->successors.size());
 
-    // block 2 (elif A)
-    const auto & con2 = get_con(irlist->next)->if_false;
-    ASSERT_EQ(fin, get_bb(get_con(con2->next)->if_true->next));
-
-    // block 3 (else)
-    const auto & con3 = get_con(con2->next)->if_false;
-    ASSERT_TRUE(is_con(con3->next));
-    const auto & con31 = get_con(con3->next);
-    const auto & bb6 = get_bb(con31->if_false->next);
-
-    const auto & con32 = get_con(bb6->next);
-    const auto & bb8 = get_bb(con32->if_false);
-
-    ASSERT_EQ(get_bb(bb8->next), fin);
+    const auto & nested = std::get<1>(branch.branches.at(0));
+    EXPECT_EQ(nested->successors.size(), 1);
 }
 
 TEST(ast_to_ir, assign) {

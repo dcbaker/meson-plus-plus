@@ -10,41 +10,6 @@
 
 namespace MIR::Passes {
 
-namespace {
-
-void condition_printer(const Condition & cond, std::ofstream & stream) {
-    stream << "    "
-           << "Condition { condition = " << cond.condition.print()
-           << "; if_true = " << cond.if_true->index << "; if_false = " << cond.if_false->index
-           << " }"
-           << "\n"
-           << "  }\n";
-}
-
-void printer_impl(const CFGNode & block, std::ofstream & stream) {
-    // Only print a given block once
-    stream << "  CFGNode " << block.index << " {\n";
-    for (auto && i : block.block->instructions) {
-        stream << "    " << i.print() << "\n";
-    }
-    std::visit(
-        [&](auto && n) {
-            using T = std::decay_t<decltype(n)>;
-            if constexpr (std::is_same_v<T, std::unique_ptr<Condition>>) {
-                condition_printer(*n, stream);
-            } else if constexpr (std::is_same_v<T, std::shared_ptr<CFGNode>>) {
-                stream << "    next block: " << n->index << "\n"
-                       << "  }\n";
-            } else {
-                static_assert(std::is_same_v<T, std::monostate>);
-                stream << "    [[exit]]\n";
-            }
-        },
-        block.next);
-}
-
-} // namespace
-
 Printer::Printer(uint32_t p) : pass{p} {
     const char * print = std::getenv("MESONPP_DEBUG_PRINT_MIR");
     if (print != nullptr) { // TODO: [[unlikely]]
@@ -55,8 +20,7 @@ Printer::Printer(uint32_t p) : pass{p} {
 
 Printer::~Printer() {
     if (out.is_open()) {
-        out << "  }\n"
-            << "}" << std::endl;
+        out << "}" << std::endl;
         out.close();
     }
 }
@@ -72,7 +36,15 @@ void Printer::increment() {
 
 bool Printer::operator()(const std::shared_ptr<CFGNode> block) {
     if (out.is_open()) {
-        printer_impl(*block, out);
+        // Only print a given block once
+        out << "  CFGNode " << block->index << " {\n";
+        for (auto && i : block->block->instructions) {
+            out << "    " << i.print() << "\n";
+        }
+        if (block->successors.empty()) {
+            out << "    [[exit]]\n";
+        }
+        out << "  }\n";
     }
 
     // Always return false, because the print pass doesn't ever make an progress

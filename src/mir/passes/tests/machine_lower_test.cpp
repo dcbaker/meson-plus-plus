@@ -71,9 +71,8 @@ TEST(machine_lower, in_condtion) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 0);
 
-    ASSERT_TRUE(is_con(irlist->next));
-    const auto & con = get_con(irlist->next);
-    const auto & obj = con->condition;
+    const auto & obj = std::get<0>(
+        std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr).branches.at(0));
     ASSERT_TRUE(std::holds_alternative<MIR::String>(*obj.obj_ptr));
     ASSERT_EQ(std::get<MIR::String>(*obj.obj_ptr).value, "x86_64");
 }

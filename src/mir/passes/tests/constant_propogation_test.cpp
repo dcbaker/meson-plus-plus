@@ -21,30 +21,17 @@ TEST(constant_propogation, phi_should_not_propogate) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
     MIR::Passes::graph_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
                                           MIR::Passes::ConstantFolding{},
                                           MIR::Passes::ConstantPropagation{},
                                       });
 
-    const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
-
-    ASSERT_EQ(fin->block->instructions.size(), 2);
-
-    const auto & phi_obj = fin->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
-    ASSERT_EQ(phi_obj.var.name, "x");
-    ASSERT_EQ(phi_obj.var.gvn, 3);
-
-    const auto & func_obj = fin->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
-
-    const auto & arg_obj = func.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
-    const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
-    ASSERT_EQ(id.value, "x");
-    ASSERT_EQ(id.version, 3);
+    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr);
+    const auto & arm = std::get<1>(branches.branches.at(0));
+    const auto & tail = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
+    const auto & msg = std::get<MIR::FunctionCall>(*tail->block->instructions.back().obj_ptr);
+    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*msg.pos_args.at(0).obj_ptr));
 }
 
 TEST(constant_propogation, function_arguments) {

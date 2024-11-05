@@ -18,21 +18,21 @@ TEST(insert_phi, simple) {
         endif
         )EOF");
 
-    MIR::Passes::graph_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
-                                      });
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
+    const auto & arm1 = std::get<1>(
+        std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr).branches.at(0));
+    const auto & fin = std::get<MIR::Jump>(*arm1->block->instructions.back().obj_ptr).target;
     ASSERT_EQ(fin->block->instructions.size(), 1);
 
     MIR::Instruction instr = fin->block->instructions.front();
-    ASSERT_EQ(instr.var.name, "x");
-    ASSERT_EQ(instr.var.gvn, 3); // because value_numbering will run again
+    EXPECT_EQ(instr.var.name, "x");
+    EXPECT_EQ(instr.var.gvn, 3); // because value_numbering will run again
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*instr.obj_ptr));
     const auto & phi = std::get<MIR::Phi>(*instr.obj_ptr);
-    ASSERT_EQ(phi.left, 2);
-    ASSERT_EQ(phi.right, 1);
+    EXPECT_EQ(phi.left, 1);
+    EXPECT_EQ(phi.right, 2);
 }
 
 TEST(insert_phi, three_branches) {
@@ -45,11 +45,12 @@ TEST(insert_phi, three_branches) {
             x = 10
         endif
         )EOF");
-    std::unordered_map<std::string, uint32_t> data{};
-
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
+    const auto & arm1 = std::get<1>(
+        std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr).branches.at(0));
+    const auto & fin = std::get<MIR::Jump>(*arm1->block->instructions.back().obj_ptr).target;
+
     ASSERT_EQ(fin->block->instructions.size(), 2);
 
     auto it = fin->block->instructions.begin();
@@ -58,7 +59,7 @@ TEST(insert_phi, three_branches) {
 
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it->obj_ptr));
     const auto & phi = std::get<MIR::Phi>(*it->obj_ptr);
-    EXPECT_EQ(phi.left, 3);
+    EXPECT_EQ(phi.left, 1);
     EXPECT_EQ(phi.right, 2);
 
     it++;
@@ -69,7 +70,7 @@ TEST(insert_phi, three_branches) {
     ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it->obj_ptr));
     const auto & phi2 = std::get<MIR::Phi>(*it->obj_ptr);
     EXPECT_EQ(phi2.left, 4);
-    ASSERT_EQ(phi2.right, 1);
+    ASSERT_EQ(phi2.right, 3);
 }
 
 TEST(insert_phi, nested_branches) {
@@ -85,30 +86,35 @@ TEST(insert_phi, nested_branches) {
         )EOF");
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
+    const auto & branch = std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr);
+
     {
-        const auto & fin =
-            get_bb(get_bb(get_con(get_bb(get_con(irlist->next)->if_true)->next)->if_true)->next);
-        ASSERT_EQ(fin->block->instructions.size(), 1);
+        const auto & arm1 = std::get<1>(branch.branches.at(0));
+        const auto & branch2 = std::get<MIR::Branch>(*arm1->block->instructions.back().obj_ptr);
+        const auto & sub1 = std::get<1>(branch2.branches.at(0));
+        const auto & fin = std::get<MIR::Jump>(sub1->block->instructions.back().object()).target;
+
+        ASSERT_EQ(fin->block->instructions.size(), 2);
         const auto & it = fin->block->instructions.front();
-        ASSERT_EQ(it.var.name, "x");
-        ASSERT_EQ(it.var.gvn, 4);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it.obj_ptr));
+        EXPECT_EQ(it.var.name, "x");
+        EXPECT_EQ(it.var.gvn, 4);
         const auto & phi = std::get<MIR::Phi>(*it.obj_ptr);
-        ASSERT_EQ(phi.left, 3);
-        ASSERT_EQ(phi.right, 2);
+        EXPECT_EQ(phi.left, 2);
+        EXPECT_EQ(phi.right, 3);
     }
 
     {
-        const auto & fin = get_bb(get_con(irlist->next)->if_false);
+        const auto & fin = std::get<1>(branch.branches.at(1));
         ASSERT_EQ(fin->block->instructions.size(), 1);
         const auto & it = fin->block->instructions.front();
-        ASSERT_EQ(it.var.name, "x");
-        ASSERT_EQ(it.var.gvn, 5);
+        EXPECT_EQ(it.var.name, "x");
+        EXPECT_EQ(it.var.gvn, 5);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*it.obj_ptr));
         const auto & phi = std::get<MIR::Phi>(*it.obj_ptr);
-        ASSERT_EQ(phi.left, 1);
-        ASSERT_EQ(phi.right, 4);
+        EXPECT_EQ(phi.left, 1);
+        EXPECT_EQ(phi.right, 4);
     }
 }

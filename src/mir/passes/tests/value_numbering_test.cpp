@@ -32,14 +32,18 @@ TEST(value_numbering, branching) {
         )EOF");
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    ASSERT_EQ(irlist->block->instructions.front().var.gvn, 1);
-    ASSERT_EQ(irlist->block->instructions.back().var.gvn, 2);
+    auto it = irlist->block->instructions.begin();
 
-    const auto & bb1 = get_con(irlist->next)->if_false;
-    ASSERT_EQ(bb1->block->instructions.front().var.gvn, 3);
+    EXPECT_EQ((it++)->var.gvn, 1);
+    EXPECT_EQ((it++)->var.gvn, 2);
 
-    const auto & bb2 = get_con(irlist->next)->if_true;
-    ASSERT_EQ(bb2->block->instructions.front().var.gvn, 4);
+    const auto & branch = std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr);
+
+    const auto & bb1 = std::get<1>(branch.branches.at(0));
+    EXPECT_EQ(bb1->block->instructions.front().var.gvn, 3);
+
+    const auto & bb2 = std::get<1>(branch.branches.at(1));
+    EXPECT_EQ(bb2->block->instructions.front().var.gvn, 4);
 }
 
 TEST(value_numbering, three_branch) {
@@ -54,16 +58,16 @@ TEST(value_numbering, three_branch) {
         )EOF");
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & bb1 = get_con(irlist->next)->if_true;
-    EXPECT_EQ(bb1->block->instructions.front().var.gvn, 3);
+    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr);
 
-    const auto & con2 = get_con(get_con(irlist->next)->if_false->next);
+    const auto & bb1 = std::get<1>(branches.branches.at(0));
+    EXPECT_EQ(bb1->block->instructions.front().var.gvn, 1);
 
-    const auto & bb2 = con2->if_false;
-    EXPECT_EQ(bb2->block->instructions.front().var.gvn, 1);
+    const auto & bb2 = std::get<1>(branches.branches.at(1));
+    EXPECT_EQ(bb2->block->instructions.front().var.gvn, 2);
 
-    const auto & bb3 = con2->if_true;
-    ASSERT_EQ(bb3->block->instructions.front().var.gvn, 2);
+    const auto & bb3 = std::get<1>(branches.branches.at(2));
+    ASSERT_EQ(bb3->block->instructions.front().var.gvn, 3);
 }
 
 TEST(number_uses, simple) {
@@ -127,23 +131,23 @@ TEST(number_uses, with_phi) {
 
     {
         const auto & num_obj = irlist->block->instructions.front();
-        ASSERT_EQ(num_obj.var.name, "x");
-        ASSERT_EQ(num_obj.var.gvn, 2);
+        EXPECT_EQ(num_obj.var.name, "x");
+        EXPECT_EQ(num_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
         const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
-        ASSERT_EQ(num.value, 9);
+        EXPECT_EQ(num.value, 9);
     }
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        EXPECT_EQ(id_obj.var.name, "y");
+        EXPECT_EQ(id_obj.var.gvn, 1);
 
         ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
         const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 3);
+        EXPECT_EQ(id.value, "x");
+        EXPECT_EQ(id.version, 3);
     }
 }
 
@@ -157,20 +161,21 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
         message(x)
         )EOF");
 
-    // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
-    // wrong thing
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
-    ASSERT_EQ(fin->block->instructions.size(), 2);
+    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr);
+    const auto & arm = std::get<1>(branches.branches.at(0));
+    const auto & tail = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
+
+    ASSERT_EQ(tail->block->instructions.size(), 2);
 
     {
-        const auto & phi_obj = fin->block->instructions.front();
+        const auto & phi_obj = tail->block->instructions.front();
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     }
 
     {
-        const auto & func_obj = fin->block->instructions.back();
+        const auto & func_obj = tail->block->instructions.back();
         ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
         const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
 
@@ -195,16 +200,17 @@ TEST(number_uses, with_phi_no_pruning) {
     // wrong thing
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & fin = get_bb(get_con(irlist->next)->if_false->next);
-    ASSERT_EQ(fin->block->instructions.size(), 2);
+    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr);
+    const auto & arm = std::get<1>(branches.branches.at(0));
+    const auto & tail = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
 
     {
-        const auto & phi_obj = fin->block->instructions.front();
+        const auto & phi_obj = tail->block->instructions.front();
         ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
     }
 
     {
-        const auto & id_obj = fin->block->instructions.back();
+        const auto & id_obj = tail->block->instructions.back();
         ASSERT_EQ(id_obj.var.name, "y");
         ASSERT_EQ(id_obj.var.gvn, 1);
 

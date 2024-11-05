@@ -9,82 +9,84 @@ namespace MIR::Passes {
 
 namespace {
 
-bool branch_pruning_impl(std::shared_ptr<CFGNode> ir) {
-    // If we don't have a condition there's nothing to do
-    if (!std::holds_alternative<std::unique_ptr<Condition>>(ir->next)) {
+bool branch_pruning_impl(std::shared_ptr<CFGNode> node) {
+    // If we don't have at least 2 potential exits from this block then we don't
+    // have anything to do
+    if (node->successors.size() < 2) {
         return false;
     }
 
-    // If the condition expression hasn't been reduced to a boolean then there's
-    // nothing to do yet.
-    auto & con = *std::get<std::unique_ptr<Condition>>(ir->next);
-    if (!std::holds_alternative<Boolean>(*con.condition.obj_ptr)) {
-        return false;
-    }
+    bool progress = false;
 
-    // worklist for cleaning up
-    std::vector<std::shared_ptr<CFGNode>> todo{};
+    // XXX: this heavily assumes that there is one and only one way to get from
+    // one node to a second node. That is not true
+    for (auto it = node->block->instructions.begin(); it != node->block->instructions.end(); ++it) {
+        if (Jump * j = std::get_if<Jump>(it->obj_ptr.get()); j && j->predicate) {
+            if (Boolean * b = std::get_if<Boolean>(j->predicate->obj_ptr.get())) {
+                if (b->value) {
+                    // If this predicate is true, then we always make this jump.
+                    // delete the predicate, erase all of the rest of the instructions
+                    // Break all of the other links, and leave
+                    j->predicate = std::make_shared<Instruction>();
+                    for (auto && s : node->successors) {
+                        if (s != j->target) {
+                            unlink_nodes(node, s);
+                        }
+                    }
+                    while (it != node->block->instructions.end()) {
+                        node->block->instructions.erase(++it);
+                    }
+                    return true;
+                } else {
+                    // Otherwise, if the predicate is false, then we can unlink it's
+                    // target, and remove the instruction
+                    unlink_nodes(node, j->target);
+                    it = node->block->instructions.erase(it);
+                    progress = true;
+                    continue;
+                }
+            }
+        } else if (auto * b = std::get_if<Branch>(it->obj_ptr.get())) {
+            assert(!b->branches.empty());
 
-    // If the true branch is the one we want, move the next and condition to our
-    // next and condition, otherwise move the `else` branch to be the main condition, and
-    // continue
-    const bool & con_v = std::get<Boolean>(*con.condition.obj_ptr).value;
-    std::shared_ptr<CFGNode> next, remove;
-    if (con_v) {
-        assert(con.if_true != nullptr);
-        next = con.if_true;
-        remove = con.if_false;
-    } else {
-        assert(con.if_false != nullptr);
-        next = con.if_false;
-        remove = con.if_true;
-    }
-    todo.emplace_back(remove);
+            // If the first branch is true, then we will take that branch of the
+            // if/elif/else construct. Throw the rest away and replace the Branch with a Jump
+            const auto [con, dest] = b->branches.at(0);
+            if (const Boolean * v = std::get_if<Boolean>(con.obj_ptr.get()); v && v->value) {
+                for (auto it2 = ++b->branches.begin(); it2 != b->branches.end(); ++it2) {
+                    auto t = std::get<1>(*it2);
+                    if (t != dest) {
+                        unlink_nodes(node, t);
+                    }
+                }
+                it = node->block->instructions.erase(it);
+                node->block->instructions.insert(it, Jump{dest});
+                progress = true;
+            } else {
+                // If we find a Branch we can prune any jumps it would make, as well
+                // as replacing it with a jump if only one branch is left.
+                for (auto it2 = b->branches.begin(); it2 != b->branches.end(); ++it2) {
+                    if (auto * con = std::get_if<Boolean>(std::get<0>(*it2).obj_ptr.get());
+                        con && !con->value) {
+                        unlink_nodes(node, std::get<1>(*it2));
+                        it2 = b->branches.erase(it2);
+                        progress = true;
+                    }
+                }
 
-    // When we prune this, we need to all remove it from any successor blocks
-    // predecessors' so that we dont reference a dangling pointer
-
-    // Blocks that have already been visited
-    std::set<std::shared_ptr<CFGNode>, CFGComparitor> visited{};
-
-    // Walk down the CFG of the block we're about to prune until we find a block
-    // with predecessors that aren't visited or todo items, that is the convergance point
-    // Then remove this path from that block's predecessors.
-    while (!todo.empty()) {
-        auto current = todo.back();
-        todo.pop_back();
-        visited.emplace(current);
-
-        // It is possible to put the last block onot the todo stack, just continue on
-        if (std::holds_alternative<std::monostate>(current->next)) {
-            continue;
-        }
-
-        // If we have a Condition then push the True block, then the False
-        // block, then loop back through
-        if (std::holds_alternative<std::unique_ptr<Condition>>(current->next)) {
-            const auto & con = *std::get<std::unique_ptr<Condition>>(current->next);
-            todo.emplace_back(con.if_true);
-            todo.emplace_back(con.if_false);
-            continue;
-        }
-
-        auto bb = std::get<std::shared_ptr<CFGNode>>(current->next).get();
-
-        std::set<std::weak_ptr<CFGNode>, CFGComparitor> new_predecessors{};
-        for (const auto & p : bb->predecessors) {
-            if (!(visited.count(p.lock()) || std::count(todo.begin(), todo.end(), p.lock()))) {
-                new_predecessors.emplace(p);
+                if (b->branches.size() == 1) {
+                    Jump jump{std::get<1>(b->branches.at(0))};
+                    it = node->block->instructions.erase(it);
+                    node->block->instructions.emplace(it, std::move(jump));
+                } else if (b->branches.empty()) {
+                    assert(node->successors.empty());
+                    it = node->block->instructions.erase(it);
+                }
             }
         }
-        bb->predecessors = new_predecessors;
     }
 
-    next->predecessors = {ir};
-    ir->successors.erase(remove);
-    ir->next = next;
-
-    return true;
+    return progress;
 };
 
 } // namespace
