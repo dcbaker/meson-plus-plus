@@ -96,6 +96,7 @@ Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::mo
 Instruction::Instruction(Test val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(AddArguments val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Jump val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Branch val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 
 std::string Instruction::print() const {
     const std::string i = std::visit(
@@ -415,6 +416,18 @@ Jump::Jump(std::shared_ptr<CFGNode> t, std::shared_ptr<Instruction> p)
 std::string Jump::print() const {
     return "jump = { target = { " + std::to_string(target->index) + " }, predicate = { " +
            (predicate == nullptr ? "always" : predicate->print()) + " } }";
+}
+
+Branch::Branch() = default;
+
+std::string Branch::print() const {
+    std::stringstream ss;
+    ss << "branch = { ";
+    for (auto && [i, dest] : branches) {
+        ss << "branch " << i.print() << " = { " << dest->index << " }, ";
+    }
+    ss << " }" << std::endl;
+    return ss.str();
 }
 
 void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
