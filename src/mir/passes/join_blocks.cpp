@@ -27,13 +27,13 @@ bool join_blocks_impl(std::shared_ptr<CFGNode> block) {
     auto nn = std::move(next->next);
     if (std::holds_alternative<std::shared_ptr<CFGNode>>(nn)) {
         const auto & b = std::get<std::shared_ptr<CFGNode>>(nn);
-        b->predecessors.erase(next);
-        b->predecessors.emplace(block);
+        unlink_nodes(next, b);
+        link_nodes(block, b);
     } else if (std::holds_alternative<std::unique_ptr<Condition>>(nn)) {
         const auto & con = std::get<std::unique_ptr<Condition>>(nn);
         for (const auto & c : {con->if_true, con->if_false}) {
-            c->predecessors.erase(next);
-            c->predecessors.emplace(block);
+            unlink_nodes(next, c);
+            link_nodes(block, c);
         }
     }
     block->next = std::move(nn);

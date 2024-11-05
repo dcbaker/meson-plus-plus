@@ -654,7 +654,7 @@ class CFG {
     std::shared_ptr<CFGNode> root;
 };
 
-void link_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
-void unlink_blocks(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
+void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
+void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
 
 } // namespace MIR
