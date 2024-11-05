@@ -18,7 +18,7 @@ namespace {
 // TODO: compilers may need to be run again if `add_language` is called
 void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
            Passes::Printer & printer) {
-    Passes::block_walker(block, {
+    Passes::graph_walker(block, {
                                     [&](std::shared_ptr<CFGNode> b) {
                                         return Passes::machine_lower(b, pstate.machines) ||
                                                Passes::insert_compilers(b, pstate.toolchains);
@@ -49,7 +49,7 @@ void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
     bool progress = false;
     do {
         printer.increment();
-        progress = Passes::block_walker(block, std::ref(main_loop));
+        progress = Passes::graph_walker(block, std::ref(main_loop));
     } while (progress);
 
     // Run the main lowering loop until it cannot lower any more, then do the
@@ -59,7 +59,7 @@ void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
     if (Passes::threaded_lowering(block, pstate)) {
         do {
             printer.increment();
-            progress = Passes::block_walker(block, std::ref(main_loop));
+            progress = Passes::graph_walker(block, std::ref(main_loop));
         } while (progress);
     }
 }
@@ -72,7 +72,7 @@ void late(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
     };
 
     printer.increment();
-    Passes::block_walker(block, std::ref(loop));
+    Passes::graph_walker(block, std::ref(loop));
 }
 
 } // namespace

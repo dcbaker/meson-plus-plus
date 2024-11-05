@@ -21,7 +21,7 @@ TEST(constant_propogation, phi_should_not_propogate) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                           MIR::Passes::ConstantFolding{},
                                           MIR::Passes::ConstantPropagation{},
@@ -59,7 +59,7 @@ TEST(constant_propogation, function_arguments) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                           MIR::Passes::branch_pruning,
                                           MIR::Passes::join_blocks,
@@ -92,7 +92,7 @@ TEST(constant_propogation, array) {
 
     // We do this in two walks because we don't have all of passes necissary to
     // get the state we want to test.
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                           MIR::Passes::branch_pruning,
                                           MIR::Passes::join_blocks,
@@ -122,12 +122,12 @@ TEST(constant_propogation, method_holder) {
     MIR::Passes::Printer printer{};
 
     bool progress =
-        MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}, std::ref(printer)});
+        MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}, std::ref(printer)});
     ASSERT_TRUE(progress) << "GVN did not make progress";
 
     printer.increment();
     progress =
-        MIR::Passes::block_walker(irlist, {
+        MIR::Passes::graph_walker(irlist, {
                                               [&](std::shared_ptr<MIR::CFGNode> b) {
                                                   return MIR::Passes::threaded_lowering(b, pstate);
                                               },
@@ -136,7 +136,7 @@ TEST(constant_propogation, method_holder) {
     ASSERT_TRUE(progress) << "threaded lowering did not make progress";
 
     printer.increment();
-    progress = MIR::Passes::block_walker(irlist, {
+    progress = MIR::Passes::graph_walker(irlist, {
                                                      MIR::Passes::ConstantFolding{},
                                                      MIR::Passes::ConstantPropagation{},
                                                      std::ref(printer),
@@ -161,13 +161,13 @@ TEST(constant_propogation, into_function_call) {
         )EOF");
     MIR::State::Persistant pstate = make_pstate();
 
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                           [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::threaded_lowering(b, pstate);
                                           },
                                       });
-    bool progress = MIR::Passes::block_walker(
+    bool progress = MIR::Passes::graph_walker(
         irlist, {
                     MIR::Passes::ConstantFolding{},
                     MIR::Passes::ConstantPropagation{},

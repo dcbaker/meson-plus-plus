@@ -240,7 +240,7 @@ bool threaded_lowering(std::shared_ptr<CFGNode> block, State::Persistant & pstat
     //  2. create the threads and send them to work on filling out those futures
     //  3. call the block walker again to fill in those values
     progress |=
-        block_walker(block, {
+        graph_walker(block, {
                                 [&](std::shared_ptr<CFGNode> b) {
                                     return function_walker(*b, [&](const Instruction & obj) {
                                         return search_threaded(obj, pstate, jobs);
@@ -250,7 +250,7 @@ bool threaded_lowering(std::shared_ptr<CFGNode> block, State::Persistant & pstat
     if (progress) {
         search_for_threaded_impl(jobs, pstate);
         progress |=
-            block_walker(block, {
+            graph_walker(block, {
                                     [&](std::shared_ptr<CFGNode> b) {
                                         return function_walker(*b, [&](const Instruction & obj) {
                                             return replace_threaded(obj, pstate);

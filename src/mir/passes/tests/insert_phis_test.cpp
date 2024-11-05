@@ -18,7 +18,7 @@ TEST(insert_phi, simple) {
         endif
         )EOF");
 
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                       });
 
@@ -47,7 +47,7 @@ TEST(insert_phi, three_branches) {
         )EOF");
     std::unordered_map<std::string, uint32_t> data{};
 
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     const auto & fin = get_bb(get_con(irlist->next)->if_true->next);
     ASSERT_EQ(fin->instructions.size(), 2);
@@ -83,7 +83,7 @@ TEST(insert_phi, nested_branches) {
             endif
         endif
         )EOF");
-    MIR::Passes::block_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
     {
         const auto & fin =

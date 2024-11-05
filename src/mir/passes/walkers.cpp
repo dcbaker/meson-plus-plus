@@ -245,7 +245,7 @@ bool function_walker(CFGNode & block, const MutationCallback & cb) {
     return progress;
 };
 
-bool block_walker(std::shared_ptr<CFGNode> root, const std::vector<BlockWalkerCb> & callbacks) {
+bool graph_walker(std::shared_ptr<CFGNode> root, const std::vector<BlockWalkerCb> & callbacks) {
     bool progress = false;
 
     BlockIterator iter{root};

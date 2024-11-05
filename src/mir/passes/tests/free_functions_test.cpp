@@ -158,13 +158,13 @@ TEST(find_program, found) {
     )EOF");
     MIR::State::Persistant pstate = make_pstate();
 
-    MIR::Passes::block_walker(irlist, {
+    MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
                                           [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::threaded_lowering(b, pstate);
                                           },
                                       });
-    bool progress = MIR::Passes::block_walker(
+    bool progress = MIR::Passes::graph_walker(
         irlist, {
                     MIR::Passes::ConstantFolding{},
                     MIR::Passes::ConstantPropagation{},

@@ -13,7 +13,7 @@ TEST(custom_target_program_replacement, string) {
         x = custom_target('name', command : 'foo.py')
         )EOF");
 
-    MIR::Passes::block_walker(irlist, {MIR::Passes::custom_target_program_replacement});
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::custom_target_program_replacement});
 
     ASSERT_EQ(irlist->instructions.size(), 1);
 
@@ -40,7 +40,7 @@ TEST(custom_target_program_replacement, array) {
         x = custom_target('name', command : ['foo.py', '@INPUT@', '@OUTPUT@'])
         )EOF");
 
-    MIR::Passes::block_walker(irlist, {MIR::Passes::custom_target_program_replacement});
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::custom_target_program_replacement});
 
     ASSERT_EQ(irlist->instructions.size(), 1);
 
