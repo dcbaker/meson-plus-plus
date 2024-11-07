@@ -13,7 +13,7 @@
 namespace MIR::Passes {
 
 /// Callback will return a an optional Instruction, when it does the original object is replaced
-using ReplacementCallback = std::function<std::optional<Instruction>(Instruction &)>;
+using ReplacementCallback = std::function<std::optional<Instruction>(const Instruction &)>;
 
 /// Callback will return a boolean that progress is mode
 using MutationCallback = std::function<bool(Instruction &)>;
