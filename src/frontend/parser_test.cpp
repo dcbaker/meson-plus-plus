@@ -589,3 +589,29 @@ TEST(parser, chained_getattr) {
     const auto & func1 = *std::get<std::unique_ptr<Frontend::AST::FunctionCall>>(func2.held);
     ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::Identifier>>(func1.held));
 }
+
+TEST(parser, method_in_function) {
+    auto block = parse("function(obj.method())");
+    ASSERT_EQ(block->statements.size(), 1);
+    const auto & stmt = std::get<0>(block->statements[0]);
+
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(stmt->expr));
+    const auto & func = std::get<std::unique_ptr<Frontend::AST::FunctionCall>>(stmt->expr);
+    ASSERT_EQ(func->as_string(), "function(obj.method())");
+
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Frontend::AST::GetAttribute>>(
+        func->args->positional.at(0)));
+    const auto & getattr =
+        std::get<std::unique_ptr<Frontend::AST::GetAttribute>>(func->args->positional.at(0));
+    ASSERT_EQ(getattr->as_string(), "obj.method()");
+
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<Frontend::AST::Identifier>>(getattr->holder));
+    const auto & holder = std::get<std::unique_ptr<Frontend::AST::Identifier>>(getattr->holder);
+    ASSERT_EQ(holder->value, "obj");
+
+    ASSERT_TRUE(
+        std::holds_alternative<std::unique_ptr<Frontend::AST::FunctionCall>>(getattr->held));
+    const auto & held = std::get<std::unique_ptr<Frontend::AST::FunctionCall>>(getattr->held);
+    ASSERT_EQ(held->as_string(), "method()");
+}

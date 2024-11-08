@@ -153,6 +153,16 @@ TEST(ast_to_ir, chained_method) {
     ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*ir2.holder.obj_ptr));
 }
 
+TEST(ast_to_ir, method_in_function) {
+    auto irlist = lower("obj.method() == 0");
+    const auto & obj = irlist->block->instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr));
+    const auto & eq = std::get<MIR::FunctionCall>(obj.object());
+    ASSERT_EQ(eq.name, "rel_eq");
+    ASSERT_EQ(eq.pos_args.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<std::monostate>(eq.holder.object()));
+}
+
 TEST(ast_to_ir, function_positional_arguments_only) {
     auto irlist = lower("has_args(1, 2, 3)");
     ASSERT_EQ(irlist.instructions.size(), 1);
