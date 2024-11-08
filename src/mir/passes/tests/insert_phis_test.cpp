@@ -39,7 +39,7 @@ TEST(insert_phi, three_branches) {
     auto irlist = lower(R"EOF(
         if true
             x = 9
-        elif y
+        elif 7
             x = 11
         else
             x = 10

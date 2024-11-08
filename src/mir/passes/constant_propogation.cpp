@@ -38,8 +38,7 @@ std::optional<Instruction> ConstantPropagation::get(const Identifier & id) const
         }
 #ifndef NDEBUG
         if (!(std::holds_alternative<Phi>(obj) && std::holds_alternative<Identifier>(obj) &&
-              std::holds_alternative<Empty>(obj) && std::holds_alternative<Message>(obj) &&
-              std::holds_alternative<FunctionCall>(obj) &&
+              std::holds_alternative<Message>(obj) && std::holds_alternative<FunctionCall>(obj) &&
               std::holds_alternative<std::monostate>(obj))) {
             throw Util::Exceptions::MesonException(
                 "Missing MIR type, this is an implementation bug");
@@ -62,17 +61,12 @@ bool ConstantPropagation::impl(Instruction & obj) const {
 
     auto * func = std::get_if<FunctionCall>(obj.obj_ptr.get());
     if (func != nullptr) {
-        auto * holder = std::get_if<Identifier>(func->holder.obj_ptr.get());
-        if (holder != nullptr) {
+        if (auto * holder = std::get_if<Identifier>(func->holder.obj_ptr.get())) {
             if (auto v = get(*holder)) {
                 func->holder = v.value();
                 progress |= true;
             }
         }
-        progress |=
-            function_argument_walker(obj, [this](const Instruction & i) { return this->impl(i); });
-        progress |=
-            function_argument_walker(obj, [this](Instruction & i) { return this->impl(i); });
     }
 
     return progress;
@@ -83,24 +77,11 @@ bool ConstantPropagation::operator()(std::shared_ptr<CFGNode> block) {
     // then the replacement
     bool progress =
         instruction_walker(*block, {
-                                      [this](Instruction & obj) { return this->update_data(obj); },
-                                  });
+                                       [this](Instruction & obj) { return this->update_data(obj); },
+                                   });
 
-    auto && prop = [this](const Instruction & obj) { return this->impl(obj); };
-    auto && prop_h = [this](Instruction & obj) { return this->impl(obj); };
-
-    progress |= instruction_walker(
-        *block,
-        {
-            [&](const Instruction & obj) { return array_walker(obj, prop); },
-            [&](Instruction & obj) { return array_walker(obj, prop_h); },
-            [&](const Instruction & obj) { return function_argument_walker(obj, prop); },
-            [&](Instruction & obj) { return function_argument_walker(obj, prop_h); },
-            prop_h,
-        },
-        {
-            prop,
-        });
+    progress |= instruction_walker(*block, {[this](Instruction & obj) { return this->impl(obj); }},
+                                   {[this](const Instruction & obj) { return this->impl(obj); }});
 
     return progress;
 }

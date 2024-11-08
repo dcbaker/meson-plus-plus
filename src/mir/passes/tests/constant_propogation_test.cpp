@@ -11,7 +11,7 @@
 
 TEST(constant_propogation, phi_should_not_propogate) {
     auto irlist = lower(R"EOF(
-        if some_var
+        if some_func()
             x = 9
         else
             x = 10
@@ -148,12 +148,17 @@ TEST(constant_propogation, into_function_call) {
         )EOF");
     MIR::State::Persistant pstate = make_pstate();
 
+    MIR::Passes::Printer printer{};
+
+    MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}, std::ref(printer)});
+    printer.increment();
     MIR::Passes::graph_walker(irlist, {
-                                          MIR::Passes::GlobalValueNumbering{},
                                           [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::threaded_lowering(b, pstate);
                                           },
+                                          std::ref(printer),
                                       });
+    printer.increment();
     bool progress = MIR::Passes::graph_walker(
         irlist, {
                     MIR::Passes::ConstantFolding{},
@@ -161,6 +166,7 @@ TEST(constant_propogation, into_function_call) {
                     [&](std::shared_ptr<MIR::CFGNode> b) {
                         return MIR::Passes::lower_program_objects(b, pstate);
                     },
+                    std::ref(printer),
                 });
 
     ASSERT_TRUE(progress);

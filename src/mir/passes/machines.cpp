@@ -69,7 +69,7 @@ std::optional<Instruction> lower_functions(const MachineInfo & machines, const I
 bool machine_lower(std::shared_ptr<CFGNode> block, const MachineInfo & machines) {
     const auto cb = [&](const Instruction & o) { return lower_functions(machines, o); };
 
-    return function_walker(*block, cb);
+    return instruction_walker(*block, {cb});
 };
 
 } // namespace MIR::Passes

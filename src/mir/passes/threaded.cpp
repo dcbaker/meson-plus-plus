@@ -242,21 +242,21 @@ bool threaded_lowering(std::shared_ptr<CFGNode> block, State::Persistant & pstat
     progress |=
         graph_walker(block, {
                                 [&](std::shared_ptr<CFGNode> b) {
-                                    return function_walker(*b, [&](const Instruction & obj) {
+                                    return instruction_walker(*b, {[&](const Instruction & obj) {
                                         return search_threaded(obj, pstate, jobs);
-                                    });
+                                    }});
                                 },
                             });
     if (progress) {
         search_for_threaded_impl(jobs, pstate);
-        progress |=
-            graph_walker(block, {
-                                    [&](std::shared_ptr<CFGNode> b) {
-                                        return function_walker(*b, [&](const Instruction & obj) {
-                                            return replace_threaded(obj, pstate);
+        progress |= graph_walker(block, {
+                                            [&](std::shared_ptr<CFGNode> b) {
+                                                return instruction_walker(
+                                                    *b, {[&](const Instruction & obj) {
+                                                        return replace_threaded(obj, pstate);
+                                                    }});
+                                            },
                                         });
-                                    },
-                                });
     }
     return progress;
 }

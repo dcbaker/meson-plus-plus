@@ -29,13 +29,15 @@ bool join_blocks_impl(std::shared_ptr<CFGNode> block) {
 
     // Move the predecessors and successors from the next block to the curren
     // tone
-    for (auto && b : next->successors) {
+    for (auto b : next->successors) {
         link_nodes(block, b);
-        unlink_nodes(next, b);
+    }
+    while (!next->successors.empty()) {
+        unlink_nodes(next, *next->successors.begin(), false);
     }
     // Move the instructions
     block->block->instructions.splice(block->block->instructions.end(), next->block->instructions);
-    unlink_nodes(block, next);
+    unlink_nodes(block, next, false);
 
     return true;
 }

@@ -72,7 +72,7 @@ std::optional<Instruction> replace_compiler(const Instruction & obj, const Toolc
 
 bool insert_compilers(std::shared_ptr<CFGNode> block, const ToolchainMap & toolchains) {
     const auto cb = [&](const Instruction & obj) { return replace_compiler(obj, toolchains); };
-    return function_walker(*block, cb);
+    return instruction_walker(*block, {cb});
 };
 
 } // namespace MIR::Passes

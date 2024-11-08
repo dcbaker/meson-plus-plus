@@ -25,7 +25,8 @@ bool delete_unreachable(std::shared_ptr<CFGNode> block) {
             if (m->level == MessageLevel::ERROR) {
                 bool progress = false;
 
-                for (auto && b : block->successors) {
+                while (!block->successors.empty()) {
+                    auto b = *block->successors.begin();
                     if (keep.find(b) == keep.end()) {
                         unlink_nodes(block, b);
                         progress = true;

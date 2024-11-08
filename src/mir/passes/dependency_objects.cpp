@@ -80,9 +80,9 @@ std::optional<Instruction> lower_dependency_methods_impl(const Instruction & obj
 } // namespace
 
 bool lower_dependency_objects(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
-    return function_walker(*block, [&](const Instruction & obj) {
+    return instruction_walker(*block, {[&](const Instruction & obj) {
         return lower_dependency_methods_impl(obj, pstate);
-    });
+    }});
 }
 
 } // namespace MIR::Passes

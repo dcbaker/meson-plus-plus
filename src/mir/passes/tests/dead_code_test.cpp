@@ -40,7 +40,7 @@ TEST(unreachable_code, clear_dead_instructions) {
 
 TEST(unreachable_code, no_jump_after_error) {
     auto irlist = lower(R"EOF(
-        if some_var
+        if host_machine.system() == 'aix'
             error('foo')
         else
             x = 10
@@ -49,12 +49,19 @@ TEST(unreachable_code, no_jump_after_error) {
         )EOF");
 
     MIR::State::Persistant pstate = make_pstate();
+    MIR::Passes::Printer printer{};
+    MIR::Passes::graph_walker(irlist, {std::ref(printer)});
+    printer.increment();
 
     MIR::Passes::graph_walker(irlist, {
+                                          [&](std::shared_ptr<MIR::CFGNode> b) {
+                                              return MIR::Passes::machine_lower(b, pstate.machines);
+                                          },
                                           [&](std::shared_ptr<MIR::CFGNode> b) {
                                               return MIR::Passes::lower_free_functions(b, pstate);
                                           },
                                           MIR::Passes::delete_unreachable,
+                                          std::ref(printer),
                                       });
 
     EXPECT_EQ(irlist->successors.size(), 2);

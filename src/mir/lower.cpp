@@ -20,8 +20,10 @@ void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
            Passes::Printer & printer) {
     Passes::graph_walker(block, {
                                     [&](std::shared_ptr<CFGNode> b) {
-                                        return Passes::machine_lower(b, pstate.machines) ||
-                                               Passes::insert_compilers(b, pstate.toolchains);
+                                        return Passes::machine_lower(b, pstate.machines);
+                                    },
+                                    [&](std::shared_ptr<CFGNode> b) {
+                                        return Passes::insert_compilers(b, pstate.toolchains);
                                     },
                                     Passes::custom_target_program_replacement,
                                     Passes::GlobalValueNumbering{},

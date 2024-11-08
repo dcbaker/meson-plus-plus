@@ -203,7 +203,7 @@ std::optional<Instruction> lower_assert(const FunctionCall & f) {
     }
 
     // TODO: it would be better to
-    return Empty{};
+    return Instruction{std::monostate{}};
 }
 
 std::optional<Instruction> lower_not(const FunctionCall & f) {
@@ -568,7 +568,7 @@ std::optional<Instruction> lower_add_arguments(const FunctionCall & func, const 
         func.name + ": positional arguments must be strings");
     // Meson allows this, so if we don't get any arguments, just return an empty to delete the node
     if (arguments.empty()) {
-        return Empty{};
+        return Instruction{std::monostate{}};
     }
 
     ArgMap mapping;
@@ -683,7 +683,7 @@ std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
     const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 
     // This is not a free function
-    if (!std::holds_alternative<std::monostate>(*f.holder.obj_ptr)) {
+    if (!std::holds_alternative<std::monostate>(f.holder.object())) {
         return std::nullopt;
     }
 
@@ -816,8 +816,8 @@ void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
 }
 
 bool lower_free_functions(std::shared_ptr<CFGNode> block, const State::Persistant & pstate) {
-    return function_walker(
-        *block, [&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); });
+    return instruction_walker(
+        *block, {[&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); }});
 }
 
 } // namespace MIR::Passes

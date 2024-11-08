@@ -54,7 +54,7 @@ TEST(fixup_phi, three_branches) {
     auto irlist = lower(R"EOF(
         if true
             x = 9
-        elif y
+        elif y()
             x = 11
         else
             x = 10
