@@ -24,45 +24,7 @@ struct ExprStringVisitor {
         return std::visit(as, s->lhs) + "[" + std::visit(as, s->rhs) + "]";
     }
 
-    std::string operator()(const std::unique_ptr<Relational> & s) {
-        ExprStringVisitor as{};
-
-        std::string opstr{};
-        switch (s->op) {
-            case RelationalOp::LT:
-                opstr = "<";
-                break;
-            case RelationalOp::LE:
-                opstr = "<=";
-                break;
-            case RelationalOp::EQ:
-                opstr = "==";
-                break;
-            case RelationalOp::NE:
-                opstr = "!=";
-                break;
-            case RelationalOp::GE:
-                opstr = ">=";
-                break;
-            case RelationalOp::GT:
-                opstr = ">";
-                break;
-            case RelationalOp::AND:
-                opstr = "and";
-                break;
-            case RelationalOp::OR:
-                opstr = "or";
-                break;
-            case RelationalOp::IN:
-                opstr = "in";
-                break;
-            case RelationalOp::NOT_IN:
-                opstr = "not in";
-                break;
-        }
-
-        return std::visit(as, s->lhs) + " " + opstr + " " + std::visit(as, s->rhs);
-    }
+    std::string operator()(const std::unique_ptr<Relational> & s) { return s->as_string(); }
 
     std::string operator()(const std::unique_ptr<UnaryExpression> & s) {
         // There's currently only unary negation
@@ -239,6 +201,45 @@ std::string GetAttribute::as_string() const {
     auto obj = std::visit(as, holder);
     auto name = std::visit(as, held);
     return obj + "." + name;
+}
+
+std::string Relational::as_string() const {
+    std::string opstr{};
+    switch (op) {
+        case RelationalOp::LT:
+            opstr = "<";
+            break;
+        case RelationalOp::LE:
+            opstr = "<=";
+            break;
+        case RelationalOp::EQ:
+            opstr = "==";
+            break;
+        case RelationalOp::NE:
+            opstr = "!=";
+            break;
+        case RelationalOp::GE:
+            opstr = ">=";
+            break;
+        case RelationalOp::GT:
+            opstr = ">";
+            break;
+        case RelationalOp::AND:
+            opstr = "and";
+            break;
+        case RelationalOp::OR:
+            opstr = "or";
+            break;
+        case RelationalOp::IN:
+            opstr = "in";
+            break;
+        case RelationalOp::NOT_IN:
+            opstr = "not in";
+            break;
+    }
+
+    ExprStringVisitor as{};
+    return std::visit(as, lhs) + " " + opstr + " " + std::visit(as, rhs);
 }
 
 std::string Array::as_string() const { return "[" + stringlistify(elements) + "]"; }

@@ -84,9 +84,9 @@
 %right                  NOT
 %left                   "-" "+"
 %left                   "*" "/" "%"
+%left                   RELATIONAL  // XXX: is the priority of this off?
 %left                   "."
 %left                   "(" ")" "[" "]"
-%left                   RELATIONAL  // XXX: is the priority of this off?
 %left                   "\n"
 %nonassoc               "?" ":"
 %nonassoc               IF ELIF ELSE ENDIF
