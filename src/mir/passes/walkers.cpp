@@ -13,18 +13,6 @@ namespace MIR::Passes {
 
 namespace {
 
-bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback & cb) {
-    bool progress = false;
-    for (auto it = vec.begin(); it != vec.end(); ++it) {
-        auto rt = cb(*it);
-        if (rt.has_value()) {
-            vec[it - vec.begin()] = rt.value();
-            progress |= true;
-        }
-    }
-    return progress;
-}
-
 class BlockIterator {
   private:
     std::shared_ptr<CFGNode> current;
@@ -68,6 +56,100 @@ class BlockIterator {
     }
 };
 
+bool mutation_visitor(Instruction & it, MutationCallback cb) {
+    bool progress = false;
+
+    if (auto * a = std::get_if<MIR::Array>(it.obj_ptr.get())) {
+        for (auto & a : a->value) {
+            progress |= mutation_visitor(a, cb);
+        }
+    } else if (auto * d = std::get_if<MIR::Dict>(it.obj_ptr.get())) {
+        for (auto & [_, v] : d->value) {
+            progress |= mutation_visitor(v, cb);
+        }
+    } else if (auto * f = std::get_if<MIR::FunctionCall>(it.obj_ptr.get())) {
+        for (auto & p : f->pos_args) {
+            progress |= mutation_visitor(p, cb);
+        }
+        for (auto & [_, v] : f->kw_args) {
+            progress |= mutation_visitor(v, cb);
+        }
+        progress |= mutation_visitor(f->holder, cb);
+    } else if (auto * j = std::get_if<MIR::Jump>(it.obj_ptr.get())) {
+        if (j->predicate) {
+            progress |= mutation_visitor(*j->predicate, cb);
+        }
+    } else if (auto * b = std::get_if<MIR::Branch>(it.obj_ptr.get())) {
+        for (auto & [i, _] : b->branches) {
+            progress |= mutation_visitor(i, cb);
+        }
+    }
+    progress |= cb(it);
+
+    return progress;
+}
+
+bool replacement_visitor(const Instruction & it, const ReplacementCallback & cb);
+
+bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback & cb) {
+    bool progress = false;
+    for (auto it = vec.begin(); it != vec.end(); ++it) {
+        progress |= replacement_visitor(*it, cb);
+        auto rt = cb(*it);
+        if (rt.has_value()) {
+            vec[it - vec.begin()] = rt.value();
+            progress |= true;
+        }
+    }
+    return progress;
+}
+
+bool replace_elements(std::unordered_map<std::string, Instruction> & map,
+                      const ReplacementCallback & cb) {
+    bool progress = false;
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        progress |= replacement_visitor(it->second, cb);
+        auto rt = cb(it->second);
+        if (rt.has_value()) {
+            map[it->first] = rt.value();
+            progress |= true;
+        }
+    }
+    return progress;
+}
+
+bool replacement_visitor(const Instruction & it, const ReplacementCallback & cb) {
+    bool progress = false;
+
+    if (auto * a = std::get_if<MIR::Array>(it.obj_ptr.get())) {
+        progress |= replace_elements(a->value, cb);
+    } else if (auto * d = std::get_if<MIR::Dict>(it.obj_ptr.get())) {
+        progress |= replace_elements(d->value, cb);
+    } else if (auto * f = std::get_if<MIR::FunctionCall>(it.obj_ptr.get())) {
+        progress |= replace_elements(f->pos_args, cb);
+        progress |= replace_elements(f->kw_args, cb);
+        progress |= replacement_visitor(f->holder, cb);
+    } else if (auto * j = std::get_if<MIR::Jump>(it.obj_ptr.get())) {
+        if (j->predicate) {
+            progress |= replacement_visitor(*j->predicate, cb);
+            if (auto rt = cb(*j->predicate)) {
+                j->predicate = std::make_shared<Instruction>(rt.value());
+                progress |= true;
+            }
+        }
+    } else if (auto * b = std::get_if<MIR::Branch>(it.obj_ptr.get())) {
+        for (auto it2 = b->branches.begin(); it2 != b->branches.end(); ++it2) {
+            progress |= replacement_visitor(std::get<0>(*it2), cb);
+            if (auto rt = cb(std::get<0>(*it2))) {
+                b->branches[it2 - b->branches.begin()] =
+                    std::make_tuple(rt.value(), std::get<1>(*it2));
+                progress |= true;
+            }
+        }
+    }
+    return progress;
+}
+
 } // namespace
 
 bool instruction_walker(CFGNode & block, const std::vector<MutationCallback> & fc) {
@@ -84,146 +166,17 @@ bool instruction_walker(CFGNode & block, const std::vector<MutationCallback> & f
 
     for (auto it = block.block->instructions.begin(); it != block.block->instructions.end(); ++it) {
         for (const auto & cb : rc) {
-            auto rt = cb(*it);
-            if (rt.has_value()) {
+            progress |= replacement_visitor(*it, cb);
+            if (auto rt = cb(*it)) {
                 it = block.block->instructions.erase(it);
                 it = block.block->instructions.insert(it, std::move(rt.value()));
                 progress |= true;
             }
         }
         for (const auto & cb : fc) {
-            progress |= cb(*it);
+            progress |= mutation_visitor(*it, cb);
         }
     }
-
-    return progress;
-};
-
-bool array_walker(Instruction & obj, const MutationCallback & cb) {
-    bool progress = false;
-
-    auto arr_ptr = std::get_if<Array>(obj.obj_ptr.get());
-    if (arr_ptr == nullptr) {
-        return progress;
-    }
-
-    for (auto & e : arr_ptr->value) {
-        if (std::holds_alternative<Array>(*e.obj_ptr)) {
-            progress |= array_walker(e, cb);
-        } else {
-            progress |= cb(e);
-        }
-    }
-
-    return progress;
-}
-
-bool array_walker(const Instruction & obj, const ReplacementCallback & cb) {
-    bool progress = false;
-
-    auto arr_ptr = std::get_if<Array>(obj.obj_ptr.get());
-    if (arr_ptr == nullptr) {
-        return progress;
-    }
-
-    for (auto it = arr_ptr->value.begin(); it != arr_ptr->value.end(); ++it) {
-        if (std::holds_alternative<Array>(*it->obj_ptr)) {
-            progress |= array_walker(*it, cb);
-        } else {
-            auto rt = cb(*it);
-            if (rt.has_value()) {
-                arr_ptr->value[it - arr_ptr->value.begin()] = rt.value();
-                progress |= true;
-            }
-        }
-    }
-
-    return progress;
-}
-
-bool function_argument_walker(const Instruction & obj, const ReplacementCallback & cb) {
-    bool progress = false;
-
-    auto func_ptr = std::get_if<FunctionCall>(obj.obj_ptr.get());
-    if (func_ptr == nullptr) {
-        return progress;
-    }
-
-    if (!func_ptr->pos_args.empty()) {
-        progress |= replace_elements(func_ptr->pos_args, cb);
-    }
-
-    if (!func_ptr->kw_args.empty()) {
-        for (auto & [n, v] : func_ptr->kw_args) {
-            if (std::holds_alternative<Array>(*v.obj_ptr)) {
-                progress |= array_walker(v, cb);
-            }
-            // If the callback can act on arrays (like flatten can), we need to
-            // call the cb on the array, and on the array elements
-            if (std::optional<Instruction> o = cb(v); o.has_value()) {
-                func_ptr->kw_args[n] = o.value();
-                progress |= true;
-            }
-        }
-    }
-
-    return progress;
-}
-
-bool function_argument_walker(Instruction & obj, const MutationCallback & cb) {
-    bool progress = false;
-
-    auto func_ptr = std::get_if<FunctionCall>(obj.obj_ptr.get());
-    if (func_ptr == nullptr) {
-        return progress;
-    }
-
-    for (auto & e : func_ptr->pos_args) {
-        progress |= cb(e);
-        progress |= array_walker(e, cb);
-    }
-
-    if (!func_ptr->kw_args.empty()) {
-        for (auto & [_, v] : func_ptr->kw_args) {
-            progress |= cb(v);
-            progress |= array_walker(v, cb);
-        }
-    }
-
-    return progress;
-}
-
-bool function_walker(CFGNode & block, const ReplacementCallback & cb) {
-    bool progress = instruction_walker(
-        block,
-        {
-            [&](const Instruction & obj) { return array_walker(obj, cb); }, // look into arrays
-            // look into function arguments
-            [&](const Instruction & obj) { return function_argument_walker(obj, cb); },
-            // TODO: look into dictionary elements
-        },
-        {cb});
-
-    // TODO: conditions where previously handled here
-    // What to do about predicated jumps?
-
-    return progress;
-};
-
-bool function_walker(CFGNode & block, const MutationCallback & cb) {
-    bool progress = instruction_walker(
-        block,
-        {
-            [&](Instruction & obj) { return array_walker(obj, cb); }, // look into arrays
-            // look into function arguments
-            [&](Instruction & obj) { return function_argument_walker(obj, cb); },
-            // TODO: look into dictionary elements
-            cb,
-        },
-        {});
-
-    // TODO: conditions where previously handled here
-    // What to do about predicated jumps?
 
     return progress;
 };

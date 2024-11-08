@@ -32,28 +32,6 @@ bool instruction_walker(CFGNode &, const std::vector<MutationCallback> &);
 bool instruction_walker(CFGNode &, const std::vector<ReplacementCallback> &);
 
 /**
- * Walks the isntructions of a basic block calling each callback on Function it fins
- *
- * It is the job of each function callback to only act on functions it means to.
- */
-bool function_walker(CFGNode &, const ReplacementCallback &);
-bool function_walker(CFGNode &, const MutationCallback &);
-
-/**
- * Walk each instruction in an array, recursively, calling the callbck on them.
- */
-bool array_walker(const Instruction &, const ReplacementCallback &);
-bool array_walker(Instruction &, const MutationCallback &);
-
-/**
- * Walk over the arguments (positional and keyword) of a function
- *
- * This will replace the arguments if they are loweed by the callback
- */
-bool function_argument_walker(const Instruction &, const ReplacementCallback &);
-bool function_argument_walker(Instruction &, const MutationCallback &);
-
-/**
  * Walker over all basic blocks starting with the provided one, applying the given callbacks
  */
 bool graph_walker(std::shared_ptr<CFGNode>, const std::vector<BlockWalkerCb> &);

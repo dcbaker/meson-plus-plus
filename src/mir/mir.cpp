@@ -86,7 +86,6 @@ Instruction::Instruction(File val) : obj_ptr{std::make_shared<Object>(std::move(
 Instruction::Instruction(IncludeDirectories val)
     : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Message val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Empty val) : obj_ptr{std::make_shared<Object>(val)} {};
 Instruction::Instruction(Dependency val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(CustomTarget val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(StaticLibrary val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
@@ -103,7 +102,7 @@ std::string Instruction::print() const {
         [](auto && i) {
             using T = std::decay_t<decltype(i)>;
             if constexpr (std::is_same_v<T, std::monostate>) {
-                return std::string{"Empty {}"};
+                return std::string{"monostate"};
             } else {
                 return i.print();
             }
@@ -289,8 +288,6 @@ std::string Program::print() const {
 
 bool Program::found() const { return path != ""; }
 
-std::string Empty::print() const { return "Empty {}"; }
-
 FunctionCall::FunctionCall(std::string _name, std::vector<Instruction> && _pos,
                            std::unordered_map<std::string, Instruction> && _kw,
                            std::filesystem::path _sd)
@@ -425,16 +422,17 @@ void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> s
     predecessor->successors.emplace(successor);
 }
 
-void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
+void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor,
+                  bool recursive) {
     // If the successor only has one parent it will be freed. When this happens
     // any blocks that consider it a predecessor will an expired weak_ptr.
     //
     // In order to avoid that situation, we look at the successor, and if it has
     // only one predecessor (us), then we recursively unlink it down the chain
     // as long as that is true.
-    if (successor->predecessors.size() == 1) {
-        for (auto && ss : successor->successors) {
-            unlink_nodes(successor, ss);
+    if (recursive && successor->predecessors.size() == 1) {
+        while (!successor->successors.empty()) {
+            unlink_nodes(successor, *successor->successors.begin());
         }
     }
 

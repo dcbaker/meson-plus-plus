@@ -9,8 +9,7 @@
 namespace MIR::Passes {
 
 std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
-    auto id = std::get_if<Identifier>(obj.obj_ptr.get());
-    if (id != nullptr) {
+    if (auto id = std::get_if<Identifier>(obj.obj_ptr.get())) {
         const Variable new_var{id->value, id->version};
 
         if (const auto & found = data.find(new_var); found != data.end()) {
@@ -38,7 +37,7 @@ std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
 }
 
 bool ConstantFolding::operator()(std::shared_ptr<CFGNode> block) {
-    return function_walker(*block, [this](const Instruction & i) { return this->impl(i); });
+    return instruction_walker(*block, {[this](const Instruction & i) { return this->impl(i); }});
 };
 
 } // namespace MIR::Passes

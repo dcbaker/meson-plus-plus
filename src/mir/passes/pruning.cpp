@@ -27,14 +27,15 @@ bool branch_pruning_impl(std::shared_ptr<CFGNode> node) {
                     // If this predicate is true, then we always make this jump.
                     // delete the predicate, erase all of the rest of the instructions
                     // Break all of the other links, and leave
-                    j->predicate = std::make_shared<Instruction>();
+                    j->predicate = std::make_shared<Instruction>(std::monostate{});
                     for (auto && s : node->successors) {
                         if (s != j->target) {
                             unlink_nodes(node, s);
                         }
                     }
+                    it++;
                     while (it != node->block->instructions.end()) {
-                        node->block->instructions.erase(++it);
+                        it = node->block->instructions.erase(it);
                     }
                     return true;
                 } else {
@@ -49,39 +50,36 @@ bool branch_pruning_impl(std::shared_ptr<CFGNode> node) {
         } else if (auto * b = std::get_if<Branch>(it->obj_ptr.get())) {
             assert(!b->branches.empty());
 
-            // If the first branch is true, then we will take that branch of the
-            // if/elif/else construct. Throw the rest away and replace the Branch with a Jump
-            const auto [con, dest] = b->branches.at(0);
-            if (const Boolean * v = std::get_if<Boolean>(con.obj_ptr.get()); v && v->value) {
-                for (auto it2 = ++b->branches.begin(); it2 != b->branches.end(); ++it2) {
-                    auto t = std::get<1>(*it2);
-                    if (t != dest) {
-                        unlink_nodes(node, t);
+            for (auto bit = b->branches.begin(); bit != b->branches.end(); ++bit) {
+                if (const Boolean * v = std::get_if<Boolean>(std::get<0>(*bit).obj_ptr.get())) {
+                    if (v->value) {
+                        // If this branch is true then we can remove all
+                        // branches *after* this one, as we know that we will
+                        for (bit++; bit != b->branches.end();) {
+                            auto next = std::get<1>(*bit);
+                            unlink_nodes(node, next);
+                            bit = b->branches.erase(bit);
+                            progress |= true;
+                        }
+                        break;
+                    } else {
+                        // If this branch is known to be false then we can remove it
+                        unlink_nodes(node, std::get<1>(*bit));
+                        bit = b->branches.erase(bit);
+                        progress |= true;
                     }
                 }
-                it = node->block->instructions.erase(it);
-                node->block->instructions.insert(it, Jump{dest});
-                progress = true;
-            } else {
-                // If we find a Branch we can prune any jumps it would make, as well
-                // as replacing it with a jump if only one branch is left.
-                for (auto it2 = b->branches.begin(); it2 != b->branches.end(); ++it2) {
-                    if (auto * con = std::get_if<Boolean>(std::get<0>(*it2).obj_ptr.get());
-                        con && !con->value) {
-                        unlink_nodes(node, std::get<1>(*it2));
-                        it2 = b->branches.erase(it2);
-                        progress = true;
-                    }
-                }
+            }
 
-                if (b->branches.size() == 1) {
-                    Jump jump{std::get<1>(b->branches.at(0))};
-                    it = node->block->instructions.erase(it);
-                    node->block->instructions.emplace(it, std::move(jump));
-                } else if (b->branches.empty()) {
-                    assert(node->successors.empty());
-                    it = node->block->instructions.erase(it);
-                }
+            if (b->branches.size() == 1) {
+                Jump jump{std::get<1>(b->branches.at(0))};
+                it = node->block->instructions.erase(it);
+                it = node->block->instructions.emplace(it, std::move(jump));
+                progress |= true;
+            } else if (b->branches.empty()) {
+                assert(node->successors.empty());
+                it = node->block->instructions.erase(it);
+                progress |= true;
             }
         }
     }

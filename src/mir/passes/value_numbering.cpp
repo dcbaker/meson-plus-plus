@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2024 Intel Corporation
 
+#include "exceptions.hpp"
 #include "passes.hpp"
 #include "private.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <stdexcept>
 #include <tuple>
 
 namespace MIR::Passes {
@@ -72,19 +74,15 @@ bool GlobalValueNumbering::number(Instruction & obj, const uint32_t block_index)
         auto & id = std::get<Identifier>(*obj.obj_ptr);
         // TODO: use before definition
         if (!id.version) {
-            id.version = table.at(id.value);
+            try {
+                id.version = table.at(id.value);
+            } catch (std::out_of_range &) {
+                throw Util::Exceptions::MesonException{"Attempted to use variable '" + id.value +
+                                                       "' before it's definition"};
+            }
             progress = true;
         }
-    } else if (std::holds_alternative<Array>(*obj.obj_ptr)) {
-        progress |=
-            array_walker(obj, {[&](Instruction & i) { return this->number(i, block_index); }});
-    } else if (std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
-        auto && fc = std::get<FunctionCall>(*obj.obj_ptr);
-        progress |= number(fc.holder, block_index);
-        progress |= function_argument_walker(
-            obj, {[&](Instruction & i) { return this->number(i, block_index); }});
     }
-    // TODO: dict
 
     // This needs to be done after numbering array and dict members, and
     // function arguments, which might otherwise create a circular reference

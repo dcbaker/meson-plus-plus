@@ -75,7 +75,6 @@ class Phi;
 class IncludeDirectories;
 class Message;
 class Program;
-class Empty;
 class CustomTarget;
 class Dependency;
 class Test;
@@ -85,7 +84,7 @@ class Branch;
 using Object =
     std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
                  Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
-                 Program, Empty, CustomTarget, Dependency, Test, AddArguments, Jump, Branch>;
+                 Program, CustomTarget, Dependency, Test, AddArguments, Jump, Branch>;
 
 using Callable = std::variant<File, Executable, Program>;
 
@@ -111,7 +110,6 @@ class Instruction {
     Instruction(File val);
     Instruction(IncludeDirectories val);
     Instruction(Message val);
-    Instruction(Empty val);
     Instruction(Dependency val);
     Instruction(CustomTarget val);
     Instruction(StaticLibrary val);
@@ -388,14 +386,6 @@ class Test {
     std::string print() const;
 };
 
-class Empty {
-  public:
-    Empty() = default;
-
-    /// Print a human readable version of this
-    std::string print() const;
-};
-
 /**
  * Holds a toolchain
  *
@@ -623,6 +613,7 @@ class CFG {
 };
 
 void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
-void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
+void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor,
+                  bool recursive = true);
 
 } // namespace MIR

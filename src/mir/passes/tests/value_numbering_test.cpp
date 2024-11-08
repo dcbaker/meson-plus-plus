@@ -50,7 +50,7 @@ TEST(value_numbering, three_branch) {
     auto irlist = lower(R"EOF(
         if true
             x = 9
-        elif y
+        elif y()
             x = 10
         else
             x = 11
@@ -116,15 +116,21 @@ TEST(number_uses, with_phi) {
         y = x
         )EOF");
 
+    MIR::Passes::Printer printer{};
+
     // Do this in two passes as otherwise the phi won't get inserted, and thus y will point at the
     // wrong thing
     MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::GlobalValueNumbering{},
+                                          std::ref(printer),
                                       });
     MIR::Passes::graph_walker(irlist, {
                                           MIR::Passes::branch_pruning,
+                                          std::ref(printer),
                                           MIR::Passes::join_blocks,
+                                          std::ref(printer),
                                           MIR::Passes::fixup_phis,
+                                          std::ref(printer),
                                       });
 
     ASSERT_EQ(irlist->block->instructions.size(), 3);
@@ -153,7 +159,7 @@ TEST(number_uses, with_phi) {
 
 TEST(number_uses, with_phi_no_pruning_in_func_call) {
     auto irlist = lower(R"EOF(
-        if some_var
+        if some_var()
             x = 9
         else
             x = 10
@@ -188,7 +194,7 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
 
 TEST(number_uses, with_phi_no_pruning) {
     auto irlist = lower(R"EOF(
-        if some_var
+        if some_var()
             x = 9
         else
             x = 10

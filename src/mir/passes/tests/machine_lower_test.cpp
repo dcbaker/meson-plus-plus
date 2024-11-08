@@ -62,14 +62,14 @@ TEST(machine_lower, in_function_args) {
     ASSERT_EQ(std::get<MIR::String>(*f.pos_args[0].obj_ptr).value, "little");
 }
 
-TEST(machine_lower, in_condtion) {
+TEST(machine_lower, in_condition) {
     auto irlist = lower("if host_machine.cpu_family()\n x = 2\nendif");
     auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
         MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
                             MIR::Machines::Endian::LITTLE, "x86_64"});
     bool progress = MIR::Passes::machine_lower(irlist, info);
     ASSERT_TRUE(progress);
-    ASSERT_EQ(irlist->block->instructions.size(), 0);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
 
     const auto & obj = std::get<0>(
         std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr).branches.at(0));
