@@ -41,19 +41,19 @@ jobs:
     - name: apt
       run: |
         sudo apt update
-        sudo apt install libfl-dev libgtest-dev
+        sudo apt install libfl-dev libgtest-dev ninja-build
 
     - name: setup python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -62,16 +62,17 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     - name: Ccache for gh actions
-      uses: hendrikmuhs/ccache-action@v1.0.5
+      uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: gcc
 
-    - name: Build Meson++
-      uses: BSFishy/meson-build@v1.0.3
-      with:
-        meson-version: 0.55
-        action: build
-        directory: builddir
+    - name: install meson
+      run: pip install meson==0.60.3
+
+    - name: Meson
+      run: |
+          meson setup builddir ${{ matrix.cfg.setup_options }}
+          ninja -C builddir
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2
