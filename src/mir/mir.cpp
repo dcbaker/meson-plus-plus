@@ -96,6 +96,7 @@ Instruction::Instruction(Test val) : obj_ptr{std::make_shared<Object>(std::move(
 Instruction::Instruction(AddArguments val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Jump val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 Instruction::Instruction(Branch val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
+Instruction::Instruction(Disabler val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
 
 std::string Instruction::print() const {
     const std::string i = std::visit(
@@ -403,6 +404,10 @@ std::string Branch::print() const {
     ss << " }";
     return ss.str();
 }
+
+Disabler::Disabler() = default;
+
+std::string Disabler::print() const { return "disabler { }"; }
 
 void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
     successor->predecessors.emplace(predecessor);
