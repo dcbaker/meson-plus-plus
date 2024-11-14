@@ -13,12 +13,21 @@
 
 #include <gtest/gtest.h>
 
+namespace {
+
+bool wrapper(std::shared_ptr<MIR::CFGNode> node, const MIR::State::Persistant & pstate) {
+    return MIR::Passes::instruction_walker(*node, {[&pstate](const MIR::Instruction & inst) {
+        return MIR::Passes::lower_free_functions(inst, pstate);
+    }});
+}
+
+} // namespace
+
 TEST(files, simple) {
     auto irlist = lower("x = files('foo.c')");
 
     const MIR::State::Persistant pstate = make_pstate();
-
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -42,7 +51,7 @@ TEST(executable, simple) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -69,7 +78,7 @@ TEST(static_library, simple) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -106,7 +115,7 @@ TEST(project, vararg_array) {
 TEST(messages, simple) {
     auto irlist = lower("message('foo')");
     MIR::State::Persistant pstate = make_pstate();
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
@@ -122,7 +131,7 @@ TEST(messages, simple) {
 TEST(messages, two_args) {
     auto irlist = lower("warning('foo', 'bar')");
     MIR::State::Persistant pstate = make_pstate();
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
@@ -138,7 +147,7 @@ TEST(messages, two_args) {
 TEST(assert, simple) {
     auto irlist = lower("assert(false)");
     MIR::State::Persistant pstate = make_pstate();
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
@@ -186,7 +195,7 @@ TEST(find_program, found) {
 TEST(not, simple) {
     auto irlist = lower("not false");
     const MIR::State::Persistant pstate = make_pstate();
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -200,7 +209,7 @@ TEST(not, simple) {
 TEST(neg, simple) {
     auto irlist = lower("-5");
     const MIR::State::Persistant pstate = make_pstate();
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -217,7 +226,7 @@ TEST(custom_target, simple) {
 
     const MIR::State::Persistant pstate = make_pstate();
 
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -234,7 +243,7 @@ static inline bool test_equality(const std::string & expr) {
 
     const MIR::State::Persistant pstate = make_pstate();
 
-    MIR::Passes::lower_free_functions(irlist, pstate);
+    wrapper(irlist, pstate);
     const auto & r = irlist->block->instructions.front();
     const auto & value = std::get<MIR::Boolean>(*r.obj_ptr);
     return value.value;
@@ -279,7 +288,7 @@ TEST(declare_dependency, string_include_dirs) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -299,7 +308,7 @@ TEST(declare_dependency, compile_args) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -323,7 +332,7 @@ TEST(declare_dependency, recursive) {
 
     bool progress = true;
     while (progress) {
-        progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        progress = wrapper(irlist, pstate);
     }
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -344,7 +353,7 @@ TEST(add_project_arguments, simple) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    const bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
 
     const auto & ir = irlist->block->instructions.front();
@@ -371,7 +380,7 @@ TEST(add_project_link_arguments, simple) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    const bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
 
     const auto & ir = irlist->block->instructions.front();
@@ -398,7 +407,7 @@ TEST(add_global_arguments, simple) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    const bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
 
     const auto & ir = irlist->block->instructions.front();
@@ -425,7 +434,7 @@ TEST(add_global_link_arguments, simple) {
         std::make_shared<MIR::Toolchain::Toolchain>(MIR::Toolchain::get_toolchain(
             MIR::Toolchain::Language::CPP, MIR::Machines::Machine::BUILD));
 
-    const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+    const bool progress = wrapper(irlist, pstate);
     ASSERT_TRUE(progress);
 
     const auto & ir = irlist->block->instructions.front();
@@ -460,7 +469,7 @@ TEST(add_global_link_arguments, combine) {
     printer.increment();
 
     {
-        const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        const bool progress = wrapper(irlist, pstate);
         printer(irlist);
         printer.increment();
         ASSERT_TRUE(progress);
@@ -511,7 +520,7 @@ TEST(add_global_link_arguments, combine_complex) {
     printer.increment();
 
     {
-        const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        const bool progress = wrapper(irlist, pstate);
         printer(irlist);
         printer.increment();
         ASSERT_TRUE(progress);
@@ -562,7 +571,7 @@ TEST(add_global_link_arguments, dont_combine) {
     printer.increment();
 
     {
-        const bool progress = MIR::Passes::lower_free_functions(irlist, pstate);
+        const bool progress = wrapper(irlist, pstate);
         printer(irlist);
         printer.increment();
         EXPECT_TRUE(progress);
