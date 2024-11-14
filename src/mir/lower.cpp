@@ -23,12 +23,16 @@ void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
         {
             [&](std::shared_ptr<CFGNode> b) { return Passes::machine_lower(b, pstate.machines); },
             [&](std::shared_ptr<CFGNode> b) {
-                return Passes::insert_compilers(b, pstate.toolchains);
-            },
-            [&](std::shared_ptr<CFGNode> b) {
-                return Passes::instruction_walker(*b, {
-                                                          Passes::custom_target_program_replacement,
-                                                      });
+                return Passes::instruction_walker(*b,
+                                                  {
+                                                      Passes::custom_target_program_replacement,
+                                                  },
+                                                  {
+                                                      [&pstate](const Instruction & obj) {
+                                                          return Passes::insert_compilers(
+                                                              obj, pstate.toolchains);
+                                                      },
+                                                  });
             },
             Passes::GlobalValueNumbering{},
             std::ref(printer),

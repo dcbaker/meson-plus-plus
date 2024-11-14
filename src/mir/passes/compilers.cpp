@@ -27,7 +27,9 @@ using ToolchainMap =
     std::unordered_map<MIR::Toolchain::Language,
                        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
 
-std::optional<Instruction> replace_compiler(const Instruction & obj, const ToolchainMap & tc) {
+} // namespace
+
+std::optional<Instruction> insert_compilers(const Instruction & obj, const ToolchainMap & tc) {
     if (!std::get_if<FunctionCall>(obj.obj_ptr.get())) {
         return std::nullopt;
     }
@@ -67,12 +69,5 @@ std::optional<Instruction> replace_compiler(const Instruction & obj, const Toolc
         throw Util::Exceptions::MesonException{"No compiler for language"};
     }
 }
-
-} // namespace
-
-bool insert_compilers(std::shared_ptr<CFGNode> block, const ToolchainMap & toolchains) {
-    const auto cb = [&](const Instruction & obj) { return replace_compiler(obj, toolchains); };
-    return instruction_walker(*block, {cb});
-};
 
 } // namespace MIR::Passes

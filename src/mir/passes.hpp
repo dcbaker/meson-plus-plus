@@ -46,10 +46,11 @@ bool machine_lower(std::shared_ptr<CFGNode>,
 /**
  * Run complier detection code and replace variables with compiler objects.
  */
-bool insert_compilers(std::shared_ptr<CFGNode>,
-                      const std::unordered_map<
-                          MIR::Toolchain::Language,
-                          MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
+std::optional<Instruction>
+insert_compilers(const Instruction &,
+                 const std::unordered_map<
+                     MIR::Toolchain::Language,
+                     MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
 
 /**
  * Find string arguments to custom_target's program space (intput[0]), and

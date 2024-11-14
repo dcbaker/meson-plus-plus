@@ -15,6 +15,20 @@
 
 #include "test_utils.hpp"
 
+namespace {
+
+using ToolchainMap =
+    std::unordered_map<MIR::Toolchain::Language,
+                       MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
+
+bool wrapper(std::shared_ptr<MIR::CFGNode> & node, const ToolchainMap & tc) {
+    return MIR::Passes::instruction_walker(*node, {[&tc](const MIR::Instruction & obj) {
+        return MIR::Passes::insert_compilers(obj, tc);
+    }});
+}
+
+} // namespace
+
 TEST(insert_compiler, simple) {
     const std::vector<std::string> init{"null"};
     auto comp = std::make_unique<MIR::Toolchain::Compiler::CPP::Clang>(init);
@@ -23,14 +37,12 @@ TEST(insert_compiler, simple) {
         std::make_unique<MIR::Toolchain::Linker::Drivers::Gnu>(MIR::Toolchain::Linker::GnuBFD{init},
                                                                comp.get()),
         std::make_unique<MIR::Toolchain::Archiver::Gnu>(init));
-    std::unordered_map<MIR::Toolchain::Language,
-                       MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>
-        tc_map{};
+    ToolchainMap tc_map{};
     tc_map[MIR::Toolchain::Language::CPP] =
         MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>{tc};
 
     auto irlist = lower("x = meson.get_compiler('cpp')");
-    bool progress = MIR::Passes::insert_compilers(irlist, tc_map);
+    bool progress = wrapper(irlist, tc_map);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -42,13 +54,11 @@ TEST(insert_compiler, simple) {
 }
 
 TEST(insert_compiler, unknown_language) {
-    std::unordered_map<MIR::Toolchain::Language,
-                       MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>
-        tc_map{};
+    ToolchainMap tc_map{};
 
     auto irlist = lower("x = meson.get_compiler('cpp')");
     try {
-        (void)MIR::Passes::insert_compilers(irlist, tc_map);
+        (void)wrapper(irlist, tc_map);
         FAIL();
     } catch (Util::Exceptions::MesonException & e) {
         std::string m{e.what()};
