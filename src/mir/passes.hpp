@@ -155,6 +155,11 @@ std::optional<Instruction> lower_compiler_methods(const Instruction & inst);
 /// Delete any code that has become unreachable
 bool delete_unreachable(std::shared_ptr<CFGNode> block);
 
+/// @brief If an object holds a disabler, disable it
+/// @param obj the object to check
+/// @return a disabler if this item should be disabled, otherwise nullopt
+std::optional<Instruction> disable(const Instruction & obj);
+
 /// Debugging pass that dumps a human readable text representation of the IR to
 /// a file.
 /// controlled by setting the MESONPP_DEBUG_PRINT_MIR environment variable

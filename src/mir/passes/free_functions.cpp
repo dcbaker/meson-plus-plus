@@ -731,6 +731,8 @@ std::optional<Instruction> lower_free_functions(const Instruction & obj,
         i = lower_add_arguments(f, ArgumentScope::global_comp, pstate);
     } else if (f.name == "add_global_link_arguments") {
         i = lower_add_arguments(f, ArgumentScope::global_link, pstate);
+    } else if (f.name == "disabler") {
+        i = Disabler{};
     } else if (f.name == "find_program" || f.name == "dependency") {
         // These are handled elsewhere
         return std::nullopt;
