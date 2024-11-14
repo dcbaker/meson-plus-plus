@@ -19,8 +19,12 @@ TEST(unreachable_code, clear_dead_instructions) {
     MIR::State::Persistant pstate = make_pstate();
 
     MIR::Passes::graph_walker(irlist, {
-                                          [&](std::shared_ptr<MIR::CFGNode> b) {
-                                              return MIR::Passes::lower_free_functions(b, pstate);
+                                          [&pstate](std::shared_ptr<MIR::CFGNode> b) {
+                                              return MIR::Passes::instruction_walker(
+                                                  *b, {[&pstate](const MIR::Instruction & inst) {
+                                                      return MIR::Passes::lower_free_functions(
+                                                          inst, pstate);
+                                                  }});
                                           },
                                           MIR::Passes::delete_unreachable,
                                       });
@@ -54,19 +58,19 @@ TEST(unreachable_code, no_jump_after_error) {
     printer.increment();
 
     MIR::Passes::graph_walker(
-        irlist,
-        {
-            [&](std::shared_ptr<MIR::CFGNode> b) {
-                return MIR::Passes::instruction_walker(*b, {[&](const MIR::Instruction & obj) {
-                    return MIR::Passes::machine_lower(obj, pstate.machines);
-                }});
-            },
-            [&](std::shared_ptr<MIR::CFGNode> b) {
-                return MIR::Passes::lower_free_functions(b, pstate);
-            },
-            MIR::Passes::delete_unreachable,
-            std::ref(printer),
-        });
+        irlist, {
+                    [&](std::shared_ptr<MIR::CFGNode> b) {
+                        return MIR::Passes::instruction_walker(
+                            *b, {[&](const MIR::Instruction & obj) {
+                                     return MIR::Passes::machine_lower(obj, pstate.machines);
+                                 },
+                                 [&pstate](const MIR::Instruction & inst) {
+                                     return MIR::Passes::lower_free_functions(inst, pstate);
+                                 }});
+                    },
+                    MIR::Passes::delete_unreachable,
+                    std::ref(printer),
+                });
 
     EXPECT_EQ(irlist->successors.size(), 2);
 

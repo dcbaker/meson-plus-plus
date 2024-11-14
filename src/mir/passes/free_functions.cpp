@@ -675,8 +675,10 @@ bool holds_reduced(const Instruction & obj) {
             holds_reduced_dict(obj));
 }
 
-std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
-                                                 const State::Persistant & pstate) {
+} // namespace
+
+std::optional<Instruction> lower_free_functions(const Instruction & obj,
+                                                const State::Persistant & pstate) {
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         return std::nullopt;
     }
@@ -741,8 +743,6 @@ std::optional<Instruction> lower_free_funcs_impl(const Instruction & obj,
     i.value().var = obj.var;
     return i;
 }
-
-} // namespace
 
 bool all_args_reduced(const std::vector<Instruction> & pos_args,
                       const std::unordered_map<std::string, Instruction> & kw_args) {
@@ -813,11 +813,6 @@ void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
     // Remove the valid project() call so we don't accidently find it later when
     // looking for invalid function calls.
     block->block->instructions.pop_front();
-}
-
-bool lower_free_functions(std::shared_ptr<CFGNode> block, const State::Persistant & pstate) {
-    return instruction_walker(
-        *block, {[&](const Instruction & obj) { return lower_free_funcs_impl(obj, pstate); }});
 }
 
 } // namespace MIR::Passes

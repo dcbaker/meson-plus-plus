@@ -46,9 +46,12 @@ void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
         [&](std::shared_ptr<CFGNode> b) {
             return Passes::instruction_walker(*b, {
                                                       Passes::flatten,
+                                                      [&pstate](const Instruction & i) {
+                                                          return Passes::lower_free_functions(
+                                                              i, pstate);
+                                                      },
                                                   });
         },
-        [&](std::shared_ptr<CFGNode> b) { return Passes::lower_free_functions(b, pstate); },
         [&](std::shared_ptr<CFGNode> b) { return Passes::lower_program_objects(b, pstate); },
         [&](std::shared_ptr<CFGNode> b) { return Passes::lower_string_objects(b, pstate); },
         [&](std::shared_ptr<CFGNode> b) { return Passes::lower_dependency_objects(b, pstate); },

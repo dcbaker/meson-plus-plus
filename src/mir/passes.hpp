@@ -63,7 +63,7 @@ bool custom_target_program_replacement(Instruction &);
  *
  * This lowers free standing functions (those not part of an object/namespace).
  */
-bool lower_free_functions(std::shared_ptr<CFGNode>, const State::Persistant &);
+std::optional<Instruction> lower_free_functions(const Instruction &, const State::Persistant &);
 
 /**
  * Flatten array arguments to functions.
