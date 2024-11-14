@@ -27,6 +27,20 @@ using ToolchainMap =
     std::unordered_map<MIR::Toolchain::Language,
                        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
 
+std::optional<Instruction> lower_get_id_method(const FunctionCall & func) {
+    if (!func.pos_args.empty()) {
+        throw Util::Exceptions::InvalidArguments(
+            "compiler.get_id(): takes no positional arguments");
+    }
+    if (!func.kw_args.empty()) {
+        throw Util::Exceptions::InvalidArguments("compiler.get_id(): takes no keyword arguments");
+    }
+
+    const auto & comp = std::get<Compiler>(func.holder.object());
+
+    return String{comp.toolchain->compiler->id()};
+}
+
 } // namespace
 
 std::optional<Instruction> insert_compilers(const Instruction & obj, const ToolchainMap & tc) {
@@ -68,6 +82,34 @@ std::optional<Instruction> insert_compilers(const Instruction & obj, const Toolc
         // TODO: add a better error message
         throw Util::Exceptions::MesonException{"No compiler for language"};
     }
+}
+
+std::optional<Instruction> lower_compiler_methods(const Instruction & obj) {
+    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
+        return std::nullopt;
+    }
+    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
+
+    if (!std::holds_alternative<Compiler>(f.holder.object())) {
+        return std::nullopt;
+    }
+
+    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+        return std::nullopt;
+    }
+
+    std::optional<Instruction> i = std::nullopt;
+    if (f.name == "get_id") {
+        i = lower_get_id_method(f);
+    }
+
+    if (i) {
+        i.value().var = obj.var;
+        return i;
+    }
+
+    // XXX: Shouldn't really be able to get here...
+    return std::nullopt;
 }
 
 } // namespace MIR::Passes

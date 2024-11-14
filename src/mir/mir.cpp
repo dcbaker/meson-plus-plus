@@ -149,19 +149,6 @@ CFG::CFG(std::shared_ptr<CFGNode> n) : root{n} {};
 
 Compiler::Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc) : toolchain{std::move(tc)} {};
 
-Instruction Compiler::get_id(const std::vector<Instruction> & args,
-                             const std::unordered_map<std::string, Instruction> & kwargs) const {
-    if (!args.empty()) {
-        throw Util::Exceptions::InvalidArguments(
-            "compiler.get_id(): takes no positional arguments");
-    }
-    if (!kwargs.empty()) {
-        throw Util::Exceptions::InvalidArguments("compiler.get_id(): takes no keyword arguments");
-    }
-
-    return std::make_shared<Object>(String{toolchain->compiler->id()});
-};
-
 std::string Compiler::print() const {
     return "Compiler { language = " + toolchain->compiler->language() +
            "; id = " + toolchain->compiler->id() + " }";
