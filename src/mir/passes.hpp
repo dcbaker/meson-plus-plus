@@ -85,7 +85,7 @@ bool lower_free_functions(std::shared_ptr<CFGNode>, const State::Persistant &);
  * Meson++ uses this pass to flatten arguments, building an idealized set of
  * arguments for each function.
  */
-bool flatten(std::shared_ptr<CFGNode>, const State::Persistant &);
+std::optional<Instruction> flatten(const Instruction &);
 
 struct GlobalValueNumbering {
     bool operator()(std::shared_ptr<CFGNode>);
