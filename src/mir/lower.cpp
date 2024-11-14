@@ -19,24 +19,25 @@ namespace {
 void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
            Passes::Printer & printer) {
     Passes::graph_walker(
-        block,
-        {
-            [&](std::shared_ptr<CFGNode> b) { return Passes::machine_lower(b, pstate.machines); },
-            [&](std::shared_ptr<CFGNode> b) {
-                return Passes::instruction_walker(*b,
-                                                  {
-                                                      Passes::custom_target_program_replacement,
-                                                  },
-                                                  {
-                                                      [&pstate](const Instruction & obj) {
-                                                          return Passes::insert_compilers(
-                                                              obj, pstate.toolchains);
-                                                      },
-                                                  });
-            },
-            Passes::GlobalValueNumbering{},
-            std::ref(printer),
-        });
+        block, {
+                   [&](std::shared_ptr<CFGNode> b) {
+                       return Passes::instruction_walker(
+                           *b,
+                           {
+                               Passes::custom_target_program_replacement,
+                           },
+                           {
+                               [&pstate](const Instruction & obj) {
+                                   return Passes::insert_compilers(obj, pstate.toolchains);
+                               },
+                               [&pstate](const Instruction & obj) {
+                                   return Passes::machine_lower(obj, pstate.machines);
+                               },
+                           });
+                   },
+                   Passes::GlobalValueNumbering{},
+                   std::ref(printer),
+               });
 }
 
 void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,

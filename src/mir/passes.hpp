@@ -40,8 +40,8 @@ bool join_blocks(std::shared_ptr<CFGNode>);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-bool machine_lower(std::shared_ptr<CFGNode>,
-                   const MIR::Machines::PerMachine<MIR::Machines::Info> &);
+std::optional<Instruction> machine_lower(const Instruction &,
+                                         const MIR::Machines::PerMachine<MIR::Machines::Info> &);
 
 /**
  * Run complier detection code and replace variables with compiler objects.

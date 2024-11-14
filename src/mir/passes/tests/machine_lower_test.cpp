@@ -13,12 +13,24 @@
 
 #include "test_utils.hpp"
 
+namespace {
+
+using MachineInfo = MIR::Machines::PerMachine<MIR::Machines::Info>;
+
+bool wrapper(std::shared_ptr<MIR::CFGNode> & node, const MachineInfo & info) {
+    return MIR::Passes::instruction_walker(*node, {[&info](const MIR::Instruction & obj) {
+        return MIR::Passes::machine_lower(obj, info);
+    }});
+}
+
+} // namespace
+
 TEST(machine_lower, simple) {
     auto irlist = lower("x = 7\ny = host_machine.cpu_family()");
-    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
-        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
-                            MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    auto info =
+        MachineInfo(MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                                        MIR::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = wrapper(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 2);
     const auto & r = irlist->block->instructions.back();
@@ -28,10 +40,10 @@ TEST(machine_lower, simple) {
 
 TEST(machine_lower, in_array) {
     auto irlist = lower("x = [host_machine.cpu_family()]");
-    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
-        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
-                            MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    auto info =
+        MachineInfo(MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                                        MIR::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = wrapper(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
     const auto & r = irlist->block->instructions.front();
@@ -46,10 +58,10 @@ TEST(machine_lower, in_array) {
 
 TEST(machine_lower, in_function_args) {
     auto irlist = lower("foo(host_machine.endian())");
-    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
-        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
-                            MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    auto info =
+        MachineInfo(MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                                        MIR::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = wrapper(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
     const auto & r = irlist->block->instructions.front();
@@ -64,10 +76,10 @@ TEST(machine_lower, in_function_args) {
 
 TEST(machine_lower, in_condition) {
     auto irlist = lower("if host_machine.cpu_family()\n x = 2\nendif");
-    auto info = MIR::Machines::PerMachine<MIR::Machines::Info>(
-        MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
-                            MIR::Machines::Endian::LITTLE, "x86_64"});
-    bool progress = MIR::Passes::machine_lower(irlist, info);
+    auto info =
+        MachineInfo(MIR::Machines::Info{MIR::Machines::Machine::BUILD, MIR::Machines::Kernel::LINUX,
+                                        MIR::Machines::Endian::LITTLE, "x86_64"});
+    bool progress = wrapper(irlist, info);
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
