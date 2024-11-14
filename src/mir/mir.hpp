@@ -80,11 +80,12 @@ class Dependency;
 class Test;
 class Jump;
 class Branch;
+class Disabler;
 
 using Object =
     std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
                  Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
-                 Program, CustomTarget, Dependency, Test, AddArguments, Jump, Branch>;
+                 Program, CustomTarget, Dependency, Test, AddArguments, Jump, Branch, Disabler>;
 
 using Callable = std::variant<File, Executable, Program>;
 
@@ -120,6 +121,7 @@ class Instruction {
     Instruction(AddArguments val);
     Instruction(Jump val);
     Instruction(Branch val);
+    Instruction(Disabler val);
 
     Instruction & operator=(const Instruction &) = default;
 
@@ -427,6 +429,14 @@ class FunctionCall {
      * required to accurately map sources between the source and build dirs.
      */
     const std::filesystem::path source_dir;
+
+    /// Print a human readable version of this
+    std::string print() const;
+};
+
+class Disabler {
+  public:
+    Disabler();
 
     /// Print a human readable version of this
     std::string print() const;
