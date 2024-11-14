@@ -140,7 +140,7 @@ std::optional<Instruction> lower_program_objects(const Instruction & inst,
                                                  const State::Persistant & pstate);
 
 /// Lower string object methods
-bool lower_string_objects(std::shared_ptr<CFGNode> block, State::Persistant & pstate);
+std::optional<Instruction> lower_string_objects(const Instruction & inst, const State::Persistant & pstate);
 
 /// Lower dependency object methods
 bool lower_dependency_objects(std::shared_ptr<CFGNode> block, State::Persistant & pstate);

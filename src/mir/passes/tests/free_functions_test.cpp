@@ -272,7 +272,10 @@ TEST(version_compare, simple) {
 
     MIR::State::Persistant pstate = make_pstate();
 
-    bool progress = MIR::Passes::lower_string_objects(irlist, pstate);
+    bool progress =
+        MIR::Passes::instruction_walker(*irlist, {[&pstate](const MIR::Instruction & inst) {
+            return MIR::Passes::lower_string_objects(inst, pstate);
+        }});
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
