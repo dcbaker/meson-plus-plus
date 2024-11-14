@@ -45,7 +45,9 @@ Instruction lower_function(const std::string & holder, const std::string & name,
 
 using MachineInfo = PerMachine<Info>;
 
-std::optional<Instruction> lower_functions(const MachineInfo & machines, const Instruction & obj) {
+} // namespace
+
+std::optional<Instruction> machine_lower(const Instruction & obj, const MachineInfo & machines) {
     if (std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr)) {
         const auto & f = std::get<MIR::FunctionCall>(*obj.obj_ptr);
         if (std::holds_alternative<Identifier>(*f.holder.obj_ptr)) {
@@ -63,13 +65,5 @@ std::optional<Instruction> lower_functions(const MachineInfo & machines, const I
     }
     return std::nullopt;
 }
-
-} // namespace
-
-bool machine_lower(std::shared_ptr<CFGNode> block, const MachineInfo & machines) {
-    const auto cb = [&](const Instruction & o) { return lower_functions(machines, o); };
-
-    return instruction_walker(*block, {cb});
-};
 
 } // namespace MIR::Passes
