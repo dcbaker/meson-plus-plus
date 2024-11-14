@@ -20,10 +20,12 @@ void do_flatten(const Array & arr, std::vector<Instruction> & newarr) {
     }
 }
 
+} // namespace
+
 /**
  * Flatten arrays when passed as arguments to functions.
  */
-std::optional<Instruction> flatten_cb(const Instruction & obj) {
+std::optional<Instruction> flatten(const Instruction & obj) {
     const auto * arr = std::get_if<Array>(obj.obj_ptr.get());
     if (arr == nullptr) {
         return std::nullopt;
@@ -45,13 +47,6 @@ std::optional<Instruction> flatten_cb(const Instruction & obj) {
     do_flatten(*arr, newarr);
 
     return Array{std::move(newarr)};
-}
-
-} // namespace
-
-bool flatten(std::shared_ptr<CFGNode> block, const State::Persistant & pstate) {
-    // TODO: we need to skip this for message, error, and warning
-    return instruction_walker(*block, {flatten_cb});
 }
 
 } // namespace MIR::Passes

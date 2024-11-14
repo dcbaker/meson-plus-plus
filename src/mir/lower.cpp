@@ -43,7 +43,11 @@ void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
 void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
           Passes::Printer & printer) {
     const std::vector<MIR::Passes::BlockWalkerCb> main_loop{
-        [&](std::shared_ptr<CFGNode> b) { return Passes::flatten(b, pstate); },
+        [&](std::shared_ptr<CFGNode> b) {
+            return Passes::instruction_walker(*b, {
+                                                      Passes::flatten,
+                                                  });
+        },
         [&](std::shared_ptr<CFGNode> b) { return Passes::lower_free_functions(b, pstate); },
         [&](std::shared_ptr<CFGNode> b) { return Passes::lower_program_objects(b, pstate); },
         [&](std::shared_ptr<CFGNode> b) { return Passes::lower_string_objects(b, pstate); },
