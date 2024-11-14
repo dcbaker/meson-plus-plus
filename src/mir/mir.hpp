@@ -397,9 +397,6 @@ class Compiler {
 
     const std::shared_ptr<MIR::Toolchain::Toolchain> toolchain;
 
-    Instruction get_id(const std::vector<Instruction> &,
-                       const std::unordered_map<std::string, Instruction> &) const;
-
     /// Print a human readable version of this
     std::string print() const;
 };

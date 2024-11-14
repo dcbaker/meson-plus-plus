@@ -27,9 +27,11 @@ bool wrapper(std::shared_ptr<MIR::CFGNode> & node, const ToolchainMap & tc) {
     }});
 }
 
-} // namespace
+bool method_wrapper(std::shared_ptr<MIR::CFGNode> & node) {
+    return MIR::Passes::instruction_walker(*node, {MIR::Passes::lower_compiler_methods});
+}
 
-TEST(insert_compiler, simple) {
+ToolchainMap make_toolchain() {
     const std::vector<std::string> init{"null"};
     auto comp = std::make_unique<MIR::Toolchain::Compiler::CPP::Clang>(init);
     auto tc = std::make_shared<MIR::Toolchain::Toolchain>(
@@ -40,7 +42,13 @@ TEST(insert_compiler, simple) {
     ToolchainMap tc_map{};
     tc_map[MIR::Toolchain::Language::CPP] =
         MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>{tc};
+    return tc_map;
+}
 
+} // namespace
+
+TEST(insert_compiler, simple) {
+    ToolchainMap tc_map = make_toolchain();
     auto irlist = lower("x = meson.get_compiler('cpp')");
     bool progress = wrapper(irlist, tc_map);
     ASSERT_TRUE(progress);
@@ -64,4 +72,28 @@ TEST(insert_compiler, unknown_language) {
         std::string m{e.what()};
         ASSERT_EQ(m, "No compiler for language");
     }
+}
+
+TEST(compiler_methods, get_id) {
+    auto irlist = lower("x = meson.get_compiler('cpp').get_id()");
+
+    ToolchainMap tc_map = make_toolchain();
+    MIR::Passes::Printer printer{};
+    printer(irlist);
+    printer.increment();
+    bool progress = wrapper(irlist, tc_map);
+    printer(irlist);
+    printer.increment();
+    ASSERT_TRUE(progress);
+
+    progress = method_wrapper(irlist);
+    printer(irlist);
+    ASSERT_TRUE(progress);
+    ASSERT_EQ(irlist->block->instructions.size(), 1);
+
+    const auto & e = irlist->block->instructions.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::String>(*e.obj_ptr));
+
+    const auto & s = std::get<MIR::String>(*e.obj_ptr);
+    ASSERT_EQ(s.value, "clang");
 }

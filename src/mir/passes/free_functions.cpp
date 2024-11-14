@@ -757,7 +757,7 @@ void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
 
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         throw Util::Exceptions::MesonException{
-            "First non-whitespace, non-lower_projectcomment must be a call to project()"};
+            "First non-whitespace, non-comment must be a call to project()"};
     }
     const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
 

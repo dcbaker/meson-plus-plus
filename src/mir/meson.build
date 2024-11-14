@@ -30,16 +30,16 @@ libmir = static_library(
     'passes/walkers.cpp',
     locations_hpp,
   ],
-  include_directories: inc_frontend,
-  dependencies: [idep_util, idep_meson, dependency('threads')],
+  include_directories : inc_frontend,
+  dependencies : [idep_util, idep_meson, dependency('threads')],
 )
 
 inc_mir = include_directories('.')
 
 idep_mir = declare_dependency(
-  link_with: libmir,
-  include_directories: inc_mir,
-  dependencies: [idep_meson],
+  link_with : libmir,
+  include_directories : inc_mir,
+  dependencies : [idep_meson],
 )
 
 test(
@@ -47,9 +47,9 @@ test(
   executable(
     'ast_to_mir_test',
     ['ast_to_mir_test.cpp', locations_hpp],
-    dependencies: [idep_frontend, idep_mir, dep_gtest],
+    dependencies : [idep_frontend, idep_mir, dep_gtest],
   ),
-  protocol: 'gtest',
+  protocol : 'gtest',
 )
 
 test(
@@ -60,9 +60,9 @@ test(
       'mir_tests.cpp',
       locations_hpp,
     ],
-    dependencies: [idep_frontend, idep_mir, dep_gtest],
+    dependencies : [idep_frontend, idep_mir, dep_gtest],
   ),
-  protocol: 'gtest',
+  protocol : 'gtest',
 )
 
 test(
@@ -88,7 +88,7 @@ test(
       'passes/tests/walker_tests.cpp',
       locations_hpp,
     ],
-    dependencies: [idep_frontend, idep_mir, idep_util, dep_gtest],
+    dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
   ),
-  protocol: 'gtest',
+  protocol : 'gtest',
 )

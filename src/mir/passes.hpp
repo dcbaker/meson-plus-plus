@@ -147,6 +147,11 @@ std::optional<Instruction> lower_string_objects(const Instruction & inst,
 std::optional<Instruction> lower_dependency_objects(const Instruction & inst,
                                                     const State::Persistant & pstate);
 
+/// @brief Lower compiler methods
+/// @param inst the instruction to be evaluated
+/// @return a new instruction of it can be lowered, otherwise nullopt
+std::optional<Instruction> lower_compiler_methods(const Instruction & inst);
+
 /// Delete any code that has become unreachable
 bool delete_unreachable(std::shared_ptr<CFGNode> block);
 
