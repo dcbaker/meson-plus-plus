@@ -140,10 +140,12 @@ std::optional<Instruction> lower_program_objects(const Instruction & inst,
                                                  const State::Persistant & pstate);
 
 /// Lower string object methods
-std::optional<Instruction> lower_string_objects(const Instruction & inst, const State::Persistant & pstate);
+std::optional<Instruction> lower_string_objects(const Instruction & inst,
+                                                const State::Persistant & pstate);
 
 /// Lower dependency object methods
-bool lower_dependency_objects(std::shared_ptr<CFGNode> block, State::Persistant & pstate);
+std::optional<Instruction> lower_dependency_objects(const Instruction & inst,
+                                                    const State::Persistant & pstate);
 
 /// Delete any code that has become unreachable
 bool delete_unreachable(std::shared_ptr<CFGNode> block);

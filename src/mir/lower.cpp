@@ -56,9 +56,11 @@ void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
                         [&pstate](const Instruction & i) {
                             return Passes::lower_string_objects(i, pstate);
                         },
+                        [&pstate](const Instruction & i) {
+                            return Passes::lower_dependency_objects(i, pstate);
+                        },
                     });
         },
-        [&](std::shared_ptr<CFGNode> b) { return Passes::lower_dependency_objects(b, pstate); },
         Passes::delete_unreachable,
         Passes::ConstantFolding{},
         Passes::ConstantPropagation{},
