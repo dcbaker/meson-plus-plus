@@ -160,14 +160,17 @@ TEST(constant_propogation, into_function_call) {
                                       });
     printer.increment();
     bool progress = MIR::Passes::graph_walker(
-        irlist, {
-                    MIR::Passes::ConstantFolding{},
-                    MIR::Passes::ConstantPropagation{},
-                    [&](std::shared_ptr<MIR::CFGNode> b) {
-                        return MIR::Passes::lower_program_objects(b, pstate);
-                    },
-                    std::ref(printer),
-                });
+        irlist,
+        {
+            MIR::Passes::ConstantFolding{},
+            MIR::Passes::ConstantPropagation{},
+            [&](std::shared_ptr<MIR::CFGNode> b) {
+                return MIR::Passes::instruction_walker(*b, {[&pstate](const MIR::Instruction & i) {
+                    return MIR::Passes::lower_program_objects(i, pstate);
+                }});
+            },
+            std::ref(printer),
+        });
 
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 2);

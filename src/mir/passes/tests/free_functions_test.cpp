@@ -177,8 +177,11 @@ TEST(find_program, found) {
         irlist, {
                     MIR::Passes::ConstantFolding{},
                     MIR::Passes::ConstantPropagation{},
-                    [&](std::shared_ptr<MIR::CFGNode> b) {
-                        return MIR::Passes::lower_program_objects(b, pstate);
+                    [&pstate](std::shared_ptr<MIR::CFGNode> b) {
+                        return MIR::Passes::instruction_walker(
+                            *b, {[&pstate](const MIR::Instruction & inst) {
+                                return MIR::Passes::lower_program_objects(inst, pstate);
+                            }});
                     },
                 });
 

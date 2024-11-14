@@ -22,8 +22,10 @@ std::optional<Instruction> lower_found_method(const FunctionCall & f) {
     return Boolean{std::get<Program>(*f.holder.obj_ptr).found()};
 }
 
-std::optional<Instruction> lower_program_methods_impl(const Instruction & obj,
-                                                      const State::Persistant & pstate) {
+} // namespace
+
+std::optional<Instruction> lower_program_objects(const Instruction & obj,
+                                                 const State::Persistant & pstate) {
     if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
         return std::nullopt;
     }
@@ -47,13 +49,6 @@ std::optional<Instruction> lower_program_methods_impl(const Instruction & obj,
     }
     // XXX: Shouldn't really be able to get here...
     return std::nullopt;
-}
-
-} // namespace
-
-bool lower_program_objects(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
-    return instruction_walker(
-        *block, {[&](const Instruction & obj) { return lower_program_methods_impl(obj, pstate); }});
 }
 
 } // namespace MIR::Passes
