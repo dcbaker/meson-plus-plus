@@ -7,9 +7,7 @@
 
 namespace MIR::Passes {
 
-namespace {
-
-bool program_replacement_impl(Instruction & obj) {
+bool custom_target_program_replacement(Instruction & obj) {
     if (!std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr)) {
         return false;
     }
@@ -47,12 +45,6 @@ bool program_replacement_impl(Instruction & obj) {
         return false;
     }
     return true;
-}
-
-} // namespace
-
-bool custom_target_program_replacement(std::shared_ptr<CFGNode> block) {
-    return instruction_walker(*block, {program_replacement_impl});
 }
 
 } // namespace MIR::Passes
