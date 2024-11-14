@@ -5,6 +5,8 @@
 #include "passes.hpp"
 #include "private.hpp"
 
+#include <algorithm>
+
 namespace MIR::Passes {
 
 namespace {
@@ -31,15 +33,9 @@ std::optional<Instruction> flatten(const Instruction & obj) {
         return std::nullopt;
     }
 
-    // If there is nothing to flatten, don't go mutation anything
-    bool has_array = false;
-    for (const auto & e : arr->value) {
-        has_array = std::holds_alternative<Array>(*e.obj_ptr);
-        if (has_array) {
-            break;
-        }
-    }
-    if (!has_array) {
+    if (std::none_of(arr->value.begin(), arr->value.end(), [](const Instruction & inst) {
+            return std::holds_alternative<Array>(inst.object());
+        })) {
         return std::nullopt;
     }
 
