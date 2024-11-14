@@ -8,12 +8,20 @@
 
 #include <gtest/gtest.h>
 
+namespace {
+
+bool ctpr_wrapper(std::shared_ptr<MIR::CFGNode> node) {
+    return MIR::Passes::instruction_walker(*node, {MIR::Passes::custom_target_program_replacement});
+}
+
+} // namespace
+
 TEST(custom_target_program_replacement, string) {
     auto irlist = lower(R"EOF(
         x = custom_target('name', command : 'foo.py')
         )EOF");
 
-    MIR::Passes::graph_walker(irlist, {MIR::Passes::custom_target_program_replacement});
+    MIR::Passes::graph_walker(irlist, {ctpr_wrapper});
 
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
@@ -40,7 +48,7 @@ TEST(custom_target_program_replacement, array) {
         x = custom_target('name', command : ['foo.py', '@INPUT@', '@OUTPUT@'])
         )EOF");
 
-    MIR::Passes::graph_walker(irlist, {MIR::Passes::custom_target_program_replacement});
+    MIR::Passes::graph_walker(irlist, {ctpr_wrapper});
 
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 

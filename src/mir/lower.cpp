@@ -18,17 +18,21 @@ namespace {
 // TODO: compilers may need to be run again if `add_language` is called
 void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
            Passes::Printer & printer) {
-    Passes::graph_walker(block, {
-                                    [&](std::shared_ptr<CFGNode> b) {
-                                        return Passes::machine_lower(b, pstate.machines);
-                                    },
-                                    [&](std::shared_ptr<CFGNode> b) {
-                                        return Passes::insert_compilers(b, pstate.toolchains);
-                                    },
-                                    Passes::custom_target_program_replacement,
-                                    Passes::GlobalValueNumbering{},
-                                    std::ref(printer),
-                                });
+    Passes::graph_walker(
+        block,
+        {
+            [&](std::shared_ptr<CFGNode> b) { return Passes::machine_lower(b, pstate.machines); },
+            [&](std::shared_ptr<CFGNode> b) {
+                return Passes::insert_compilers(b, pstate.toolchains);
+            },
+            [&](std::shared_ptr<CFGNode> b) {
+                return Passes::instruction_walker(*b, {
+                                                          Passes::custom_target_program_replacement,
+                                                      });
+            },
+            Passes::GlobalValueNumbering{},
+            std::ref(printer),
+        });
 }
 
 void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,

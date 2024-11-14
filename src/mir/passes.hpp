@@ -55,7 +55,7 @@ bool insert_compilers(std::shared_ptr<CFGNode>,
  * Find string arguments to custom_target's program space (intput[0]), and
  * replace it with a call to `find_program()`
  */
-bool custom_target_program_replacement(std::shared_ptr<CFGNode>);
+bool custom_target_program_replacement(Instruction &);
 
 /**
  * Lowering for free functions
