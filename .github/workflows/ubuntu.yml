@@ -35,14 +35,14 @@ jobs:
         run: |
           sudo apt update
           sudo apt install libfl-dev libgtest-dev ninja-build ccache clang
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: install meson
         run: pip install meson==0.60.3
       - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.0.5
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.id }}
       - name: setup git
@@ -63,8 +63,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install libfl-dev libgtest-dev ninja-build clang-tidy
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: install meson
