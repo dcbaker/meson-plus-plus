@@ -89,13 +89,14 @@ bool mutation_visitor(Instruction & it, MutationCallback cb) {
     return progress;
 }
 
-bool replacement_visitor(const Instruction & it, const ReplacementCallback & cb);
+std::tuple<bool, std::optional<Instruction>> replacement_visitor(const Instruction & it,
+                                                                 const ReplacementCallback & cb);
 
 bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback & cb) {
     bool progress = false;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
-        progress |= replacement_visitor(*it, cb);
-        auto rt = cb(*it);
+        auto && [rp, rt] = replacement_visitor(*it, cb);
+        progress |= rp;
         if (rt.has_value()) {
             vec[it - vec.begin()] = rt.value();
             progress |= true;
@@ -108,8 +109,8 @@ bool replace_elements(std::unordered_map<std::string, Instruction> & map,
                       const ReplacementCallback & cb) {
     bool progress = false;
     for (auto it = map.begin(); it != map.end(); ++it) {
-        progress |= replacement_visitor(it->second, cb);
-        auto rt = cb(it->second);
+        auto && [rp, rt] = replacement_visitor(it->second, cb);
+        progress |= rp;
         if (rt.has_value()) {
             map[it->first] = rt.value();
             progress |= true;
@@ -118,36 +119,46 @@ bool replace_elements(std::unordered_map<std::string, Instruction> & map,
     return progress;
 }
 
-bool replacement_visitor(const Instruction & it, const ReplacementCallback & cb) {
-    bool progress = false;
+std::tuple<bool, std::optional<Instruction>> replacement_visitor(const Instruction & it,
+                                                                 const ReplacementCallback & cb) {
+    bool progress{false};
 
     if (auto * a = std::get_if<MIR::Array>(it.obj_ptr.get())) {
         progress |= replace_elements(a->value, cb);
     } else if (auto * d = std::get_if<MIR::Dict>(it.obj_ptr.get())) {
+        // TODO: keys
         progress |= replace_elements(d->value, cb);
     } else if (auto * f = std::get_if<MIR::FunctionCall>(it.obj_ptr.get())) {
         progress |= replace_elements(f->pos_args, cb);
         progress |= replace_elements(f->kw_args, cb);
-        progress |= replacement_visitor(f->holder, cb);
+        auto && [rp, rt] = replacement_visitor(f->holder, cb);
+        progress |= rp;
+        if (rt) {
+            f->holder = rt.value();
+        }
     } else if (auto * j = std::get_if<MIR::Jump>(it.obj_ptr.get())) {
         if (j->predicate) {
-            progress |= replacement_visitor(*j->predicate, cb);
-            if (auto rt = cb(*j->predicate)) {
+            auto && [rp, rt] = replacement_visitor(*j->predicate, cb);
+            progress |= rp;
+            if (rt) {
                 j->predicate = std::make_shared<Instruction>(rt.value());
                 progress |= true;
             }
         }
     } else if (auto * b = std::get_if<MIR::Branch>(it.obj_ptr.get())) {
         for (auto it2 = b->branches.begin(); it2 != b->branches.end(); ++it2) {
-            progress |= replacement_visitor(std::get<0>(*it2), cb);
-            if (auto rt = cb(std::get<0>(*it2))) {
+            auto && [rp, rt] = replacement_visitor(std::get<0>(*it2), cb);
+            progress |= rp;
+            if (rt) {
                 b->branches[it2 - b->branches.begin()] =
                     std::make_tuple(rt.value(), std::get<1>(*it2));
                 progress |= true;
             }
         }
     }
-    return progress;
+    auto && rt = cb(it);
+    progress |= rt.has_value();
+    return std::make_tuple(progress, rt);
 }
 
 } // namespace
@@ -166,10 +177,11 @@ bool instruction_walker(CFGNode & block, const std::vector<MutationCallback> & f
 
     for (auto it = block.block->instructions.begin(); it != block.block->instructions.end(); ++it) {
         for (const auto & cb : rc) {
-            progress |= replacement_visitor(*it, cb);
-            if (auto rt = cb(*it)) {
+            auto && [rp, rt] = replacement_visitor(*it, cb);
+            progress |= rp;
+            if (rt) {
                 it = block.block->instructions.erase(it);
-                it = block.block->instructions.insert(it, std::move(rt.value()));
+                it = block.block->instructions.insert(it, rt.value());
                 progress |= true;
             }
         }
