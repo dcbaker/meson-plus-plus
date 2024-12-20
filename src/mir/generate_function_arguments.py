@@ -34,16 +34,25 @@ HEADER_TEMPLATE = '''\
 #include "mir.hpp"
 #include "passes/private.hpp"
 
-#include <string>
-#include <vector>
 #include <optional>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace MIR::Passes::ArgumentValidator {
 
 % for function in functions:
     struct ${function.struct_name} {
-      ## TODO: positional arguments
+      % for pos in function.positional:
+        MIR::${pos.type.value} ${pos.name};
+      % endfor
+      % for pos in function.optional:
+        % if pos.default is None:
+        std::optional<MIR::${pos.type.value}> ${pos.name};
+        % else:
+        MIR::${pos.type.value} ${pos.name};
+        % endif
+      % endfor
       % if function.variadic:
         std::vector<MIR::${function.variadic.type.value if function.variadic.convert is None else function.variadic.convert.value}> ${function.variadic.name};
       % endif
@@ -137,11 +146,31 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
 
         // TODO: validate keyword arguments
 
+      % if function.positional or function.optional or function.variadic:
         auto pos_args = func.pos_args.begin();
+      % endif
 
         return ${function.struct_name} {
-            // TODO: positional arguments
-            // TODO: optional arguments
+          % for pos in function.positional:
+            .${pos.name} = extract_positional_argument<${pos.type.value}>(
+              *(pos_args++)->obj_ptr,
+              "${pos.name}: argument must be a ${pos.type.name.lower()}"),
+          % endfor
+          % for pos in function.optional:
+            ## TODO: this looses the type validation
+            .${pos.name} = (pos_args == func.pos_args.end()
+              % if pos.default is not None:
+                ? ${pos.type.value}{${pos.default}}
+              % else:
+                ? std::nullopt
+              % endif
+                : extract_positional_argument<${pos.type.value}>(
+                    *(pos_args++)->obj_ptr)
+              % if pos.default is not None:
+                    .value_or(${pos.type.value}{${pos.default}})
+              % endif
+                    ),
+          % endfor
           % if function.variadic is not None:
             .${function.variadic.name} =
               % if function.variadic.convert:
@@ -184,6 +213,14 @@ class ArgumentType(enum.Enum):
 
 
 @dataclasses.dataclass(slots=True)
+class PositionalArgument:
+
+    name: str
+    type: ArgumentType
+    default: str | None
+
+
+@dataclasses.dataclass(slots=True)
 class VariadicArgument:
 
     name: str
@@ -203,6 +240,8 @@ class KeywordArgument:
 class Function:
 
     name: str
+    positional: list[PositionalArgument]
+    optional: list[PositionalArgument]
     variadic: VariadicArgument | None
     keywords: list[KeywordArgument]
 
@@ -239,6 +278,8 @@ def parse_value(raw: str, type_: ArgumentType) -> object:
             val = raw.lower()
             assert val, f'invalid boolean string {raw!r}'
             return val
+        case ArgumentType.STRING:
+            return raw
         case _:
             raise RuntimeError('Not implemented')
 
@@ -274,11 +315,30 @@ def parse_keyword_arguments(element: et.Element | None) -> list[KeywordArgument]
     return keywords
 
 
+def parse_positional_arguments(element: et.Element | None) -> list[PositionalArgument]:
+    if element is None:
+        return []
+
+    positional: list[PositionalArgument] = []
+
+    for var in element.findall('argument'):
+        type_ = parse_argument_type(extract_attr(var, 'type'))
+        positional.append(PositionalArgument(
+            extract_attr(var, 'name'),
+            type_,
+            parse_value(v, type_) if (v := var.get('default')) else None,
+        ))
+
+    return positional
+
+
 def parse_xml(xmlfile: str) -> T.Iterator[Function]:
     xml = et.parse(xmlfile)
     for fxml in xml.findall('function'):
         yield Function(
             extract_attr(fxml, 'name'),
+            parse_positional_arguments(fxml.find('./arguments/positional')),
+            parse_positional_arguments(fxml.find('./arguments/optional')),
             parse_variadic_arguments(fxml.find('./arguments/variadic')),
             parse_keyword_arguments(fxml.find('./arguments/keyword')),
         )

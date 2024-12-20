@@ -174,23 +174,13 @@ std::optional<Instruction> lower_messages(const FunctionCall & f) {
     return Message{level, message};
 }
 
-std::optional<Instruction> lower_assert(const FunctionCall & f) {
-    if (f.pos_args.empty() || f.pos_args.size() > 2) {
-        throw Util::Exceptions::InvalidArguments("assert: takes 1 or 2 arguments, got " +
-                                                 std::to_string(f.pos_args.size()));
-    }
+std::optional<Instruction> lower_assert(const FunctionCall & f, const State::Persistant & pstate) {
+    ArgumentValidator::Assert args = ArgumentValidator::parse_assert(f, pstate);
 
-    const auto & value = extract_positional_argument<Boolean>(
-        f.pos_args[0], f.name + ": First argument did not resolve to boolean");
-
-    if (!value.value) {
-        // TODO: maye have an assert level of message?
+    if (!args.condition.value) {
+        // TODO: maybe have an assert level of message?
         // TODO, how to get the original values of this?
-        std::string message;
-        if (f.pos_args.size() == 2) {
-            message = extract_positional_argument<String>(f.pos_args[1]).value().value;
-        }
-        return Message{MessageLevel::ERROR, "Assertion failed: " + message};
+        return Message{MessageLevel::ERROR, "Assertion failed: " + args.message.value};
     }
 
     // TODO: it would be better to
@@ -695,7 +685,7 @@ std::optional<Instruction> lower_free_functions(const Instruction & obj,
     } else if (f.name == "unary_neg") {
         i = lower_neg(f);
     } else if (f.name == "assert") {
-        i = lower_assert(f);
+        i = lower_assert(f, pstate);
     } else if (f.name == "message" || f.name == "warning" || f.name == "error") {
         i = lower_messages(f);
     } else if (f.name == "include_directories") {

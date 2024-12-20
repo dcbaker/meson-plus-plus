@@ -21,4 +21,14 @@ Copyright © 2024 Intel Corporation
       </variadic>
     </arguments>
   </function>
+  <function name="assert">
+    <arguments>
+      <positional>
+        <argument name="condition" type="bool"/>
+      </positional>
+      <optional>
+        <argument name="message" type="string" default='""'/>
+      </optional>
+    </arguments>
+  </function>
 </functions>
