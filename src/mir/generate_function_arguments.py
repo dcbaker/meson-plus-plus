@@ -59,7 +59,11 @@ namespace MIR::Passes::ArgumentValidator {
       % if function.keywords:
         struct {
           % for kw in function.keywords:
+            % if kw.default is not None:
             ${kw.type.value} ${kw.name};
+            % else:
+            std::optional<${kw.type.value}> ${kw.name};
+            % endif
           % endfor
         } keywords;
       % endif
@@ -189,7 +193,11 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
                 .${kw.name} = extract_keyword_argument<${kw.type.value}>(
                         func.kw_args, "${kw.name}",
                         "${function.name}: ${kw.name} argument must be a ${kw.type.name.lower()}"
+                % if kw.default is not None:
                     ).value_or(${kw.type.value}{${kw.default}}),
+                % else:
+                    ),
+                % endif
               % endfor
             },
           % endif
@@ -210,6 +218,7 @@ class ArgumentType(enum.Enum):
     STRING = 'String'
     FILE = 'File'
     BOOL = 'Boolean'
+    ARRAY_STRING = 'Array[String]'
 
 
 @dataclasses.dataclass(slots=True)
@@ -247,7 +256,7 @@ class Function:
 
     @property
     def struct_name(self) -> str:
-        return self.name.capitalize()
+        return ''.join(n.capitalize() for n in self.name.split('_'))
 
     @property
     def min_pos_args(self) -> int:
@@ -309,7 +318,7 @@ def parse_keyword_arguments(element: et.Element | None) -> list[KeywordArgument]
         keywords.append(KeywordArgument(
             extract_attr(var, 'name'),
             type_,
-            parse_value(extract_attr(var, 'default'), type_),
+            parse_value(v, type_) if (v := var.get('default')) else None,
         ))
 
     return keywords

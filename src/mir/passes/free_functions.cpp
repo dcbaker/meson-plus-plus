@@ -137,7 +137,7 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
 
 std::optional<Instruction> lower_include_dirs(const FunctionCall & f,
                                               const State::Persistant & pstate) {
-    ArgumentValidator::Include_directories args =
+    ArgumentValidator::IncludeDirectories args =
         ArgumentValidator::parse_include_directories(f, pstate);
 
     std::vector<std::string> dirs{};
@@ -283,16 +283,8 @@ std::optional<Instruction> lower_ne(const FunctionCall & f) {
 
 std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
                                                     const State::Persistant & pstate) {
-    if (!f.pos_args.empty()) {
-        throw Util::Exceptions::InvalidArguments(
-            "declare_dependency: takes 0 positional arguments.");
-    }
-
-    std::string version =
-        extract_keyword_argument<String>(
-            f.kw_args, "version", "declare_dependency: 'version' keyword argument must be a string")
-            .value_or(String("unknown"))
-            .value;
+    ArgumentValidator::DeclareDependency _args =
+        ArgumentValidator::parse_declare_dependency(f, pstate);
 
     std::vector<Arguments::Argument> args{};
     const auto & raw_comp_args = extract_keyword_argument_a<String>(
@@ -343,7 +335,12 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
         std::copy(dargs.begin(), dargs.end(), std::back_inserter(args));
     }
 
-    return Dependency{"internal", true, version, args};
+    return Dependency{
+        "internal",
+        true,
+        _args.keywords.version.value_or(String{pstate.project_version}).value,
+        args,
+    };
 }
 
 class CallableReducer {
