@@ -1,0 +1,14 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+Copyright © 2024 Intel Corporation
+-->
+
+<functions>
+  <function name="files">
+    <arguments>
+      <variadic>
+        <argument name="files" type="string" convert="file"/>
+      </variadic>
+    </arguments>
+  </function>
+</functions>
