@@ -2,6 +2,7 @@
 // Copyright © 2021-2024 Intel Corporation
 
 #include "argument_extractors.hpp"
+#include "argument_validators.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "passes.hpp"
@@ -15,15 +16,14 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Instruction> lower_files(const FunctionCall & f, const State::Persistant & pstate) {
-    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end(),
-                                                   "files: arguments must be strings");
+std::optional<Instruction> lower_files(const FunctionCall & func,
+                                       const State::Persistant & pstate) {
+    ArgumentValidator::Files args = ArgumentValidator::parse_files(func, pstate);
     std::vector<Instruction> files{};
-    files.reserve(args.size());
-    std::transform(args.begin(), args.end(), std::back_inserter(files), [&](const String & v) {
-        return File{v.value, f.source_dir, false, pstate.source_root, pstate.build_root};
-    });
-
+    files.reserve(args.files.size());
+    for (auto && f : args.files) {
+        files.emplace_back(std::move(f));
+    }
     return Array{std::move(files)};
 }
 

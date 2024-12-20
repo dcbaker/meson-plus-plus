@@ -3,9 +3,20 @@
 
 subdir('meson')
 
+argument_parser_cpp = custom_target(
+  command : [
+    find_program('generate_function_arguments.py'),
+    '@INPUT@',
+    '@OUTPUT@',
+  ],
+  output : ['argument_validators.hpp', 'arguments_validators.cpp'],
+  input : files('functions.xml'),
+)
+
 libmir = static_library(
   'mir',
   [
+    argument_parser_cpp,
     'ast_to_mir.cpp',
     'lower.cpp',
     'mir.cpp',
