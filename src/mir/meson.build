@@ -9,7 +9,7 @@ argument_parser_cpp = custom_target(
     '@INPUT@',
     '@OUTPUT@',
   ],
-  output : ['argument_validators.hpp', 'arguments_validators.cpp'],
+  output : ['argument_validators.hpp', 'argument_validators.cpp'],
   input : files('functions.xml'),
 )
 

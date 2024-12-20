@@ -137,24 +137,15 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
 
 std::optional<Instruction> lower_include_dirs(const FunctionCall & f,
                                               const State::Persistant & pstate) {
-    for (const auto & a : f.pos_args) {
-        if (!std::holds_alternative<String>(*a.obj_ptr)) {
-            throw Util::Exceptions::InvalidArguments{
-                "include_directories: all positional arguments must be strings"};
-        }
-    }
+    ArgumentValidator::Include_directories args =
+        ArgumentValidator::parse_include_directories(f, pstate);
 
     std::vector<std::string> dirs{};
-    for (const auto & a : f.pos_args) {
-        dirs.emplace_back(std::get<String>(*a.obj_ptr).value);
+    for (const auto & a : args.directories) {
+        dirs.emplace_back(a.value);
     }
 
-    auto is_system =
-        extract_keyword_argument<Boolean>(
-            f.kw_args, "is_system", "include_directories: 'is_system' argument must be a boolean")
-            .value_or(Boolean{false});
-
-    return IncludeDirectories{dirs, is_system.value};
+    return IncludeDirectories{dirs, args.keywords.is_system.value};
 }
 
 std::optional<Instruction> lower_messages(const FunctionCall & f) {

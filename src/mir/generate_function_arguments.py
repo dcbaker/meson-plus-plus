@@ -11,6 +11,7 @@ import typing as T
 import xml.etree.ElementTree as et
 
 from mako.template import Template
+from mako import exceptions
 
 if T.TYPE_CHECKING:
 
@@ -36,6 +37,7 @@ HEADER_TEMPLATE = '''\
 #include <string>
 #include <vector>
 #include <optional>
+#include <unordered_set>
 
 namespace MIR::Passes::ArgumentValidator {
 
@@ -45,7 +47,13 @@ namespace MIR::Passes::ArgumentValidator {
       % if function.variadic:
         std::vector<MIR::${function.variadic.type.value if function.variadic.convert is None else function.variadic.convert.value}> ${function.variadic.name};
       % endif
-      ## TODO: kwargs arguments
+      % if function.keywords:
+        struct {
+          % for kw in function.keywords:
+            ${kw.type.value} ${kw.name};
+          % endfor
+        } keywords;
+      % endif
     };
 
     ${function.struct_name}
@@ -115,6 +123,18 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
         }
       % endif
 
+      % if function.keywords:
+        const std::unordered_set<std::string> valid_keywords = {
+            ${", ".join(f'"{n}"' for n in function.keywords)}
+        };
+        for (const auto & [name, _] : func.kw_args) {
+            if (!(valid_keywords.find(name) == valid_keywords.end())) {
+                throw Util::Exceptions::InvalidArguments{
+                    "${function.name}: Unexpected keyword argument: " + name};
+            }
+        }
+      % endif
+
         // TODO: validate keyword arguments
 
         auto pos_args = func.pos_args.begin();
@@ -122,10 +142,28 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
         return ${function.struct_name} {
             // TODO: positional arguments
             // TODO: optional arguments
-          % if function.variadic:
-            .${function.variadic.name} = srcs_to_files(pos_args, func.pos_args.end(), func, pstate),
+          % if function.variadic is not None:
+            .${function.variadic.name} =
+              % if function.variadic.convert:
+                % if function.variadic.convert is ArgumentType.FILE:
+                srcs_to_files(pos_args, func.pos_args.end(), func, pstate),
+                % endif
+              % else:
+                extract_variadic_arguments<${function.variadic.type.value}>(
+                    pos_args, func.pos_args.end(),
+                    "${function.variadic.name}: arguments must be strings"),
+              % endif
           % endif
-            // TODO: keyword arguments
+          % if function.keywords:
+            .keywords = {
+              % for kw in function.keywords:
+                .${kw.name} = extract_keyword_argument<${kw.type.value}>(
+                        func.kw_args, "${kw.name}",
+                        "${function.name}: ${kw.name} argument must be a ${kw.type.name.lower()}"
+                    ).value_or(${kw.type.value}{${kw.default}}),
+              % endfor
+            },
+          % endif
         };
 
     }
@@ -142,6 +180,7 @@ class ArgumentType(enum.Enum):
 
     STRING = 'String'
     FILE = 'File'
+    BOOL = 'Boolean'
 
 
 @dataclasses.dataclass(slots=True)
@@ -153,10 +192,19 @@ class VariadicArgument:
 
 
 @dataclasses.dataclass(slots=True)
+class KeywordArgument:
+
+    name: str
+    type: ArgumentType
+    default: str
+
+
+@dataclasses.dataclass(slots=True)
 class Function:
 
     name: str
     variadic: VariadicArgument | None
+    keywords: list[KeywordArgument]
 
     @property
     def struct_name(self) -> str:
@@ -185,6 +233,16 @@ def parse_argument_type(raw: str) -> ArgumentType:
     return ArgumentType[raw.upper()]
 
 
+def parse_value(raw: str, type_: ArgumentType) -> object:
+    match type_:
+        case ArgumentType.BOOL:
+            val = raw.lower()
+            assert val, f'invalid boolean string {raw!r}'
+            return val
+        case _:
+            raise RuntimeError('Not implemented')
+
+
 def parse_variadic_arguments(element: et.Element | None) -> VariadicArgument | None:
     if element is None:
         return None
@@ -195,8 +253,25 @@ def parse_variadic_arguments(element: et.Element | None) -> VariadicArgument | N
     return VariadicArgument(
         extract_attr(var, 'name'),
         parse_argument_type(extract_attr(var, 'type')),
-        parse_argument_type(v) if (v := var.get('convert')) else v,
+        parse_argument_type(v) if (v := var.get('convert')) else None,
     )
+
+
+def parse_keyword_arguments(element: et.Element | None) -> list[KeywordArgument]:
+    if element is None:
+        return []
+
+    keywords: list[KeywordArgument] = []
+
+    for var in element.findall('argument'):
+        type_ = parse_argument_type(extract_attr(var, 'type'))
+        keywords.append(KeywordArgument(
+            extract_attr(var, 'name'),
+            type_,
+            parse_value(extract_attr(var, 'default'), type_),
+        ))
+
+    return keywords
 
 
 def parse_xml(xmlfile: str) -> T.Iterator[Function]:
@@ -204,7 +279,8 @@ def parse_xml(xmlfile: str) -> T.Iterator[Function]:
     for fxml in xml.findall('function'):
         yield Function(
             extract_attr(fxml, 'name'),
-            parse_variadic_arguments(fxml.find('./arguments/variadic'))
+            parse_variadic_arguments(fxml.find('./arguments/variadic')),
+            parse_keyword_arguments(fxml.find('./arguments/keyword')),
         )
 
 
@@ -220,9 +296,11 @@ def main() -> int:
         with open(args.header, 'w', encoding='utf-8') as f:
             f.write(Template(HEADER_TEMPLATE).render(functions=description))
         with open(args.code, 'w', encoding='utf-8') as f:
-            f.write(Template(CODE_TEMPLATE).render(header=args.header, functions=description))
-    except Exception as e:
-        print(str(e), file=sys.stderr)
+            f.write(Template(CODE_TEMPLATE).render(
+                header=args.header, functions=description,
+                ArgumentType=ArgumentType))
+    except Exception:
+        print(exceptions.text_error_template().render(), file=sys.stderr)
         return 1
 
     return 0
