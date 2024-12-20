@@ -144,7 +144,7 @@ class ArgumentType(enum.Enum):
     FILE = 'File'
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class VariadicArgument:
 
     name: str
@@ -152,7 +152,7 @@ class VariadicArgument:
     convert: ArgumentType | None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class Function:
 
     name: str

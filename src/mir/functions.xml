@@ -4,6 +4,16 @@ Copyright © 2024 Intel Corporation
 -->
 
 <functions>
+  <function name="include_directories">
+    <arguments>
+      <variadic>
+        <argument name="directories" type="string"/>
+      </variadic>
+      <keyword>
+        <argument name="is_system" type="bool" default="false"/>
+      </keyword>
+    </arguments>
+  </function>
   <function name="files">
     <arguments>
       <variadic>
