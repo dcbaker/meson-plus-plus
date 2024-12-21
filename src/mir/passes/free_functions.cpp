@@ -2,6 +2,7 @@
 // Copyright © 2021-2024 Intel Corporation
 
 #include "argument_extractors.hpp"
+#include "argument_validators.hpp"
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "passes.hpp"
@@ -15,15 +16,14 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Instruction> lower_files(const FunctionCall & f, const State::Persistant & pstate) {
-    auto args = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end(),
-                                                   "files: arguments must be strings");
+std::optional<Instruction> lower_files(const FunctionCall & func,
+                                       const State::Persistant & pstate) {
+    ArgumentValidator::Files args = ArgumentValidator::parse_files(func, pstate);
     std::vector<Instruction> files{};
-    files.reserve(args.size());
-    std::transform(args.begin(), args.end(), std::back_inserter(files), [&](const String & v) {
-        return File{v.value, f.source_dir, false, pstate.source_root, pstate.build_root};
-    });
-
+    files.reserve(args.files.size());
+    for (auto && f : args.files) {
+        files.emplace_back(std::move(f));
+    }
     return Array{std::move(files)};
 }
 
@@ -137,24 +137,15 @@ std::optional<T> lower_build_target(const FunctionCall & f, const State::Persist
 
 std::optional<Instruction> lower_include_dirs(const FunctionCall & f,
                                               const State::Persistant & pstate) {
-    for (const auto & a : f.pos_args) {
-        if (!std::holds_alternative<String>(*a.obj_ptr)) {
-            throw Util::Exceptions::InvalidArguments{
-                "include_directories: all positional arguments must be strings"};
-        }
-    }
+    ArgumentValidator::IncludeDirectories args =
+        ArgumentValidator::parse_include_directories(f, pstate);
 
     std::vector<std::string> dirs{};
-    for (const auto & a : f.pos_args) {
-        dirs.emplace_back(std::get<String>(*a.obj_ptr).value);
+    for (const auto & a : args.directories) {
+        dirs.emplace_back(a.value);
     }
 
-    auto is_system =
-        extract_keyword_argument<Boolean>(
-            f.kw_args, "is_system", "include_directories: 'is_system' argument must be a boolean")
-            .value_or(Boolean{false});
-
-    return IncludeDirectories{dirs, is_system.value};
+    return IncludeDirectories{dirs, args.keywords.is_system.value};
 }
 
 std::optional<Instruction> lower_messages(const FunctionCall & f) {
@@ -183,23 +174,13 @@ std::optional<Instruction> lower_messages(const FunctionCall & f) {
     return Message{level, message};
 }
 
-std::optional<Instruction> lower_assert(const FunctionCall & f) {
-    if (f.pos_args.empty() || f.pos_args.size() > 2) {
-        throw Util::Exceptions::InvalidArguments("assert: takes 1 or 2 arguments, got " +
-                                                 std::to_string(f.pos_args.size()));
-    }
+std::optional<Instruction> lower_assert(const FunctionCall & f, const State::Persistant & pstate) {
+    ArgumentValidator::Assert args = ArgumentValidator::parse_assert(f, pstate);
 
-    const auto & value = extract_positional_argument<Boolean>(
-        f.pos_args[0], f.name + ": First argument did not resolve to boolean");
-
-    if (!value.value) {
-        // TODO: maye have an assert level of message?
+    if (!args.condition.value) {
+        // TODO: maybe have an assert level of message?
         // TODO, how to get the original values of this?
-        std::string message;
-        if (f.pos_args.size() == 2) {
-            message = extract_positional_argument<String>(f.pos_args[1]).value().value;
-        }
-        return Message{MessageLevel::ERROR, "Assertion failed: " + message};
+        return Message{MessageLevel::ERROR, "Assertion failed: " + args.message.value};
     }
 
     // TODO: it would be better to
@@ -302,16 +283,8 @@ std::optional<Instruction> lower_ne(const FunctionCall & f) {
 
 std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
                                                     const State::Persistant & pstate) {
-    if (!f.pos_args.empty()) {
-        throw Util::Exceptions::InvalidArguments(
-            "declare_dependency: takes 0 positional arguments.");
-    }
-
-    std::string version =
-        extract_keyword_argument<String>(
-            f.kw_args, "version", "declare_dependency: 'version' keyword argument must be a string")
-            .value_or(String("unknown"))
-            .value;
+    ArgumentValidator::DeclareDependency _args =
+        ArgumentValidator::parse_declare_dependency(f, pstate);
 
     std::vector<Arguments::Argument> args{};
     const auto & raw_comp_args = extract_keyword_argument_a<String>(
@@ -362,7 +335,12 @@ std::optional<Instruction> lower_declare_dependency(const FunctionCall & f,
         std::copy(dargs.begin(), dargs.end(), std::back_inserter(args));
     }
 
-    return Dependency{"internal", true, version, args};
+    return Dependency{
+        "internal",
+        true,
+        _args.keywords.version.value_or(String{pstate.project_version}).value,
+        args,
+    };
 }
 
 class CallableReducer {
@@ -704,7 +682,7 @@ std::optional<Instruction> lower_free_functions(const Instruction & obj,
     } else if (f.name == "unary_neg") {
         i = lower_neg(f);
     } else if (f.name == "assert") {
-        i = lower_assert(f);
+        i = lower_assert(f, pstate);
     } else if (f.name == "message" || f.name == "warning" || f.name == "error") {
         i = lower_messages(f);
     } else if (f.name == "include_directories") {

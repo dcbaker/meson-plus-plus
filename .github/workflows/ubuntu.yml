@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: install meson
-        run: pip install meson==0.60.3
+        run: pip install meson==0.60.3 mako
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -68,11 +68,11 @@ jobs:
         with:
           python-version: '3.10'
       - name: install meson
-        run: pip install meson==0.60.3
+        run: pip install meson==0.60.3 mako
       - name: generate headers
         run: |
           meson setup builddir
-          ninja -C builddir src/version.hpp src/frontend/parser.yy.hpp
+          ninja -C builddir src/version.hpp src/frontend/parser.yy.hpp src/mir/argument_validators.cpp src/mir/argument_validators.hpp
       - name: clang-tidy
         run: |
           ninja -C builddir clang-tidy
