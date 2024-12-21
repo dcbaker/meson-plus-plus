@@ -35,7 +35,7 @@ Copyright © 2024 Intel Corporation
     <arguments>
       <keyword>
         <argument name="version" type="string"/>
-        <argument name="compile_args" type="array[string]" />
+        <!-- <argument name="compile_args" type="array[string]" /> -->
         <!-- <argument name="include_directories" type="array[string | include_directories]" /> -->
         <!-- <argument name="dependencies" type="array[dependency]" /> -->
       </keyword>
