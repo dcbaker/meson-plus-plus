@@ -62,7 +62,7 @@ namespace MIR::Passes::ArgumentValidator {
             % if kw.default is not None:
             ${kw.type.value} ${kw.name};
             % else:
-            std::optional<${kw.type.value}> ${kw.name};
+            std::optional<MIR::${kw.type.value}> ${kw.name};
             % endif
           % endfor
         } keywords;
@@ -178,7 +178,7 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
           % if function.variadic is not None:
             .${function.variadic.name} =
               % if function.variadic.convert:
-                % if function.variadic.convert is ArgumentType.FILE:
+                % if function.variadic.convert.name == 'file':
                 srcs_to_files(pos_args, func.pos_args.end(), func, pstate),
                 % endif
               % else:
@@ -190,7 +190,13 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
           % if function.keywords:
             .keywords = {
               % for kw in function.keywords:
-                .${kw.name} = extract_keyword_argument<${kw.type.value}>(
+                .${kw.name} =
+                  % if kw.type.contains:
+                    ## TODO: variadic types
+                    extract_keyword_argument_a<${kw.type.contains[0].value}>(
+                  % else:
+                    extract_keyword_argument<${kw.type.value}>(
+                  % endif
                         func.kw_args, "${kw.name}",
                         "${function.name}: ${kw.name} argument must be a ${kw.type.name.lower()}"
                 % if kw.default is not None:
@@ -213,12 +219,19 @@ srcs_to_files(std::vector<MIR::Instruction>::const_iterator begin,
 _T = T.TypeVar('_T')
 
 
-class ArgumentType(enum.Enum):
+@dataclasses.dataclass(slots=True)
+class ArgumentType:
 
-    STRING = 'String'
-    FILE = 'File'
-    BOOL = 'Boolean'
-    ARRAY_STRING = 'Array[String]'
+    name: str
+    value: str
+    contains: list[ArgumentType] = dataclasses.field(default_factory=list)
+
+
+ELEMENTARY_TYPES = {
+    'bool': ArgumentType('bool', 'Boolean'),
+    'file': ArgumentType('file', 'File'),
+    'string': ArgumentType('string', 'String'),
+}
 
 
 @dataclasses.dataclass(slots=True)
@@ -278,19 +291,27 @@ def extract_attr(e: et.Element | None, attr: str) -> str:
 
 
 def parse_argument_type(raw: str) -> ArgumentType:
-    return ArgumentType[raw.upper()]
+    if v := ELEMENTARY_TYPES.get(raw):
+        return v
+
+    if raw.startswith('array'):
+        raw_held = raw[len('array['):-1].split('|')
+        raw_held = [r.strip() for r in raw_held]
+        return ArgumentType(
+            raw, 'Array', [parse_argument_type(r) for r in raw_held])
+    raise RuntimeError('not implemented ', raw)
 
 
 def parse_value(raw: str, type_: ArgumentType) -> object:
-    match type_:
-        case ArgumentType.BOOL:
+    match type_.name:
+        case 'bool':
             val = raw.lower()
             assert val, f'invalid boolean string {raw!r}'
             return val
-        case ArgumentType.STRING:
+        case 'string':
             return raw
         case _:
-            raise RuntimeError('Not implemented')
+            raise RuntimeError('Not implemented ', raw)
 
 
 def parse_variadic_arguments(element: et.Element | None) -> VariadicArgument | None:
