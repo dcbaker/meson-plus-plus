@@ -67,7 +67,7 @@ jobs:
         key: gcc
 
     - name: install meson
-      run: pip install meson==0.60.3
+      run: pip install meson==0.60.3 mako
 
     - name: Meson
       run: |
