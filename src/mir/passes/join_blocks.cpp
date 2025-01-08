@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include "passes.hpp"
 
@@ -24,7 +24,7 @@ bool join_blocks_impl(std::shared_ptr<CFGNode> block) {
 
     // Remove the jump block
     // TODO: could be a branch block?
-    assert(std::holds_alternative<Jump>(*block->block->instructions.back().obj_ptr));
+    assert(std::holds_alternative<JumpPtr>(block->block->instructions.back()));
     block->block->instructions.pop_back();
 
     // Move the predecessors and successors from the next block to the curren

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -19,11 +19,11 @@ TEST(branch_pruning, simple) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(node->block->instructions.size(), 2);
     EXPECT_EQ(node->successors.size(), 1);
-    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::NumberPtr>(node->block->instructions.front()));
 
     const auto & jump_i = node->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*jump_i.obj_ptr));
-    const auto & target = std::get<MIR::Jump>(*jump_i.obj_ptr).target;
+    ASSERT_TRUE(std::holds_alternative<MIR::JumpPtr>(jump_i));
+    const auto & target = std::get<MIR::JumpPtr>(jump_i)->target;
     ASSERT_TRUE(node->successors.find(target) != node->successors.end());
     ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
 }
@@ -41,15 +41,15 @@ TEST(branch_pruning, if_else) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(node->block->instructions.size(), 2);
     EXPECT_EQ(node->successors.size(), 1);
-    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::NumberPtr>(node->block->instructions.front()));
 
     const auto & jump_i = node->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*jump_i.obj_ptr));
-    const auto & target = std::get<MIR::Jump>(*jump_i.obj_ptr).target;
+    ASSERT_TRUE(std::holds_alternative<MIR::JumpPtr>(jump_i));
+    const auto & target = std::get<MIR::JumpPtr>(jump_i)->target;
     ASSERT_TRUE(node->successors.find(target) != node->successors.end());
     ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
 
-    ASSERT_EQ(std::get<MIR::Number>(*target->block->instructions.front().obj_ptr).value, 8);
+    ASSERT_EQ(std::get<MIR::NumberPtr>(target->block->instructions.front())->value, 8);
 }
 
 TEST(branch_pruning, if_false) {
@@ -66,13 +66,13 @@ TEST(branch_pruning, if_false) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(node->block->instructions.size(), 2);
     EXPECT_EQ(node->successors.size(), 1);
-    EXPECT_TRUE(std::holds_alternative<MIR::Number>(*node->block->instructions.front().obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::NumberPtr>(node->block->instructions.front()));
 
     const auto & jump_i = node->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::Jump>(*jump_i.obj_ptr));
-    const auto & target = std::get<MIR::Jump>(*jump_i.obj_ptr).target;
+    ASSERT_TRUE(std::holds_alternative<MIR::JumpPtr>(jump_i));
+    const auto & target = std::get<MIR::JumpPtr>(jump_i)->target;
     ASSERT_TRUE(node->successors.find(target) != node->successors.end());
     ASSERT_TRUE(target->predecessors.find(node) != target->predecessors.end());
 
-    ASSERT_EQ(std::get<MIR::Number>(*target->block->instructions.front().obj_ptr).value, 9);
+    ASSERT_EQ(std::get<MIR::NumberPtr>(target->block->instructions.front())->value, 9);
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 /**
  * Lowering passes for MIR
@@ -40,14 +40,14 @@ bool join_blocks(std::shared_ptr<CFGNode>);
  * This replaces function calls to `host_machine`, `build_machine`, and
  * `target_machine` methods with their values.
  */
-std::optional<Instruction> machine_lower(const Instruction &,
-                                         const MIR::Machines::PerMachine<MIR::Machines::Info> &);
+std::optional<Object> machine_lower(const Object &,
+                                    const MIR::Machines::PerMachine<MIR::Machines::Info> &);
 
 /**
  * Run complier detection code and replace variables with compiler objects.
  */
-std::optional<Instruction>
-insert_compilers(const Instruction &,
+std::optional<Object>
+insert_compilers(const Object &,
                  const std::unordered_map<
                      MIR::Toolchain::Language,
                      MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>> &);
@@ -56,14 +56,14 @@ insert_compilers(const Instruction &,
  * Find string arguments to custom_target's program space (intput[0]), and
  * replace it with a call to `find_program()`
  */
-bool custom_target_program_replacement(Instruction &);
+bool custom_target_program_replacement(Object &);
 
 /**
  * Lowering for free functions
  *
  * This lowers free standing functions (those not part of an object/namespace).
  */
-std::optional<Instruction> lower_free_functions(const Instruction &, const State::Persistant &);
+std::optional<Object> lower_free_functions(const Object &, const State::Persistant &);
 
 /**
  * Flatten array arguments to functions.
@@ -85,7 +85,7 @@ std::optional<Instruction> lower_free_functions(const Instruction &, const State
  * Meson++ uses this pass to flatten arguments, building an idealized set of
  * arguments for each function.
  */
-std::optional<Instruction> flatten(const Instruction &);
+std::optional<Object> flatten(const Object &);
 
 struct GlobalValueNumbering {
     bool operator()(std::shared_ptr<CFGNode>);
@@ -93,7 +93,7 @@ struct GlobalValueNumbering {
   private:
     std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>> data;
     std::unordered_map<std::string, uint32_t> gvn;
-    bool number(Instruction &, const uint32_t);
+    bool number(Object &, const uint32_t);
     bool insert_phis(CFGNode &);
 };
 
@@ -104,7 +104,7 @@ struct ConstantFolding {
 
   private:
     std::map<Variable, Variable> data;
-    std::optional<Instruction> impl(const Instruction &);
+    std::optional<Object> impl(const Object &);
 };
 
 /**
@@ -114,11 +114,11 @@ struct ConstantPropagation {
     bool operator()(std::shared_ptr<CFGNode>);
 
   private:
-    std::map<Variable, Instruction *> data;
-    bool update_data(Instruction &);
-    std::optional<Instruction> get(const Identifier & id) const;
-    std::optional<Instruction> impl(const Instruction & obj) const;
-    bool impl(Instruction & obj) const;
+    std::map<Variable, Object *> data;
+    bool update_data(Object &);
+    std::optional<Object> get(const IdentifierPtr & id) const;
+    std::optional<Object> impl(const Object & obj) const;
+    bool impl(Object & obj) const;
 };
 
 /**
@@ -136,21 +136,19 @@ bool threaded_lowering(std::shared_ptr<CFGNode>, State::Persistant & pstate);
 /**
  * Lower Program objects and their methods
  */
-std::optional<Instruction> lower_program_objects(const Instruction & inst,
-                                                 const State::Persistant & pstate);
+std::optional<Object> lower_program_objects(const Object & inst, const State::Persistant & pstate);
 
 /// Lower string object methods
-std::optional<Instruction> lower_string_objects(const Instruction & inst,
-                                                const State::Persistant & pstate);
+std::optional<Object> lower_string_objects(const Object & inst, const State::Persistant & pstate);
 
 /// Lower dependency object methods
-std::optional<Instruction> lower_dependency_objects(const Instruction & inst,
-                                                    const State::Persistant & pstate);
+std::optional<Object> lower_dependency_objects(const Object & inst,
+                                               const State::Persistant & pstate);
 
 /// @brief Lower compiler methods
 /// @param inst the instruction to be evaluated
 /// @return a new instruction of it can be lowered, otherwise nullopt
-std::optional<Instruction> lower_compiler_methods(const Instruction & inst);
+std::optional<Object> lower_compiler_methods(const Object & inst);
 
 /// Delete any code that has become unreachable
 bool delete_unreachable(std::shared_ptr<CFGNode> block);
@@ -158,7 +156,7 @@ bool delete_unreachable(std::shared_ptr<CFGNode> block);
 /// @brief If an object holds a disabler, disable it
 /// @param obj the object to check
 /// @return a disabler if this item should be disabled, otherwise nullopt
-std::optional<Instruction> disable(const Instruction & obj);
+std::optional<Object> disable(const Object & obj);
 
 /// Debugging pass that dumps a human readable text representation of the IR to
 /// a file.

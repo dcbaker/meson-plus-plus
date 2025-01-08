@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <cassert>
 
@@ -8,8 +8,9 @@
 
 namespace MIR::Passes {
 
-std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
-    if (auto id = std::get_if<Identifier>(obj.obj_ptr.get())) {
+std::optional<Object> ConstantFolding::impl(const Object & obj) {
+    if (std::holds_alternative<IdentifierPtr>(obj)) {
+        const auto & id = std::get<IdentifierPtr>(obj);
         const Variable new_var{id->value, id->version};
 
         if (const auto & found = data.find(new_var); found != data.end()) {
@@ -20,24 +21,28 @@ std::optional<Instruction> ConstantFolding::impl(const Instruction & obj) {
              *     y₁ = x₁
              *     z₁ = y₁
              *
-             * In this caswe we konw that z₁ == x₁, and we want to just go ahead
+             * In this case we know that z₁ == x₁, and we want to just go ahead
              * and optimize that.
              */
 
-            if (obj.var) {
-                data[obj.var] = Variable{found->second.name, found->second.gvn};
+            const Variable & var = std::visit(VariableGetter{}, obj);
+
+            if (var) {
+                data[var] = Variable{found->second.name, found->second.gvn};
             }
-            return Instruction{Identifier{found->second.name, found->second.gvn}, obj.var};
+            auto i = std::make_shared<Identifier>(found->second.name, found->second.gvn);
+            i->var = var;
+            return i;
         }
-        if (obj.var) {
-            data[obj.var] = new_var;
+        if (auto v = std::visit(VariableGetter{}, obj)) {
+            data[v] = new_var;
         }
     }
     return std::nullopt;
 }
 
 bool ConstantFolding::operator()(std::shared_ptr<CFGNode> block) {
-    return instruction_walker(*block, {[this](const Instruction & i) { return this->impl(i); }});
+    return instruction_walker(*block, {[this](const Object & i) { return this->impl(i); }});
 };
 
 } // namespace MIR::Passes

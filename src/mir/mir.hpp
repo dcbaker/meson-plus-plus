@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 /**
  * Meson++ Mid level IR
@@ -82,63 +82,36 @@ class Jump;
 class Branch;
 class Disabler;
 
+using AddArgumentsPtr = std::shared_ptr<AddArguments>;
+using FunctionCallPtr = std::shared_ptr<FunctionCall>;
+using StringPtr = std::shared_ptr<String>;
+using BooleanPtr = std::shared_ptr<Boolean>;
+using NumberPtr = std::shared_ptr<Number>;
+using IdentifierPtr = std::shared_ptr<Identifier>;
+using ArrayPtr = std::shared_ptr<Array>;
+using DictPtr = std::shared_ptr<Dict>;
+using CompilerPtr = std::shared_ptr<Compiler>;
+using FilePtr = std::shared_ptr<File>;
+using ExecutablePtr = std::shared_ptr<Executable>;
+using StaticLibraryPtr = std::shared_ptr<StaticLibrary>;
+using PhiPtr = std::shared_ptr<Phi>;
+using IncludeDirectoriesPtr = std::shared_ptr<IncludeDirectories>;
+using MessagePtr = std::shared_ptr<Message>;
+using ProgramPtr = std::shared_ptr<Program>;
+using CustomTargetPtr = std::shared_ptr<CustomTarget>;
+using DependencyPtr = std::shared_ptr<Dependency>;
+using TestPtr = std::shared_ptr<Test>;
+using JumpPtr = std::shared_ptr<Jump>;
+using BranchPtr = std::shared_ptr<Branch>;
+using DisablerPtr = std::shared_ptr<Disabler>;
+
 using Object =
-    std::variant<std::monostate, FunctionCall, String, Boolean, Number, Identifier, Array, Dict,
-                 Compiler, File, Executable, StaticLibrary, Phi, IncludeDirectories, Message,
-                 Program, CustomTarget, Dependency, Test, AddArguments, Jump, Branch, Disabler>;
+    std::variant<AddArgumentsPtr, FunctionCallPtr, StringPtr, BooleanPtr, NumberPtr, IdentifierPtr,
+                 ArrayPtr, DictPtr, CompilerPtr, FilePtr, ExecutablePtr, StaticLibraryPtr, PhiPtr,
+                 IncludeDirectoriesPtr, MessagePtr, ProgramPtr, CustomTargetPtr, DependencyPtr,
+                 TestPtr, JumpPtr, BranchPtr, DisablerPtr>;
 
-using Callable = std::variant<File, Executable, Program>;
-
-/**
- * A single instruction.
- */
-class Instruction {
-
-  public:
-    Instruction();
-    Instruction(Instruction &&) = default;
-    Instruction(const Instruction &) = default;
-    Instruction(std::shared_ptr<Object>);
-    Instruction(const Object & obj);
-    Instruction(Object obj, const Variable & var_);
-    Instruction(Boolean val);
-    Instruction(Number val);
-    Instruction(String val);
-    Instruction(FunctionCall val);
-    Instruction(Identifier val);
-    Instruction(Array val);
-    Instruction(Dict val);
-    Instruction(File val);
-    Instruction(IncludeDirectories val);
-    Instruction(Message val);
-    Instruction(Dependency val);
-    Instruction(CustomTarget val);
-    Instruction(StaticLibrary val);
-    Instruction(Executable val);
-    Instruction(Phi val);
-    Instruction(Program val);
-    Instruction(Test val);
-    Instruction(AddArguments val);
-    Instruction(Jump val);
-    Instruction(Branch val);
-    Instruction(Disabler val);
-
-    Instruction & operator=(const Instruction &) = default;
-
-    /// The actual object in the instruction
-    /// This is a ptr because of self-referncing, Objects can hold Instructions, so we can't put an
-    /// Object directly into the Instruction
-    std::shared_ptr<Object> obj_ptr;
-
-    /// The place where the instruction was defined
-    Variable var;
-
-    /// Get a const reference to the held object
-    const Object & object() const;
-
-    /// Print a human readable version of this
-    std::string print() const;
-};
+using Callable = std::variant<FilePtr, ExecutablePtr, ProgramPtr>;
 
 /**
  * Holds a File, which is a smart object point to a source
@@ -175,24 +148,28 @@ class File {
     const bool built;
     const fs::path source_root;
     const fs::path build_root;
+
+    Variable var;
 };
 
 class CustomTarget {
   public:
-    CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
-                 std::vector<std::string> c, fs::path s, std::vector<File> d,
+    CustomTarget(std::string n, std::vector<Object> i, std::vector<FilePtr> o,
+                 std::vector<std::string> c, fs::path s, std::vector<FilePtr> d,
                  std::optional<std::string> df);
 
     const std::string name;
-    const std::vector<Instruction> inputs;
-    const std::vector<File> outputs;
+    const std::vector<Object> inputs;
+    const std::vector<FilePtr> outputs;
     const std::vector<std::string> command;
     const fs::path subdir;
-    std::vector<File> depends;
+    std::vector<FilePtr> depends;
     std::optional<std::string> depfile;
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 using ArgMap = std::unordered_map<Toolchain::Language, std::vector<Arguments::Argument>>;
@@ -204,18 +181,18 @@ enum class StaticLinkMode {
 
 class StaticLibrary;
 
-using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibrary>;
+using StaticLinkage = std::tuple<StaticLinkMode, const StaticLibraryPtr>;
 
 class Executable {
   public:
-    Executable(std::string name_, std::vector<Instruction> srcs, const Machines::Machine & m,
+    Executable(std::string name_, std::vector<Object> srcs, const Machines::Machine & m,
                fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link);
 
     /// The name of the target
     const std::string name;
 
     /// The sources (as files)
-    const std::vector<Instruction> sources;
+    const std::vector<Object> sources;
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
@@ -238,18 +215,20 @@ class Executable {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class StaticLibrary {
   public:
-    StaticLibrary(std::string name_, std::vector<Instruction> srcs, const Machines::Machine & m,
+    StaticLibrary(std::string name_, std::vector<Object> srcs, const Machines::Machine & m,
                   fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link);
 
     /// The name of the target
     const std::string name;
 
     /// The sources (as files)
-    const std::vector<Instruction> sources;
+    const std::vector<Object> sources;
 
     /// Which machine is this executable to be built for?
     const Machines::Machine machine;
@@ -272,6 +251,8 @@ class StaticLibrary {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 /**
@@ -294,6 +275,8 @@ class Phi {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class IncludeDirectories {
@@ -305,6 +288,8 @@ class IncludeDirectories {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 enum class DependencyType {
@@ -338,6 +323,8 @@ class Dependency {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 enum class MessageLevel {
@@ -359,6 +346,8 @@ class Message {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Program {
@@ -373,19 +362,24 @@ class Program {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Test {
   public:
-    Test(std::string n, Callable exe, std::vector<std::variant<String, File>> args, bool xfail);
+    Test(std::string n, Callable exe, std::vector<std::variant<StringPtr, FilePtr>> args,
+         bool xfail);
 
     const std::string name;
     const Callable executable;
-    const std::vector<std::variant<String, File>> arguments;
+    const std::vector<std::variant<StringPtr, FilePtr>> arguments;
     const bool should_fail;
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 /**
@@ -401,26 +395,28 @@ class Compiler {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 // Can be a method via an optional paramter maybe?
 /// A function call object
 class FunctionCall {
   public:
-    FunctionCall(std::string _name, std::vector<Instruction> && _pos,
-                 std::unordered_map<std::string, Instruction> && _kw, std::filesystem::path _sd);
-    FunctionCall(std::string _name, std::vector<Instruction> && _pos, std::filesystem::path _sd);
+    FunctionCall(std::string _name, std::vector<Object> && _pos,
+                 std::unordered_map<std::string, Object> && _kw, std::filesystem::path _sd);
+    FunctionCall(std::string _name, std::vector<Object> && _pos, std::filesystem::path _sd);
 
     const std::string name;
 
     /// Ordered container of positional argument objects
-    std::vector<Instruction> pos_args;
+    std::vector<Object> pos_args;
 
     /// Unordered container mapping keyword arguments to their values
-    std::unordered_map<std::string, Instruction> kw_args;
+    std::unordered_map<std::string, Object> kw_args;
 
     /// reference to object holding this function, it's monostate if not
-    Instruction holder;
+    std::optional<Object> holder;
 
     /**
      * The directory this was called form.
@@ -432,6 +428,8 @@ class FunctionCall {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Disabler {
@@ -440,6 +438,8 @@ class Disabler {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class String {
@@ -453,6 +453,8 @@ class String {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Boolean {
@@ -466,6 +468,8 @@ class Boolean {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Number {
@@ -479,6 +483,8 @@ class Number {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Identifier {
@@ -507,18 +513,22 @@ class Identifier {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Array {
   public:
     Array() = default;
-    Array(std::vector<Instruction> && a);
+    Array(std::vector<Object> && a);
     Array(std::vector<String> && a);
 
-    std::vector<Instruction> value;
+    std::vector<Object> value;
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class Dict {
@@ -527,10 +537,12 @@ class Dict {
 
     // TODO: the key is allowed to be a string or an expression that evaluates
     // to a string, we need to enforce that somewhere.
-    std::unordered_map<std::string, Instruction> value;
+    std::unordered_map<std::string, Object> value;
 
     /// Print a human readable version of this
     std::string print() const;
+
+    Variable var;
 };
 
 class AddArguments {
@@ -542,6 +554,8 @@ class AddArguments {
 
     ArgMap arguments;
     bool is_global;
+
+    Variable var;
 };
 
 class CFGNode;
@@ -550,7 +564,7 @@ class CFGNode;
 class Jump {
   public:
     Jump(std::shared_ptr<CFGNode> t);
-    Jump(std::shared_ptr<CFGNode> t, std::shared_ptr<Instruction> p);
+    Jump(std::shared_ptr<CFGNode> t, Object p);
 
     /// @brief Print a human readable version of this instruction
     /// @return A string representing the instructions
@@ -561,7 +575,9 @@ class Jump {
 
     /// @brief A potential predicate of the jump
     /// If this is a nullptr it is considered unconditional
-    std::shared_ptr<Instruction> predicate;
+    std::optional<Object> predicate;
+
+    Variable var;
 };
 
 /// @brief An instruction for jumping to multiple targets based on conditions
@@ -572,9 +588,11 @@ class Branch {
   public:
     Branch();
 
-    std::vector<std::tuple<Instruction, std::shared_ptr<CFGNode>>> branches;
+    std::vector<std::tuple<Object, std::shared_ptr<CFGNode>>> branches;
 
     std::string print() const;
+
+    Variable var;
 };
 
 class BasicBlock {
@@ -582,7 +600,9 @@ class BasicBlock {
     BasicBlock() = default;
 
     /// The instructions in this block
-    std::list<Instruction> instructions;
+    std::list<Object> instructions;
+
+    Variable var;
 };
 
 struct CFGComparitor {
@@ -618,6 +638,61 @@ class CFG {
 
     std::shared_ptr<CFGNode> root;
 };
+
+struct VariableGetter {
+    Variable & operator()(const AddArgumentsPtr & o) const { return o->var; }
+    Variable & operator()(const ArrayPtr & o) const { return o->var; }
+    Variable & operator()(const BooleanPtr & o) const { return o->var; }
+    Variable & operator()(const BranchPtr & o) const { return o->var; }
+    Variable & operator()(const CompilerPtr & o) const { return o->var; }
+    Variable & operator()(const CustomTargetPtr & o) const { return o->var; }
+    Variable & operator()(const DependencyPtr & o) const { return o->var; }
+    Variable & operator()(const DictPtr & o) const { return o->var; }
+    Variable & operator()(const DisablerPtr & o) const { return o->var; }
+    Variable & operator()(const ExecutablePtr & o) const { return o->var; }
+    Variable & operator()(const FilePtr & o) const { return o->var; }
+    Variable & operator()(const FunctionCallPtr & o) const { return o->var; }
+    Variable & operator()(const IdentifierPtr & o) const { return o->var; }
+    Variable & operator()(const IncludeDirectoriesPtr & o) const { return o->var; }
+    Variable & operator()(const JumpPtr & o) const { return o->var; }
+    Variable & operator()(const MessagePtr & o) const { return o->var; }
+    Variable & operator()(const NumberPtr & o) const { return o->var; }
+    Variable & operator()(const PhiPtr & o) const { return o->var; }
+    Variable & operator()(const ProgramPtr & o) const { return o->var; }
+    Variable & operator()(const StaticLibraryPtr & o) const { return o->var; }
+    Variable & operator()(const StringPtr & o) const { return o->var; }
+    Variable & operator()(const TestPtr & o) const { return o->var; }
+};
+
+struct VariableSetter {
+
+    const Variable var;
+
+    void operator()(AddArgumentsPtr & o) const { o->var = var; }
+    void operator()(ArrayPtr & o) const { o->var = var; }
+    void operator()(BooleanPtr & o) const { o->var = var; }
+    void operator()(BranchPtr & o) const { o->var = var; }
+    void operator()(CompilerPtr & o) const { o->var = var; }
+    void operator()(CustomTargetPtr & o) const { o->var = var; }
+    void operator()(DependencyPtr & o) const { o->var = var; }
+    void operator()(DictPtr & o) const { o->var = var; }
+    void operator()(DisablerPtr & o) const { o->var = var; }
+    void operator()(ExecutablePtr & o) const { o->var = var; }
+    void operator()(FilePtr & o) const { o->var = var; }
+    void operator()(FunctionCallPtr & o) const { o->var = var; }
+    void operator()(IdentifierPtr & o) const { o->var = var; }
+    void operator()(IncludeDirectoriesPtr & o) const { o->var = var; }
+    void operator()(JumpPtr & o) const { o->var = var; }
+    void operator()(MessagePtr & o) const { o->var = var; }
+    void operator()(NumberPtr & o) const { o->var = var; }
+    void operator()(PhiPtr & o) const { o->var = var; }
+    void operator()(ProgramPtr & o) const { o->var = var; }
+    void operator()(StaticLibraryPtr & o) const { o->var = var; }
+    void operator()(StringPtr & o) const { o->var = var; }
+    void operator()(TestPtr & o) const { o->var = var; }
+};
+
+void set_var(const Object & src, Object & dest);
 
 void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor);
 void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor,

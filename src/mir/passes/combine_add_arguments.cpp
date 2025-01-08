@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2025 Intel Corporation
 
 #include "passes.hpp"
 #include "private.hpp"
@@ -7,14 +7,15 @@
 namespace MIR::Passes {
 
 bool combine_add_arguments(std::shared_ptr<CFGNode> block) {
-    MIR::AddArguments * proj = nullptr;
-    MIR::AddArguments * global = nullptr;
+    MIR::AddArgumentsPtr proj = nullptr;
+    MIR::AddArgumentsPtr global = nullptr;
 
     bool progress = false;
 
     for (auto it = block->block->instructions.begin(); it != block->block->instructions.end();
          ++it) {
-        if (MIR::AddArguments * a = std::get_if<MIR::AddArguments>(it->obj_ptr.get())) {
+        if (std::holds_alternative<MIR::AddArgumentsPtr>(*it)) {
+            MIR::AddArgumentsPtr a = std::get<MIR::AddArgumentsPtr>(*it);
             if (a->is_global && global == nullptr) {
                 global = a;
                 continue;
@@ -25,7 +26,7 @@ bool combine_add_arguments(std::shared_ptr<CFGNode> block) {
                 continue;
             }
 
-            MIR::AddArguments * target = a->is_global ? global : proj;
+            MIR::AddArgumentsPtr target = a->is_global ? global : proj;
             // TODO: if this is a project argument, we need to only combine them
             // if they are for the same project
             for (auto && [language, arguments] : a->arguments) {

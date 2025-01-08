@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -24,17 +24,18 @@ TEST(join_blocks, simple) {
     MIR::Passes::graph_walker(irlist, {std::ref(printer)});
     printer.increment();
 
-    bool progress = MIR::Passes::graph_walker(irlist, {
-                                                          std::ref(printer),
-                                                          MIR::Passes::branch_pruning,
-                                                          std::ref(printer),
-                                                          MIR::Passes::join_blocks,
-                                                            [&printer](std::shared_ptr<MIR::CFGNode> c) {
-                                                                printer(c);
-                                                                printer.increment();
-                                                                return false;
-                                                            },
-                                                      });
+    bool progress =
+        MIR::Passes::graph_walker(irlist, {
+                                              std::ref(printer),
+                                              MIR::Passes::branch_pruning,
+                                              std::ref(printer),
+                                              MIR::Passes::join_blocks,
+                                              [&printer](std::shared_ptr<MIR::CFGNode> c) {
+                                                  printer(c);
+                                                  printer.increment();
+                                                  return false;
+                                              },
+                                          });
     EXPECT_TRUE(progress);
     EXPECT_TRUE(irlist->successors.empty());
     ASSERT_EQ(irlist->block->instructions.size(), 3);
@@ -89,9 +90,9 @@ TEST(join_blocks, nested_if_elif_else) {
     ASSERT_TRUE(progress);
 
     // Check that the predecessors of the final block are correct
-    const auto & arm = std::get<1>(
-        std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr).branches.at(0));
-    const auto & fin = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
+    const auto & arm =
+        std::get<1>(std::get<MIR::BranchPtr>(irlist->block->instructions.back())->branches.at(0));
+    const auto & fin = std::get<MIR::JumpPtr>(arm->block->instructions.back())->target;
 
     ASSERT_EQ(fin->block->instructions.size(), 2);
     ASSERT_TRUE(fin->predecessors.count(arm));

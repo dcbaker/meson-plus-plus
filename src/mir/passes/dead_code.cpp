@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include "exceptions.hpp"
 #include "passes.hpp"
@@ -14,14 +14,17 @@ bool delete_unreachable(std::shared_ptr<CFGNode> block) {
 
     for (auto itr = block->block->instructions.begin(); itr != block->block->instructions.end();
          ++itr) {
-        if (auto * m = std::get_if<Jump>(itr->obj_ptr.get())) {
+        if (std::holds_alternative<JumpPtr>(*itr)) {
+            auto m = std::get<JumpPtr>(*itr);
             keep.emplace(m->target);
-        } else if (auto * m = std::get_if<Branch>(itr->obj_ptr.get())) {
+        } else if (std::holds_alternative<BranchPtr>(*itr)) {
+            auto m = std::get<BranchPtr>(*itr);
             for (auto && [_, b] : m->branches) {
                 keep.emplace(b);
             }
             continue;
-        } else if (auto * m = std::get_if<Message>(itr->obj_ptr.get())) {
+        } else if (std::holds_alternative<MessagePtr>(*itr)) {
+            auto m = std::get<MessagePtr>(*itr);
             if (m->level == MessageLevel::ERROR) {
                 bool progress = false;
 

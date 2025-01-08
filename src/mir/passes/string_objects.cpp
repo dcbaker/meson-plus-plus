@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2022-2024 Intel Corporation
+// Copyright © 2022-2025 Intel Corporation
 
 #include "argument_extractors.hpp"
 #include "exceptions.hpp"
@@ -11,25 +11,27 @@ namespace MIR::Passes {
 
 namespace {
 
-std::optional<Instruction> lower_version_compare_method(const FunctionCall & f) {
-    if (!f.kw_args.empty()) {
+std::optional<Object> lower_version_compare_method(const FunctionCallPtr & f) {
+    if (!f->kw_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "string.version_compare() does not take any keyword arguments");
     }
 
-    if (f.pos_args.size() != 1) {
+    if (f->pos_args.size() != 1) {
         throw Util::Exceptions::InvalidArguments(
             "string.version_compare() takes exactly 1 positional argument, got: " +
-            std::to_string(f.pos_args.size()));
+            std::to_string(f->pos_args.size()));
     }
 
     // XXX: really need to check that this has a value...
-    const auto c = extract_positional_argument<String>(
-        f.pos_args[0], "string.version_compare: First argument was not a string");
-    const auto & s = std::get<String>(*f.holder.obj_ptr);
+    const auto c = extract_positional_argument<StringPtr>(
+        f->pos_args[0], "string.version_compare: First argument was not a string");
+
+    assert(f->holder.has_value());
+    const auto & s = std::get<StringPtr>(f->holder.value());
 
     std::string cval{};
-    for (const auto & ch : c.value) {
+    for (const auto & ch : c->value) {
         if (!std::isspace(ch)) {
             cval.insert(cval.end(), ch);
         }
@@ -58,36 +60,35 @@ std::optional<Instruction> lower_version_compare_method(const FunctionCall & f) 
     } else {
         throw Util::Exceptions::MesonException(
             "Version string comparison does not start with a valid comparison operator: " +
-            c.value);
+            c->value);
     }
 
-    return Boolean{Version::compare(s.value, op, val)};
+    return std::make_shared<Boolean>(Version::compare(s->value, op, val));
 }
 
 } // namespace
 
-std::optional<Instruction> lower_string_objects(const Instruction & obj,
-                                                const State::Persistant & pstate) {
-    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
+std::optional<Object> lower_string_objects(const Object & obj, const State::Persistant & pstate) {
+    if (!std::holds_alternative<FunctionCallPtr>(obj)) {
         return std::nullopt;
     }
-    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
+    const auto & f = std::get<FunctionCallPtr>(obj);
 
-    if (!std::holds_alternative<String>(*f.holder.obj_ptr)) {
-        return std::nullopt;
-    }
-
-    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+    if (!(f->holder && std::holds_alternative<StringPtr>(f->holder.value()))) {
         return std::nullopt;
     }
 
-    std::optional<Instruction> i = std::nullopt;
-    if (f.name == "version_compare") {
+    if (!all_args_reduced(f->pos_args, f->kw_args)) {
+        return std::nullopt;
+    }
+
+    std::optional<Object> i = std::nullopt;
+    if (f->name == "version_compare") {
         i = lower_version_compare_method(f);
     }
 
     if (i) {
-        i.value().var = obj.var;
+        MIR::set_var(obj, i.value());
         return i;
     }
 

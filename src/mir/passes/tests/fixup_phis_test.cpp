@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -31,22 +31,24 @@ TEST(fixup_phi, simple) {
 
     {
         const auto & id_obj = irlist->block->instructions.front();
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.value, 9);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(id_obj));
+        const auto & id = std::get<MIR::NumberPtr>(id_obj);
+        EXPECT_EQ(id->value, 9);
     }
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 3);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 3);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->version, 1);
     }
 }
 
@@ -75,32 +77,35 @@ TEST(fixup_phi, three_branches) {
 
     {
         const auto & id_obj = *it;
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.value, 9);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(id_obj));
+        const auto & id = std::get<MIR::NumberPtr>(id_obj);
+        EXPECT_EQ(id->value, 9);
     }
 
     {
         const auto & id_obj = *(++it);
-        EXPECT_EQ(id_obj.var.gvn, 4);
-        EXPECT_EQ(id_obj.var.name, "x");
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.gvn, 4);
+        EXPECT_EQ(var.name, "x");
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->version, 1);
     }
 
     {
         const auto & id_obj = *(++it);
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 5);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 5);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.version, 4);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->version, 4);
     }
 }
 
@@ -134,47 +139,51 @@ TEST(fixup_phi, nested_branches) {
 
     {
         const auto & id_obj = *it;
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.value, 9);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(id_obj));
+        const auto & id = std::get<MIR::NumberPtr>(id_obj);
+        EXPECT_EQ(id->value, 9);
     }
 
     ++it;
 
     {
         const auto & id_obj = *it;
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 2);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 2);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Number>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.value, 11);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(id_obj));
+        const auto & id = std::get<MIR::NumberPtr>(id_obj);
+        EXPECT_EQ(id->value, 11);
     }
 
     ++it;
 
     {
         const auto & id_obj = *it;
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 4);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 4);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.version, 2);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->version, 2);
     }
 
     ++it;
 
     {
         const auto & id_obj = *it;
-        EXPECT_EQ(id_obj.var.name, "x");
-        EXPECT_EQ(id_obj.var.gvn, 5);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 5);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.version, 4);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->version, 4);
     }
 }

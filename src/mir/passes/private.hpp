@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 /**
  * Implementation details of the MIR passes
@@ -12,11 +12,11 @@
 
 namespace MIR::Passes {
 
-/// Callback will return a an optional Instruction, when it does the original object is replaced
-using ReplacementCallback = std::function<std::optional<Instruction>(const Instruction &)>;
+/// Callback will return a an optional Object when it does the original object is replaced
+using ReplacementCallback = std::function<std::optional<Object>(const Object &)>;
 
 /// Callback will return a boolean that progress is mode
-using MutationCallback = std::function<bool(Instruction &)>;
+using MutationCallback = std::function<bool(Object &)>;
 
 /// Callback to pass to a BlockWalker, probably an instruction_walker
 using BlockWalkerCb = std::function<bool(std::shared_ptr<CFGNode>)>;
@@ -37,7 +37,7 @@ bool instruction_walker(CFGNode &, const std::vector<ReplacementCallback> &);
 bool graph_walker(std::shared_ptr<CFGNode>, const std::vector<BlockWalkerCb> &);
 
 /// Check if all of the arguments have been reduced from ids
-bool all_args_reduced(const std::vector<Instruction> & pos_args,
-                      const std::unordered_map<std::string, Instruction> & kw_args);
+bool all_args_reduced(const std::vector<Object> & pos_args,
+                      const std::unordered_map<std::string, Object> & kw_args);
 
 } // namespace MIR::Passes

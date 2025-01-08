@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <algorithm>
 #include <iterator>
@@ -37,6 +37,18 @@ std::string to_string(const MessageLevel l) {
     assert(false); // Unreachable
 }
 
+std::string printer(const Object & obj) {
+    return std::visit(
+        [](const auto & o) -> std::string {
+            if constexpr (std::is_same_v<std::decay_t<decltype(o)>, std::monostate>) {
+                return "INVALID STATE";
+            } else {
+                return o->print();
+            }
+        },
+        obj);
+}
+
 std::string to_string(const DependencyType d) {
     switch (d) {
         case DependencyType::INTERNAL:
@@ -45,74 +57,30 @@ std::string to_string(const DependencyType d) {
     assert(false); // Unreachable
 }
 
-std::string to_string(const std::vector<Instruction> & args) {
+std::string to_string(const std::vector<Object> & args) {
     std::vector<std::string> vec{};
     std::transform(args.begin(), args.end(), std::back_inserter(vec),
-                   [](const Instruction & i) { return i.print(); });
+                   [](const Object & i) { return printer(i); });
     return join(vec);
 }
 
-std::string to_string(const std::vector<File> & args) {
+std::string to_string(const std::vector<FilePtr> & args) {
     std::vector<std::string> vec{};
     std::transform(args.begin(), args.end(), std::back_inserter(vec),
-                   [](const File & i) { return i.print(); });
+                   [](const FilePtr & i) { return i->print(); });
     return join(vec);
 }
 
-std::string to_string(const std::unordered_map<std::string, Instruction> & map) {
+std::string to_string(const std::unordered_map<std::string, Object> & map) {
     std::vector<std::string> args{};
     std::transform(map.begin(), map.end(), std::back_inserter(args),
-                   [](const std::pair<const std::string, const Instruction> & p) {
-                       return p.first + " : " + p.second.print();
+                   [](const std::pair<const std::string, const Object> & p) {
+                       return p.first + " : " + printer(p.second);
                    });
     return join(args);
 }
 
 } // namespace
-
-Instruction::Instruction() : obj_ptr{std::make_shared<Object>(std::monostate{})} {};
-Instruction::Instruction(std::shared_ptr<Object> ptr) : obj_ptr{std::move(std::move(ptr))} {};
-Instruction::Instruction(const Object & obj) : obj_ptr{std::make_shared<Object>(obj)} {};
-Instruction::Instruction(Object obj, const Variable & var_)
-    : obj_ptr{std::make_shared<Object>(std::move(obj))}, var{var_} {};
-Instruction::Instruction(Boolean val) : obj_ptr{std::make_shared<Object>(val)} {};
-Instruction::Instruction(Number val) : obj_ptr{std::make_shared<Object>(val)} {};
-Instruction::Instruction(String val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(FunctionCall val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Identifier val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Array val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Dict val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(File val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(IncludeDirectories val)
-    : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Message val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Dependency val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(CustomTarget val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(StaticLibrary val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Executable val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Phi val) : obj_ptr{std::make_shared<Object>(val)} {};
-Instruction::Instruction(Program val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Test val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(AddArguments val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Jump val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Branch val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-Instruction::Instruction(Disabler val) : obj_ptr{std::make_shared<Object>(std::move(val))} {};
-
-std::string Instruction::print() const {
-    const std::string i = std::visit(
-        [](auto && i) {
-            using T = std::decay_t<decltype(i)>;
-            if constexpr (std::is_same_v<T, std::monostate>) {
-                return std::string{"monostate"};
-            } else {
-                return i.print();
-            }
-        },
-        *obj_ptr);
-    return "Instruction { object = " + i + "; var = " + var.print() + " }";
-}
-
-const Object & Instruction::object() const { return *obj_ptr; }
 
 Phi::Phi() : left{}, right{} {};
 Phi::Phi(const uint32_t & l, const uint32_t & r)
@@ -224,9 +192,8 @@ std::ostream & operator<<(std::ostream & os, const File & f) {
     return os << (f.is_built() ? f.build_root : f.source_root) / f.subdir / f.get_name();
 }
 
-Executable::Executable(std::string name_, std::vector<Instruction> srcs,
-                       const Machines::Machine & m, fs::path sdir, ArgMap args,
-                       std::vector<StaticLinkage> s_link)
+Executable::Executable(std::string name_, std::vector<Object> srcs, const Machines::Machine & m,
+                       fs::path sdir, ArgMap args, std::vector<StaticLinkage> s_link)
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
       arguments{std::move(args)}, link_static{std::move(s_link)} {};
 
@@ -238,7 +205,7 @@ std::string Executable::print() const {
            "; subdir = " + std::string{subdir} + "; sources = " + to_string(sources) + " }";
 }
 
-StaticLibrary::StaticLibrary(std::string name_, std::vector<Instruction> srcs,
+StaticLibrary::StaticLibrary(std::string name_, std::vector<Object> srcs,
                              const Machines::Machine & m, fs::path sdir, ArgMap args,
                              std::vector<StaticLinkage> s_link)
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
@@ -276,20 +243,30 @@ std::string Program::print() const {
 
 bool Program::found() const { return path != ""; }
 
-FunctionCall::FunctionCall(std::string _name, std::vector<Instruction> && _pos,
-                           std::unordered_map<std::string, Instruction> && _kw,
+FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
+                           std::unordered_map<std::string, Object> && _kw,
                            std::filesystem::path _sd)
     : name{std::move(_name)}, pos_args{std::move(_pos)}, kw_args{std::move(_kw)},
-      holder{std::make_shared<Object>(std::monostate{})}, source_dir{std::move(_sd)} {};
+      holder{std::nullopt}, source_dir{std::move(_sd)} {};
 
-FunctionCall::FunctionCall(std::string _name, std::vector<Instruction> && _pos,
+FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
                            std::filesystem::path _sd)
-    : name{std::move(_name)}, pos_args{std::move(_pos)},
-      holder{std::make_shared<Object>(std::monostate{})}, source_dir{std::move(_sd)} {};
+    : name{std::move(_name)}, pos_args{std::move(_pos)}, holder{std::nullopt},
+      source_dir{std::move(_sd)} {};
 
 std::string FunctionCall::print() const {
-    return "FunctionCall { name = " + name + "; holder = { " + holder.print() + " }; args = { " +
-           to_string(pos_args) + " }; kwargs = { " + to_string(kw_args) + " } }";
+    std::stringstream ss{};
+    ss << "FunctionCall { name = { " + name + " };";
+    ss << " holder = {";
+    if (holder) {
+        ss << " " << printer(holder.value());
+    }
+    ss << " };"
+       << " args = { " << to_string(pos_args) << " };"
+       << " kwargs = { " << to_string(kw_args) << " };"
+       << " };";
+
+    return ss.str();
 }
 
 String::String(std::string f) : value{std::move(f)} {};
@@ -321,14 +298,14 @@ std::string Identifier::print() const {
     return "Identifier { value = " + value + "; version = " + to_string(version) + " }";
 }
 
-Array::Array(std::vector<Instruction> && a) : value{std::move(a)} {};
+Array::Array(std::vector<Object> && a) : value{std::move(a)} {};
 
 std::string Array::print() const { return "Array { value = " + to_string(value) + " }"; }
 
 std::string Dict::print() const { return "Dict { value = " + to_string(value) + " }"; }
 
-CustomTarget::CustomTarget(std::string n, std::vector<Instruction> i, std::vector<File> o,
-                           std::vector<std::string> c, fs::path s, std::vector<File> d,
+CustomTarget::CustomTarget(std::string n, std::vector<Object> i, std::vector<FilePtr> o,
+                           std::vector<std::string> c, fs::path s, std::vector<FilePtr> d,
                            std::optional<std::string> df)
     : name{std::move(n)}, inputs{std::move(i)}, outputs{std::move(o)}, command{std::move(c)},
       subdir{std::move(s)}, depends{std::move(d)}, depfile{std::move(df)} {};
@@ -355,13 +332,14 @@ std::string Dependency::print() const {
            "; type = " + to_string(type) + " }";
 }
 
-Test::Test(std::string n, Callable exe, std::vector<std::variant<String, File>> args, bool xfail)
+Test::Test(std::string n, Callable exe, std::vector<std::variant<StringPtr, FilePtr>> args,
+           bool xfail)
     : name{std::move(n)}, executable{std::move(exe)}, arguments{std::move(args)},
       should_fail{xfail} {};
 
 std::string Test::print() const {
     return "Test { name = " + name +
-           "; executable = " + std::visit([](auto && arg) { return arg.print(); }, executable) +
+           "; executable = " + std::visit([](auto && arg) { return arg->print(); }, executable) +
            "; should_fail = " + (should_fail ? "true" : "false") + " }";
 }
 
@@ -385,12 +363,11 @@ std::string AddArguments::print() const {
 }
 
 Jump::Jump(std::shared_ptr<CFGNode> t) : target{std::move(t)} {};
-Jump::Jump(std::shared_ptr<CFGNode> t, std::shared_ptr<Instruction> p)
-    : target{std::move(t)}, predicate{std::move(p)} {};
+Jump::Jump(std::shared_ptr<CFGNode> t, Object p) : target{std::move(t)}, predicate{std::move(p)} {};
 
 std::string Jump::print() const {
     return "jump { target = { " + std::to_string(target->index) + " }; predicate = { " +
-           (predicate == nullptr ? "always" : predicate->print()) + " } }";
+           (!predicate ? "always" : printer(predicate.value())) + " } }";
 }
 
 Branch::Branch() = default;
@@ -399,7 +376,7 @@ std::string Branch::print() const {
     std::stringstream ss;
     ss << "branch = { ";
     for (auto && [i, dest] : branches) {
-        ss << "branch " << i.print() << " = { " << dest->index << " }, ";
+        ss << "branch " << printer(i) << " = { " << dest->index << " }, ";
     }
     ss << " }";
     return ss.str();
@@ -430,6 +407,11 @@ void unlink_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode>
 
     successor->predecessors.erase(predecessor);
     predecessor->successors.erase(successor);
+}
+
+void set_var(const Object & src, Object & dest) {
+    const Variable & var = std::visit(VariableGetter{}, src);
+    std::visit(VariableSetter{var}, dest);
 }
 
 } // namespace MIR

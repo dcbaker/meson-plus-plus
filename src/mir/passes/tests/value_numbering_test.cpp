@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -16,8 +16,8 @@ TEST(value_numbering, simple) {
         )EOF");
     MIR::Passes::GlobalValueNumbering{}(irlist);
 
-    ASSERT_EQ(irlist->block->instructions.front().var.gvn, 1);
-    ASSERT_EQ(irlist->block->instructions.back().var.gvn, 2);
+    ASSERT_EQ(std::visit(MIR::VariableGetter{}, irlist->block->instructions.front()).gvn, 1);
+    ASSERT_EQ(std::visit(MIR::VariableGetter{}, irlist->block->instructions.back()).gvn, 2);
 }
 
 TEST(value_numbering, branching) {
@@ -34,16 +34,16 @@ TEST(value_numbering, branching) {
 
     auto it = irlist->block->instructions.begin();
 
-    EXPECT_EQ((it++)->var.gvn, 1);
-    EXPECT_EQ((it++)->var.gvn, 2);
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, *(it++)).gvn, 1);
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, *(it++)).gvn, 2);
 
-    const auto & branch = std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr);
+    const auto & branch = std::get<MIR::BranchPtr>(irlist->block->instructions.back());
 
-    const auto & bb1 = std::get<1>(branch.branches.at(0));
-    EXPECT_EQ(bb1->block->instructions.front().var.gvn, 3);
+    const auto & bb1 = std::get<1>(branch->branches.at(0));
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, bb1->block->instructions.front()).gvn, 3);
 
-    const auto & bb2 = std::get<1>(branch.branches.at(1));
-    EXPECT_EQ(bb2->block->instructions.front().var.gvn, 4);
+    const auto & bb2 = std::get<1>(branch->branches.at(1));
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, bb2->block->instructions.front()).gvn, 4);
 }
 
 TEST(value_numbering, three_branch) {
@@ -58,16 +58,16 @@ TEST(value_numbering, three_branch) {
         )EOF");
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.back().obj_ptr);
+    const auto & branches = std::get<MIR::BranchPtr>(irlist->block->instructions.back());
 
-    const auto & bb1 = std::get<1>(branches.branches.at(0));
-    EXPECT_EQ(bb1->block->instructions.front().var.gvn, 1);
+    const auto & bb1 = std::get<1>(branches->branches.at(0));
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, bb1->block->instructions.front()).gvn, 1);
 
-    const auto & bb2 = std::get<1>(branches.branches.at(1));
-    EXPECT_EQ(bb2->block->instructions.front().var.gvn, 2);
+    const auto & bb2 = std::get<1>(branches->branches.at(1));
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, bb2->block->instructions.front()).gvn, 2);
 
-    const auto & bb3 = std::get<1>(branches.branches.at(2));
-    ASSERT_EQ(bb3->block->instructions.front().var.gvn, 3);
+    const auto & bb3 = std::get<1>(branches->branches.at(2));
+    EXPECT_EQ(std::visit(MIR::VariableGetter{}, bb3->block->instructions.front()).gvn, 3);
 }
 
 TEST(number_uses, simple) {
@@ -86,23 +86,25 @@ TEST(number_uses, simple) {
 
     {
         const auto & num_obj = irlist->block->instructions.front();
-        ASSERT_EQ(num_obj.var.name, "x");
-        ASSERT_EQ(num_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, num_obj);
+        ASSERT_EQ(var.name, "x");
+        ASSERT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
-        const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
-        ASSERT_EQ(num.value, 9);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(num_obj));
+        const auto & num = std::get<MIR::NumberPtr>(num_obj);
+        ASSERT_EQ(num->value, 9);
     }
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        ASSERT_EQ(var.name, "y");
+        ASSERT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 1);
     }
 }
 
@@ -137,23 +139,25 @@ TEST(number_uses, with_phi) {
 
     {
         const auto & num_obj = irlist->block->instructions.front();
-        EXPECT_EQ(num_obj.var.name, "x");
-        EXPECT_EQ(num_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, num_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
-        const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
-        EXPECT_EQ(num.value, 9);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(num_obj));
+        const auto & num = std::get<MIR::NumberPtr>(num_obj);
+        EXPECT_EQ(num->value, 9);
     }
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        EXPECT_EQ(id_obj.var.name, "y");
-        EXPECT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "y");
+        EXPECT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.value, "x");
-        EXPECT_EQ(id.version, 3);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->value, "x");
+        EXPECT_EQ(id->version, 3);
     }
 }
 
@@ -169,26 +173,26 @@ TEST(number_uses, with_phi_no_pruning_in_func_call) {
 
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr);
-    const auto & arm = std::get<1>(branches.branches.at(0));
-    const auto & tail = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
+    const auto & branches = std::get<MIR::BranchPtr>(irlist->block->instructions.front());
+    const auto & arm = std::get<1>(branches->branches.at(0));
+    const auto & tail = std::get<MIR::JumpPtr>(arm->block->instructions.back())->target;
 
     ASSERT_EQ(tail->block->instructions.size(), 2);
 
     {
         const auto & phi_obj = tail->block->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
+        ASSERT_TRUE(std::holds_alternative<MIR::PhiPtr>(phi_obj));
     }
 
     {
         const auto & func_obj = tail->block->instructions.back();
-        ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-        const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
+        ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(func_obj));
+        const auto & func = std::get<MIR::FunctionCallPtr>(func_obj);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*func.pos_args.front().obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*func.pos_args.front().obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 3);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(func->pos_args.front()));
+        const auto & id = std::get<MIR::IdentifierPtr>(func->pos_args.front());
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 3);
     }
 }
 
@@ -206,24 +210,25 @@ TEST(number_uses, with_phi_no_pruning) {
     // wrong thing
     MIR::Passes::graph_walker(irlist, {MIR::Passes::GlobalValueNumbering{}});
 
-    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr);
-    const auto & arm = std::get<1>(branches.branches.at(0));
-    const auto & tail = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
+    const auto & branches = std::get<MIR::BranchPtr>(irlist->block->instructions.front());
+    const auto & arm = std::get<1>(branches->branches.at(0));
+    const auto & tail = std::get<MIR::JumpPtr>(arm->block->instructions.back())->target;
 
     {
         const auto & phi_obj = tail->block->instructions.front();
-        ASSERT_TRUE(std::holds_alternative<MIR::Phi>(*phi_obj.obj_ptr));
+        ASSERT_TRUE(std::holds_alternative<MIR::PhiPtr>(phi_obj));
     }
 
     {
         const auto & id_obj = tail->block->instructions.back();
-        ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        ASSERT_EQ(var.name, "y");
+        ASSERT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 3);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 3);
     }
 }
 
@@ -242,13 +247,14 @@ TEST(number_uses, three_statements) {
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        ASSERT_EQ(id_obj.var.name, "z");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        ASSERT_EQ(var.name, "z");
+        ASSERT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "y");
-        ASSERT_EQ(id.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        ASSERT_EQ(id->value, "y");
+        ASSERT_EQ(id->version, 1);
     }
 }
 
@@ -267,13 +273,14 @@ TEST(number_uses, redefined_value) {
 
     {
         const auto & id_obj = irlist->block->instructions.back();
-        ASSERT_EQ(id_obj.var.name, "y");
-        ASSERT_EQ(id_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        ASSERT_EQ(var.name, "y");
+        ASSERT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 2);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 2);
     }
 }
 
@@ -292,24 +299,25 @@ TEST(number_uses, in_array) {
 
     {
         const auto & num_obj = irlist->block->instructions.front();
-        ASSERT_EQ(num_obj.var.name, "x");
-        ASSERT_EQ(num_obj.var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, num_obj);
+        ASSERT_EQ(var.name, "x");
+        ASSERT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
-        const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
-        ASSERT_EQ(num.value, 10);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(num_obj));
+        const auto & num = std::get<MIR::NumberPtr>(num_obj);
+        ASSERT_EQ(num->value, 10);
     }
 
     {
         const auto & arr_obj = irlist->block->instructions.back();
-        ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arr_obj.obj_ptr));
-        const auto & arr = std::get<MIR::Array>(*arr_obj.obj_ptr);
+        ASSERT_TRUE(std::holds_alternative<MIR::ArrayPtr>(arr_obj));
+        const auto & arr = std::get<MIR::ArrayPtr>(arr_obj);
 
-        ASSERT_EQ(arr.value.size(), 1);
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arr.value[0].obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*arr.value[0].obj_ptr);
+        ASSERT_EQ(arr->value.size(), 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(arr->value[0]));
+        const auto & id = std::get<MIR::IdentifierPtr>(arr->value[0]);
 
-        ASSERT_EQ(id.value, "y");
-        ASSERT_EQ(id.version, 1);
+        ASSERT_EQ(id->value, "y");
+        ASSERT_EQ(id->version, 1);
     }
 }

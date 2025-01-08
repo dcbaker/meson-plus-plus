@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -27,11 +27,11 @@ TEST(constant_propogation, phi_should_not_propogate) {
                                           MIR::Passes::ConstantPropagation{},
                                       });
 
-    const auto & branches = std::get<MIR::Branch>(*irlist->block->instructions.front().obj_ptr);
-    const auto & arm = std::get<1>(branches.branches.at(0));
-    const auto & tail = std::get<MIR::Jump>(*arm->block->instructions.back().obj_ptr).target;
-    const auto & msg = std::get<MIR::FunctionCall>(*tail->block->instructions.back().obj_ptr);
-    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*msg.pos_args.at(0).obj_ptr));
+    const auto & branches = std::get<MIR::BranchPtr>(irlist->block->instructions.front());
+    const auto & arm = std::get<1>(branches->branches.at(0));
+    const auto & tail = std::get<MIR::JumpPtr>(arm->block->instructions.back())->target;
+    const auto & msg = std::get<MIR::FunctionCallPtr>(tail->block->instructions.back());
+    ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(msg->pos_args.at(0)));
 }
 
 TEST(constant_propogation, function_arguments) {
@@ -58,13 +58,13 @@ TEST(constant_propogation, function_arguments) {
     ASSERT_EQ(irlist->block->instructions.size(), 2);
 
     const auto & func_obj = irlist->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(func_obj));
+    const auto & func = std::get<MIR::FunctionCallPtr>(func_obj);
 
-    const auto & arg_obj = func.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::String>(*arg_obj.obj_ptr));
-    const auto & str = std::get<MIR::String>(*arg_obj.obj_ptr);
-    ASSERT_EQ(str.value, "true");
+    const auto & arg_obj = func->pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::StringPtr>(arg_obj));
+    const auto & str = std::get<MIR::StringPtr>(arg_obj);
+    ASSERT_EQ(str->value, "true");
 }
 
 TEST(constant_propogation, array) {
@@ -91,13 +91,13 @@ TEST(constant_propogation, array) {
     ASSERT_EQ(irlist->block->instructions.size(), 2);
 
     const auto & func_obj = irlist->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*func_obj.obj_ptr));
-    const auto & func = std::get<MIR::Array>(*func_obj.obj_ptr);
+    ASSERT_TRUE(std::holds_alternative<MIR::ArrayPtr>(func_obj));
+    const auto & func = std::get<MIR::ArrayPtr>(func_obj);
 
-    const auto & arg_obj = func.value.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::String>(*arg_obj.obj_ptr));
-    const auto & str = std::get<MIR::String>(*arg_obj.obj_ptr);
-    ASSERT_EQ(str.value, "true");
+    const auto & arg_obj = func->value.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::StringPtr>(arg_obj));
+    const auto & str = std::get<MIR::StringPtr>(arg_obj);
+    ASSERT_EQ(str->value, "true");
 }
 
 TEST(constant_propogation, method_holder) {
@@ -132,13 +132,13 @@ TEST(constant_propogation, method_holder) {
     ASSERT_EQ(irlist->block->instructions.size(), 2);
 
     const auto & front = irlist->block->instructions.front();
-    EXPECT_TRUE(std::holds_alternative<MIR::Program>(*front.obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::ProgramPtr>(front));
 
     const auto & back = irlist->block->instructions.back();
-    EXPECT_TRUE(std::holds_alternative<MIR::FunctionCall>(*back.obj_ptr));
+    EXPECT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(back));
 
-    const auto & f = std::get<MIR::FunctionCall>(*back.obj_ptr);
-    ASSERT_TRUE(std::holds_alternative<MIR::Program>(*f.holder.obj_ptr));
+    const auto & f = std::get<MIR::FunctionCallPtr>(back);
+    ASSERT_TRUE(std::holds_alternative<MIR::ProgramPtr>(f->holder.value()));
 }
 
 TEST(constant_propogation, into_function_call) {
@@ -165,7 +165,7 @@ TEST(constant_propogation, into_function_call) {
             MIR::Passes::ConstantFolding{},
             MIR::Passes::ConstantPropagation{},
             [&](std::shared_ptr<MIR::CFGNode> b) {
-                return MIR::Passes::instruction_walker(*b, {[&pstate](const MIR::Instruction & i) {
+                return MIR::Passes::instruction_walker(*b, {[&pstate](const MIR::Object & i) {
                     return MIR::Passes::lower_program_objects(i, pstate);
                 }});
             },
@@ -176,11 +176,11 @@ TEST(constant_propogation, into_function_call) {
     ASSERT_EQ(irlist->block->instructions.size(), 2);
 
     const auto & front = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Program>(*front.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::ProgramPtr>(front));
 
     const auto & back = irlist->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*back.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(back));
 
-    const auto & f = std::get<MIR::FunctionCall>(*back.obj_ptr);
-    ASSERT_TRUE(std::holds_alternative<MIR::Boolean>(*f.pos_args[0].obj_ptr));
+    const auto & f = std::get<MIR::FunctionCallPtr>(back);
+    ASSERT_TRUE(std::holds_alternative<MIR::BooleanPtr>(f->pos_args[0]));
 }

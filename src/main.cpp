@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 /**
  * Main Meson++ entrypoint
  */
-
-#include <filesystem>
-#include <iostream>
 
 #include "ast_to_mir.hpp"
 #include "backends/ninja/entry.hpp"
@@ -19,6 +16,9 @@
 #include "tools/test.hpp"
 #include "tools/vcs_tag.hpp"
 #include "version.hpp"
+
+#include <filesystem>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -40,12 +40,12 @@ bool emit_messages(MIR::CFGNode & block) {
             std::cout << Util::Log::bold("Debug information:") << std::endl;
         }
         for (const auto & i : block.block->instructions) {
-            if (std::holds_alternative<MIR::Message>(*i.obj_ptr)) {
-                const auto & m = std::get<MIR::Message>(*i.obj_ptr);
-                if (m.level == level) {
-                    std::cout << Util::Log::bold(" *  ") << m.message << std::endl;
+            if (std::holds_alternative<MIR::MessagePtr>(i)) {
+                const auto & m = std::get<MIR::MessagePtr>(i);
+                if (m->level == level) {
+                    std::cout << Util::Log::bold(" *  ") << m->message << std::endl;
                 }
-                if (m.level == MIR::MessageLevel::ERROR) {
+                if (m->level == MIR::MessageLevel::ERROR) {
                     errors = true;
                 }
             }

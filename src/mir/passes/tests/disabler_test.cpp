@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2025 Intel Corporation
 
 #include "passes.hpp"
 #include "passes/private.hpp"
@@ -14,7 +14,7 @@ namespace {
 bool wrapper(std::shared_ptr<MIR::CFGNode> node) {
     const MIR::State::Persistant pstate = make_pstate();
     return MIR::Passes::instruction_walker(*node, {
-                                                      [&pstate](const MIR::Instruction & i) {
+                                                      [&pstate](const MIR::Object & i) {
                                                           return MIR::Passes::lower_free_functions(
                                                               i, pstate);
                                                       },
@@ -30,7 +30,7 @@ TEST(disabler, in_array) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
     const auto & r = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Disabler>(*r.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::DisablerPtr>(r));
 }
 
 TEST(disabler, in_dict) {
@@ -39,7 +39,7 @@ TEST(disabler, in_dict) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
     const auto & r = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Disabler>(*r.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::DisablerPtr>(r));
 }
 
 TEST(disabler, in_function_arguments) {
@@ -48,5 +48,5 @@ TEST(disabler, in_function_arguments) {
     ASSERT_TRUE(progress);
     ASSERT_EQ(irlist->block->instructions.size(), 1);
     const auto & r = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Disabler>(*r.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::DisablerPtr>(r));
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <cassert>
 
@@ -26,19 +26,18 @@ std::optional<Machine> machine_map(const std::string & func_name) {
     return std::nullopt;
 }
 
-Instruction lower_function(const std::string & holder, const std::string & name,
-                           const Info & info) {
+Object lower_function(const std::string & holder, const std::string & name, const Info & info) {
     if (name == "cpu_family") {
-        return MIR::String{info.cpu_family};
+        return std::make_shared<MIR::String>(info.cpu_family);
     }
     if (name == "cpu") {
-        return MIR::String{info.cpu};
+        return std::make_shared<MIR::String>(info.cpu);
     }
     if (name == "system") {
-        return MIR::String{info.system()};
+        return std::make_shared<MIR::String>(info.system());
     }
     if (name == "endian") {
-        return MIR::String{info.endian == Endian::LITTLE ? "little" : "big"};
+        return std::make_shared<MIR::String>(info.endian == Endian::LITTLE ? "little" : "big");
     }
     throw Util::Exceptions::MesonException{holder + " has no method " + name};
 }
@@ -47,18 +46,18 @@ using MachineInfo = PerMachine<Info>;
 
 } // namespace
 
-std::optional<Instruction> machine_lower(const Instruction & obj, const MachineInfo & machines) {
-    if (std::holds_alternative<MIR::FunctionCall>(*obj.obj_ptr)) {
-        const auto & f = std::get<MIR::FunctionCall>(*obj.obj_ptr);
-        if (std::holds_alternative<Identifier>(*f.holder.obj_ptr)) {
-            const auto & holder = std::get<Identifier>(*f.holder.obj_ptr).value;
+std::optional<Object> machine_lower(const Object & obj, const MachineInfo & machines) {
+    if (std::holds_alternative<MIR::FunctionCallPtr>(obj)) {
+        const auto & f = std::get<MIR::FunctionCallPtr>(obj);
+        if (f->holder && std::holds_alternative<IdentifierPtr>(f->holder.value())) {
+            const std::string & holder = std::get<IdentifierPtr>(f->holder.value())->value;
 
             auto maybe_m = machine_map(holder);
             if (maybe_m.has_value()) {
                 const auto & info = machines.get(maybe_m.value());
 
-                Instruction i = lower_function(holder, f.name, info);
-                i.var = obj.var;
+                Object i = lower_function(holder, f->name, info);
+                MIR::set_var(obj, i);
                 return i;
             }
         }
