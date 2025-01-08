@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -26,15 +26,15 @@ TEST(constant_folding, simple) {
     ASSERT_EQ(irlist->block->instructions.size(), 3);
 
     const auto & func_obj = irlist->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
-    ASSERT_EQ(func.pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(func_obj));
+    const auto & func = std::get<MIR::FunctionCallPtr>(func_obj);
+    ASSERT_EQ(func->pos_args.size(), 1);
 
-    const auto & arg_obj = func.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
-    const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
-    ASSERT_EQ(id.value, "x");
-    ASSERT_EQ(id.version, 1);
+    const auto & arg_obj = func->pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(arg_obj));
+    const auto & id = std::get<MIR::IdentifierPtr>(arg_obj);
+    ASSERT_EQ(id->value, "x");
+    ASSERT_EQ(id->version, 1);
 }
 
 TEST(constant_folding, with_phi) {
@@ -63,46 +63,53 @@ TEST(constant_folding, with_phi) {
 
     auto it = irlist->block->instructions.begin();
 
-    EXPECT_EQ(it->var.gvn, 1);
-    EXPECT_EQ(it->var.name, "x");
+    {
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, *it);
+        EXPECT_EQ(var.gvn, 1);
+        EXPECT_EQ(var.name, "x");
 
-    const auto & num_obj = *(it);
-    ASSERT_TRUE(std::holds_alternative<MIR::Number>(*num_obj.obj_ptr));
-    const auto & num = std::get<MIR::Number>(*num_obj.obj_ptr);
-    EXPECT_EQ(num.value, 9);
+        const auto & num_obj = *(it);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(num_obj));
+        const auto & num = std::get<MIR::NumberPtr>(num_obj);
+        EXPECT_EQ(num->value, 9);
+    }
 
     // This was the Phi
     const auto & phi_obj = *(++it);
-    EXPECT_EQ(it->var.name, "x");
-    EXPECT_EQ(it->var.gvn, 3);
+    {
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, phi_obj);
+        EXPECT_EQ(var.name, "x");
+        EXPECT_EQ(var.gvn, 3);
 
-    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*phi_obj.obj_ptr));
-    const auto & phi = std::get<MIR::Identifier>(*phi_obj.obj_ptr);
-    EXPECT_EQ(phi.value, "x");
-    EXPECT_EQ(phi.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(phi_obj));
+        const auto & phi = std::get<MIR::IdentifierPtr>(phi_obj);
+        EXPECT_EQ(phi->value, "x");
+        EXPECT_EQ(phi->version, 1);
+    }
 
     {
         const auto & id_obj = *(++it);
-        EXPECT_EQ(it->var.name, "y");
-        EXPECT_EQ(it->var.gvn, 1);
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, id_obj);
+        EXPECT_EQ(var.name, "y");
+        EXPECT_EQ(var.gvn, 1);
 
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        EXPECT_EQ(id.value, "x");
-        EXPECT_EQ(id.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        EXPECT_EQ(id->value, "x");
+        EXPECT_EQ(id->version, 1);
     }
 
     {
         const auto & func_obj = *(++it);
-        ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-        const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
-        EXPECT_EQ(func.pos_args.size(), 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(func_obj));
+        const auto & func = std::get<MIR::FunctionCallPtr>(func_obj);
+        EXPECT_EQ(func->pos_args.size(), 1);
 
-        const auto & arg_obj = func.pos_args.front();
-        EXPECT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
-        EXPECT_EQ(id.value, "x");
-        EXPECT_EQ(id.version, 1);
+        const auto & arg_obj = func->pos_args.front();
+        EXPECT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(arg_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(arg_obj);
+        EXPECT_EQ(id->value, "x");
+        EXPECT_EQ(id->version, 1);
     }
 }
 
@@ -123,15 +130,15 @@ TEST(constant_folding, three_statements) {
                                       });
 
     const auto & func_obj = irlist->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
-    ASSERT_EQ(func.pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(func_obj));
+    const auto & func = std::get<MIR::FunctionCallPtr>(func_obj);
+    ASSERT_EQ(func->pos_args.size(), 1);
 
-    const auto & arg_obj = func.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
-    const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
-    ASSERT_EQ(id.value, "x");
-    ASSERT_EQ(id.version, 1);
+    const auto & arg_obj = func->pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(arg_obj));
+    const auto & id = std::get<MIR::IdentifierPtr>(arg_obj);
+    ASSERT_EQ(id->value, "x");
+    ASSERT_EQ(id->version, 1);
 }
 
 TEST(constant_folding, redefined_value) {
@@ -151,15 +158,15 @@ TEST(constant_folding, redefined_value) {
                                       });
 
     const auto & func_obj = irlist->block->instructions.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*func_obj.obj_ptr));
-    const auto & func = std::get<MIR::FunctionCall>(*func_obj.obj_ptr);
-    ASSERT_EQ(func.pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(func_obj));
+    const auto & func = std::get<MIR::FunctionCallPtr>(func_obj);
+    ASSERT_EQ(func->pos_args.size(), 1);
 
-    const auto & arg_obj = func.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*arg_obj.obj_ptr));
-    const auto & id = std::get<MIR::Identifier>(*arg_obj.obj_ptr);
-    ASSERT_EQ(id.value, "x");
-    ASSERT_EQ(id.version, 2);
+    const auto & arg_obj = func->pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(arg_obj));
+    const auto & id = std::get<MIR::IdentifierPtr>(arg_obj);
+    ASSERT_EQ(id->value, "x");
+    ASSERT_EQ(id->version, 2);
 }
 
 TEST(constant_folding, in_array) {
@@ -180,17 +187,18 @@ TEST(constant_folding, in_array) {
     auto it = irlist->block->instructions.begin();
     {
         const auto & id_obj = *it;
-        ASSERT_TRUE(std::holds_alternative<MIR::Number>(*id_obj.obj_ptr));
-        ASSERT_EQ(it->var.name, "x");
-        ASSERT_EQ(it->var.gvn, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::NumberPtr>(id_obj));
+        const MIR::Variable & var = std::visit(MIR::VariableGetter{}, *it);
+        ASSERT_EQ(var.name, "x");
+        ASSERT_EQ(var.gvn, 1);
     }
 
     {
         const auto & id_obj = *(++it);
-        ASSERT_TRUE(std::holds_alternative<MIR::Identifier>(*id_obj.obj_ptr));
-        const auto & id = std::get<MIR::Identifier>(*id_obj.obj_ptr);
-        ASSERT_EQ(id.value, "x");
-        ASSERT_EQ(id.version, 1);
+        ASSERT_TRUE(std::holds_alternative<MIR::IdentifierPtr>(id_obj));
+        const auto & id = std::get<MIR::IdentifierPtr>(id_obj);
+        ASSERT_EQ(id->value, "x");
+        ASSERT_EQ(id->version, 1);
     }
 }
 

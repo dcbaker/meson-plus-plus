@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include "exceptions.hpp"
 #include "passes.hpp"
@@ -50,13 +50,15 @@ bool GlobalValueNumbering::insert_phis(CFGNode & b) {
         return false;
     }
 
-    std::list<Instruction> phis;
+    std::list<Object> phis;
     for (auto && [var, values] : convergence) {
         auto it = values.begin();
         uint32_t cur = ++data[b.index][var];
         uint32_t prev = *it++;
         for (; it != values.end(); ++it) {
-            phis.emplace_back(Instruction{Phi{prev, *it}, Variable{var, cur}});
+            auto phi = std::make_shared<Phi>(prev, *it);
+            phi->var = Variable{var, cur};
+            phis.emplace_back(phi);
             prev = cur++;
         }
     }
@@ -66,18 +68,18 @@ bool GlobalValueNumbering::insert_phis(CFGNode & b) {
     return true;
 };
 
-bool GlobalValueNumbering::number(Instruction & obj, const uint32_t block_index) {
+bool GlobalValueNumbering::number(Object & obj, const uint32_t block_index) {
     bool progress = false;
     std::unordered_map<std::string, uint32_t> & table = data[block_index];
 
-    if (std::holds_alternative<Identifier>(*obj.obj_ptr)) {
-        auto & id = std::get<Identifier>(*obj.obj_ptr);
+    if (std::holds_alternative<IdentifierPtr>(obj)) {
+        auto & id = std::get<IdentifierPtr>(obj);
         // TODO: use before definition
-        if (!id.version) {
+        if (!id->version) {
             try {
-                id.version = table.at(id.value);
+                id->version = table.at(id->value);
             } catch (std::out_of_range &) {
-                throw Util::Exceptions::MesonException{"Attempted to use variable '" + id.value +
+                throw Util::Exceptions::MesonException{"Attempted to use variable '" + id->value +
                                                        "' before it's definition"};
             }
             progress = true;
@@ -86,9 +88,10 @@ bool GlobalValueNumbering::number(Instruction & obj, const uint32_t block_index)
 
     // This needs to be done after numbering array and dict members, and
     // function arguments, which might otherwise create a circular reference
-    if (obj.var && obj.var.gvn == 0) {
-        obj.var.gvn = ++gvn[obj.var.name];
-        table[obj.var.name] = obj.var.gvn;
+    MIR::Variable & var = std::visit(VariableGetter{}, obj);
+    if (var && var.gvn == 0) {
+        var.gvn = ++gvn[var.name];
+        table[var.name] = var.gvn;
         progress = true;
     }
 
@@ -105,7 +108,7 @@ bool GlobalValueNumbering::operator()(std::shared_ptr<CFGNode> block) {
     bool progress = false;
     progress |= insert_phis(*block);
     progress |= instruction_walker(
-        *block, {[this, &block](Instruction & i) { return number(i, block->index); }});
+        *block, {[this, &block](Object & i) { return number(i, block->index); }});
     return progress;
 }
 

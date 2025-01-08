@@ -1,5 +1,5 @@
 // SPDX-License-Indentifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2025 Intel Corporation
 
 #include "passes.hpp"
 #include "passes/private.hpp"
@@ -56,6 +56,6 @@ TEST(graph_walker, predecessors_first) {
     auto s = node->successors.begin();
     EXPECT_EQ(seen[1], (*s)->index);
     EXPECT_EQ(seen[2], (*++s)->index);
-    const auto & last = std::get<MIR::Jump>(*(*s)->block->instructions.back().obj_ptr).target;
+    const auto & last = std::get<MIR::JumpPtr>((*s)->block->instructions.back())->target;
     EXPECT_EQ(seen[3], last->index);
 }

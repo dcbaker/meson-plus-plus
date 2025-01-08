@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -24,13 +24,12 @@ TEST(lower, after_files) {
         )
         )EOF");
     MIR::State::Persistant pstate = make_pstate();
-    // MIR::Passes::lower_project(irlist, pstate);
     MIR::lower(irlist, pstate);
 
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
     const auto & ct_obj = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::CustomTarget>(*ct_obj.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::CustomTargetPtr>(ct_obj));
 }
 
 #if false

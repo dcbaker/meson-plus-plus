@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2025 Intel Corporation
 
 #include <filesystem>
 
@@ -27,102 +27,104 @@ struct ExpressionLowering {
 
     const MIR::State::Persistant & pstate;
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
-        return String{expr->value};
+    Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
+        return std::make_shared<String>(expr->value);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
+    Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
         // I think that a function can only be an ID, I think
         auto fname_id = std::visit(*this, expr->held);
-        auto fname_ptr = std::get_if<Identifier>(fname_id.obj_ptr.get());
-        if (fname_ptr == nullptr) {
+        IdentifierPtr fname_ptr;
+        try {
+            fname_ptr = std::get<IdentifierPtr>(fname_id);
+        } catch (std::bad_variant_access &) {
             // TODO: Better error message witht the thing being called
             throw Util::Exceptions::MesonException{"Object is not callable"};
         }
-        auto fname = fname_ptr->value;
+        const std::string & fname = fname_ptr->value;
 
         // Get the positional arguments
-        std::vector<Instruction> pos{};
+        std::vector<Object> pos{};
         for (const auto & i : expr->args->positional) {
             pos.emplace_back(std::visit(*this, i));
         }
 
-        std::unordered_map<std::string, Instruction> kwargs{};
+        std::unordered_map<std::string, Object> kwargs{};
         for (const auto & [k, v] : expr->args->keyword) {
             auto key_obj = std::visit(*this, k);
-            auto key_ptr = std::get_if<Identifier>(key_obj.obj_ptr.get());
-            if (key_ptr == nullptr) {
-                // TODO: better error message
+            try {
+                auto key_ptr = std::get<IdentifierPtr>(key_obj);
+                kwargs.emplace(key_ptr->value, std::visit(*this, v));
+            } catch (std::bad_variant_access &) {
+                // TODO: Better error message witht the thing being called
                 throw Util::Exceptions::MesonException{"keyword arguments must be identifiers"};
             }
-            auto key = key_ptr->value;
-            kwargs[key] = std::visit(*this, v);
         }
 
         const fs::path subdir = get_subdir(fs::path{expr->loc.filename}, pstate);
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return FunctionCall{fname, std::move(pos), std::move(kwargs), std::move(subdir)};
+        return std::make_shared<FunctionCall>(fname, std::move(pos), std::move(kwargs),
+                                              std::move(subdir));
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
-        return Boolean{expr->value};
+    Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
+        return std::make_shared<Boolean>(expr->value);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
-        return Number{expr->value};
+    Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
+        return std::make_shared<Number>(expr->value);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
-        return Identifier{expr->value};
+    Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
+        return std::make_shared<Identifier>(expr->value);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
-        Array arr{};
+    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
+        auto arr = std::make_shared<Array>();
         for (const auto & i : expr->elements) {
-            arr.value.emplace_back(std::visit(*this, i));
+            arr->value.emplace_back(std::visit(*this, i));
         }
         return arr;
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
-        Dict dict{};
+    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
+        auto dict = std::make_shared<Dict>();
         for (const auto & [k, v] : expr->elements) {
             auto key_obj = std::visit(*this, k);
-            auto key_ptr = std::get_if<String>(key_obj.obj_ptr.get());
-            if (key_ptr == nullptr) {
+            try {
+                auto key_ptr = std::get<StringPtr>(key_obj);
+                dict->value.emplace(key_ptr->value, std::visit(*this, v));
+            } catch (std::bad_variant_access &) {
                 // TODO: Better error message witht the thing being called
-                throw Util::Exceptions::InvalidArguments("Dictionary keys must be string");
+                throw Util::Exceptions::MesonException{"Dictionary keys must be strings"};
             }
-
-            dict.value[key_ptr->value] = std::visit(*this, v);
         }
         return std::move(dict);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
-        auto holding_obj = std::visit(*this, expr->holder);
+    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
+        MIR::Object holding_obj = std::visit(*this, expr->holder);
 
         // Meson only allows methods in objects, so we can enforce that this is a function
-        auto method = std::visit(*this, expr->held);
-        auto func = std::get<MIR::FunctionCall>(*method.obj_ptr);
-        func.holder = holding_obj;
+        MIR::Object method = std::visit(*this, expr->held);
+        auto func = std::get<MIR::FunctionCallPtr>(method);
+        func->holder = holding_obj;
 
         return std::move(func);
     };
 
     // XXX: all of thse are lies to get things compiling
-    Instruction operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
-        return String{"placeholder: add"};
+    Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
+        return std::make_shared<String>("placeholder: add");
     };
 
-    Instruction
-    operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
-        return String{"placeholder: mul"};
+    Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
+        return std::make_shared<String>("placeholder: mul");
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
+    Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
         std::string name;
         switch (expr->op) {
             case Frontend::AST::UnaryOp::NOT:
@@ -136,20 +138,20 @@ struct ExpressionLowering {
         }
 
         fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
-        std::vector<Instruction> pos{};
+        std::vector<Object> pos{};
         pos.emplace_back(std::visit(*this, expr->rhs));
 
         // We have to move positional arguments because Object isn't copy-able
         // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return FunctionCall{name, std::move(pos), path};
+        return std::make_shared<FunctionCall>(name, std::move(pos), path);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
-        return String{"placeholder: subscript"};
+    Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
+        return std::make_shared<String>("placeholder: subscript");
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
-        std::vector<Instruction> pos{};
+    Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
+        std::vector<Object> pos{};
         pos.emplace_back(std::visit(*this, expr->lhs));
         pos.emplace_back(std::visit(*this, expr->rhs));
 
@@ -188,11 +190,11 @@ struct ExpressionLowering {
         }
         fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
 
-        return FunctionCall{func_name, std::move(pos), path};
+        return std::make_shared<FunctionCall>(func_name, std::move(pos), path);
     };
 
-    Instruction operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
-        return String{"placeholder: tern"};
+    Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
+        return std::make_shared<String>("placeholder: tern");
     };
 };
 
@@ -226,12 +228,12 @@ struct StatementLowering {
         // head node, this will, in turn, link to all of the subsequent nodes,
         // which will return to a newly created tail node.
         auto tail = std::make_shared<CFGNode>();
-        MIR::Branch branch{};
+        auto branch = std::make_shared<MIR::Branch>();
 
         {
             auto if_node = std::make_shared<CFGNode>();
             link_nodes(head, if_node);
-            branch.branches.emplace_back(std::visit(l, stmt->ifblock.condition), if_node);
+            branch->branches.emplace_back(std::visit(l, stmt->ifblock.condition), if_node);
             for (auto && i : stmt->ifblock.block->statements) {
                 if_node =
                     std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
@@ -239,7 +241,7 @@ struct StatementLowering {
 
             // Finally, insert a jump from the last block reached by the if
             // pointing to our tail block.
-            if_node->block->instructions.emplace_back(Jump(tail));
+            if_node->block->instructions.emplace_back(std::make_shared<Jump>(tail));
             link_nodes(if_node, tail);
         }
 
@@ -247,14 +249,14 @@ struct StatementLowering {
             for (const auto & el : stmt->efblock) {
                 auto if_node = std::make_shared<CFGNode>();
                 link_nodes(head, if_node);
-                branch.branches.emplace_back(std::visit(l, el.condition), if_node);
+                branch->branches.emplace_back(std::visit(l, el.condition), if_node);
                 for (auto && i : el.block->statements) {
                     if_node =
                         std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
                 }
                 // Finally, insert a jump from the last block reached by the if
                 // pointing to our tail block.
-                if_node->block->instructions.emplace_back(Jump(tail));
+                if_node->block->instructions.emplace_back(std::make_shared<Jump>(tail));
                 link_nodes(if_node, tail);
             }
         }
@@ -262,7 +264,7 @@ struct StatementLowering {
         if (stmt->eblock.block) {
             auto if_node = std::make_shared<CFGNode>();
             link_nodes(head, if_node);
-            branch.branches.emplace_back(Instruction{Boolean{true}}, if_node);
+            branch->branches.emplace_back(std::make_shared<Boolean>(true), if_node);
             for (auto && i : stmt->eblock.block->statements) {
                 if_node =
                     std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
@@ -270,15 +272,14 @@ struct StatementLowering {
 
             // Finally, insert a jump from the last block reached by the if
             // pointing to our tail block.
-            if_node->block->instructions.emplace_back(Jump(tail));
+            if_node->block->instructions.emplace_back(std::make_shared<Jump>(tail));
             link_nodes(if_node, tail);
         } else {
             // This case there's an implicit else block, to jump to the tail
-            branch.branches.emplace_back(Instruction{Boolean{true}}, tail);
+            branch->branches.emplace_back(std::make_shared<Boolean>(true), tail);
             link_nodes(head, tail);
         }
-        head->block->instructions.insert(head->block->instructions.end(),
-                                         Instruction{std::move(branch)});
+        head->block->instructions.insert(head->block->instructions.end(), branch);
 
         return tail;
     };
@@ -293,15 +294,18 @@ struct StatementLowering {
         // XXX: need to handle mutative assignments
         assert(stmt->op == Frontend::AST::AssignOp::EQUAL);
 
-        // XXX: need to handle other things that can be assigned to, like subscript
-        auto name_ptr = std::get_if<Identifier>(target.obj_ptr.get());
-        if (name_ptr == nullptr) {
+        MIR::IdentifierPtr name_ptr;
+        try {
+            name_ptr = std::get<IdentifierPtr>(target);
+        } catch (std::bad_variant_access &) {
+            // TODO: Better error message with the thing being called
             throw Util::Exceptions::MesonException{
-                "This might be a bug, or might be an incomplete implementation"};
+                "Expected an Identifier but got something else. This might be a bug, or might be "
+                "an incomplete implementation"};
         }
-        value.var.name = name_ptr->value;
+        std::visit(MIR::VariableSetter{name_ptr->value}, value);
 
-        list->block->instructions.emplace_back(std::move(value));
+        list->block->instructions.emplace_back(value);
         return list;
     };
 

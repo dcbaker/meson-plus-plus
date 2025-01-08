@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include "exceptions.hpp"
 #include "private.hpp"
@@ -56,30 +56,37 @@ class BlockIterator {
     }
 };
 
-bool mutation_visitor(Instruction & it, MutationCallback cb) {
+bool mutation_visitor(Object & it, MutationCallback cb) {
     bool progress = false;
 
-    if (auto * a = std::get_if<MIR::Array>(it.obj_ptr.get())) {
+    if (std::holds_alternative<MIR::ArrayPtr>(it)) {
+        auto a = std::get<MIR::ArrayPtr>(it);
         for (auto & a : a->value) {
             progress |= mutation_visitor(a, cb);
         }
-    } else if (auto * d = std::get_if<MIR::Dict>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::DictPtr>(it)) {
+        auto d = std::get<MIR::DictPtr>(it);
         for (auto & [_, v] : d->value) {
             progress |= mutation_visitor(v, cb);
         }
-    } else if (auto * f = std::get_if<MIR::FunctionCall>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::FunctionCallPtr>(it)) {
+        auto f = std::get<MIR::FunctionCallPtr>(it);
         for (auto & p : f->pos_args) {
             progress |= mutation_visitor(p, cb);
         }
         for (auto & [_, v] : f->kw_args) {
             progress |= mutation_visitor(v, cb);
         }
-        progress |= mutation_visitor(f->holder, cb);
-    } else if (auto * j = std::get_if<MIR::Jump>(it.obj_ptr.get())) {
+        if (f->holder) {
+            progress |= mutation_visitor(f->holder.value(), cb);
+        }
+    } else if (std::holds_alternative<MIR::JumpPtr>(it)) {
+        auto j = std::get<MIR::JumpPtr>(it);
         if (j->predicate) {
             progress |= mutation_visitor(*j->predicate, cb);
         }
-    } else if (auto * b = std::get_if<MIR::Branch>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::BranchPtr>(it)) {
+        auto b = std::get<MIR::BranchPtr>(it);
         for (auto & [i, _] : b->branches) {
             progress |= mutation_visitor(i, cb);
         }
@@ -89,10 +96,10 @@ bool mutation_visitor(Instruction & it, MutationCallback cb) {
     return progress;
 }
 
-std::tuple<bool, std::optional<Instruction>> replacement_visitor(const Instruction & it,
-                                                                 const ReplacementCallback & cb);
+std::tuple<bool, std::optional<Object>> replacement_visitor(const Object & it,
+                                                            const ReplacementCallback & cb);
 
-bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback & cb) {
+bool replace_elements(std::vector<Object> & vec, const ReplacementCallback & cb) {
     bool progress = false;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
         auto && [rp, rt] = replacement_visitor(*it, cb);
@@ -105,7 +112,7 @@ bool replace_elements(std::vector<Instruction> & vec, const ReplacementCallback 
     return progress;
 }
 
-bool replace_elements(std::unordered_map<std::string, Instruction> & map,
+bool replace_elements(std::unordered_map<std::string, Object> & map,
                       const ReplacementCallback & cb) {
     bool progress = false;
     for (auto it = map.begin(); it != map.end(); ++it) {
@@ -119,33 +126,40 @@ bool replace_elements(std::unordered_map<std::string, Instruction> & map,
     return progress;
 }
 
-std::tuple<bool, std::optional<Instruction>> replacement_visitor(const Instruction & it,
-                                                                 const ReplacementCallback & cb) {
+std::tuple<bool, std::optional<Object>> replacement_visitor(const Object & it,
+                                                            const ReplacementCallback & cb) {
     bool progress{false};
 
-    if (auto * a = std::get_if<MIR::Array>(it.obj_ptr.get())) {
+    if (std::holds_alternative<MIR::ArrayPtr>(it)) {
+        auto a = std::get<MIR::ArrayPtr>(it);
         progress |= replace_elements(a->value, cb);
-    } else if (auto * d = std::get_if<MIR::Dict>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::DictPtr>(it)) {
         // TODO: keys
+        auto d = std::get<MIR::DictPtr>(it);
         progress |= replace_elements(d->value, cb);
-    } else if (auto * f = std::get_if<MIR::FunctionCall>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::FunctionCallPtr>(it)) {
+        auto f = std::get<MIR::FunctionCallPtr>(it);
         progress |= replace_elements(f->pos_args, cb);
         progress |= replace_elements(f->kw_args, cb);
-        auto && [rp, rt] = replacement_visitor(f->holder, cb);
-        progress |= rp;
-        if (rt) {
-            f->holder = rt.value();
+        if (f->holder) {
+            auto && [rp, rt] = replacement_visitor(f->holder.value(), cb);
+            progress |= rp;
+            if (rt) {
+                f->holder = rt.value();
+            }
         }
-    } else if (auto * j = std::get_if<MIR::Jump>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::JumpPtr>(it)) {
+        auto j = std::get<MIR::JumpPtr>(it);
         if (j->predicate) {
             auto && [rp, rt] = replacement_visitor(*j->predicate, cb);
             progress |= rp;
             if (rt) {
-                j->predicate = std::make_shared<Instruction>(rt.value());
+                j->predicate = rt.value();
                 progress |= true;
             }
         }
-    } else if (auto * b = std::get_if<MIR::Branch>(it.obj_ptr.get())) {
+    } else if (std::holds_alternative<MIR::BranchPtr>(it)) {
+        auto b = std::get<MIR::BranchPtr>(it);
         for (auto it2 = b->branches.begin(); it2 != b->branches.end(); ++it2) {
             auto && [rp, rt] = replacement_visitor(std::get<0>(*it2), cb);
             progress |= rp;

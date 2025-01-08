@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2022-2024 Intel Corporation
+// Copyright © 2022-2025 Intel Corporation
 
 #include "argument_extractors.hpp"
 #include "exceptions.hpp"
@@ -104,13 +104,13 @@ class FindList {
     }
 };
 
-bool search_find_program(const FunctionCall & f, State::Persistant & pstate, FindList & jobs) {
-    auto names = extract_variadic_arguments<String>(f.pos_args.begin(), f.pos_args.end(),
-                                                    "find_program: names must be strings");
+bool search_find_program(const FunctionCallPtr & f, State::Persistant & pstate, FindList & jobs) {
+    auto names = extract_variadic_arguments<StringPtr>(f->pos_args.begin(), f->pos_args.end(),
+                                                       "find_program: names must be strings");
 
     std::vector<std::string> ret{names.size()};
     std::transform(names.begin(), names.end(), ret.begin(),
-                   [](const String & s) { return s.value; });
+                   [](const StringPtr & s) { return s->value; });
     jobs.emplace(Type::PROGRAM, std::move(ret));
 
     return true;
@@ -159,12 +159,12 @@ void search_for_threaded_impl(FindList & jobs, State::Persistant & pstate) {
     }
 }
 
-std::optional<Instruction> replace_find_program(const FunctionCall & f, State::Persistant & state) {
+std::optional<Object> replace_find_program(const FunctionCallPtr & f, State::Persistant & state) {
     // We know this is safe since we've already processed this call before (hopefully)
     // We only need the first name, as all of the names should be in the mapping
-    auto name = extract_positional_argument<String>(f.pos_args[0],
-                                                    f.name + ": first argument was not a string")
-                    .value;
+    auto name = extract_positional_argument<StringPtr>(
+                    f->pos_args[0], f->name + ": first argument was not a string")
+                    ->value;
 
     fs::path exe;
     try {
@@ -174,56 +174,56 @@ std::optional<Instruction> replace_find_program(const FunctionCall & f, State::P
     }
 
     bool required =
-        extract_keyword_argument<Boolean>(
-            f.kw_args, "required", "find_program: 'required' keyword argument must be a boolean")
-            .value_or(Boolean{true})
-            .value;
+        extract_keyword_argument<BooleanPtr>(
+            f->kw_args, "required", "find_program: 'required' keyword argument must be a boolean")
+            .value_or(std::make_shared<Boolean>(true))
+            ->value;
     if (required && exe == "") {
         throw Util::Exceptions::MesonException("Could not find required program \"" + name + "\"");
     }
 
-    return Program{name, Machines::Machine::BUILD, exe};
+    return std::make_shared<Program>(name, Machines::Machine::BUILD, exe);
 }
 
-bool search_threaded(const Instruction & obj, State::Persistant & pstate, FindList & jobs) {
-    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
+bool search_threaded(const Object & obj, State::Persistant & pstate, FindList & jobs) {
+    if (!std::holds_alternative<FunctionCallPtr>(obj)) {
         return false;
     }
-    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
+    const auto & f = std::get<FunctionCallPtr>(obj);
 
-    if (!std::holds_alternative<std::monostate>(*f.holder.obj_ptr)) {
+    if (f->holder) {
         return false;
     }
-    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+    if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return false;
     }
 
-    if (f.name == "find_program") {
+    if (f->name == "find_program") {
         return search_find_program(f, pstate, jobs);
     }
     return false;
 }
 
-std::optional<Instruction> replace_threaded(const Instruction & obj, State::Persistant & state) {
-    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
+std::optional<Object> replace_threaded(const Object & obj, State::Persistant & state) {
+    if (!std::holds_alternative<FunctionCallPtr>(obj)) {
         return std::nullopt;
     }
-    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
+    const auto & f = std::get<FunctionCallPtr>(obj);
 
-    if (!std::holds_alternative<std::monostate>(*f.holder.obj_ptr)) {
+    if (f->holder) {
         return std::nullopt;
     }
-    if (!all_args_reduced(f.pos_args, f.kw_args)) {
+    if (!all_args_reduced(f->pos_args, f->kw_args)) {
         return std::nullopt;
     }
 
-    std::optional<Instruction> i{std::nullopt};
-    if (f.name == "find_program") {
+    std::optional<Object> i{std::nullopt};
+    if (f->name == "find_program") {
         i = replace_find_program(f, state);
     }
 
     if (i) {
-        i.value().var = obj.var;
+        MIR::set_var(obj, i.value());
     }
 
     return i;
@@ -239,24 +239,23 @@ bool threaded_lowering(std::shared_ptr<CFGNode> block, State::Persistant & pstat
     //  1. call the block walker to gather find_program, dependency, etc
     //  2. create the threads and send them to work on filling out those futures
     //  3. call the block walker again to fill in those values
-    progress |=
-        graph_walker(block, {
-                                [&](std::shared_ptr<CFGNode> b) {
-                                    return instruction_walker(*b, {[&](const Instruction & obj) {
-                                        return search_threaded(obj, pstate, jobs);
-                                    }});
-                                },
-                            });
+    progress |= graph_walker(block, {
+                                        [&](std::shared_ptr<CFGNode> b) {
+                                            return instruction_walker(*b, {[&](const Object & obj) {
+                                                return search_threaded(obj, pstate, jobs);
+                                            }});
+                                        },
+                                    });
     if (progress) {
         search_for_threaded_impl(jobs, pstate);
-        progress |= graph_walker(block, {
-                                            [&](std::shared_ptr<CFGNode> b) {
-                                                return instruction_walker(
-                                                    *b, {[&](const Instruction & obj) {
-                                                        return replace_threaded(obj, pstate);
-                                                    }});
-                                            },
-                                        });
+        progress |=
+            graph_walker(block, {
+                                    [&](std::shared_ptr<CFGNode> b) {
+                                        return instruction_walker(*b, {[&](const Object & obj) {
+                                            return replace_threaded(obj, pstate);
+                                        }});
+                                    },
+                                });
     }
     return progress;
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <stdexcept>
 
@@ -11,23 +11,23 @@ namespace MIR::Passes {
 
 namespace {
 
-inline bool valid_holder(const std::optional<Instruction> & holder) {
+inline bool valid_holder(const std::optional<Object> & holder) {
     if (!holder) {
         return false;
     }
     auto && held = holder.value();
 
-    if (!std::holds_alternative<Identifier>(*held.obj_ptr)) {
+    if (!std::holds_alternative<IdentifierPtr>(held)) {
         return false;
     }
-    return std::get<Identifier>(*held.obj_ptr).value == "meson";
+    return std::get<IdentifierPtr>(held)->value == "meson";
 }
 
 using ToolchainMap =
     std::unordered_map<MIR::Toolchain::Language,
                        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
 
-std::optional<Instruction> lower_get_id_method(const FunctionCall & func) {
+Object lower_get_id_method(const FunctionCall & func) {
     if (!func.pos_args.empty()) {
         throw Util::Exceptions::InvalidArguments(
             "compiler.get_id(): takes no positional arguments");
@@ -36,18 +36,18 @@ std::optional<Instruction> lower_get_id_method(const FunctionCall & func) {
         throw Util::Exceptions::InvalidArguments("compiler.get_id(): takes no keyword arguments");
     }
 
-    const auto & comp = std::get<Compiler>(func.holder.object());
+    const auto & comp = std::get<CompilerPtr>(func.holder.value());
 
-    return String{comp.toolchain->compiler->id()};
+    return std::make_shared<String>(comp->toolchain->compiler->id());
 }
 
 } // namespace
 
-std::optional<Instruction> insert_compilers(const Instruction & obj, const ToolchainMap & tc) {
-    if (!std::get_if<FunctionCall>(obj.obj_ptr.get())) {
+std::optional<Object> insert_compilers(const Object & obj, const ToolchainMap & tc) {
+    if (!std::holds_alternative<FunctionCallPtr>(obj)) {
         return std::nullopt;
     }
-    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
+    const auto & f = *std::get<FunctionCallPtr>(obj);
 
     if (!(valid_holder(f.holder) && f.name == "get_compiler")) {
         return std::nullopt;
@@ -56,20 +56,20 @@ std::optional<Instruction> insert_compilers(const Instruction & obj, const Toolc
     // XXX: if there is no argument here this is going to blow up spectacularly
     const auto & l = f.pos_args[0];
     // If we haven't reduced this to a string then we need to wait and try again later
-    if (!std::get_if<String>(l.obj_ptr.get())) {
+    if (!std::holds_alternative<StringPtr>(l)) {
         return std::nullopt;
     }
 
-    const auto & lang = MIR::Toolchain::from_string(std::get<String>(*l.obj_ptr).value);
+    const auto & lang = MIR::Toolchain::from_string(std::get<StringPtr>(l)->value);
 
     MIR::Machines::Machine m;
     try {
         const auto & n = f.kw_args.at("native");
         // If we haven't lowered this away yet, then we can't reduce this.
-        if (!std::get_if<Boolean>(n.obj_ptr.get())) {
+        if (!std::holds_alternative<BooleanPtr>(n)) {
             return std::nullopt;
         }
-        const auto & native = std::get<Boolean>(*n.obj_ptr).value;
+        const auto & native = std::get<BooleanPtr>(n)->value;
 
         m = native ? MIR::Machines::Machine::BUILD : MIR::Machines::Machine::HOST;
     } catch (std::out_of_range &) {
@@ -77,20 +77,20 @@ std::optional<Instruction> insert_compilers(const Instruction & obj, const Toolc
     }
 
     try {
-        return std::make_shared<Object>(Compiler{tc.at(lang).get(m)});
+        return std::make_shared<Compiler>(tc.at(lang).get(m));
     } catch (std::out_of_range &) {
         // TODO: add a better error message
         throw Util::Exceptions::MesonException{"No compiler for language"};
     }
 }
 
-std::optional<Instruction> lower_compiler_methods(const Instruction & obj) {
-    if (!std::holds_alternative<FunctionCall>(*obj.obj_ptr)) {
+std::optional<Object> lower_compiler_methods(const Object & obj) {
+    if (!std::holds_alternative<FunctionCallPtr>(obj)) {
         return std::nullopt;
     }
-    const auto & f = std::get<FunctionCall>(*obj.obj_ptr);
+    const auto & f = *std::get<FunctionCallPtr>(obj);
 
-    if (!std::holds_alternative<Compiler>(f.holder.object())) {
+    if (!f.holder || !std::holds_alternative<CompilerPtr>(f.holder.value())) {
         return std::nullopt;
     }
 
@@ -98,13 +98,15 @@ std::optional<Instruction> lower_compiler_methods(const Instruction & obj) {
         return std::nullopt;
     }
 
-    std::optional<Instruction> i = std::nullopt;
+    std::optional<Object> i;
     if (f.name == "get_id") {
-        i = lower_get_id_method(f);
+        i.emplace(lower_get_id_method(f));
+    } else {
+        i = std::nullopt;
     }
 
     if (i) {
-        i.value().var = obj.var;
+        std::visit(MIR::VariableSetter{f.var}, i.value());
         return i;
     }
 

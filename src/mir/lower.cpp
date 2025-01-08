@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <unordered_map>
 
@@ -27,10 +27,10 @@ void early(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
                                Passes::custom_target_program_replacement,
                            },
                            {
-                               [&pstate](const Instruction & obj) {
+                               [&pstate](const Object & obj) {
                                    return Passes::insert_compilers(obj, pstate.toolchains);
                                },
-                               [&pstate](const Instruction & obj) {
+                               [&pstate](const Object & obj) {
                                    return Passes::machine_lower(obj, pstate.machines);
                                },
                            });
@@ -48,16 +48,16 @@ void main(std::shared_ptr<MIR::CFGNode> block, State::Persistant & pstate,
                 *b, {
                         Passes::disable,
                         Passes::flatten,
-                        [&pstate](const Instruction & i) {
+                        [&pstate](const Object & i) {
                             return Passes::lower_free_functions(i, pstate);
                         },
-                        [&pstate](const Instruction & i) {
+                        [&pstate](const Object & i) {
                             return Passes::lower_program_objects(i, pstate);
                         },
-                        [&pstate](const Instruction & i) {
+                        [&pstate](const Object & i) {
                             return Passes::lower_string_objects(i, pstate);
                         },
-                        [&pstate](const Instruction & i) {
+                        [&pstate](const Object & i) {
                             return Passes::lower_dependency_objects(i, pstate);
                         },
                     });

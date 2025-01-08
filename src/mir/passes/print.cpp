@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2022-2024 Intel Corporation
+// Copyright © 2022-2025 Intel Corporation
 
 #include <cstdlib>
 #include <fstream>
@@ -39,7 +39,7 @@ bool Printer::operator()(const std::shared_ptr<CFGNode> block) {
         // Only print a given block once
         out << "  CFGNode " << block->index << " {\n";
         for (auto && i : block->block->instructions) {
-            out << "    " << i.print() << "\n";
+            out << "    " << std::visit([](const auto & o) { return o->print(); }, i) << "\n";
         }
         if (block->successors.empty()) {
             out << "    [[exit]]\n";

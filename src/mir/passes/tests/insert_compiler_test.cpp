@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
-
-#include <gtest/gtest.h>
+// Copyright © 2021-2025 Intel Corporation
 
 #include "arguments.hpp"
 #include "exceptions.hpp"
@@ -15,6 +13,9 @@
 
 #include "test_utils.hpp"
 
+#include <gtest/gtest.h>
+#include <unordered_map>
+
 namespace {
 
 using ToolchainMap =
@@ -22,9 +23,8 @@ using ToolchainMap =
                        MIR::Machines::PerMachine<std::shared_ptr<MIR::Toolchain::Toolchain>>>;
 
 bool wrapper(std::shared_ptr<MIR::CFGNode> & node, const ToolchainMap & tc) {
-    return MIR::Passes::instruction_walker(*node, {[&tc](const MIR::Instruction & obj) {
-        return MIR::Passes::insert_compilers(obj, tc);
-    }});
+    return MIR::Passes::instruction_walker(
+        *node, {[&tc](const MIR::Object & obj) { return MIR::Passes::insert_compilers(obj, tc); }});
 }
 
 bool method_wrapper(std::shared_ptr<MIR::CFGNode> & node) {
@@ -55,10 +55,10 @@ TEST(insert_compiler, simple) {
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
     const auto & e = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Compiler>(*e.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::CompilerPtr>(e));
 
-    const auto & c = std::get<MIR::Compiler>(*e.obj_ptr);
-    ASSERT_EQ(c.toolchain->compiler->id(), "clang");
+    const auto & c = std::get<MIR::CompilerPtr>(e);
+    ASSERT_EQ(c->toolchain->compiler->id(), "clang");
 }
 
 TEST(insert_compiler, unknown_language) {
@@ -92,8 +92,8 @@ TEST(compiler_methods, get_id) {
     ASSERT_EQ(irlist->block->instructions.size(), 1);
 
     const auto & e = irlist->block->instructions.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::String>(*e.obj_ptr));
+    ASSERT_TRUE(std::holds_alternative<MIR::StringPtr>(e));
 
-    const auto & s = std::get<MIR::String>(*e.obj_ptr);
-    ASSERT_EQ(s.value, "clang");
+    const auto & s = std::get<MIR::StringPtr>(e);
+    ASSERT_EQ(s->value, "clang");
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <gtest/gtest.h>
 
@@ -26,14 +26,14 @@ TEST(flatten, basic) {
 
     const auto & r = irlist->block->instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
-    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
-    ASSERT_EQ(f.name, "func");
-    ASSERT_EQ(f.pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(r));
+    const auto & f = std::get<MIR::FunctionCallPtr>(r);
+    ASSERT_EQ(f->name, "func");
+    ASSERT_EQ(f->pos_args.size(), 1);
 
-    const auto & arg = f.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arg.obj_ptr));
-    const auto & arr = std::get<MIR::Array>(*arg.obj_ptr).value;
+    const auto & arg = f->pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::ArrayPtr>(arg));
+    const auto & arr = std::get<MIR::ArrayPtr>(arg)->value;
 
     ASSERT_EQ(arr.size(), 4);
 }
@@ -47,14 +47,14 @@ TEST(flatten, already_flat) {
 
     const auto & r = irlist->block->instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
-    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
-    ASSERT_EQ(f.name, "func");
-    ASSERT_EQ(f.pos_args.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(r));
+    const auto & f = std::get<MIR::FunctionCallPtr>(r);
+    ASSERT_EQ(f->name, "func");
+    ASSERT_EQ(f->pos_args.size(), 1);
 
-    const auto & arg = f.pos_args.front();
-    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arg.obj_ptr));
-    const auto & arr = std::get<MIR::Array>(*arg.obj_ptr).value;
+    const auto & arg = f->pos_args.front();
+    ASSERT_TRUE(std::holds_alternative<MIR::ArrayPtr>(arg));
+    const auto & arr = std::get<MIR::ArrayPtr>(arg)->value;
 
     ASSERT_EQ(arr.size(), 2);
 }
@@ -68,13 +68,13 @@ TEST(flatten, mixed_args) {
 
     const auto & r = irlist->block->instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
-    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
-    ASSERT_EQ(f.pos_args.size(), 2);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(r));
+    const auto & f = std::get<MIR::FunctionCallPtr>(r);
+    ASSERT_EQ(f->pos_args.size(), 2);
 
-    const auto & arg = f.pos_args.back();
-    ASSERT_TRUE(std::holds_alternative<MIR::Array>(*arg.obj_ptr));
-    const auto & arr = std::get<MIR::Array>(*arg.obj_ptr).value;
+    const auto & arg = f->pos_args.back();
+    ASSERT_TRUE(std::holds_alternative<MIR::ArrayPtr>(arg));
+    const auto & arr = std::get<MIR::ArrayPtr>(arg)->value;
 
     ASSERT_EQ(arr.size(), 2);
 }
@@ -88,8 +88,8 @@ TEST(flatten, keyword_mixed) {
 
     const auto & r = irlist->block->instructions.front();
 
-    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCall>(*r.obj_ptr));
-    const auto & f = std::get<MIR::FunctionCall>(*r.obj_ptr);
-    const auto & arr = std::get<MIR::Array>(*f.kw_args.at("arg").obj_ptr);
-    ASSERT_EQ(arr.value.size(), 3);
+    ASSERT_TRUE(std::holds_alternative<MIR::FunctionCallPtr>(r));
+    const auto & f = std::get<MIR::FunctionCallPtr>(r);
+    const auto & arr = std::get<MIR::ArrayPtr>(f->kw_args.at("arg"));
+    ASSERT_EQ(arr->value.size(), 3);
 }

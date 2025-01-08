@@ -1,61 +1,57 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2025 Intel Corporation
 
 #include "passes.hpp"
 #include "private.hpp"
+
+#include <algorithm>
 
 namespace MIR::Passes {
 
 namespace {
 
-bool is_disabler(const Instruction & it) {
-    if (auto * a = std::get_if<MIR::Array>(it.obj_ptr.get())) {
-        for (auto & a : a->value) {
-            if (is_disabler(a)) {
-                return true;
-            }
-        }
-    } else if (auto * d = std::get_if<MIR::Dict>(it.obj_ptr.get())) {
-        for (auto & [_, v] : d->value) {
-            if (is_disabler(v)) {
-                return true;
-            }
-        }
-    } else if (auto * f = std::get_if<MIR::FunctionCall>(it.obj_ptr.get())) {
-        for (auto & p : f->pos_args) {
-            if (is_disabler(p)) {
-                return true;
-            }
-        }
-        for (auto & [_, v] : f->kw_args) {
-            if (is_disabler(v)) {
-                return true;
-            }
-        }
-        if (is_disabler(f->holder)) {
+bool is_disabler(const Object & it) {
+    if (std::holds_alternative<MIR::ArrayPtr>(it)) {
+        auto obj = std::get<MIR::ArrayPtr>(it);
+        return std::any_of(obj->value.begin(), obj->value.end(),
+                           [](const Object & o) { return is_disabler(o); });
+    } else if (std::holds_alternative<MIR::DictPtr>(it)) {
+        auto obj = std::get<MIR::DictPtr>(it);
+        return std::any_of(
+            obj->value.begin(), obj->value.end(),
+            [](const std::pair<std::string, Object> & o) { return is_disabler(o.second); });
+    } else if (std::holds_alternative<MIR::FunctionCallPtr>(it)) {
+        auto obj = std::get<MIR::FunctionCallPtr>(it);
+        if (obj->holder && is_disabler(obj->holder.value())) {
             return true;
         }
-    } else if (auto * j = std::get_if<MIR::Jump>(it.obj_ptr.get())) {
-        if (j->predicate) {
-            if (is_disabler(*j->predicate)) {
-                return true;
-            }
+        if (std::any_of(obj->pos_args.begin(), obj->pos_args.end(),
+                        [](const Object & o) { return is_disabler(o); })) {
+            return true;
         }
-    } else if (auto * b = std::get_if<MIR::Branch>(it.obj_ptr.get())) {
-        for (auto & [i, _] : b->branches) {
-            if (is_disabler(i)) {
-                return true;
-            }
+        return std::any_of(
+            obj->kw_args.begin(), obj->kw_args.end(),
+            [](const std::pair<std::string, Object> & o) { return is_disabler(o.second); });
+    } else if (std::holds_alternative<MIR::JumpPtr>(it)) {
+        auto obj = std::get<MIR::JumpPtr>(it);
+        if (obj->predicate && is_disabler(obj->predicate.value())) {
+            return true;
         }
+    } else if (std::holds_alternative<MIR::BranchPtr>(it)) {
+        auto obj = std::get<MIR::BranchPtr>(it);
+        return std::any_of(obj->branches.begin(), obj->branches.end(),
+                           [](const std::tuple<Object, std::shared_ptr<CFGNode>> & o) {
+                               return is_disabler(std::get<0>(o));
+                           });
     }
-    return std::holds_alternative<Disabler>(it.object());
+    return std::holds_alternative<DisablerPtr>(it);
 }
 
 } // namespace
 
-std::optional<Instruction> disable(const Instruction & obj) {
+std::optional<Object> disable(const Object & obj) {
     if (is_disabler(obj)) {
-        return Disabler{};
+        return std::make_shared<Disabler>();
     }
     return std::nullopt;
 }
