@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2025 Intel Corporation
 
-#include <stdexcept>
-
+#include "argument_extractors.hpp"
 #include "exceptions.hpp"
 #include "passes.hpp"
 #include "private.hpp"
@@ -53,34 +52,33 @@ std::optional<Object> insert_compilers(const Object & obj, const ToolchainMap & 
         return std::nullopt;
     }
 
-    // XXX: if there is no argument here this is going to blow up spectacularly
-    const auto & l = f.pos_args[0];
-    // If we haven't reduced this to a string then we need to wait and try again later
-    if (!std::holds_alternative<StringPtr>(l)) {
+    if (f.pos_args.size() != 1) {
+        throw Util::Exceptions::InvalidArguments(
+            "meson.get_compiler(): requires exactly 1 positional argument");
+    }
+
+    if (!all_args_reduced(f.pos_args, f.kw_args)) {
         return std::nullopt;
     }
 
-    const auto & lang = MIR::Toolchain::from_string(std::get<StringPtr>(l)->value);
+    const std::string l =
+        extract_positional_argument<StringPtr>(
+            f.pos_args.at(0), "meson.get_compiler(): first argument must be a string")
+            ->value;
+    const auto & lang = MIR::Toolchain::from_string(l);
 
     MIR::Machines::Machine m;
-    try {
-        const auto & n = f.kw_args.at("native");
-        // If we haven't lowered this away yet, then we can't reduce this.
-        if (!std::holds_alternative<BooleanPtr>(n)) {
-            return std::nullopt;
-        }
-        const auto & native = std::get<BooleanPtr>(n)->value;
-
-        m = native ? MIR::Machines::Machine::BUILD : MIR::Machines::Machine::HOST;
-    } catch (std::out_of_range &) {
-        m = MIR::Machines::Machine::HOST;
-    }
+    const bool native =
+        extract_keyword_argument<BooleanPtr>(f.kw_args, "native", "must be a boolean")
+            .value_or(std::make_shared<Boolean>(false))
+            ->value;
+    m = native ? MIR::Machines::Machine::BUILD : MIR::Machines::Machine::HOST;
 
     try {
         return std::make_shared<Compiler>(tc.at(lang).get(m));
     } catch (std::out_of_range &) {
         // TODO: add a better error message
-        throw Util::Exceptions::MesonException{"No compiler for language"};
+        throw Util::Exceptions::MesonException{"No compiler for language '" + l + "'"};
     }
 }
 
