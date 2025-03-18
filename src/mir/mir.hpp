@@ -57,6 +57,9 @@ class Variable {
 
     // Print a human readable version of this Variable
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 };
 
 class AddArguments;
@@ -140,6 +143,9 @@ class File {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     // For gtest
     friend std::ostream & operator<<(std::ostream & os, const File & f);
 
@@ -168,6 +174,9 @@ class CustomTarget {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };
@@ -213,6 +222,9 @@ class Executable {
 
     std::string output() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     /// Print a human readable version of this
     std::string print() const;
 
@@ -249,6 +261,9 @@ class StaticLibrary {
 
     std::string output() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     /// Print a human readable version of this
     std::string print() const;
 
@@ -273,6 +288,9 @@ class Phi {
     bool operator==(const Phi & other) const;
     bool operator<(const Phi & other) const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     /// Print a human readable version of this
     std::string print() const;
 
@@ -285,6 +303,9 @@ class IncludeDirectories {
 
     const std::vector<std::string> directories;
     const bool is_system;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     /// Print a human readable version of this
     std::string print() const;
@@ -321,6 +342,9 @@ class Dependency {
     /// The kind of dependency this is
     const DependencyType type = DependencyType::INTERNAL;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     /// Print a human readable version of this
     std::string print() const;
 
@@ -347,6 +371,9 @@ class Message {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -362,6 +389,9 @@ class Program {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };
@@ -379,6 +409,9 @@ class Test {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -395,6 +428,9 @@ class Compiler {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };
@@ -429,6 +465,9 @@ class FunctionCall {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -438,6 +477,9 @@ class Disabler {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };
@@ -454,6 +496,9 @@ class String {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -469,6 +514,9 @@ class Boolean {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -483,6 +531,9 @@ class Number {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };
@@ -514,6 +565,9 @@ class Identifier {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -527,6 +581,9 @@ class Array {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };
@@ -542,6 +599,9 @@ class Dict {
     /// Print a human readable version of this
     std::string print() const;
 
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
+
     Variable var;
 };
 
@@ -551,6 +611,9 @@ class AddArguments {
 
     /// Print a human readable version of this
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     ArgMap arguments;
     bool is_global;
@@ -569,6 +632,9 @@ class Jump {
     /// @brief Print a human readable version of this instruction
     /// @return A string representing the instructions
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     /// @brief The block to jump to
     std::shared_ptr<CFGNode> target;
@@ -591,6 +657,9 @@ class Branch {
     std::vector<std::tuple<Object, std::shared_ptr<CFGNode>>> branches;
 
     std::string print() const;
+
+    /// Is this a fully reduced object?
+    bool is_reduced() const;
 
     Variable var;
 };

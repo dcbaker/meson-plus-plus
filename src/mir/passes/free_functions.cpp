@@ -644,39 +644,6 @@ std::optional<Object> lower_vcs_tag(const FunctionCallPtr & f, const State::Pers
                                           std::vector<FilePtr>{}, depfile);
 }
 
-bool holds_reduced(const Object & obj);
-
-bool holds_reduced_array(const Object & obj) {
-    if (std::holds_alternative<ArrayPtr>(obj)) {
-        auto val = std::get<ArrayPtr>(obj);
-        return std::none_of(val->value.begin(), val->value.end(), [](auto && a) {
-            return !holds_reduced(a) || std::holds_alternative<ArrayPtr>(a);
-        });
-    }
-    return false;
-}
-
-bool holds_reduced_dict(const Object & obj) {
-    if (std::holds_alternative<DictPtr>(obj)) {
-        auto val = std::get<DictPtr>(obj);
-        return std::all_of(val->value.begin(), val->value.end(),
-                           [](auto && v) { return holds_reduced(v.second); });
-    }
-    return false;
-}
-
-bool holds_reduced(const Object & obj) {
-    return (std::holds_alternative<StringPtr>(obj) || std::holds_alternative<BooleanPtr>(obj) ||
-            std::holds_alternative<NumberPtr>(obj) || std::holds_alternative<FilePtr>(obj) ||
-            std::holds_alternative<ExecutablePtr>(obj) ||
-            std::holds_alternative<StaticLibraryPtr>(obj) ||
-            std::holds_alternative<IncludeDirectoriesPtr>(obj) ||
-            std::holds_alternative<ProgramPtr>(obj) ||
-            std::holds_alternative<CustomTargetPtr>(obj) ||
-            std::holds_alternative<DependencyPtr>(obj) || std::holds_alternative<MessagePtr>(obj) ||
-            holds_reduced_array(obj) || holds_reduced_dict(obj));
-}
-
 } // namespace
 
 std::optional<Object> lower_free_functions(const Object & obj, const State::Persistant & pstate) {
@@ -749,10 +716,11 @@ std::optional<Object> lower_free_functions(const Object & obj, const State::Pers
 
 bool all_args_reduced(const std::vector<Object> & pos_args,
                       const std::unordered_map<std::string, Object> & kw_args) {
+    const auto reduced = [](auto && obj) { return obj->is_reduced(); };
     return std::all_of(pos_args.begin(), pos_args.end(),
-                       [](auto && p) { return holds_reduced(p); }) &&
+                       [&reduced](auto && p) { return std::visit(reduced, p); }) &&
            std::all_of(kw_args.begin(), kw_args.end(),
-                       [](auto && kw) { return holds_reduced(kw.second); });
+                       [&reduced](auto && kw) { return std::visit(reduced, kw.second); });
 }
 
 void lower_project(std::shared_ptr<CFGNode> block, State::Persistant & pstate) {
