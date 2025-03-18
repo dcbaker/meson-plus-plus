@@ -96,6 +96,8 @@ bool Phi::operator<(const Phi & other) const {
     return left < other.left && right < other.right;
 }
 
+bool Phi::is_reduced() const { return false; }
+
 std::string Phi::print() const {
     return "Phi { left = " + to_string(left) + "; right = " + to_string(right) + " }";
 }
@@ -117,6 +119,8 @@ bool CFGComparitor::operator()(const std::shared_ptr<CFGNode> & lhs,
 CFG::CFG(std::shared_ptr<CFGNode> n) : root{n} {};
 
 Compiler::Compiler(std::shared_ptr<MIR::Toolchain::Toolchain> tc) : toolchain{std::move(tc)} {};
+
+bool Compiler::is_reduced() const { return true; }
 
 std::string Compiler::print() const {
     return "Compiler { language = " + toolchain->compiler->language() +
@@ -183,6 +187,8 @@ bool File::operator!=(const File & f) const {
     return subdir / name != f.subdir / f.name || built != f.built;
 }
 
+bool File::is_reduced() const { return true; }
+
 std::string File::print() const {
     return "File { path = " + std::string{relative_to_source_dir()} +
            "; is_built = " + to_string(is_built()) + " }";
@@ -199,6 +205,8 @@ Executable::Executable(std::string name_, std::vector<Object> srcs, const Machin
 
 std::string Executable::output() const { return name; }
 
+bool Executable::is_reduced() const { return true; }
+
 std::string Executable::print() const {
     // TODO: arguments, static_linkage
     return "Executable { name = " + name + "; machine = " + to_string(machine) +
@@ -211,6 +219,8 @@ StaticLibrary::StaticLibrary(std::string name_, std::vector<Object> srcs,
     : name{std::move(name_)}, sources{std::move(srcs)}, machine{m}, subdir{std::move(sdir)},
       arguments{std::move(args)}, link_static{std::move(s_link)} {};
 
+bool StaticLibrary::is_reduced() const { return true; }
+
 std::string StaticLibrary::print() const {
     // TODO: arguments, static_linkage
     return "StaticLibrary { name = " + name + "; machine = " + to_string(machine) +
@@ -222,6 +232,8 @@ std::string StaticLibrary::output() const { return name + ".a"; }
 IncludeDirectories::IncludeDirectories(std::vector<std::string> d, const bool & s)
     : directories{std::move(d)}, is_system{s} {};
 
+bool IncludeDirectories::is_reduced() const { return true; }
+
 std::string IncludeDirectories::print() const {
     return "IncludeDirectories { directories = " + join(directories) +
            "; is_system = " + to_string(is_system) + " }";
@@ -229,12 +241,16 @@ std::string IncludeDirectories::print() const {
 
 Message::Message(const MessageLevel & l, std::string m) : level{l}, message{std::move(m)} {};
 
+bool Message::is_reduced() const { return true; }
+
 std::string Message::print() const {
     return "Message { level = " + to_string(level) + "; message = " + message + " }";
 }
 
 Program::Program(std::string n, const Machines::Machine & m, fs::path p)
     : name{std::move(n)}, for_machine{m}, path{std::move(p)} {};
+
+bool Program::is_reduced() const { return true; }
 
 std::string Program::print() const {
     return "Program { name = " + name + "; machine = " + to_string(for_machine) +
@@ -254,6 +270,8 @@ FunctionCall::FunctionCall(std::string _name, std::vector<Object> && _pos,
     : name{std::move(_name)}, pos_args{std::move(_pos)}, holder{std::nullopt},
       source_dir{std::move(_sd)} {};
 
+bool FunctionCall::is_reduced() const { return false; }
+
 std::string FunctionCall::print() const {
     std::stringstream ss{};
     ss << "FunctionCall { name = { " + name + " };";
@@ -271,6 +289,8 @@ std::string FunctionCall::print() const {
 
 String::String(std::string f) : value{std::move(f)} {};
 
+bool String::is_reduced() const { return true; }
+
 std::string String::print() const { return "'" + value + "'"; }
 
 bool String::operator!=(const String & o) const { return value != o.value; }
@@ -279,12 +299,16 @@ bool String::operator==(const String & o) const { return value == o.value; }
 
 Boolean::Boolean(const bool & f) : value{f} {};
 
+bool Boolean::is_reduced() const { return true; }
+
 std::string Boolean::print() const { return value ? "true" : "false"; }
 
 bool Boolean::operator!=(const Boolean & o) const { return value != o.value; }
 bool Boolean::operator==(const Boolean & o) const { return value == o.value; }
 
 Number::Number(const int64_t & f) : value{f} {};
+
+bool Number::is_reduced() const { return true; }
 
 std::string Number::print() const { return to_string(value); }
 
@@ -294,13 +318,29 @@ bool Number::operator==(const Number & o) const { return value == o.value; }
 Identifier::Identifier(std::string s) : value{std::move(s)}, version{} {};
 Identifier::Identifier(std::string s, const uint32_t & ver) : value{std::move(s)}, version{ver} {};
 
+bool Identifier::is_reduced() const { return false; }
+
 std::string Identifier::print() const {
     return "Identifier { value = " + value + "; version = " + to_string(version) + " }";
 }
 
 Array::Array(std::vector<Object> && a) : value{std::move(a)} {};
 
+bool Array::is_reduced() const {
+    return std::all_of(value.begin(), value.end(), [](const Object & obj) {
+        return std::visit([](auto && o) { return o->is_reduced(); }, obj);
+    });
+}
+
 std::string Array::print() const { return "Array { value = " + to_string(value) + " }"; }
+
+bool Dict::is_reduced() const {
+    return std::all_of(value.begin(), value.end(), [](auto && pair) {
+        // TODO: need to handle key being an Object
+        auto && [_, v] = pair;
+        return std::visit([](auto && o) { return o->is_reduced(); }, v);
+    });
+}
 
 std::string Dict::print() const { return "Dict { value = " + to_string(value) + " }"; }
 
@@ -317,9 +357,13 @@ std::string CustomTarget::print() const {
            "; subdir = " + std::string{subdir} + " }";
 }
 
+bool CustomTarget::is_reduced() const { return true; }
+
 Dependency::Dependency(std::string n, const bool & f, std::string ver,
                        std::vector<Arguments::Argument> a)
     : name{std::move(n)}, found{f}, version{std::move(ver)}, arguments{std::move(a)} {};
+
+bool Dependency::is_reduced() const { return true; }
 
 std::string Dependency::print() const {
     std::vector<std::string> args{};
@@ -337,6 +381,8 @@ Test::Test(std::string n, Callable exe, std::vector<std::variant<StringPtr, File
     : name{std::move(n)}, executable{std::move(exe)}, arguments{std::move(args)},
       should_fail{xfail} {};
 
+bool Test::is_reduced() const { return true; }
+
 std::string Test::print() const {
     return "Test { name = " + name +
            "; executable = " + std::visit([](auto && arg) { return arg->print(); }, executable) +
@@ -345,6 +391,8 @@ std::string Test::print() const {
 
 AddArguments::AddArguments(ArgMap && args, bool global)
     : arguments{std::move(args)}, is_global{global} {};
+
+bool AddArguments::is_reduced() const { return true; }
 
 std::string AddArguments::print() const {
     std::stringstream ss{};
@@ -365,12 +413,22 @@ std::string AddArguments::print() const {
 Jump::Jump(std::shared_ptr<CFGNode> t) : target{std::move(t)} {};
 Jump::Jump(std::shared_ptr<CFGNode> t, Object p) : target{std::move(t)}, predicate{std::move(p)} {};
 
+// In a language that cannot be deterministically transpiled, this could be
+// reduced, but for Meson it is not fully reduced, as there should be no control
+// flow left when leaving MIR
+bool Jump::is_reduced() const { return false; }
+
 std::string Jump::print() const {
     return "jump { target = { " + std::to_string(target->index) + " }; predicate = { " +
            (!predicate ? "always" : printer(predicate.value())) + " } }";
 }
 
 Branch::Branch() = default;
+
+// In a language that cannot be deterministically transpiled, this could be
+// reduced, but for Meson it is not fully reduced, as there should be no control
+// flow left when leaving MIR
+bool Branch::is_reduced() const { return false; }
 
 std::string Branch::print() const {
     std::stringstream ss;
@@ -385,6 +443,8 @@ std::string Branch::print() const {
 Disabler::Disabler() = default;
 
 std::string Disabler::print() const { return "disabler { }"; }
+
+bool Disabler::is_reduced() const { return true; }
 
 void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
     successor->predecessors.emplace(predecessor);
