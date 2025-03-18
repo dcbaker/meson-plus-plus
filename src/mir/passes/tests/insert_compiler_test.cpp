@@ -70,7 +70,7 @@ TEST(insert_compiler, unknown_language) {
         FAIL();
     } catch (Util::Exceptions::MesonException & e) {
         std::string m{e.what()};
-        ASSERT_EQ(m, "No compiler for language");
+        ASSERT_EQ(m, "No compiler for language 'cpp'");
     }
 }
 
