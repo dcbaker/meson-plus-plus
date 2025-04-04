@@ -84,6 +84,7 @@ class Test;
 class Jump;
 class Branch;
 class Disabler;
+class Meson;
 
 using AddArgumentsPtr = std::shared_ptr<AddArguments>;
 using FunctionCallPtr = std::shared_ptr<FunctionCall>;
@@ -107,12 +108,13 @@ using TestPtr = std::shared_ptr<Test>;
 using JumpPtr = std::shared_ptr<Jump>;
 using BranchPtr = std::shared_ptr<Branch>;
 using DisablerPtr = std::shared_ptr<Disabler>;
+using MesonPtr = std::shared_ptr<Meson>;
 
 using Object =
     std::variant<AddArgumentsPtr, FunctionCallPtr, StringPtr, BooleanPtr, NumberPtr, IdentifierPtr,
                  ArrayPtr, DictPtr, CompilerPtr, FilePtr, ExecutablePtr, StaticLibraryPtr, PhiPtr,
                  IncludeDirectoriesPtr, MessagePtr, ProgramPtr, CustomTargetPtr, DependencyPtr,
-                 TestPtr, JumpPtr, BranchPtr, DisablerPtr>;
+                 TestPtr, JumpPtr, BranchPtr, DisablerPtr, MesonPtr>;
 
 using Callable = std::variant<FilePtr, ExecutablePtr, ProgramPtr>;
 
@@ -664,6 +666,17 @@ class Branch {
     Variable var;
 };
 
+class Meson {
+  public:
+    Meson() = default;
+
+    Variable var;
+
+    std::string print() const;
+
+    bool is_reduced() const;
+};
+
 class BasicBlock {
   public:
     BasicBlock() = default;
@@ -731,6 +744,7 @@ struct VariableGetter {
     Variable & operator()(const StaticLibraryPtr & o) const { return o->var; }
     Variable & operator()(const StringPtr & o) const { return o->var; }
     Variable & operator()(const TestPtr & o) const { return o->var; }
+    Variable & operator()(const MesonPtr & o) const { return o->var; }
 };
 
 struct VariableSetter {
@@ -759,6 +773,7 @@ struct VariableSetter {
     void operator()(StaticLibraryPtr & o) const { o->var = var; }
     void operator()(StringPtr & o) const { o->var = var; }
     void operator()(TestPtr & o) const { o->var = var; }
+    void operator()(MesonPtr & o) const { o->var = var; }
 };
 
 void set_var(const Object & src, Object & dest);

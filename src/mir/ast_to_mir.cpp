@@ -78,6 +78,9 @@ struct ExpressionLowering {
     };
 
     Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
+        if (expr->value == "meson") {
+            return std::make_shared<Meson>();
+        }
         return std::make_shared<Identifier>(expr->value);
     };
 

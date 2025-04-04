@@ -16,10 +16,7 @@ inline bool valid_holder(const std::optional<Object> & holder) {
     }
     auto && held = holder.value();
 
-    if (!std::holds_alternative<IdentifierPtr>(held)) {
-        return false;
-    }
-    return std::get<IdentifierPtr>(held)->value == "meson";
+    return std::holds_alternative<MesonPtr>(held);
 }
 
 using ToolchainMap =

@@ -446,6 +446,10 @@ std::string Disabler::print() const { return "disabler { }"; }
 
 bool Disabler::is_reduced() const { return true; }
 
+std::string Meson::print() const { return "Meson { }"; }
+
+bool Meson::is_reduced() const { return true; }
+
 void link_nodes(std::shared_ptr<CFGNode> predecessor, std::shared_ptr<CFGNode> successor) {
     successor->predecessors.emplace(predecessor);
     predecessor->successors.emplace(successor);
