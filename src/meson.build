@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021-2024 Intel Corporation
+# Copyright © 2021-2025 Intel Corporation
 
 subdir('util')
 subdir('frontend')
-subdir('mir')
-subdir('backends')
 
 version_hpp = vcs_tag(
-  input: 'version.hpp.in',
-  output: 'version.hpp',
+  input : 'version.hpp.in',
+  output : 'version.hpp',
 )
 
 mesonpp = executable(
@@ -21,14 +19,12 @@ mesonpp = executable(
     version_hpp,
     locations_hpp,
   ],
-  cpp_args: [
+  cpp_args : [
     '-D_GNU_SOURCE', # for getopt
   ],
-  dependencies: [
+  dependencies : [
     idep_frontend,
-    idep_mir,
     idep_util,
-    idep_backend,
   ],
-  install: true,
+  install : true,
 )

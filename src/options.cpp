@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #include <iostream>
 
@@ -41,12 +41,6 @@ Verbs:
             -D, --define
                 Set a Meson built-in or project option
 
-    Test:
-        Usage:
-            meson++ test <builddir> [options]
-
-        Run tests on a new build directory.
-
     *:
         Any additional verbs that are not documented here are considered
         implementation details, and are subject to change at any time without
@@ -61,9 +55,6 @@ Verb get_verb(int & argc, const char * const argv[]) {
 
         if (v == "configure") {
             return Verb::CONFIGURE;
-        }
-        if (v == "test") {
-            return Verb::TEST;
         }
         if (v == "vcs_tag") {
             return Verb::VCS_TAG;
@@ -137,44 +128,6 @@ ConfigureOptions get_config_options(int argc, char * argv[]) {
     return conf;
 }
 
-TestOptions get_test_options(int argc, char * argv[]) {
-    TestOptions opts{};
-
-    static const char * const short_opts = "hs:D:";
-    static const option long_opts[] = {
-        {"help", no_argument, nullptr, 'h'},
-        {nullptr},
-    };
-
-    int c;
-    while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
-        switch (c) {
-            case 'h':
-            default:
-                std::cout << usage << std::endl;
-                exit(0);
-        }
-    }
-
-    // ++ here to pass the verb
-    int i = ++optind;
-    if (i >= argc) {
-        std::cerr << "missing required positional argument to 'meson++ test': <builddir>"
-                  << std::endl;
-        std::cout << usage << std::endl;
-        exit(1);
-    }
-    opts.builddir = fs::path{argv[i++]};
-    if (i < argc) {
-        // TODO: better error message
-        std::cerr << "Got extra arguments." << std::endl;
-        std::cout << usage << std::endl;
-        exit(1);
-    }
-
-    return opts;
-}
-
 VCSTagOptions get_vcs_tag_options(int argc, char * argv[]) {
 
     static const char * const short_opts = "h";
@@ -232,8 +185,6 @@ OptionV parse_opts(int argc, char * argv[]) {
     switch (verb) {
         case Verb::CONFIGURE:
             return get_config_options(argc, argv);
-        case Verb::TEST:
-            return get_test_options(argc, argv);
         case Verb::VCS_TAG:
             return get_vcs_tag_options(argc, argv);
         default:
