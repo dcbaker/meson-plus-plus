@@ -23,6 +23,10 @@ ProjectState::ProjectState() = default;
 
 std::string ProjectState::serialize() const { return "ProjectState { }"; }
 
+Phi::Phi() = default;
+
+std::string Phi::serialize() const { return "Phi { }"; }
+
 Variable::Variable() = default;
 
 Variable::operator bool() const { return false; }

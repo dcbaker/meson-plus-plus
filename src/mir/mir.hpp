@@ -62,7 +62,15 @@ class ProjectState {
     std::string serialize() const;
 };
 
-using InstructionType = std::variant<Message, Target, Operation, State>;
+class Phi {
+  public:
+    Phi();
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
+};
+
+using InstructionType = std::variant<Message, Target, Operation, State, Phi>;
 
 /// @brief Information about variable storage
 class Variable {
