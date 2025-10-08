@@ -103,6 +103,9 @@ class BasicBlock {
   public:
     BasicBlock();
 
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
+
     /// @brief The list of instructions
     std::list<Instruction> instructions;
 };

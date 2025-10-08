@@ -3,6 +3,8 @@
 
 #include "mir.hpp"
 
+#include <sstream>
+
 Message::Message() = default;
 
 std::string Message::serialize() const { return "Message { }"; }
@@ -42,6 +44,16 @@ std::string Instruction::serialize() const {
 }
 
 BasicBlock::BasicBlock() = default;
+
+std::string BasicBlock::serialize() const {
+    std::stringstream ss{};
+    ss << "Basic Block {\n";
+    for (auto & i : instructions) {
+        ss << "  " << i.serialize() << "\n";
+    }
+    ss << "}";
+    return ss.str();
+}
 
 Node::Node() = default;
 
