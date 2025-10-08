@@ -29,9 +29,7 @@ endif
 #
 # Because of this we want to be sure that we don't propogate the parser header
 # out of thehis bit of code
-_frontend_args = cpp.get_supported_arguments(
-  '-Wno-switch-enum',
- )
+_frontend_args = cpp.get_supported_arguments('-Wno-switch-enum')
 
 libfrontend = static_library(
   'frontend',
