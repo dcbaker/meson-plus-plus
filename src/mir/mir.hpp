@@ -5,6 +5,7 @@
 
 #include <list>
 #include <memory>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -12,6 +13,9 @@
 class Message {
   public:
     Message();
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
 };
 
 /// @brief A Target of some kind.
@@ -20,6 +24,9 @@ class Message {
 class Target {
   public:
     Target();
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
 };
 
 /// @brief An operation that does not create a target
@@ -28,6 +35,9 @@ class Target {
 class Operation {
   public:
     Operation();
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
 };
 
 /// @brief An operation on the program state
@@ -36,6 +46,9 @@ class Operation {
 class State {
   public:
     State();
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
 };
 
 /// @brief Object holding the project state.
@@ -44,15 +57,22 @@ class State {
 class ProjectState {
   public:
     ProjectState();
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
 };
 
 using InstructionType = std::variant<Message, Target, Operation, State>;
 
+/// @brief Information about variable storage
 class Variable {
   public:
     Variable();
 
     operator bool() const;
+
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
 };
 
 /// @brief A basic instruction
@@ -60,8 +80,13 @@ class Instruction {
   public:
     Instruction(InstructionType && inst);
 
+    /// @brief provide a serialized form of this instruction
+    std::string serialize() const;
+
     /// @brief The held instruction
     InstructionType instruction;
+
+    /// @brief the storage of this variable
     Variable variable;
 };
 

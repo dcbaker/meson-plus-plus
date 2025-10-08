@@ -5,19 +5,37 @@
 
 Message::Message() = default;
 
+std::string Message::serialize() const { return "Message { }"; }
+
 Target::Target() = default;
+
+std::string Target::serialize() const { return "Target { }"; }
 
 Operation::Operation() = default;
 
+std::string Operation::serialize() const { return "Operation { }"; }
+
 State::State() = default;
 
+std::string State::serialize() const { return "State { }"; }
+
 ProjectState::ProjectState() = default;
+
+std::string ProjectState::serialize() const { return "ProjectState { }"; }
 
 Variable::Variable() = default;
 
 Variable::operator bool() const { return false; }
 
+std::string Variable::serialize() const { return "Variable { }"; }
+
 Instruction::Instruction(InstructionType && inst) : instruction{inst} {};
+
+std::string Instruction::serialize() const {
+    const std::string inst = std::visit([](auto && i) { return i.serialize(); }, instruction);
+    const std::string var = variable.serialize();
+    return "Instruction { instruction = { " + inst + " } variable = { " + var + " } }";
+}
 
 BasicBlock::BasicBlock() = default;
 
