@@ -40,7 +40,7 @@ std::string Variable::serialize() const { return "Variable { }"; }
 Instruction::Instruction(InstructionType && inst) : instruction{inst} {};
 
 std::string Instruction::serialize() const {
-    const std::string inst = std::visit([](auto && i) { return i.serialize(); }, instruction);
+    const std::string inst = std::visit([](auto && i) { return i->serialize(); }, instruction);
     const std::string var = variable.serialize();
     return "Instruction { instruction = { " + inst + " } variable = { " + var + " } }";
 }

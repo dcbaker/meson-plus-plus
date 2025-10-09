@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <list>
+#include <memory>
 #include <string>
 #include <variant>
 
@@ -70,7 +72,9 @@ class Phi {
     std::string serialize() const;
 };
 
-using InstructionType = std::variant<Message, Target, Operation, State, Phi>;
+using InstructionType =
+    std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<Operation>,
+                 std::shared_ptr<State>, std::shared_ptr<Phi>>;
 
 /// @brief Information about variable storage
 class Variable {
@@ -110,4 +114,4 @@ class BasicBlock {
     std::list<Instruction> instructions;
 };
 
-}
+} // namespace MIR

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,6 +18,8 @@ class BasicBlock;
 class Node {
   public:
     Node(std::shared_ptr<BasicBlock> b);
+
+    const uint32_t id;
 
     /// @brief  The block of this node
     std::shared_ptr<BasicBlock> block;
@@ -34,6 +38,10 @@ class CFG {
 
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;
+
+    /// @brief Walk the graph calling a callback on each node
+    /// @param cb The callback to call
+    void apply(std::function<void(std::shared_ptr<Node>)> & cb) const;
 
     std::shared_ptr<Node> root;
 };
