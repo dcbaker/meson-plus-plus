@@ -4,10 +4,10 @@
 #pragma once
 
 #include <list>
-#include <memory>
 #include <string>
 #include <variant>
-#include <vector>
+
+namespace MIR {
 
 /// @brief A printed message of some kind
 class Message {
@@ -110,22 +110,4 @@ class BasicBlock {
     std::list<Instruction> instructions;
 };
 
-/// @brief A single node the Control Flow Graph
-class Node {
-  public:
-    Node();
-
-    /// @brief Possible entries to this node.
-    std::vector<std::shared_ptr<Node>> parents;
-
-    /// @brief The possible exits from this node
-    std::vector<std::shared_ptr<Node>> children;
-};
-
-/// @brief The representation of the Control Flow Graph
-class CFG {
-  public:
-    CFG(std::shared_ptr<Node> r);
-
-    std::shared_ptr<Node> root;
-};
+}

@@ -5,6 +5,8 @@
 
 #include <sstream>
 
+namespace MIR {
+
 Message::Message() = default;
 
 std::string Message::serialize() const { return "Message { }"; }
@@ -55,6 +57,4 @@ std::string BasicBlock::serialize() const {
     return ss.str();
 }
 
-Node::Node() = default;
-
-CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
+} // namespace MIR
