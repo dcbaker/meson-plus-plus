@@ -10,3 +10,15 @@ libmir = static_library(
 )
 
 idep_mir = declare_dependency(link_with : libmir)
+
+test(
+  'mir',
+  executable(
+    'mir_tests',
+    [
+      'graph_test.cpp',
+    ],
+    dependencies : [idep_mir, dep_gtest],
+  ),
+  protocol : 'gtest',
+)
