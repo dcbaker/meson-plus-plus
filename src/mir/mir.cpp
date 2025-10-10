@@ -7,10 +7,6 @@
 
 namespace MIR {
 
-State::State() = default;
-
-std::string State::serialize() const { return "State { }"; }
-
 ProjectState::ProjectState() = default;
 
 std::string ProjectState::serialize() const { return "ProjectState { }"; }

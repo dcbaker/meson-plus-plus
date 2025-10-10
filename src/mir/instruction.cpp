@@ -5,6 +5,7 @@
 #include "message.hpp"
 #include "mir.hpp"
 #include "operation.hpp"
+#include "state.hpp"
 #include "target.hpp"
 
 #include <sstream>

@@ -9,6 +9,7 @@ libmir = static_library(
     'message.cpp',
     'mir.cpp',
     'operation.cpp',
+    'state.cpp',
     'target.cpp',
   ],
 )

@@ -10,17 +10,6 @@
 
 namespace MIR {
 
-/// @brief An operation on the program state
-///
-/// These have the inherit side effect of modifying the program state
-class State {
-  public:
-    State();
-
-    /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
-};
-
 /// @brief Object holding the project state.
 ///
 /// This is a sort of psuedo-instruction
