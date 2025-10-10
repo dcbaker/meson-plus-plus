@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2025 Intel Corporation
 
-#include "mir.hpp"
+#include "instruction.hpp"
+
+#include "message.hpp"
 
 #include <sstream>
 

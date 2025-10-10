@@ -5,6 +5,7 @@ libmir = static_library(
   'mir',
   [
     'graph.cpp',
+    'instruction.cpp',
     'message.cpp',
     'mir.cpp',
   ],
