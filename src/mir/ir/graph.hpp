@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace MIR {
+namespace MIR::IR {
 
 // I'm concerned about mega headers
 class BasicBlock;

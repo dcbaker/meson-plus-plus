@@ -5,7 +5,7 @@
 
 #include <sstream>
 
-namespace MIR {
+namespace MIR::IR {
 
 BasicBlock::BasicBlock() = default;
 

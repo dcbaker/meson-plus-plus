@@ -10,7 +10,7 @@
 
 #include <sstream>
 
-namespace MIR {
+namespace MIR::IR {
 
 Variable::Variable() = default;
 

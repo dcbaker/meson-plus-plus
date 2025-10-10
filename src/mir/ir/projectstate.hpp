@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace MIR {
+namespace MIR::IR {
 
 /// @brief Object holding the project state.
 ///
@@ -18,4 +18,4 @@ class ProjectState {
     std::string serialize() const;
 };
 
-} // namespace MIR
+} // namespace MIR::IR

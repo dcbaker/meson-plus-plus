@@ -5,10 +5,10 @@
 
 #include <sstream>
 
-namespace MIR {
+namespace MIR::IR {
 
 ProjectState::ProjectState() = default;
 
 std::string ProjectState::serialize() const { return "ProjectState { }"; }
 
-} // namespace MIR
+} // namespace MIR::IR

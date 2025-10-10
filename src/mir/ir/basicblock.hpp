@@ -8,7 +8,7 @@
 #include <list>
 #include <string>
 
-namespace MIR {
+namespace MIR::IR {
 
 /// @brief A block containing a list of instructions
 class BasicBlock {

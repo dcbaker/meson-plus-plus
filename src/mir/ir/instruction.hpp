@@ -9,7 +9,7 @@
 #include <variant>
 #include <vector>
 
-namespace MIR {
+namespace MIR::IR {
 
 class Message;
 class Operation;
@@ -48,4 +48,4 @@ class Instruction {
 using PositionalArguments = std::vector<Instruction>;
 using KeywordArguments = std::unordered_map<std::string, Instruction>;
 
-} // namespace MIR
+} // namespace MIR::IR

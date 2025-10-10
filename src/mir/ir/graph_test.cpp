@@ -5,10 +5,12 @@
 
 #include <gtest/gtest.h>
 
+using namespace MIR::IR;
+
 TEST(Node, eq) {
-    auto n = std::make_shared<MIR::Node>(nullptr);
-    auto n1 = std::make_shared<MIR::Node>(nullptr);
-    auto n2 = std::make_shared<MIR::Node>(UINT32_MAX, nullptr);
+    auto n = std::make_shared<Node>(nullptr);
+    auto n1 = std::make_shared<Node>(nullptr);
+    auto n2 = std::make_shared<Node>(UINT32_MAX, nullptr);
 
     EXPECT_EQ(n, n);
     EXPECT_EQ(n1, n1);
@@ -17,14 +19,14 @@ TEST(Node, eq) {
 }
 
 TEST(Node, iter_pre_fix) {
-    auto n = std::make_shared<MIR::Node>(nullptr);
-    auto n1 = std::make_shared<MIR::Node>(nullptr);
-    auto n2 = std::make_shared<MIR::Node>(nullptr);
-    auto n3 = std::make_shared<MIR::Node>(nullptr);
-    MIR::link_nodes(n, n1);
-    MIR::link_nodes(n, n2);
-    MIR::link_nodes(n1, n3);
-    MIR::link_nodes(n2, n3);
+    auto n = std::make_shared<Node>(nullptr);
+    auto n1 = std::make_shared<Node>(nullptr);
+    auto n2 = std::make_shared<Node>(nullptr);
+    auto n3 = std::make_shared<Node>(nullptr);
+    link_nodes(n, n1);
+    link_nodes(n, n2);
+    link_nodes(n1, n3);
+    link_nodes(n2, n3);
 
     auto itr = n->begin();
     ASSERT_EQ(*itr, *n) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
@@ -40,14 +42,14 @@ TEST(Node, iter_pre_fix) {
 }
 
 TEST(Node, iter_post_fix) {
-    auto n = std::make_shared<MIR::Node>(nullptr);
-    auto n1 = std::make_shared<MIR::Node>(nullptr);
-    auto n2 = std::make_shared<MIR::Node>(nullptr);
-    auto n3 = std::make_shared<MIR::Node>(nullptr);
-    MIR::link_nodes(n, n1);
-    MIR::link_nodes(n, n2);
-    MIR::link_nodes(n1, n3);
-    MIR::link_nodes(n2, n3);
+    auto n = std::make_shared<Node>(nullptr);
+    auto n1 = std::make_shared<Node>(nullptr);
+    auto n2 = std::make_shared<Node>(nullptr);
+    auto n3 = std::make_shared<Node>(nullptr);
+    link_nodes(n, n1);
+    link_nodes(n, n2);
+    link_nodes(n1, n3);
+    link_nodes(n2, n3);
 
     auto itr = n->begin();
     ASSERT_EQ(*itr++, *n) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
@@ -63,14 +65,14 @@ TEST(Node, iter_post_fix) {
 }
 
 TEST(Node, iter_loop) {
-    auto n = std::make_shared<MIR::Node>(0, nullptr);
-    auto n1 = std::make_shared<MIR::Node>(1, nullptr);
-    auto n2 = std::make_shared<MIR::Node>(2, nullptr);
-    auto n3 = std::make_shared<MIR::Node>(3, nullptr);
-    MIR::link_nodes(n, n1);
-    MIR::link_nodes(n, n2);
-    MIR::link_nodes(n1, n3);
-    MIR::link_nodes(n2, n3);
+    auto n = std::make_shared<Node>(0, nullptr);
+    auto n1 = std::make_shared<Node>(1, nullptr);
+    auto n2 = std::make_shared<Node>(2, nullptr);
+    auto n3 = std::make_shared<Node>(3, nullptr);
+    link_nodes(n, n1);
+    link_nodes(n, n2);
+    link_nodes(n1, n3);
+    link_nodes(n2, n3);
 
     uint32_t counter = 0;
     for (auto i = n->begin(); i != n->end(); i++) {
@@ -80,14 +82,14 @@ TEST(Node, iter_loop) {
 }
 
 TEST(Node, iter_range) {
-    auto n = std::make_shared<MIR::Node>(0, nullptr);
-    auto n1 = std::make_shared<MIR::Node>(1, nullptr);
-    auto n2 = std::make_shared<MIR::Node>(2, nullptr);
-    auto n3 = std::make_shared<MIR::Node>(3, nullptr);
-    MIR::link_nodes(n, n1);
-    MIR::link_nodes(n, n2);
-    MIR::link_nodes(n1, n3);
-    MIR::link_nodes(n2, n3);
+    auto n = std::make_shared<Node>(0, nullptr);
+    auto n1 = std::make_shared<Node>(1, nullptr);
+    auto n2 = std::make_shared<Node>(2, nullptr);
+    auto n3 = std::make_shared<Node>(3, nullptr);
+    link_nodes(n, n1);
+    link_nodes(n, n2);
+    link_nodes(n1, n3);
+    link_nodes(n2, n3);
 
     uint32_t counter = 0;
     for (auto & i : *n) {

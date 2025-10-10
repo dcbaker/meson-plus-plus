@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace MIR {
+namespace MIR::IR {
 
 /// @brief An operation that does not create a target
 ///
@@ -20,4 +20,4 @@ class Operation {
     std::string serialize() const;
 };
 
-} // namespace MIR
+} // namespace MIR::IR

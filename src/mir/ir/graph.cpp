@@ -6,7 +6,7 @@
 #include <deque>
 #include <set>
 
-namespace MIR {
+namespace MIR::IR {
 
 namespace {
 

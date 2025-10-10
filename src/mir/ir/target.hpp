@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace MIR {
+namespace MIR::IR {
 
 /// @brief A Target of some kind.
 ///
@@ -20,4 +20,4 @@ class Target {
     std::string serialize() const;
 };
 
-} // namespace MIR
+} // namespace MIR::IR

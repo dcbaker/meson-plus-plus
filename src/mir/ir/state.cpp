@@ -3,7 +3,7 @@
 
 #include "state.hpp"
 
-namespace MIR {
+namespace MIR::IR {
 
 State::State() = default;
 

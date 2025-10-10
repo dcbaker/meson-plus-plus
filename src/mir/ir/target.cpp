@@ -3,10 +3,10 @@
 
 #include "target.hpp"
 
-namespace MIR {
+namespace MIR::IR {
 
 Target::Target() = default;
 
 std::string Target::serialize() const { return "Target { }"; }
 
-} // namespace MIR
+} // namespace MIR::IR

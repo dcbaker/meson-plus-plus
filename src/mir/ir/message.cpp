@@ -7,7 +7,7 @@
 
 #include <sstream>
 
-namespace MIR {
+namespace MIR::IR {
 
 namespace {
 

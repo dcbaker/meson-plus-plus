@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace MIR {
+namespace MIR::IR {
 
 /// @brief What kind of message is this.
 enum class MessageType {

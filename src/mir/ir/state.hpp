@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace MIR {
+namespace MIR::IR {
 
 /// @brief An operation on the program state
 ///
@@ -20,4 +20,4 @@ class State {
     std::string serialize() const;
 };
 
-} // namespace MIR
+} // namespace MIR::IR
