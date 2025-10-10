@@ -9,9 +9,23 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace MIR {
+
+class Operation;
+class Target;
+class State;
+
+using InstructionType = std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>,
+                                     std::shared_ptr<Operation>, std::shared_ptr<State>>;
+
+class Instruction;
+
+using PositionalArguments = std::vector<Instruction>;
+using KeywordArguments = std::unordered_map<std::string, Instruction>;
 
 /// @brief A Target of some kind.
 ///
@@ -56,9 +70,6 @@ class ProjectState {
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;
 };
-
-using InstructionType = std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>,
-                                     std::shared_ptr<Operation>, std::shared_ptr<State>>;
 
 /// @brief Information about variable storage
 class Variable {

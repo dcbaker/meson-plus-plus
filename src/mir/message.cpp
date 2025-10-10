@@ -35,7 +35,7 @@ std::string Message::serialize() const {
     std::stringstream ss{};
     ss << "Message { "
        << "type = { " << to_string(type) << " } "
-       << "message = { '" << message << "' } "
+       << "message = { \"" << message << "\" } "
        << "is_error = { " << is_error << " } "
        << "}";
 
