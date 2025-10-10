@@ -3,8 +3,8 @@
 
 #include "instruction.hpp"
 #include "message.hpp"
-#include "mir.hpp"
 #include "operation.hpp"
+#include "projectstate.hpp"
 #include "state.hpp"
 #include "target.hpp"
 
