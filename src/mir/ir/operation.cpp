@@ -9,6 +9,4 @@ namespace MIR::IR {
 
 Operation::Operation() = default;
 
-std::string Operation::serialize() const { return "Operation { }"; }
-
 } // namespace MIR::IR

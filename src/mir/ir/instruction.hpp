@@ -48,4 +48,7 @@ class Instruction {
 using PositionalArguments = std::vector<Instruction>;
 using KeywordArguments = std::unordered_map<std::string, Instruction>;
 
+std::string to_string(PositionalArguments p);
+std::string to_string(KeywordArguments k);
+
 } // namespace MIR::IR

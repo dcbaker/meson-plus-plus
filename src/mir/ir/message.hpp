@@ -41,4 +41,4 @@ class Message {
     bool is_error;
 };
 
-} // namespace MIR
+} // namespace MIR::IR
