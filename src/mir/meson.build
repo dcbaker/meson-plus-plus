@@ -4,14 +4,14 @@
 libmir = static_library(
   'mir',
   [
-    'graph.cpp',
-    'instruction.cpp',
-    'message.cpp',
-    'mir.cpp',
-    'operation.cpp',
-    'projectstate.cpp',
-    'state.cpp',
-    'target.cpp',
+    'ir/basicblock.cpp',
+    'ir/graph.cpp',
+    'ir/instruction.cpp',
+    'ir/message.cpp',
+    'ir/operation.cpp',
+    'ir/projectstate.cpp',
+    'ir/state.cpp',
+    'ir/target.cpp',
   ],
 )
 
@@ -21,7 +21,7 @@ test(
   'mir',
   executable(
     'mir_tests',
-    ['graph_test.cpp'],
+    ['ir/graph_test.cpp'],
     dependencies : [idep_mir, dep_gtest],
   ),
   protocol : 'gtest',

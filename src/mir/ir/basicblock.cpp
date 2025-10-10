@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2025 Intel Corporation
 
-#include "mir.hpp"
+#include "basicblock.hpp"
 
 #include <sstream>
 
 namespace MIR {
-
-ProjectState::ProjectState() = default;
-
-std::string ProjectState::serialize() const { return "ProjectState { }"; }
 
 BasicBlock::BasicBlock() = default;
 
