@@ -7,10 +7,6 @@
 
 namespace MIR {
 
-Target::Target() = default;
-
-std::string Target::serialize() const { return "Target { }"; }
-
 Operation::Operation() = default;
 
 std::string Operation::serialize() const { return "Operation { }"; }

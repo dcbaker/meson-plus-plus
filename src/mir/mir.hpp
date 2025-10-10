@@ -5,23 +5,10 @@
 
 #include "instruction.hpp"
 
-#include "message.hpp"
-
 #include <list>
 #include <string>
 
 namespace MIR {
-
-/// @brief A Target of some kind.
-///
-/// These have inherent side-effects of creating targets
-class Target {
-  public:
-    Target();
-
-    /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
-};
 
 /// @brief An operation that does not create a target
 ///

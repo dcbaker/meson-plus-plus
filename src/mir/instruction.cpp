@@ -2,9 +2,9 @@
 // Copyright © 2025 Intel Corporation
 
 #include "instruction.hpp"
-
 #include "message.hpp"
 #include "mir.hpp"
+#include "target.hpp"
 
 #include <sstream>
 
