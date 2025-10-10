@@ -10,17 +10,6 @@
 
 namespace MIR {
 
-/// @brief An operation that does not create a target
-///
-/// These are pure, they don't affect
-class Operation {
-  public:
-    Operation();
-
-    /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
-};
-
 /// @brief An operation on the program state
 ///
 /// These have the inherit side effect of modifying the program state

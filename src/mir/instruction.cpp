@@ -4,6 +4,7 @@
 #include "instruction.hpp"
 #include "message.hpp"
 #include "mir.hpp"
+#include "operation.hpp"
 #include "target.hpp"
 
 #include <sstream>
