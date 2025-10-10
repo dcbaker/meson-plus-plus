@@ -4,8 +4,9 @@
 libmir = static_library(
   'mir',
   [
-    'mir.cpp',
     'graph.cpp',
+    'message.cpp',
+    'mir.cpp',
   ],
 )
 
@@ -15,9 +16,7 @@ test(
   'mir',
   executable(
     'mir_tests',
-    [
-      'graph_test.cpp',
-    ],
+    ['graph_test.cpp'],
     dependencies : [idep_mir, dep_gtest],
   ),
   protocol : 'gtest',

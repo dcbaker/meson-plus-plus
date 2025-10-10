@@ -7,10 +7,6 @@
 
 namespace MIR {
 
-Message::Message() = default;
-
-std::string Message::serialize() const { return "Message { }"; }
-
 Target::Target() = default;
 
 std::string Target::serialize() const { return "Target { }"; }
@@ -26,10 +22,6 @@ std::string State::serialize() const { return "State { }"; }
 ProjectState::ProjectState() = default;
 
 std::string ProjectState::serialize() const { return "ProjectState { }"; }
-
-Phi::Phi() = default;
-
-std::string Phi::serialize() const { return "Phi { }"; }
 
 Variable::Variable() = default;
 
