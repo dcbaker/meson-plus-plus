@@ -2,11 +2,8 @@
 // Copyright © 2025 Intel Corporation
 
 #include "instruction.hpp"
-#include "message.hpp"
-#include "operation.hpp"
-#include "projectstate.hpp"
-#include "state.hpp"
-#include "target.hpp"
+
+#include "instructions.hpp"
 
 #include <sstream>
 
