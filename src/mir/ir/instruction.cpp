@@ -26,12 +26,10 @@ std::string Instruction::serialize() const {
 std::string to_string(PositionalArguments p_args) {
     std::stringstream ss{};
     ss << "PositionalArguments { ";
-
     for (const auto & p : p_args) {
         ss << p.serialize();
     }
-
-    ss << " } ";
+    ss << " }";
 
     return ss.str();
 }
@@ -39,12 +37,10 @@ std::string to_string(PositionalArguments p_args) {
 std::string to_string(KeywordArguments k_args) {
     std::stringstream ss{};
     ss << "KeywordArguments { ";
-
     for (const auto & [k, v] : k_args) {
         ss << k << " = { " << v.serialize() << " } ";
     }
-
-    ss << "} ";
+    ss << "}";
 
     return ss.str();
 }

@@ -3,20 +3,19 @@
 
 #pragma once
 
-#include <cstdint>
 #include <string>
 
 namespace MIR::IR {
 
 /// @brief A string object
-class Number {
+class Boolean {
   public:
-    Number(uint64_t v);
+    Boolean(bool v);
 
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;
 
-    uint64_t value;
+    bool value;
 };
 
 } // namespace MIR::IR

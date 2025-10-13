@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "identifier.hpp"
-
 #include <string>
 
 namespace MIR::IR {

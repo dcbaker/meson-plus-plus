@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2025 Intel Corporation
 
-#include "number.hpp"
+#include "boolean.hpp"
 
 #include <sstream>
 
 namespace MIR::IR {
 
-Number::Number(uint64_t v) : value{v} {};
+Boolean::Boolean(bool v) : value{v} {};
 
-std::string Number::serialize() const {
+std::string Boolean::serialize() const {
     std::stringstream ss{};
-    ss << "Number { "
+    ss << "Boolean { "
        << "value = { " << std::to_string(value) << " } "
        << "}";
     return ss.str();

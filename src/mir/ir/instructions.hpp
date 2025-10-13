@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "boolean.hpp"
 #include "identifier.hpp"
 #include "message.hpp"
 #include "number.hpp"

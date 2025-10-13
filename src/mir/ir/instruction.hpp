@@ -18,11 +18,12 @@ class Target;
 class String;
 class Number;
 class Identifier;
+class Boolean;
 
 using InstructionType =
     std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<Operation>,
                  std::shared_ptr<State>, std::shared_ptr<String>, std::shared_ptr<Identifier>,
-                 std::shared_ptr<Number>>;
+                 std::shared_ptr<Number>, std::shared_ptr<Boolean>>;
 
 /// @brief Information about variable storage
 class Variable {

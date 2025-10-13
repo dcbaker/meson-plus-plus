@@ -19,4 +19,4 @@ std::string BasicBlock::serialize() const {
     return ss.str();
 }
 
-} // namespace MIR
+} // namespace MIR::IR
