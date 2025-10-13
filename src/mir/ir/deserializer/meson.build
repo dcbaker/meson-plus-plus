@@ -16,3 +16,12 @@ de_lexer = custom_target(
   output : '@PLAINNAME@.cpp',
   command : [prog_flex, '-o', '@OUTPUT@', '@INPUT@'],
 )
+
+libmir_deserialize = static_library(
+  'mir_deserialize',
+  [de_parser, de_lexer],
+  cpp_args : cpp.get_supported_arguments(
+    '-Wno-switch-enum',
+    '-Wno-implicit-fallthrough',
+  ),
+)

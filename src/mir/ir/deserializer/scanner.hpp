@@ -10,7 +10,7 @@
 #include <FlexLexer.h>
 #endif
 
-#include "ir/deserializer/deserialize.yy.hpp"
+#include "deserialize.yy.hpp"
 
 namespace MIR::IR::Serial {
 

@@ -18,13 +18,10 @@ libmir = static_library(
     'ir/state.cpp',
     'ir/string.cpp',
     'ir/target.cpp',
-    de_parser,
-    de_lexer,
   ],
-  cpp_args : ['-Wno-switch-enum'],
 )
 
-idep_mir = declare_dependency(link_with : libmir)
+idep_mir = declare_dependency(link_with : [libmir, libmir_deserialize])
 
 test(
   'mir',

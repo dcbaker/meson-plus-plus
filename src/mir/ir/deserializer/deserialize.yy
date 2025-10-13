@@ -26,8 +26,8 @@
 }
 
 %code {
-    #include "ir/deserializer/scanner.hpp"
-    #include "ir/deserializer/serial.hpp"
+    #include "scanner.hpp"
+    #include "serial.hpp"
 
     #include <iostream>
     #include <fstream>
