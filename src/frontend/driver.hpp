@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2025 Intel Corporation
 
 #pragma once
+
+#include "node.hpp"
 
 #include <istream>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "parser.yy.hpp"
 
 namespace Frontend {
 
