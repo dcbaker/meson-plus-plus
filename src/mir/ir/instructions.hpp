@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include "identifier.hpp"
 #include "message.hpp"
+#include "number.hpp"
 #include "operation.hpp"
 #include "projectstate.hpp"
 #include "state.hpp"
+#include "string.hpp"
 #include "target.hpp"

@@ -12,6 +12,9 @@ libmir = static_library(
     'ir/projectstate.cpp',
     'ir/state.cpp',
     'ir/target.cpp',
+    'ir/number.cpp',
+    'ir/string.cpp',
+    'ir/identifier.cpp',
   ],
 )
 

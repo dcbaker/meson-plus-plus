@@ -15,9 +15,14 @@ class Message;
 class Operation;
 class State;
 class Target;
+class String;
+class Number;
+class Identifier;
 
-using InstructionType = std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>,
-                                     std::shared_ptr<Operation>, std::shared_ptr<State>>;
+using InstructionType =
+    std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<Operation>,
+                 std::shared_ptr<State>, std::shared_ptr<String>, std::shared_ptr<Identifier>,
+                 std::shared_ptr<Number>>;
 
 /// @brief Information about variable storage
 class Variable {
