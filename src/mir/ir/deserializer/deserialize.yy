@@ -12,13 +12,16 @@
 %define api.location.file "deserialize_loc.hpp"
 
 %code requires {
+    #include <memory>
+    #include "../../ir.hpp"
+
     namespace MIR::IR::Serial {
         class Scanner;
     }
 }
 
 %parse-param { Scanner & scanner }
-// %parse-param { std::unique_ptr<AST::CodeBlock> & block }
+%parse-param { std::shared_ptr<MIR::IR::Node> & node }
 
 %locations
 %initial-action {
@@ -27,7 +30,6 @@
 
 %code {
     #include "scanner.hpp"
-    #include "serial.hpp"
 
     #include <iostream>
     #include <fstream>
@@ -47,7 +49,7 @@
 %token                  LCURLY              "{"
 %token                  RCURLY              "}"
 
-// %nterm <AST::ExpressionV>                           literal expression
+%nterm <std::shared_ptr<MIR::IR::Node>>              program
 
 %left                   EQUAL
 %left                   LCURLY RCURLY

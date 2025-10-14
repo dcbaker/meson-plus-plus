@@ -11,11 +11,11 @@ BasicBlock::BasicBlock() = default;
 
 std::string BasicBlock::serialize() const {
     std::stringstream ss{};
-    ss << "Basic Block {\n";
+    ss << "  Basic Block {\n";
     for (auto & i : instructions) {
-        ss << "  " << i.serialize() << "\n";
+        ss << "    " << i.serialize() << "\n";
     }
-    ss << "}";
+    ss << "  }";
     return ss.str();
 }
 

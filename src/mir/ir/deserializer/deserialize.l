@@ -4,7 +4,6 @@
 %{
 
 #include "scanner.hpp"
-#include "serial.hpp"
 
 #include "deserialize.yy.hpp"
 
@@ -46,6 +45,10 @@ using token = MIR::IR::Serial::Parser::token;
 \"[^"]*\"                       {
                                     lval->build<std::string>(yytext);
                                     return token::STRING;
+                                }
+[a-zA-z]+                       {
+                                    lval->build<std::string>(yytext);
+                                    return token::IDENTIFIER;
                                 }
 \{                              { return token::LCURLY; }
 \}                              { return token::RCURLY; }

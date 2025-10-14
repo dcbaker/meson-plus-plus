@@ -19,6 +19,7 @@ class BasicBlock;
 /// @brief A single node the Control Flow Graph
 class Node {
   public:
+    Node();
     Node(std::shared_ptr<BasicBlock> b);
     Node(uint32_t i, std::shared_ptr<BasicBlock> b);
 
@@ -32,6 +33,8 @@ class Node {
 
     /// @brief The possible exits from this node
     std::vector<std::shared_ptr<Node>> successors;
+
+    std::string serialize() const;
 
     bool operator==(const Node & other) const;
     bool operator!=(const Node & other) const;
@@ -86,4 +89,4 @@ class CFG {
     std::shared_ptr<Node> root;
 };
 
-} // namespace MIR
+} // namespace MIR::IR

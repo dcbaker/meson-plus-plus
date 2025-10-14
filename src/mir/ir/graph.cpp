@@ -2,9 +2,11 @@
 // Copyright © 2025 Intel Corporation
 
 #include "graph.hpp"
+#include "basicblock.hpp"
 
 #include <deque>
 #include <set>
+#include <sstream>
 
 namespace MIR::IR {
 
@@ -15,8 +17,19 @@ Node node_sentintel = Node{UINT32_MAX, nullptr};
 
 } // namespace
 
+Node::Node() : id{node_id_base++}, block{} {};
 Node::Node(std::shared_ptr<BasicBlock> b) : id{node_id_base++}, block{std::move(b)} {};
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b) : id{i}, block{b} {};
+
+std::string Node::serialize() const {
+    std::stringstream ss{};
+    ss << "Node {\n"
+       << "  id = { " << id << " }\n"
+       << "  block = {\n" << block->serialize() << "\n}"
+       << "}";
+
+    return ss.str();
+}
 
 bool Node::operator==(const Node & other) const { return this->id == other.id; }
 
@@ -69,4 +82,4 @@ CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
 Node::Iterator CFG::begin() { return root->begin(); }
 Node::Iterator CFG::end() { return root->end(); }
 
-} // namespace MIR
+} // namespace MIR::IR

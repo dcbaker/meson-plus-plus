@@ -19,7 +19,7 @@ de_lexer = custom_target(
 
 libmir_deserialize = static_library(
   'mir_deserialize',
-  [de_parser, de_lexer],
+  [de_parser, de_lexer, 'driver.cpp'],
   cpp_args : cpp.get_supported_arguments(
     '-Wno-switch-enum',
     '-Wno-implicit-fallthrough',
