@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "ir/ir.hpp"
+#include "ir.hpp"
 #include "node.hpp"
 
 namespace MIR {

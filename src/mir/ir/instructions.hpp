@@ -4,6 +4,7 @@
 #pragma once
 
 #include "boolean.hpp"
+#include "file.hpp"
 #include "identifier.hpp"
 #include "message.hpp"
 #include "number.hpp"
