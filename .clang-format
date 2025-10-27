@@ -1,0 +1,22 @@
+AllowAllArgumentsOnNextLine: true
+AllowShortFunctionsOnASingleLine: true
+BasedOnStyle: LLVM
+ColumnLimit: 100
+IndentCaseLabels: true
+IndentWidth: 4
+Language: Cpp
+PointerAlignment: Middle
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesInContainerLiterals: false
+Standard: Cpp11
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterStruct: false
+  AfterUnion: false
+  SplitEmptyFunction: false
+
+
+# vim: ft=yaml

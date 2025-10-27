@@ -9,7 +9,7 @@
 
 #include <filesystem>
 
-#include "mir/meson/toolchains/compiler.hpp"
+#include "toolchains/compiler.hpp"
 
 namespace MIR::Toolchain::Compiler::CPP {
 

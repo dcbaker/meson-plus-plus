@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "archiver.hpp"
-#include "util/process.hpp"
+#include "process.hpp"
 
 namespace MIR::Toolchain::Archiver {
 

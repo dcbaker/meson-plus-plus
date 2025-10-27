@@ -11,9 +11,9 @@
 #include <vector>
 
 #include "compiler.hpp"
-#include "util/exceptions.hpp"
+#include "exceptions.hpp"
 #include "linker.hpp"
-#include "util/process.hpp"
+#include "process.hpp"
 
 namespace MIR::Toolchain::Linker {
 

@@ -5,10 +5,10 @@
 
 #include <memory>
 
-#include "mir/meson/toolchains/archiver.hpp"
-#include "mir/meson/toolchains/common.hpp"
-#include "mir/meson/toolchains/compiler.hpp"
-#include "mir/meson/toolchains/linker.hpp"
+#include "archiver.hpp"
+#include "common.hpp"
+#include "compiler.hpp"
+#include "linker.hpp"
 
 namespace MIR::Toolchain {
 

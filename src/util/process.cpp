@@ -6,16 +6,11 @@
 #include <iostream>
 #include <thread>
 
-#ifdef _WIN32
-#include <windows.h>
-#include <io.h>
-#include <fcntl.h>
-#else
+// TODO: a windows version of this.
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#endif
 
 #include "process.hpp"
 
@@ -27,97 +22,16 @@ namespace Util {
 namespace {}
 
 Result process(const std::vector<std::string> & cmd, const char * cwd) {
-#ifdef _WIN32
-    // Windows implementation using CreateProcess
-    std::string out{}, err{};
-    
-    // Create command line string
-    std::string cmdline;
-    for (size_t i = 0; i < cmd.size(); ++i) {
-        if (i > 0) cmdline += " ";
-        cmdline += cmd[i];
-    }
-    
-    // Create pipes for stdout and stderr
-    HANDLE hOutRead, hOutWrite, hErrRead, hErrWrite;
-    SECURITY_ATTRIBUTES sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-    
-    if (!CreatePipe(&hOutRead, &hOutWrite, &sa, 0) ||
-        !CreatePipe(&hErrRead, &hErrWrite, &sa, 0)) {
-        return Result{1, "", "Failed to create pipes"};
-    }
-    
-    // Set up process startup info
-    STARTUPINFOA si = {sizeof(STARTUPINFOA)};
-    si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdOutput = hOutWrite;
-    si.hStdError = hErrWrite;
-    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-    
-    PROCESS_INFORMATION pi = {};
-    
-    // Create the process
-    BOOL success = CreateProcessA(
-        NULL,                    // Application name
-        const_cast<char*>(cmdline.c_str()), // Command line
-        NULL,                    // Process security attributes
-        NULL,                    // Thread security attributes
-        TRUE,                    // Inherit handles
-        0,                       // Creation flags
-        NULL,                    // Environment
-        cwd,                     // Current directory
-        &si,                     // Startup info
-        &pi                      // Process information
-    );
-    
-    // Close write handles in parent
-    CloseHandle(hOutWrite);
-    CloseHandle(hErrWrite);
-    
-    if (!success) {
-        CloseHandle(hOutRead);
-        CloseHandle(hErrRead);
-        return Result{1, "", "Failed to create process"};
-    }
-    
-    // Read output
-    char buffer[4096];
-    DWORD bytesRead;
-    
-    while (ReadFile(hOutRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) {
-        buffer[bytesRead] = '\0';
-        out += buffer;
-    }
-    
-    while (ReadFile(hErrRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) {
-        buffer[bytesRead] = '\0';
-        err += buffer;
-    }
-    
-    // Wait for process to complete
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    
-    DWORD exitCode;
-    GetExitCodeProcess(pi.hProcess, &exitCode);
-    
-    // Cleanup
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-    CloseHandle(hOutRead);
-    CloseHandle(hErrRead);
-    
-    return Result{static_cast<int8_t>(exitCode), out, err};
-    
-#else
-    // Unix/Linux implementation (original code)
     std::string out{}, err{};
     int out_pipes[2];
     int err_pipes[2];
     if (pipe(out_pipes) != 0) {
+        // Do something reall
         throw std::runtime_error{"failed to create stdout pipes"};
     }
     if (pipe(err_pipes) != 0) {
-        throw std::runtime_error{"failed to create stderr pipes"};
+        // Do something reall
+        throw std::runtime_error{"failes to create stderr pipes"};
     }
 
     pid_t pid = fork();
@@ -164,6 +78,7 @@ Result process(const std::vector<std::string> & cmd, const char * cwd) {
             for (auto const & f : fds) {
                 close(f.fd);
             }
+            // XXX: do something less silly here.
             throw std::runtime_error{"timeout of 5 seconds elapsed"};
         }
 
@@ -192,13 +107,14 @@ Result process(const std::vector<std::string> & cmd, const char * cwd) {
         status %= 255;
     }
 
+    // On Unix-like OSes return codes > 128 are traditionally used for
+    // returning error codes, 128 + n, where n is the code.
     if (status > 128) {
         status -= 128;
         status *= -1;
     }
 
     return Result{status, out, err};
-#endif
 };
 
 } // namespace Util

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2021 Intel Corporation
+
+option(
+  'tests',
+  type : 'feature',
+  description : 'build unit tests',
+)

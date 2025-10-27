@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2024 Intel Corporation
 
-#include "mir/meson/toolchains/compilers/cpp/cpp.hpp"
+#include "toolchains/compilers/cpp/cpp.hpp"
 
 namespace MIR::Toolchain::Compiler::CPP {
 
@@ -20,25 +20,25 @@ Arguments::Argument GnuLike::generalize_argument(const std::string & arg) const 
     // TODO: Linker argument generalization should be done by the linker...
 
     if (start == "-L") {
-        return {arg.substr(2), Arguments::Type::LINK_SEARCH};
+        return {arg.substr(2, arg.size()), Arguments::Type::LINK_SEARCH};
     }
     if (start == "-D") {
-        return {arg.substr(2), Arguments::Type::DEFINE};
+        return {arg.substr(2, arg.size()), Arguments::Type::DEFINE};
     }
     if (start == "-l") {
-        return {arg.substr(2), Arguments::Type::LINK};
+        return {arg.substr(2, arg.size()), Arguments::Type::LINK};
     }
     if (start == "-I") {
-        return {arg.substr(2), Arguments::Type::INCLUDE, Arguments::IncludeType::BASE};
+        return {arg.substr(2, arg.size()), Arguments::Type::INCLUDE, Arguments::IncludeType::BASE};
     }
     if (start == "-isystem") {
-        return {arg.substr(2), Arguments::Type::INCLUDE,
+        return {arg.substr(2, arg.size()), Arguments::Type::INCLUDE,
                 Arguments::IncludeType::SYSTEM};
     }
-    if (arg.substr(arg.length() - 2) == ".a") {
+    if (arg.substr(arg.length() - 2, arg.length()) == ".a") {
         return {arg, Arguments::Type::LINK};
     }
-    if (arg.substr(arg.length() - 3) == ".so") {
+    if (arg.substr(arg.length() - 3, arg.length()) == ".so") {
         // TODO: or .so.X.Y.Z, .so.X.Y, .so.X
         return {arg, Arguments::Type::LINK};
     }
@@ -67,7 +67,7 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
                 default:
                     throw std::exception{}; // Should be unreachable
             }
-            std::string b_inc = "'" + fs::relative(arg.value(), build_dir).string() + "'";
+            std::string b_inc = "'" + std::string{fs::relative(arg.value(), build_dir)} + "'";
             if (b_inc == "''") {
                 b_inc = ".";
             }
@@ -75,7 +75,7 @@ std::vector<std::string> GnuLike::specialize_argument(const Arguments::Argument 
             args.emplace_back(b_inc);
             args.emplace_back(inc_arg);
             // Needs to be relative to build dir
-            args.emplace_back(fs::relative(src_dir / arg.value(), build_dir).string());
+            args.emplace_back(fs::relative(src_dir / arg.value(), build_dir));
             return args;
         }
         case Arguments::Type::RAW:

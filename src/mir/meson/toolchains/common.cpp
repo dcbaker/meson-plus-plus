@@ -2,7 +2,7 @@
 // Copyright © 2021-2024 Intel Corporation
 
 #include "common.hpp"
-#include "util/exceptions.hpp"
+#include "exceptions.hpp"
 
 namespace MIR::Toolchain {
 

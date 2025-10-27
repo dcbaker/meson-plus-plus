@@ -26,7 +26,7 @@ namespace {
  * Detect the endianness for the build machine
  */
 constexpr Endian detect_endian() {
-/*#ifdef HAVE_ENDIAN_H
+#ifdef HAVE_ENDIAN_H
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     return Endian::LITTLE;
 #elif __BYTE_ORDER == __BIG_ENDIAN
@@ -36,33 +36,30 @@ constexpr Endian detect_endian() {
 #endif
 #else
 #error("Unable to detect endiandess for this platform!")
-#endif*/
-    return Endian::LITTLE;
+#endif
 }
 
 /**
  * Detect the Operating System kernel
  */
 constexpr Kernel detect_kernel() {
-/*#if defined(__linux__)
+#if defined(__linux__)
     return Kernel::LINUX;
 #else
 #error("This Kernel is currently unsupported")
-#endif*/
-    return Kernel::LINUX;
+#endif
 }
 
 // This must be a string unfortunately, as the user is free to se this to a
 // value we don't determine in their machine files.
 constexpr const char * detect_cpu_family() {
-/*#if defined(__x86_64__)
+#if defined(__x86_64__)
     return "x86_64";
 #elif defined(__i386__)
     return "x86";
 #else
 #error("this cpu family is not supported")
-#endif*/
-    return "x86_64";
+#endif
 }
 
 } // namespace

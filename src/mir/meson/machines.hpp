@@ -12,7 +12,7 @@ namespace MIR::Machines {
 /**
  * Represents the machine that is being used
  */
-enum class Machine : unsigned int {
+enum class Machine {
     BUILD,
     HOST,
     TARGET,
