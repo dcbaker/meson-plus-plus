@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2021-2024 Intel Corporation
 
-#include "mir/meson/toolchains/linker.hpp"
+#include "toolchains/linker.hpp"
 
 namespace MIR::Toolchain::Linker::Drivers {
 
