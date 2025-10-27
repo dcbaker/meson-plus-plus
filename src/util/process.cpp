@@ -6,11 +6,16 @@
 #include <iostream>
 #include <thread>
 
-// TODO: a windows version of this.
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#include <fcntl.h>
+#else
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 #include "process.hpp"
 
@@ -22,6 +27,86 @@ namespace Util {
 namespace {}
 
 Result process(const std::vector<std::string> & cmd, const char * cwd) {
+#ifdef _WIN32
+    // Windows implementation
+    std::string out{}, err{};
+    
+    std::string cmdline;
+    for (size_t i = 0; i < cmd.size(); ++i) 
+    {
+        if (i > 0) cmdline += " ";
+        cmdline += cmd[i];
+    }
+    
+    HANDLE hOutRead, hOutWrite, hErrRead, hErrWrite;
+    SECURITY_ATTRIBUTES sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+    
+    if (!CreatePipe(&hOutRead, &hOutWrite, &sa, 0) ||
+        !CreatePipe(&hErrRead, &hErrWrite, &sa, 0)) 
+    {
+        return Result{1, "", "Failed to create pipes"};
+    }
+    
+    STARTUPINFOA si = {sizeof(STARTUPINFOA)};
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdOutput = hOutWrite;
+    si.hStdError = hErrWrite;
+    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    
+    PROCESS_INFORMATION pi = {};
+    
+    BOOL success = CreateProcessA(
+        NULL,
+        const_cast<char*>(cmdline.c_str()),
+        NULL,
+        NULL,
+        TRUE,
+        0,
+        NULL,
+        cwd,
+        &si,
+        &pi
+    );
+    
+    CloseHandle(hOutWrite);
+    CloseHandle(hErrWrite);
+    
+    if (!success) 
+    {
+        CloseHandle(hOutRead);
+        CloseHandle(hErrRead);
+        return Result{1, "", "Failed to create process"};
+    }
+    
+    char buffer[4096];
+    DWORD bytesRead;
+    
+    while (ReadFile(hOutRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) 
+    {
+        buffer[bytesRead] = '\0';
+        out += buffer;
+    }
+    
+    while (ReadFile(hErrRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) 
+    {
+        buffer[bytesRead] = '\0';
+        err += buffer;
+    }
+    
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    
+    DWORD exitCode;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+    
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    CloseHandle(hOutRead);
+    CloseHandle(hErrRead);
+    
+    return Result{static_cast<int8_t>(exitCode), out, err};
+    
+#else
+    // Linux implementation
     std::string out{}, err{};
     int out_pipes[2];
     int err_pipes[2];
@@ -115,6 +200,7 @@ Result process(const std::vector<std::string> & cmd, const char * cwd) {
     }
 
     return Result{status, out, err};
+#endif
 };
 
 } // namespace Util
