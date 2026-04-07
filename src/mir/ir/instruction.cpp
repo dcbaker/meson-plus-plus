@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #include "instruction.hpp"
 
@@ -38,7 +38,7 @@ std::string to_string(KeywordArguments k_args) {
     std::stringstream ss{};
     ss << "KeywordArguments { ";
     for (const auto & [k, v] : k_args) {
-        ss << k << " = { " << v.serialize() << " } ";
+        ss << k.serialize() << " = { " << v.serialize() << " } ";
     }
     ss << "}";
 

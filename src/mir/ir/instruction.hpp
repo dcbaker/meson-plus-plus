@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #pragma once
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -53,7 +54,7 @@ class Instruction {
 };
 
 using PositionalArguments = std::vector<Instruction>;
-using KeywordArguments = std::unordered_map<std::string, Instruction>;
+using KeywordArguments = std::vector<std::pair<Instruction, Instruction>>;
 
 std::string to_string(PositionalArguments p);
 std::string to_string(KeywordArguments k);
