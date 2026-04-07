@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #include "ast_to_mir.hpp"
 
@@ -7,7 +7,11 @@ namespace MIR {
 
 namespace {
 
+/// @brief Lower AST expressions into MIR representations
 struct ExpressionLowering {};
+
+/// @brief Lower AST statements into MIR representations
+struct StatementLowering {};
 
 } // namespace
 
