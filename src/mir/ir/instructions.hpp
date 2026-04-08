@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "array.hpp"
 #include "boolean.hpp"
 #include "file.hpp"
 #include "identifier.hpp"
