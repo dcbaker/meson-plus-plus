@@ -15,11 +15,12 @@ libmir = static_library(
     'ir/message.cpp',
     'ir/number.cpp',
     'ir/operation.cpp',
+    'ir/phi.cpp',
     'ir/projectstate.cpp',
     'ir/state.cpp',
     'ir/string.cpp',
     'ir/target.cpp',
-    'ir/phi.cpp',
+    'ir/undefined.cpp',
   ],
 )
 
