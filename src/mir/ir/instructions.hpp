@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #pragma once
 
@@ -13,3 +13,4 @@
 #include "state.hpp"
 #include "string.hpp"
 #include "target.hpp"
+#include "phi.hpp"
