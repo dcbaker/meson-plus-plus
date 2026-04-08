@@ -11,9 +11,18 @@ namespace MIR::IR {
 
 Variable::Variable() = default;
 
-Variable::operator bool() const { return false; }
+Variable::operator bool() const { return !m_name.empty(); }
 
-std::string Variable::serialize() const { return "Variable { }"; }
+std::string Variable::serialize() const {
+    std::stringstream ss;
+    ss << "Variable = { ";
+    if (!m_name.empty()) {
+        ss << "name = { " << m_name << " } "
+           << "ssa_id = { " << m_ssa_id << " } ";
+    }
+    ss << "}";
+    return ss.str();
+}
 
 Instruction::Instruction(InstructionType && inst) : instruction{inst} {};
 

@@ -38,6 +38,13 @@ class Variable {
 
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;
+
+    /// @brief The name the variable is assigned to
+    std::string m_name;
+
+    /// @brief The SSA Id of the variable, corresponding to the name of the
+    /// variable
+    uint64_t m_ssa_id;
 };
 
 /// @brief A basic instruction
