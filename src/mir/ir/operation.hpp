@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #pragma once
 
@@ -10,25 +10,27 @@
 namespace MIR::IR {
 
 enum class OperationType {
-    // Maps to <object>.<attribute>
+    /// @brief Maps to <object>.<attribute>
     get_attribute,
+
+    /// @brief Maps <object>[<index>]
+    subscript,
 };
 
 /// @brief An operation that does not create a target
 ///
 /// These are pure, they don't affect
 
-// TODO: should this be InstructionType or Instruction?
 class Operation {
   public:
-    Operation(Instruction left, OperationType t, Instruction right);
+    Operation(InstructionType left, OperationType t, InstructionType right);
 
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;
 
-    Instruction left;
+    InstructionType left;
     OperationType type;
-    Instruction right;
+    InstructionType right;
 };
 
 } // namespace MIR::IR
