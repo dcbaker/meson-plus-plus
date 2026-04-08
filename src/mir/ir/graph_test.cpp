@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #include "graph.hpp"
 
@@ -24,9 +24,9 @@ TEST(Node, iter_pre_fix) {
     auto n2 = std::make_shared<Node>(nullptr);
     auto n3 = std::make_shared<Node>(nullptr);
     link_nodes(n, n1);
-    link_nodes(n, n2);
+    link_nodes(n, n2, true);
     link_nodes(n1, n3);
-    link_nodes(n2, n3);
+    link_nodes(n2, n3, true);
 
     auto itr = n->begin();
     ASSERT_EQ(*itr, *n) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
@@ -47,9 +47,9 @@ TEST(Node, iter_post_fix) {
     auto n2 = std::make_shared<Node>(nullptr);
     auto n3 = std::make_shared<Node>(nullptr);
     link_nodes(n, n1);
-    link_nodes(n, n2);
+    link_nodes(n, n2, true);
     link_nodes(n1, n3);
-    link_nodes(n2, n3);
+    link_nodes(n2, n3, true);
 
     auto itr = n->begin();
     ASSERT_EQ(*itr++, *n) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
@@ -70,9 +70,9 @@ TEST(Node, iter_loop) {
     auto n2 = std::make_shared<Node>(2, nullptr);
     auto n3 = std::make_shared<Node>(3, nullptr);
     link_nodes(n, n1);
-    link_nodes(n, n2);
+    link_nodes(n, n2, true);
     link_nodes(n1, n3);
-    link_nodes(n2, n3);
+    link_nodes(n2, n3, true);
 
     uint32_t counter = 0;
     for (auto i = n->begin(); i != n->end(); i++) {
@@ -87,9 +87,9 @@ TEST(Node, iter_range) {
     auto n2 = std::make_shared<Node>(2, nullptr);
     auto n3 = std::make_shared<Node>(3, nullptr);
     link_nodes(n, n1);
-    link_nodes(n, n2);
+    link_nodes(n, n2, true);
     link_nodes(n1, n3);
-    link_nodes(n2, n3);
+    link_nodes(n2, n3, true);
 
     uint32_t counter = 0;
     for (auto & i : *n) {

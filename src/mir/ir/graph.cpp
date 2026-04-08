@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #include "graph.hpp"
 #include "basicblock.hpp"
 
+#include <cassert>
 #include <deque>
 #include <set>
 #include <sstream>
@@ -17,15 +18,18 @@ Node node_sentintel = Node{UINT32_MAX, nullptr};
 
 } // namespace
 
-Node::Node() : id{node_id_base++}, block{} {};
-Node::Node(std::shared_ptr<BasicBlock> b) : id{node_id_base++}, block{std::move(b)} {};
-Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b) : id{i}, block{b} {};
+Node::Node() : id{node_id_base++}, block{}, successors{{nullptr, nullptr}} {};
+Node::Node(std::shared_ptr<BasicBlock> b)
+    : id{node_id_base++}, block{std::move(b)}, successors{{nullptr, nullptr}} {};
+Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
+    : id{i}, block{b}, successors{{nullptr, nullptr}} {};
 
 std::string Node::serialize() const {
     std::stringstream ss{};
     ss << "Node {\n"
        << "  id = { " << id << " }\n"
-       << "  block = {\n" << block->serialize() << "\n}"
+       << "  block = {\n"
+       << block->serialize() << "\n}"
        << "}";
 
     return ss.str();
@@ -43,8 +47,12 @@ Node::Iterator::Iterator(pointer ptr) {
     processed.emplace(ptr->id);
 }
 
-void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ) {
-    pred->successors.push_back(succ);
+void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
+    const int index = right ? 1 : 0;
+
+    assert(pred->successors[index] == nullptr);
+
+    pred->successors[index] = succ;
     succ->predecessors.push_back(pred);
 }
 
@@ -55,9 +63,9 @@ Node::Iterator::pointer Node::Iterator::operator->() { return deque.front(); }
 Node::Iterator & Node::Iterator::operator++() {
     Node * root = deque.front();
 
-    if (!root->successors.empty()) {
+    if (root->successors[0] || root->successors[1]) {
         for (auto & n : root->successors) {
-            if (processed.find(n->id) == processed.end()) {
+            if (n != nullptr && processed.find(n->id) == processed.end()) {
                 deque.push_back(n.get());
                 processed.emplace(n->id);
             }

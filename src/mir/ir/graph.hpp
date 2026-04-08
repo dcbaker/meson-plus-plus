@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -32,7 +33,7 @@ class Node {
     std::vector<std::shared_ptr<Node>> predecessors;
 
     /// @brief The possible exits from this node
-    std::vector<std::shared_ptr<Node>> successors;
+    std::array<std::shared_ptr<Node>, 2> successors;
 
     std::string serialize() const;
 
@@ -73,7 +74,8 @@ class Node {
 /// @brief Link two nodes together
 /// @param pred the Predecessor node
 /// @param succ the Successor node
-void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ);
+/// @param right if the node is the right leg (default: false)
+void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right = false);
 
 /// @brief The representation of the Control Flow Graph
 class CFG {
