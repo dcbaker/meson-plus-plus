@@ -16,3 +16,4 @@
 #include "string.hpp"
 #include "target.hpp"
 #include "undefined.hpp"
+#include "dict.hpp"
