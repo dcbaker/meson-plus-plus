@@ -13,6 +13,10 @@ namespace {
 
 std::string to_string(Operation1SrcType t) {
     switch (t) {
+        case Operation1SrcType::lnot:
+            return "logical not";
+        case Operation1SrcType::negate:
+            return "negation";
         default:
             throw std::runtime_error("Unknown operation type");
     }
@@ -24,6 +28,36 @@ std::string to_string(Operation2SrcType t) {
             return "getattr";
         case Operation2SrcType::subscript:
             return "subscript";
+        case Operation2SrcType::lt:
+            return "less than";
+        case Operation2SrcType::le:
+            return "less than or equal";
+        case Operation2SrcType::eq:
+            return "equal";
+        case Operation2SrcType::ne:
+            return "not equal";
+        case Operation2SrcType::ge:
+            return "greater than or equal";
+        case Operation2SrcType::gt:
+            return "greater than";
+        case Operation2SrcType::not_in:
+            return "not in";
+        case Operation2SrcType::in:
+            return "in";
+        case Operation2SrcType::and_:
+            return "and";
+        case Operation2SrcType::or_:
+            return "or";
+        case Operation2SrcType::mod:
+            return "mod";
+        case Operation2SrcType::mul:
+            return "multiply";
+        case Operation2SrcType::div:
+            return "division";
+        case Operation2SrcType::add:
+            return "addition";
+        case Operation2SrcType::sub:
+            return "subtraction";
         default:
             throw std::runtime_error("Unknown operation type");
     }

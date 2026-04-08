@@ -10,7 +10,13 @@
 namespace MIR::IR {
 
 /// @brief Operations acting on one source
-enum class Operation1SrcType {};
+enum class Operation1SrcType {
+    /// @brief logical not
+    lnot,
+
+    /// @brief Numerical negation, i.e., -10
+    negate,
+};
 
 class Operation1Src {
   public:
@@ -30,6 +36,51 @@ enum class Operation2SrcType {
 
     /// @brief Maps <object>[<index>]
     subscript,
+
+    /// @brief Maps x < y
+    lt,
+
+    /// @brief Maps x ≤ y
+    le,
+
+    /// @brief Maps x == y
+    eq,
+
+    /// @brief Maps x ≠ y
+    ne,
+
+    /// @brief Maps x ≥ y
+    ge,
+
+    /// @brief Maps x > y
+    gt,
+
+    /// @brief Maps x not in y
+    not_in,
+
+    /// @brief Maps x in y
+    in,
+
+    /// @brief Maps x and y
+    and_,
+
+    /// @brief Maps x or y
+    or_,
+
+    /// @brief Maps x * y
+    mul,
+
+    /// @brief Maps x / y
+    div,
+
+    /// @brief Maps x % y
+    mod,
+
+    /// @brief Maps x + y
+    add,
+
+    /// @brief Maps x - y
+    sub,
 };
 
 /// @brief An operation that does not create a target
