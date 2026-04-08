@@ -13,7 +13,8 @@
 namespace MIR::IR {
 
 class Message;
-class Operation;
+class Operation1Src;
+class Operation2Src;
 class State;
 class Target;
 class String;
@@ -25,10 +26,10 @@ class Phi;
 class Undefined;
 
 using InstructionType =
-    std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<Operation>,
-                 std::shared_ptr<State>, std::shared_ptr<String>, std::shared_ptr<Identifier>,
-                 std::shared_ptr<Number>, std::shared_ptr<Boolean>, std::shared_ptr<File>,
-                 std::shared_ptr<Phi>, std::shared_ptr<Undefined>>;
+    std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<Operation1Src>,
+                 std::shared_ptr<Operation2Src>, std::shared_ptr<State>, std::shared_ptr<String>,
+                 std::shared_ptr<Identifier>, std::shared_ptr<Number>, std::shared_ptr<Boolean>,
+                 std::shared_ptr<File>, std::shared_ptr<Phi>, std::shared_ptr<Undefined>>;
 
 /// @brief Information about variable storage
 class Variable {
