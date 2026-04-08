@@ -10,6 +10,7 @@
 namespace MIR::IR {
 
 Variable::Variable() = default;
+Variable::Variable(std::string name) : m_name{name} {};
 
 Variable::operator bool() const { return !m_name.empty(); }
 
@@ -25,6 +26,8 @@ std::string Variable::serialize() const {
 }
 
 Instruction::Instruction(InstructionType && inst) : instruction{inst} {};
+Instruction::Instruction(InstructionType && inst, Variable && var)
+    : instruction{inst}, variable{var} {};
 
 std::string Instruction::serialize() const {
     const std::string inst = std::visit([](auto && i) { return i->serialize(); }, instruction);

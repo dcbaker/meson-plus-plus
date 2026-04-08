@@ -39,6 +39,7 @@ using InstructionType =
 class Variable {
   public:
     Variable();
+    Variable(std::string name);
 
     operator bool() const;
 
@@ -57,6 +58,7 @@ class Variable {
 class Instruction {
   public:
     Instruction(InstructionType && inst);
+    Instruction(InstructionType && inst, Variable && var);
 
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;
