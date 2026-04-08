@@ -3,6 +3,8 @@
 
 #include "ast_to_mir.hpp"
 
+#include <stdexcept>
+
 namespace MIR {
 
 namespace {
@@ -172,8 +174,48 @@ struct StatementLowering {
 
     StatementLowering() : el{} {};
 
-    IR::Instruction operator()(const std::unique_ptr<AST::Statement> & stmt) const;
-    IR::Instruction operator()(const std::unique_ptr<AST::Assignment> & stmt) const;
+    IR::Instruction operator()(const std::unique_ptr<AST::Statement> & stmt) const {
+        return IR::Instruction{std::visit(el, stmt->expr)};
+    }
+
+    IR::Instruction operator()(const std::unique_ptr<AST::Assignment> & stmt) const {
+        IR::InstructionType lhs = std::visit(el, stmt->lhs);
+        // TODO: error handling
+        auto & id = std::get<IR::Identifier>(lhs);
+        IR::InstructionType && rhs = std::visit(el, stmt->rhs);
+
+        // In Meson operators like x *= y are short for x = x * y
+        // As such, MIR doesn't have representations for them, and they're easy to convert
+        // At the AST -> MIR barrier
+        switch (stmt->op) {
+            case AST::AssignOp::EQUAL:
+                break;
+            case AST::AssignOp::ADD_EQUAL:
+                rhs = std::make_shared<IR::Operation2Src>(
+                    std::move(lhs), IR::Operation2SrcType::add, std::move(rhs));
+                break;
+            case AST::AssignOp::SUB_EQUAL:
+                rhs = std::make_shared<IR::Operation2Src>(
+                    std::move(lhs), IR::Operation2SrcType::sub, std::move(rhs));
+                break;
+            case AST::AssignOp::DIV_EQUAL:
+                rhs = std::make_shared<IR::Operation2Src>(
+                    std::move(lhs), IR::Operation2SrcType::div, std::move(rhs));
+                break;
+            case AST::AssignOp::MUL_EQUAL:
+                rhs = std::make_shared<IR::Operation2Src>(
+                    std::move(lhs), IR::Operation2SrcType::mul, std::move(rhs));
+                break;
+            case AST::AssignOp::MOD_EQUAL:
+                rhs = std::make_shared<IR::Operation2Src>(
+                    std::move(lhs), IR::Operation2SrcType::mod, std::move(rhs));
+                break;
+            default:
+                throw std::runtime_error{"Unknown operator"};
+        }
+        return IR::Instruction{std::move(rhs), {id.m_name}};
+    }
+
     IR::Instruction operator()(const std::unique_ptr<AST::IfStatement> & stmt) const;
     IR::Instruction operator()(const std::unique_ptr<AST::ForeachStatement> & stmt) const;
     IR::Instruction operator()(const std::unique_ptr<AST::Break> & stmt) const;
