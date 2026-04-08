@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright © 2025 Intel Corporation
+ * Copyright © 2025-2026 Intel Corporation
  */
 
 %skeleton "lalr1.cc"
@@ -13,7 +13,7 @@
 
 %code requires {
     #include <memory>
-    #include "../../ir.hpp"
+    #include "../ir.hpp"
 
     namespace MIR::IR::Serial {
         class Scanner;

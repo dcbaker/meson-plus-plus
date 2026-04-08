@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2025 Intel Corporation
+# Copyright © 2025-2026 Intel Corporation
 
-subdir('ir/deserializer')
+subdir('deserializer')
 
 libmir = static_library(
   'mir',
