@@ -15,7 +15,6 @@ namespace MIR::IR {
 class Message;
 class Operation1Src;
 class Operation2Src;
-class State;
 class Target;
 class String;
 class Number;
@@ -27,13 +26,15 @@ class Undefined;
 class Array;
 class Dict;
 class Ternary;
+class FunctionCall;
 
 using InstructionType =
     std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<Operation1Src>,
-                 std::shared_ptr<Operation2Src>, std::shared_ptr<State>, std::shared_ptr<String>,
+                 std::shared_ptr<Operation2Src>, std::shared_ptr<String>,
                  std::shared_ptr<Identifier>, std::shared_ptr<Number>, std::shared_ptr<Boolean>,
                  std::shared_ptr<File>, std::shared_ptr<Phi>, std::shared_ptr<Undefined>,
-                 std::shared_ptr<Array>, std::shared_ptr<Dict>, std::shared_ptr<Ternary>>;
+                 std::shared_ptr<Array>, std::shared_ptr<Dict>, std::shared_ptr<Ternary>,
+                 std::shared_ptr<FunctionCall>>;
 
 /// @brief Information about variable storage
 class Variable {
@@ -70,10 +71,6 @@ class Instruction {
     Variable variable;
 };
 
-using PositionalArguments = std::vector<Instruction>;
-using KeywordArguments = std::vector<std::pair<Instruction, Instruction>>;
-
-std::string to_string(PositionalArguments p);
-std::string to_string(KeywordArguments k);
+std::string to_string(const InstructionType & i);
 
 } // namespace MIR::IR

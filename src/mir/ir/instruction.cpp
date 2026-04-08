@@ -30,31 +30,9 @@ Instruction::Instruction(InstructionType && inst, Variable && var)
     : instruction{inst}, variable{var} {};
 
 std::string Instruction::serialize() const {
-    const std::string inst = std::visit([](auto && i) { return i->serialize(); }, instruction);
+    const std::string inst = to_string(instruction);
     const std::string var = variable.serialize();
     return "Instruction { instruction = { " + inst + " } variable = { " + var + " } }";
-}
-
-std::string to_string(PositionalArguments p_args) {
-    std::stringstream ss{};
-    ss << "PositionalArguments { ";
-    for (const auto & p : p_args) {
-        ss << p.serialize();
-    }
-    ss << " }";
-
-    return ss.str();
-}
-
-std::string to_string(KeywordArguments k_args) {
-    std::stringstream ss{};
-    ss << "KeywordArguments { ";
-    for (const auto & [k, v] : k_args) {
-        ss << k.serialize() << " = { " << v.serialize() << " } ";
-    }
-    ss << "}";
-
-    return ss.str();
 }
 
 } // namespace MIR::IR

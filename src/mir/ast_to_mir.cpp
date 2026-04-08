@@ -135,7 +135,23 @@ struct ExpressionLowering {
         return std::make_shared<IR::Operation2Src>(lhs, op, rhs);
     }
 
-    IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const;
+    IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
+        IR::PositionalArguments pos;
+        for (auto && a : stmt->args->positional) {
+            pos.emplace_back(std::visit(*this, a));
+        }
+
+        IR::KeywordArguments kws;
+        for (auto && [k, v] : stmt->args->keyword) {
+            pos.emplace_back((std::visit(*this, k), std::visit(*this, v)));
+        }
+
+        IR::InstructionType && fname = std::visit(*this, stmt->held);
+        // TODO: error handling
+        std::string_view name = std::get<IR::String>(fname).m_value;
+
+        return std::make_shared<IR::FunctionCall>(name, std::move(pos), std::move(kws));
+    }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
         IR::InstructionType && holder = std::visit(*this, stmt->holder);
