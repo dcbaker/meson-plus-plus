@@ -5,6 +5,7 @@
 
 #include "array.hpp"
 #include "boolean.hpp"
+#include "dict.hpp"
 #include "file.hpp"
 #include "identifier.hpp"
 #include "message.hpp"
@@ -15,5 +16,5 @@
 #include "state.hpp"
 #include "string.hpp"
 #include "target.hpp"
+#include "ternary.hpp"
 #include "undefined.hpp"
-#include "dict.hpp"
