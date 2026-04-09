@@ -25,9 +25,9 @@ std::string Variable::serialize() const {
     return ss.str();
 }
 
-Instruction::Instruction(InstructionType && inst) : instruction{inst} {};
+Instruction::Instruction(InstructionType && inst) : instruction{std::move(inst)} {};
 Instruction::Instruction(InstructionType && inst, Variable && var)
-    : instruction{inst}, variable{var} {};
+    : instruction{std::move(inst)}, variable{std::move(var)} {};
 
 std::string Instruction::serialize() const {
     const std::string inst = to_string(instruction);

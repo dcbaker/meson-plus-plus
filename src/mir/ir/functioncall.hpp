@@ -24,9 +24,9 @@ std::string to_string(const KeywordArguments & k);
 /// @brief A function call
 class FunctionCall {
   public:
-    FunctionCall(std::string name, PositionalArguments pos, KeywordArguments kws);
-    FunctionCall(std::string name, InstructionType ns, PositionalArguments pos,
-                 KeywordArguments kws);
+    FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws);
+    FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,
+                 KeywordArguments && kws);
 
     /// @brief provide a serialized form of this instruction
     std::string serialize() const;

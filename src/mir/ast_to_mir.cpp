@@ -2,6 +2,7 @@
 // Copyright © 2025-2026 Intel Corporation
 
 #include "ast_to_mir.hpp"
+#include "ir/instruction.hpp"
 
 #include <stdexcept>
 
@@ -136,19 +137,19 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
-        IR::PositionalArguments pos;
+        IR::PositionalArguments && pos{};
         for (auto && a : stmt->args->positional) {
             pos.emplace_back(std::visit(*this, a));
         }
 
-        IR::KeywordArguments kws;
+        IR::KeywordArguments && kws{};
         for (auto && [k, v] : stmt->args->keyword) {
             pos.emplace_back((std::visit(*this, k), std::visit(*this, v)));
         }
 
         IR::InstructionType && fname = std::visit(*this, stmt->held);
         // TODO: error handling
-        std::string_view name = std::get<IR::String>(fname).m_value;
+        std::string name = std::get<std::shared_ptr<IR::String>>(fname)->m_value;
 
         return std::make_shared<IR::FunctionCall>(name, std::move(pos), std::move(kws));
     }
@@ -174,7 +175,7 @@ struct ExpressionLowering {
             value.emplace(std::visit(*this, k), std::visit(*this, v));
         }
 
-        std::make_shared<IR::Dict>(std::move(value));
+        return std::make_shared<IR::Dict>(std::move(value));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
@@ -185,19 +186,30 @@ struct ExpressionLowering {
     }
 };
 
+struct StatementLowering;
+
+std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block,
+                                      const StatementLowering & lower);
+
 /// @brief Lower AST statements into MIR representations
 struct StatementLowering {
 
     StatementLowering() : el{} {};
 
-    IR::Instruction operator()(const std::unique_ptr<AST::Statement> & stmt) const {
-        return IR::Instruction{std::visit(el, stmt->expr)};
+    StatementLowering(StatementLowering &&) = delete;
+    StatementLowering & operator=(StatementLowering &&) = delete;
+
+    std::shared_ptr<IR::Node> operator()(const std::unique_ptr<AST::Statement> & stmt,
+                                         std::shared_ptr<IR::Node> node) const {
+        node->block->instructions.emplace_back(IR::Instruction{std::visit(el, stmt->expr)});
+        return node;
     }
 
-    IR::Instruction operator()(const std::unique_ptr<AST::Assignment> & stmt) const {
+    std::shared_ptr<IR::Node> operator()(const std::unique_ptr<AST::Assignment> & stmt,
+                                         std::shared_ptr<IR::Node> node) const {
         IR::InstructionType lhs = std::visit(el, stmt->lhs);
         // TODO: error handling
-        auto & id = std::get<IR::Identifier>(lhs);
+        auto & id = std::get<std::shared_ptr<IR::Identifier>>(lhs);
         IR::InstructionType && rhs = std::visit(el, stmt->rhs);
 
         // In Meson operators like x *= y are short for x = x * y
@@ -229,22 +241,88 @@ struct StatementLowering {
             default:
                 throw std::runtime_error{"Unknown operator"};
         }
-        return IR::Instruction{std::move(rhs), {id.m_name}};
+        node->block->instructions.emplace_back(IR::Instruction{std::move(rhs), {id->m_name}});
+
+        return node;
     }
 
-    IR::Instruction operator()(const std::unique_ptr<AST::IfStatement> & stmt) const;
-    IR::Instruction operator()(const std::unique_ptr<AST::ForeachStatement> & stmt) const;
-    IR::Instruction operator()(const std::unique_ptr<AST::Break> & stmt) const;
-    IR::Instruction operator()(const std::unique_ptr<AST::Continue> & stmt) const;
+    std::shared_ptr<IR::Node> operator()(const std::unique_ptr<AST::IfStatement> & stmt,
+                                         std::shared_ptr<IR::Node> node) const {
+        // This is the block that all of the branches of the if/elif/else web
+        // will join back to
+        auto tail = std::make_shared<IR::Node>();
+
+        // place the condition as the last instruction of the block.
+        // TODO: We might need a Condition{} type?
+        node->block->instructions.emplace_back(std::visit(el, stmt->ifblock.condition));
+
+        std::shared_ptr<IR::Node> lhs = nullptr;
+
+        // create a new block with the body of the if statement, then link that block
+        // as a successor of the parent node, and a predecessor of the tail node
+        lhs = lower_block(*stmt->ifblock.block, *this);
+        IR::link_nodes(node, lhs);
+        IR::link_nodes(lhs, tail);
+
+        for (auto && elif : stmt->efblock) {
+            // Create a new block that will be the other successor, this will
+            // hold the condition of the `elif` branch, and then have it's own lhs for the body,
+            // and a new rhs for additional `elif` or `else` blocks
+            std::shared_ptr<IR::Node> rhs = std::make_shared<IR::Node>();
+            IR::link_nodes(node, rhs, true);
+            IR::link_nodes(rhs, tail);
+
+            rhs->block->instructions.emplace_back(std::visit(el, elif.condition));
+
+            // Attach the body to this new lhs
+            lhs = lower_block(*elif.block, *this);
+            IR::link_nodes(node, lhs);
+            IR::link_nodes(lhs, tail);
+
+            // This is now the current node, as we build our if web
+            node = rhs;
+        }
+
+        // Finally attach any else block. While this block may be empty, we'll
+        // attach it anyway and allow any cleanup to be done later
+        std::shared_ptr<IR::Node> rhs = lower_block(*stmt->eblock.block, *this);
+        IR::link_nodes(node, rhs, true);
+        IR::link_nodes(rhs, tail);
+
+        // Return the tail, as this is now the only block we care about
+        return tail;
+    }
+
+    std::shared_ptr<IR::Node> operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
+                                         std::shared_ptr<IR::Node> node) const;
+
+    std::shared_ptr<IR::Node> operator()(const std::unique_ptr<AST::Break> & stmt,
+                                         std::shared_ptr<IR::Node> node) const;
+
+    std::shared_ptr<IR::Node> operator()(const std::unique_ptr<AST::Continue> & stmt,
+                                         std::shared_ptr<IR::Node> node) const;
 
   private:
     const ExpressionLowering el;
 };
 
+std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block,
+                                      const StatementLowering & lower) {
+    auto root = std::make_shared<IR::Node>();
+    auto node = root;
+    for (auto && stmt : block.statements) {
+        node = std::visit([&](auto && s) -> std::shared_ptr<IR::Node> { return lower(s, node); },
+                          stmt);
+    }
+    return root;
+}
+
 } // namespace
 
 IR::CFG ast_to_mir(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
-    return IR::CFG{std::make_shared<IR::Node>(std::make_shared<IR::BasicBlock>())};
+    const StatementLowering lwr{};
+
+    return IR::CFG{lower_block(*block, lwr)};
 }
 
 } // namespace MIR

@@ -31,14 +31,14 @@ std::string to_string(const KeywordArguments & k_args) {
     return ss.str();
 }
 
-std::string to_string(const InstructionType & inst){
+std::string to_string(const InstructionType & inst) {
     return std::visit([](auto && i) -> std::string { return i->serialize(); }, inst);
 }
 
-FunctionCall::FunctionCall(std::string name, PositionalArguments pos, KeywordArguments kws)
+FunctionCall::FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws)
     : m_name{name}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
-FunctionCall::FunctionCall(std::string name, InstructionType ns, PositionalArguments pos,
-                           KeywordArguments kws)
+FunctionCall::FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,
+                           KeywordArguments && kws)
     : m_name{name}, m_namespace{std::move(ns)}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
 
 std::string FunctionCall::serialize() const {
