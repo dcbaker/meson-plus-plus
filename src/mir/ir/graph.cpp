@@ -23,11 +23,14 @@ Node::Node(std::shared_ptr<BasicBlock> b)
     : id{node_id_base++}, block{std::move(b)}, successors{{nullptr, nullptr}} {};
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
     : id{i}, block{b}, successors{{nullptr, nullptr}} {};
+Node::Node(bool is_header)
+    : id{node_id_base++}, successors{{nullptr, nullptr}}, loop_header{is_header} {};
 
 std::string Node::serialize() const {
     std::stringstream ss{};
     ss << "Node {\n"
        << "  id = { " << id << " }\n"
+       << "  loop_header = { " << loop_header << " }\n"
        << "  block = {\n"
        << block->serialize() << "\n}"
        << "}";

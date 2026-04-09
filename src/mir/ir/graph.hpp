@@ -23,6 +23,7 @@ class Node {
     Node();
     Node(std::shared_ptr<BasicBlock> b);
     Node(uint32_t i, std::shared_ptr<BasicBlock> b);
+    Node(bool is_header);
 
     const uint32_t id;
 
@@ -34,6 +35,9 @@ class Node {
 
     /// @brief The possible exits from this node
     std::array<std::shared_ptr<Node>, 2> successors;
+
+    /// @brief Is this block a loop header block
+    bool loop_header;
 
     std::string serialize() const;
 
