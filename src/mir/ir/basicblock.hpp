@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #pragma once
 
 #include "instruction.hpp"
 
 #include <list>
+#include <memory>
 #include <string>
 
 namespace MIR::IR {
@@ -19,7 +20,7 @@ class BasicBlock {
     std::string serialize() const;
 
     /// @brief The list of instructions
-    std::list<Instruction> instructions;
+    std::list<std::unique_ptr<Instruction>> instructions;
 };
 
-} // namespace MIR
+} // namespace MIR::IR

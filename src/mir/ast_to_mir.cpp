@@ -4,6 +4,7 @@
 #include "ast_to_mir.hpp"
 #include "ir/instruction.hpp"
 
+#include <memory>
 #include <stdexcept>
 
 namespace MIR {
@@ -208,7 +209,7 @@ struct StatementLowering {
 
     void operator()(const std::unique_ptr<AST::Statement> & stmt, LoweringState & state) const {
         state.current_node->block->instructions.emplace_back(
-            IR::Instruction{std::visit(el, stmt->expr)});
+            std::make_unique<IR::Instruction>(std::visit(el, stmt->expr)));
     }
 
     void operator()(const std::unique_ptr<AST::Assignment> & stmt, LoweringState & state) const {
@@ -248,7 +249,7 @@ struct StatementLowering {
         }
 
         state.current_node->block->instructions.emplace_back(
-            IR::Instruction{std::move(rhs), {id->m_name}});
+            std::make_unique<IR::Instruction>(std::move(rhs), IR::Variable{id->m_name}));
     }
 
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
@@ -259,7 +260,7 @@ struct StatementLowering {
         // place the condition as the last instruction of the block.
         // TODO: We might need a Condition{} type?
         state.current_node->block->instructions.emplace_back(
-            std::visit(el, stmt->ifblock.condition));
+            std::make_unique<IR::Instruction>(std::visit(el, stmt->ifblock.condition)));
 
         std::shared_ptr<IR::Node> lhs = nullptr;
 
@@ -277,7 +278,8 @@ struct StatementLowering {
             IR::link_nodes(state.current_node, rhs, true);
             IR::link_nodes(rhs, tail);
 
-            rhs->block->instructions.emplace_back(std::visit(el, elif.condition));
+            rhs->block->instructions.emplace_back(
+                std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
 
             // Attach the body to this new lhs
             lhs = lower_block(*elif.block, *this, state);
@@ -328,12 +330,12 @@ struct StatementLowering {
 
         auto && id1 = std::make_shared<IR::Undefined>();
         preamble->block->instructions.emplace_back(
-            IR::Instruction{std::move(id1), {stmt->id.value}});
+            std::make_unique<IR::Instruction>(std::move(id1), IR::Variable{stmt->id.value}));
 
         if (stmt->id2) {
             auto && id2 = std::make_shared<IR::Undefined>();
-            preamble->block->instructions.emplace_back(
-                IR::Instruction{std::move(id2), {stmt->id2.value().value}});
+            preamble->block->instructions.emplace_back(std::make_unique<IR::Instruction>(
+                std::move(id2), IR::Variable{stmt->id2.value().value}));
         }
 
         // This is the header where we evaluate the condition of the loop to decide if we will

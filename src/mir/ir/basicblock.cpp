@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #include "basicblock.hpp"
 
@@ -13,7 +13,7 @@ std::string BasicBlock::serialize() const {
     std::stringstream ss{};
     ss << "  Basic Block {\n";
     for (auto & i : instructions) {
-        ss << "    " << i.serialize() << "\n";
+        ss << "    " << i->serialize() << "\n";
     }
     ss << "  }";
     return ss.str();

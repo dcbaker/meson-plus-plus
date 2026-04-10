@@ -5,6 +5,8 @@
 
 #include <memory>
 
+#include "ir/instruction.hpp"
+
 namespace MIR::Builder {
 
 struct BuilderPrivate;
