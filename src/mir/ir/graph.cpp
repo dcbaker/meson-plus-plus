@@ -18,13 +18,15 @@ Node node_sentintel = Node{UINT32_MAX, nullptr};
 
 } // namespace
 
-Node::Node() : id{node_id_base++}, block{}, successors{{nullptr, nullptr}} {};
+Node::Node()
+    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}} {};
 Node::Node(std::shared_ptr<BasicBlock> b)
-    : id{node_id_base++}, block{std::move(b)}, successors{{nullptr, nullptr}} {};
+    : id{node_id_base++}, block{b}, successors{{nullptr, nullptr}} {};
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
     : id{i}, block{b}, successors{{nullptr, nullptr}} {};
 Node::Node(bool is_header)
-    : id{node_id_base++}, successors{{nullptr, nullptr}}, loop_header{is_header} {};
+    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}},
+      loop_header{is_header} {};
 
 std::string Node::serialize() const {
     std::stringstream ss{};

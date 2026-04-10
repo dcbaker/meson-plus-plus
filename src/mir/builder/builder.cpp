@@ -2,18 +2,20 @@
 // Copyright © 2026 Intel Corporation
 
 #include "builder.hpp"
+#include "ir.hpp"
 
-#include "ir/graph.hpp"
-#include "ir/instructions.hpp"
+#include <cassert>
 
 namespace MIR::Builder {
 
-struct BuilderPrivate {
-    BuilderPrivate() : root{std::make_shared<IR::Node>()} {};
+Builder::Builder() : p_root{std::make_shared<IR::Node>()} {};
 
-    std::shared_ptr<IR::Node> root;
-};
+std::shared_ptr<IR::Node> Builder::finalize() { return p_root; }
 
-Builder::Builder() : priv{std::make_unique<BuilderPrivate>()} {};
+Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
+    assert(inst != nullptr);
+    p_root->block->instructions.emplace_back(std::move(inst));
+    return *this;
+}
 
 } // namespace MIR::Builder
