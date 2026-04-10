@@ -13,7 +13,7 @@ std::string to_string(const PositionalArguments & p_args) {
     std::stringstream ss{};
     ss << "PositionalArguments { ";
     for (const auto & p : p_args) {
-        ss << p.serialize();
+        ss << to_string(p);
     }
     ss << " }";
 
@@ -24,7 +24,7 @@ std::string to_string(const KeywordArguments & k_args) {
     std::stringstream ss{};
     ss << "KeywordArguments { ";
     for (const auto & [k, v] : k_args) {
-        ss << k.serialize() << " = { " << v.serialize() << " } ";
+        ss << to_string(k) << " = { " << to_string(v) << " } ";
     }
     ss << "}";
 
@@ -35,6 +35,7 @@ std::string to_string(const InstructionType & inst) {
     return std::visit([](auto && i) -> std::string { return i->serialize(); }, inst);
 }
 
+FunctionCall::FunctionCall(std::string name) : m_name{name} {};
 FunctionCall::FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws)
     : m_name{name}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
 FunctionCall::FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,

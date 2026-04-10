@@ -10,7 +10,7 @@ namespace MIR::Builder {
 
 Builder::Builder() : p_root{std::make_shared<IR::Node>()} {};
 
-std::shared_ptr<IR::Node> Builder::finalize() { return p_root; }
+std::shared_ptr<IR::Node> Builder::finalize() const { return p_root; }
 
 Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
     assert(inst != nullptr);

@@ -10,8 +10,8 @@
 
 namespace MIR::IR {
 
-using PositionalArguments = std::vector<Instruction>;
-using KeywordArguments = std::vector<std::pair<Instruction, Instruction>>;
+using PositionalArguments = std::vector<InstructionType>;
+using KeywordArguments = std::vector<std::pair<InstructionType, InstructionType>>;
 
 std::string to_string(const PositionalArguments & p);
 std::string to_string(const KeywordArguments & k);
@@ -24,6 +24,7 @@ std::string to_string(const KeywordArguments & k);
 /// @brief A function call
 class FunctionCall {
   public:
+    FunctionCall(std::string name);
     FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws);
     FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,
                  KeywordArguments && kws);

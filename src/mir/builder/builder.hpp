@@ -10,7 +10,14 @@
 
 namespace MIR::Builder {
 
-struct BuilderPrivate;
+namespace {
+
+template <typename, typename> constexpr bool is_one_of_variants_types = false;
+
+template <typename... Ts, typename T>
+constexpr bool is_one_of_variants_types<std::variant<Ts...>, T> = (std::is_same_v<T, Ts> || ...);
+
+} // namespace
 
 template <typename T, typename... Params> class InstructionBuilder {
   public:
@@ -26,9 +33,25 @@ template <typename T, typename... Params> class InstructionBuilder {
         return *this;
     }
 
-    std::unique_ptr<IR::Instruction> finalize() {
+    template <int..., typename U = T,
+              typename = std::enable_if_t<std::is_same_v<U, MIR::IR::FunctionCall>>>
+    InstructionBuilder & add_pos_arg(IR::InstructionType && arg) {
+        p_inst->m_pos.emplace_back(std::move(arg));
+        return *this;
+    }
+
+    template <int..., typename U = T,
+              typename = std::enable_if_t<std::is_same_v<U, MIR::IR::FunctionCall>>>
+    InstructionBuilder & add_kw_arg(IR::InstructionType && key, IR::InstructionType && value) {
+        p_inst->m_kws.emplace_back(std::move(key), std::move(value));
+        return *this;
+    }
+
+    std::unique_ptr<IR::Instruction> as_instr() {
         return std::make_unique<IR::Instruction>(p_inst, std::move(p_var));
     }
+
+    IR::InstructionType as_type() const { return p_inst; }
 
   private:
     std::shared_ptr<T> p_inst;
@@ -39,14 +62,16 @@ class Builder {
   public:
     Builder();
 
-    template <typename T, typename... Params>
+    template <typename T,
+              typename = std::enable_if<is_one_of_variants_types<MIR::IR::InstructionType, T>>,
+              typename... Params>
     InstructionBuilder<T, Params...> new_inst(Params &&... params) {
         return InstructionBuilder<T, Params...>{std::forward<Params>(params)...};
     }
 
     Builder & add_inst(std::unique_ptr<IR::Instruction> && inst);
 
-    std::shared_ptr<IR::Node> finalize();
+    std::shared_ptr<IR::Node> finalize() const;
 
   private:
     std::shared_ptr<IR::Node> p_root;

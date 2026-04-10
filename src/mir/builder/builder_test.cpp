@@ -21,7 +21,7 @@ TEST(MIR_Builder, simple) {
 TEST(MIR_Builder, build_inst) {
     Builder b{};
     auto s = b.new_inst<String>("bar");
-    auto i = s.finalize();
+    auto i = s.as_instr();
     b.add_inst(std::move(i));
     auto n = b.finalize();
     auto && insts = n->block->instructions;
@@ -36,10 +36,28 @@ TEST(MIR_Builder, build_inst) {
 
 TEST(MIR_Builder, set_var) {
     Builder b{};
-    auto n = b.add_inst(b.new_inst<String>("bar").set_var("x").finalize()).finalize();
+    auto n = b.add_inst(b.new_inst<String>("bar").set_var("x").as_instr()).finalize();
     auto && insts = n->block->instructions;
     ASSERT_EQ(insts.size(), 1);
 
     auto && f = insts.front();
     ASSERT_EQ(f->variable.m_name, "x");
+}
+
+TEST(MIR_Builder, funccall) {
+    Builder b{};
+    // clang-format off
+    auto n = b.add_inst(b.new_inst<FunctionCall>("add")
+                         .add_pos_arg(b.new_inst<Number>(1).as_type())
+                         .add_pos_arg(b.new_inst<Number>(2).as_type())
+                         .add_kw_arg(b.new_inst<String>("foo").as_type(),
+                                     b.new_inst<Boolean>(false).as_type())
+                         .as_instr())
+              .finalize();
+    // clang-format on
+
+    auto && insts = n->block->instructions;
+    ASSERT_EQ(insts.size(), 1);
+
+    // TODO: really should checkt aht this is correct...
 }
