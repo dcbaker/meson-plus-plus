@@ -6,6 +6,8 @@ subdir('deserializer')
 libmir = static_library(
   'mir',
   [
+    'ast_to_mir.cpp',
+    'builder/builder.cpp',
     'ir/array.cpp',
     'ir/basicblock.cpp',
     'ir/boolean.cpp',
@@ -24,7 +26,6 @@ libmir = static_library(
     'ir/target.cpp',
     'ir/ternary.cpp',
     'ir/undefined.cpp',
-    'ast_to_mir.cpp',
   ],
   include_directories : inc_frontend,
 )
