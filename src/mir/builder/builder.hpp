@@ -84,10 +84,21 @@ class Builder {
 
     Builder & add_inst(std::unique_ptr<IR::Instruction> && inst);
 
-    std::shared_ptr<IR::Node> finalize() const;
+    Builder & add_condition(std::unique_ptr<IR::Instruction> && inst);
+
+    Builder left_successor();
+    Builder right_successor();
+
+    Builder & link_left_successor(Builder &);
+    Builder & link_right_successor(Builder &);
+    Builder & link_left_successor(std::shared_ptr<IR::Node>);
+    Builder & link_right_successor(std::shared_ptr<IR::Node>);
+
+    std::shared_ptr<IR::Node> finalize();
 
   private:
     std::shared_ptr<IR::Node> p_root;
+    std::unique_ptr<IR::Instruction> p_condition;
 };
 
 } // namespace MIR::Builder

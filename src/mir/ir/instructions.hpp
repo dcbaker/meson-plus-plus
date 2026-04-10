@@ -11,7 +11,6 @@
 #include "identifier.hpp"
 #include "message.hpp"
 #include "number.hpp"
-#include "operation.hpp"
 #include "phi.hpp"
 #include "projectstate.hpp"
 #include "string.hpp"
