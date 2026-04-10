@@ -47,6 +47,19 @@ template <typename T, typename... Params> class InstructionBuilder {
         return *this;
     }
 
+    template <int..., typename U = T,
+              typename = std::enable_if_t<std::is_same_v<U, MIR::IR::Array>>>
+    InstructionBuilder & append(IR::InstructionType && arg) {
+        p_inst->m_value.emplace_back(std::move(arg));
+        return *this;
+    }
+
+    template <int..., typename U = T, typename = std::enable_if_t<std::is_same_v<U, MIR::IR::Dict>>>
+    InstructionBuilder & append(IR::InstructionType && key, IR::InstructionType && value) {
+        p_inst->m_value.emplace(std::move(key), std::move(value));
+        return *this;
+    }
+
     std::unique_ptr<IR::Instruction> as_instr() {
         return std::make_unique<IR::Instruction>(p_inst, std::move(p_var));
     }

@@ -25,6 +25,8 @@ std::string to_string(const KeywordArguments & k);
 class FunctionCall {
   public:
     FunctionCall(std::string name);
+    FunctionCall(std::string name, InstructionType && ns);
+    FunctionCall(std::string name, std::string ns);
     FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws);
     FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,
                  KeywordArguments && kws);

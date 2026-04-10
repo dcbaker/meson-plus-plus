@@ -2,6 +2,7 @@
 // Copyright © 2025-2026 Intel Corporation
 
 #include "ast_to_mir.hpp"
+#include "builder/builder.hpp"
 #include "ir/instruction.hpp"
 
 #include <memory>
@@ -16,21 +17,23 @@ using namespace Frontend;
 /// @brief Lower AST expressions into MIR representations
 struct ExpressionLowering {
     IR::InstructionType operator()(const std::unique_ptr<AST::AdditiveExpression> & stmt) const {
-        IR::Operation2SrcType op;
+        std::string name;
         switch (stmt->op) {
             case AST::AddOp::ADD:
-                op = IR::Operation2SrcType::add;
+                name = "addition";
                 break;
             case AST::AddOp::SUB:
-                op = IR::Operation2SrcType::sub;
+                name = "subtraction";
                 break;
             default:
                 throw std::runtime_error{"Unknown additive expression type"};
         }
 
-        IR::InstructionType && lhs = std::visit(*this, stmt->lhs);
-        IR::InstructionType && rhs = std::visit(*this, stmt->rhs);
-        return std::make_shared<IR::Operation2Src>(lhs, op, rhs);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>(name, "meson++")
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Boolean> & stmt) const {
@@ -43,41 +46,45 @@ struct ExpressionLowering {
 
     IR::InstructionType
     operator()(const std::unique_ptr<AST::MultiplicativeExpression> & stmt) const {
-        IR::Operation2SrcType op;
+        std::string name;
         switch (stmt->op) {
             case AST::MulOp::MOD:
-                op = IR::Operation2SrcType::mod;
+                name = "modulo";
                 break;
             case AST::MulOp::MUL:
-                op = IR::Operation2SrcType::mul;
+                name = "multiplication";
                 break;
             case AST::MulOp::DIV:
-                op = IR::Operation2SrcType::div;
+                name = "division";
                 break;
             default:
                 throw std::runtime_error{"Unknown multiplication expression type"};
         }
 
-        IR::InstructionType && lhs = std::visit(*this, stmt->lhs);
-        IR::InstructionType && rhs = std::visit(*this, stmt->rhs);
-        return std::make_shared<IR::Operation2Src>(lhs, op, rhs);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>(name, "meson++")
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::UnaryExpression> & stmt) const {
-        IR::Operation1SrcType op;
+        std::string name;
         switch (stmt->op) {
             case AST::UnaryOp::NEG:
-                op = IR::Operation1SrcType::negate;
+                name = "negate";
                 break;
             case AST::UnaryOp::NOT:
-                op = IR::Operation1SrcType::lnot;
+                name = "logical_not";
                 break;
             default:
                 throw std::runtime_error{"Unknown unary expression type"};
         }
 
-        IR::InstructionType && value = std::visit(*this, stmt->rhs);
-        return std::make_shared<IR::Operation1Src>(value, op);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>(name, "meson++")
+            .add_pos_arg(std::visit(*this, stmt->rhs))
+            .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Number> & stmt) const {
@@ -89,101 +96,112 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Subscript> & stmt) const {
-        IR::InstructionType && container = std::visit(*this, stmt->lhs);
-        IR::InstructionType && index = std::visit(*this, stmt->rhs);
-        return std::make_shared<IR::Operation2Src>(container, IR::Operation2SrcType::subscript,
-                                                   index);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>("subscript", "meson++")
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Relational> & stmt) const {
-        IR::Operation2SrcType op;
+        // TODO: we could rewrite not_in and not_equal as not(in) and not(equal), respectively
+        // This would save us on
+        std::string name;
         switch (stmt->op) {
             case AST::RelationalOp::AND:
-                op = IR::Operation2SrcType::and_;
+                name = "logical_and";
                 break;
             case AST::RelationalOp::OR:
-                op = IR::Operation2SrcType::or_;
+                name = "logical_or";
                 break;
             case AST::RelationalOp::EQ:
-                op = IR::Operation2SrcType::eq;
+                name = "equal";
                 break;
             case AST::RelationalOp::NE:
-                op = IR::Operation2SrcType::ne;
+                name = "not_equal";
                 break;
             case AST::RelationalOp::GE:
-                op = IR::Operation2SrcType::ge;
+                name = "greater_equal";
                 break;
             case AST::RelationalOp::GT:
-                op = IR::Operation2SrcType::gt;
+                name = "greater_than";
                 break;
             case AST::RelationalOp::LT:
-                op = IR::Operation2SrcType::lt;
+                name = "less_than";
                 break;
             case AST::RelationalOp::LE:
-                op = IR::Operation2SrcType::le;
+                name = "less_equal";
                 break;
             case AST::RelationalOp::NOT_IN:
-                op = IR::Operation2SrcType::not_in;
+                name = "not_in";
                 break;
             case AST::RelationalOp::IN:
-                op = IR::Operation2SrcType::in;
+                name = "in";
                 break;
             default:
                 throw std::runtime_error{"Unknown relation expression type"};
         }
 
-        IR::InstructionType && lhs = std::visit(*this, stmt->lhs);
-        IR::InstructionType && rhs = std::visit(*this, stmt->rhs);
-        return std::make_shared<IR::Operation2Src>(lhs, op, rhs);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>(name, "meson++")
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
-        IR::PositionalArguments && pos{};
-        for (auto && a : stmt->args->positional) {
-            pos.emplace_back(std::visit(*this, a));
-        }
-
-        IR::KeywordArguments && kws{};
-        for (auto && [k, v] : stmt->args->keyword) {
-            pos.emplace_back((std::visit(*this, k), std::visit(*this, v)));
-        }
 
         IR::InstructionType && fname = std::visit(*this, stmt->held);
         // TODO: error handling
         std::string name = std::get<std::shared_ptr<IR::String>>(fname)->m_value;
+        auto f = Builder::Builder{}.new_inst<IR::FunctionCall>(name);
 
-        return std::make_shared<IR::FunctionCall>(name, std::move(pos), std::move(kws));
+        for (auto && a : stmt->args->positional) {
+            f.add_pos_arg(std::visit(*this, a));
+        }
+
+        IR::KeywordArguments && kws{};
+        for (auto && [k, v] : stmt->args->keyword) {
+            f.add_kw_arg(std::visit(*this, k), std::visit(*this, v));
+        }
+
+        return f.as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
-        IR::InstructionType && holder = std::visit(*this, stmt->holder);
-        IR::InstructionType && held = std::visit(*this, stmt->held);
-        return std::make_shared<IR::Operation2Src>(holder, IR::Operation2SrcType::get_attribute,
-                                                   held);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>("get_attribute"
+                                        "meson++")
+            .add_pos_arg(std::visit(*this, stmt->holder))
+            .add_pos_arg(std::visit(*this, stmt->held))
+            .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Array> & stmt) const {
-        std::vector<IR::InstructionType> held;
+        auto arr = Builder::Builder{}.new_inst<IR::Array>();
         for (auto && v : stmt->elements) {
-            held.emplace_back(std::visit(*this, v));
+            arr.append(std::visit(*this, v));
         }
-        return std::make_shared<IR::Array>(std::move(held));
+        return arr.as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Dict> & stmt) const {
-        std::map<IR::InstructionType, IR::InstructionType> value;
+        auto dict = Builder::Builder{}.new_inst<IR::Dict>();
         for (auto && [k, v] : stmt->elements) {
-            value.emplace(std::visit(*this, k), std::visit(*this, v));
+            dict.append(std::visit(*this, k), std::visit(*this, v));
         }
 
-        return std::make_shared<IR::Dict>(std::move(value));
+        return dict.as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
-        IR::InstructionType && cond = std::visit(*this, stmt->condition);
-        IR::InstructionType && lhs = std::visit(*this, stmt->lhs);
-        IR::InstructionType && rhs = std::visit(*this, stmt->rhs);
-        return std::make_shared<IR::Ternary>(cond, lhs, rhs);
+        return Builder::Builder{}
+            .new_inst<IR::FunctionCall>("ternary"
+                                        "meson++")
+            .add_pos_arg(std::visit(*this, stmt->condition))
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->rhs))
+            .as_type();
     }
 };
 
@@ -216,40 +234,44 @@ struct StatementLowering {
         IR::InstructionType lhs = std::visit(el, stmt->lhs);
         // TODO: error handling
         auto & id = std::get<std::shared_ptr<IR::Identifier>>(lhs);
-        IR::InstructionType && rhs = std::visit(el, stmt->rhs);
+        IR::InstructionType rhs = std::visit(el, stmt->rhs);
+
+        Builder::Builder b{};
 
         // In Meson operators like x *= y are short for x = x * y
         // As such, MIR doesn't have representations for them, and they're easy to convert
         // At the AST -> MIR barrier
+        std::string name;
         switch (stmt->op) {
             case AST::AssignOp::EQUAL:
-                break;
+                state.current_node->block->instructions.emplace_back(
+                    std::make_unique<IR::Instruction>(std::move(rhs), IR::Variable{id->m_name}));
+                return;
             case AST::AssignOp::ADD_EQUAL:
-                rhs = std::make_shared<IR::Operation2Src>(
-                    std::move(lhs), IR::Operation2SrcType::add, std::move(rhs));
+                name = "addition";
                 break;
             case AST::AssignOp::SUB_EQUAL:
-                rhs = std::make_shared<IR::Operation2Src>(
-                    std::move(lhs), IR::Operation2SrcType::sub, std::move(rhs));
+                name = "subtraction";
                 break;
             case AST::AssignOp::DIV_EQUAL:
-                rhs = std::make_shared<IR::Operation2Src>(
-                    std::move(lhs), IR::Operation2SrcType::div, std::move(rhs));
+                name = "division";
                 break;
             case AST::AssignOp::MUL_EQUAL:
-                rhs = std::make_shared<IR::Operation2Src>(
-                    std::move(lhs), IR::Operation2SrcType::mul, std::move(rhs));
+                name = "multiplication";
                 break;
             case AST::AssignOp::MOD_EQUAL:
-                rhs = std::make_shared<IR::Operation2Src>(
-                    std::move(lhs), IR::Operation2SrcType::mod, std::move(rhs));
+                name = "modulo";
                 break;
             default:
                 throw std::runtime_error{"Unknown operator"};
         }
 
         state.current_node->block->instructions.emplace_back(
-            std::make_unique<IR::Instruction>(std::move(rhs), IR::Variable{id->m_name}));
+            b.new_inst<IR::FunctionCall>(name, "meson++")
+                .add_pos_arg(std::move(lhs))
+                .add_pos_arg(std::move(rhs))
+                .set_var(id->m_name)
+                .as_instr());
     }
 
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {

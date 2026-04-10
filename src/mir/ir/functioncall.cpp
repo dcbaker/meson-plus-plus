@@ -36,6 +36,10 @@ std::string to_string(const InstructionType & inst) {
 }
 
 FunctionCall::FunctionCall(std::string name) : m_name{name} {};
+FunctionCall::FunctionCall(std::string name, InstructionType && ns)
+    : m_name{name}, m_namespace{std::move(ns)} {};
+FunctionCall::FunctionCall(std::string name, std::string ns)
+    : m_name{name}, m_namespace{std::make_shared<String>(ns)} {};
 FunctionCall::FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws)
     : m_name{name}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
 FunctionCall::FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,
