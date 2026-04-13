@@ -197,6 +197,13 @@ struct LoweringState {
     builder::Builder * current_node;
     builder::Builder * loop_header;
     builder::Builder * loop_tail;
+
+    std::string tmp_var() { return "mesonpp_tmp_" + std::to_string(m_tmp_var++); }
+    std::string tmp_var(std::string name) {
+        return "mesonpp_tmp_" + name + "_" + std::to_string(m_tmp_var++);
+    }
+
+    uint64_t m_tmp_var;
 };
 
 std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
@@ -321,29 +328,54 @@ struct StatementLowering {
          * The preamble is used to initialize loop variables, of which there may be 1 or 2.
          * This ensures strictness auto preamble = state.current_node->left_successor();
          */
+
+        const std::string array = state.tmp_var("loop_array");
+        const std::string cursor = state.tmp_var("loop_container_cursor");
+        const std::string container_size = state.tmp_var("loop_container_size");
+
         auto preamble = state.current_node->left_successor();
         preamble.add_inst(builder::make_instruction<IR::Undefined>().set_var(stmt->id.value));
 
         if (stmt->id2) {
             preamble.add_inst(
                 builder::make_instruction<IR::Undefined>().set_var(stmt->id2.value().value));
+
             // TODO: call `.keys()` to get an array of keys, we can iterate that
             // We then do the same thing in both cases, index into the array,
             // set id1 = to array[index], then in the dict case we use the dict[key]
             // form to get the value.
+        } else {
+            auto expr = std::make_unique<IR::Instruction>(std::visit(el, stmt->expr));
+            expr->variable.m_name = array;
+            preamble.add_inst(std::move(expr));
         }
-        // TODO: set a variable to the length of the array in both cases
+
+        // Find the length of the container, as well as set the default value for the cursor
+        preamble
+            .add_inst(builder::make_instruction<IR::FunctionCall>(
+                          "length", builder::make_instruction<IR::Identifier>(array))
+                          .set_var(container_size))
+            .add_inst(builder::make_instruction<IR::Number>(0).set_var(cursor));
 
         // This is the header where we evaluate the condition of the loop to decide if we will
         // continue or break
         auto header = preamble.left_successor();
         state.current_node = &header;
 
-        // TODO: we still need to:
-        //  1. set the id (and id2 if necessary) to the next value on the array/dict
-        //  2. check that we are at the end of the array
-        //  3. go back into the rhs block if we are not at the end of the array, or
-        //     go to the tail if we are
+        const std::string loop_condition = state.tmp_var("loop_condition");
+
+        // If the cursor is the same size as the array, we've read to the end
+        // and it's time to break, otherwise we can go ahead to the loop body
+        preamble
+            .add_inst(builder::make_instruction<IR::FunctionCall>("equal", "meson++")
+                          .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
+                          .add_pos_arg(builder::make_instruction<IR::Identifier>(container_size))
+                          .set_var(loop_condition))
+            .add_inst(builder::make_instruction<IR::FunctionCall>("addition")
+                          .add_pos_arg(builder::make_instruction<IR::Identifier>("cursor"))
+                          .add_pos_arg(builder::make_instruction<IR::Number>(1))
+                          .set_var(cursor))
+            .add_condition(builder::make_instruction<IR::Identifier>(loop_condition));
 
         // This is the block that comes after the loop
         auto tail = state.current_node->left_successor();
@@ -353,13 +385,21 @@ struct StatementLowering {
         // loops, which will each need their own head/tail blocks.
         auto rhs = state.current_node->right_successor();
 
+        // TODO: need some way to deal with the
         LoweringState lstate{
             .current_node = &rhs,
             .loop_header = &header,
             .loop_tail = &tail,
+            .m_tmp_var = state.m_tmp_var,
         };
 
         auto lblock = lower_block(*stmt->block, *this, lstate);
+        // This may have been updated and they need to be synced
+        state.m_tmp_var = lstate.m_tmp_var;
+
+        // TODO: we need to add instructions to the top of the lblock
+        // to actually set id (and possibly id2) to their values
+
         header.link_right_successor(lblock);
         header.link_left_successor(header);
 
