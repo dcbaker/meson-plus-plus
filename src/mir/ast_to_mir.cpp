@@ -299,29 +299,29 @@ struct StatementLowering {
 
     void operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
                     LoweringState & state) const {
-        // A loop will end up being turned into at least 4 basic blocks
-        //  1. A preamble which is used to force strictness, as well as set up
-        //     and variables required before deconstructing the loop
-        //  2. A header, this is where the condition of the loop is evaluated,
-        //     and either continues to the body, or exits to the tail
-        //  3. The body is the first block of the body of the loop. There may be
-        //     additional successors to this block depending on the structure of
-        //     the loop itself.
-        //  4. The tail is the first block after the loop, it's the place that all
-        //     exits to the loop will link to.
-        //
-        //
-        //                          O preamble
-        //                          |
-        //                          O header
-        //                         / \
-        //                        |   O body
-        //                         \ /
-        //                          O tail
-        // The preamble is used to initialize loop variables, of which there may be 1 or 2.
-        // This ensures strictness
+        /* A loop will end up being turned into at least 4 basic blocks
+         *  1. A preamble which is used to force strictness, as well as set up
+         *     and variables required before deconstructing the loop
+         *  2. A header, this is where the condition of the loop is evaluated,
+         *     and either continues to the body, or exits to the tail
+         *  3. The body is the first block of the body of the loop. There may be
+         *     additional successors to this block depending on the structure of
+         *     the loop itself.
+         *  4. The tail is the first block after the loop, it's the place that all
+         *     exits to the loop will link to.
+         *
+         *                          O preamble
+         *                          |
+         *                          O header
+         *                         / \
+         *                        |   O body
+         *                         \ /
+         *                          O tail
+         *
+         * The preamble is used to initialize loop variables, of which there may be 1 or 2.
+         * This ensures strictness auto preamble = state.current_node->left_successor();
+         */
         auto preamble = state.current_node->left_successor();
-
         preamble.add_inst(builder::make_instruction<IR::Undefined>().set_var(stmt->id.value));
 
         if (stmt->id2) {
