@@ -74,14 +74,14 @@ template <typename T, typename... Params> class InstructionBuilder {
     IR::Variable p_var{};
 };
 
+template <typename T, typename = std::enable_if<is_mir_instruction<T>>, typename... Params>
+InstructionBuilder<T, Params...> make_instruction(Params &&... params) {
+    return InstructionBuilder<T, Params...>{std::forward<Params>(params)...};
+}
+
 class Builder {
   public:
     Builder();
-
-    template <typename T, typename = std::enable_if<is_mir_instruction<T>>, typename... Params>
-    InstructionBuilder<T, Params...> new_inst(Params &&... params) {
-        return InstructionBuilder<T, Params...>{std::forward<Params>(params)...};
-    }
 
     Builder & add_inst(std::unique_ptr<IR::Instruction> && inst);
 

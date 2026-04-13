@@ -18,9 +18,9 @@ TEST(MIR_Builder, simple) {
     ASSERT_EQ(insts.size(), 1);
 }
 
-TEST(MIR_Builder, build_inst) {
+TEST(MIR_Builder, make_instruction) {
     Builder b{};
-    auto s = b.new_inst<String>("bar");
+    auto s = make_instruction<String>("bar");
     auto i = s.as_instr();
     b.add_inst(std::move(i));
     auto n = b.finalize();
@@ -36,7 +36,7 @@ TEST(MIR_Builder, build_inst) {
 
 TEST(MIR_Builder, set_var) {
     Builder b{};
-    auto n = b.add_inst(b.new_inst<String>("bar").set_var("x").as_instr()).finalize();
+    auto n = b.add_inst(make_instruction<String>("bar").set_var("x").as_instr()).finalize();
     auto && insts = n->block->instructions;
     ASSERT_EQ(insts.size(), 1);
 
@@ -47,11 +47,11 @@ TEST(MIR_Builder, set_var) {
 TEST(MIR_Builder, funccall) {
     Builder b{};
     // clang-format off
-    auto n = b.add_inst(b.new_inst<FunctionCall>("add")
-                         .add_pos_arg(b.new_inst<Number>(1).as_type())
-                         .add_pos_arg(b.new_inst<Number>(2).as_type())
-                         .add_kw_arg(b.new_inst<String>("foo").as_type(),
-                                     b.new_inst<Boolean>(false).as_type())
+    auto n = b.add_inst(make_instruction<FunctionCall>("add")
+                         .add_pos_arg(make_instruction<Number>(1).as_type())
+                         .add_pos_arg(make_instruction<Number>(2).as_type())
+                         .add_kw_arg(make_instruction<String>("foo").as_type(),
+                                     make_instruction<Boolean>(false).as_type())
                          .as_instr())
               .finalize();
     // clang-format on

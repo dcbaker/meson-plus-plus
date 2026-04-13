@@ -29,8 +29,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown additive expression type"};
         }
 
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>(name, "meson++")
+        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -61,8 +60,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown multiplication expression type"};
         }
 
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>(name, "meson++")
+        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -81,8 +79,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown unary expression type"};
         }
 
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>(name, "meson++")
+        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->rhs))
             .as_type();
     }
@@ -96,8 +93,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Subscript> & stmt) const {
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>("subscript", "meson++")
+        return Builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -142,8 +138,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown relation expression type"};
         }
 
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>(name, "meson++")
+        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -154,7 +149,7 @@ struct ExpressionLowering {
         IR::InstructionType && fname = std::visit(*this, stmt->held);
         // TODO: error handling
         std::string name = std::get<std::shared_ptr<IR::String>>(fname)->m_value;
-        auto f = Builder::Builder{}.new_inst<IR::FunctionCall>(name);
+        auto f = Builder::make_instruction<IR::FunctionCall>(name);
 
         for (auto && a : stmt->args->positional) {
             f.add_pos_arg(std::visit(*this, a));
@@ -169,16 +164,15 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>("get_attribute"
-                                        "meson++")
+        return Builder::make_instruction<IR::FunctionCall>("get_attribute"
+                                                           "meson++")
             .add_pos_arg(std::visit(*this, stmt->holder))
             .add_pos_arg(std::visit(*this, stmt->held))
             .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Array> & stmt) const {
-        auto arr = Builder::Builder{}.new_inst<IR::Array>();
+        auto arr = Builder::make_instruction<IR::Array>();
         for (auto && v : stmt->elements) {
             arr.append(std::visit(*this, v));
         }
@@ -186,7 +180,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Dict> & stmt) const {
-        auto dict = Builder::Builder{}.new_inst<IR::Dict>();
+        auto dict = Builder::make_instruction<IR::Dict>();
         for (auto && [k, v] : stmt->elements) {
             dict.append(std::visit(*this, k), std::visit(*this, v));
         }
@@ -195,9 +189,8 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
-        return Builder::Builder{}
-            .new_inst<IR::FunctionCall>("ternary"
-                                        "meson++")
+        return Builder::make_instruction<IR::FunctionCall>("ternary"
+                                                           "meson++")
             .add_pos_arg(std::visit(*this, stmt->condition))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->rhs))
@@ -236,8 +229,6 @@ struct StatementLowering {
         auto & id = std::get<std::shared_ptr<IR::Identifier>>(lhs);
         IR::InstructionType rhs = std::visit(el, stmt->rhs);
 
-        Builder::Builder b{};
-
         // In Meson operators like x *= y are short for x = x * y
         // As such, MIR doesn't have representations for them, and they're easy to convert
         // At the AST -> MIR barrier
@@ -267,7 +258,7 @@ struct StatementLowering {
         }
 
         state.current_node->block->instructions.emplace_back(
-            b.new_inst<IR::FunctionCall>(name, "meson++")
+            Builder::make_instruction<IR::FunctionCall>(name, "meson++")
                 .add_pos_arg(std::move(lhs))
                 .add_pos_arg(std::move(rhs))
                 .set_var(id->m_name)
