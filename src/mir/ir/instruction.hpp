@@ -66,6 +66,9 @@ class Instruction {
 
     /// @brief the storage of this variable
     Variable variable;
+
+    /// @brief If this instruction a block condition?
+    bool m_is_block_condition;
 };
 
 std::string to_string(const InstructionType & i);

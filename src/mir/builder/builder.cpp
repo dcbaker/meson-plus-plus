@@ -25,6 +25,7 @@ Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
 
 Builder & Builder::add_condition(std::unique_ptr<IR::Instruction> && inst) {
     p_condition = std::move(inst);
+    p_condition->m_is_block_condition = true;
     return *this;
 }
 
