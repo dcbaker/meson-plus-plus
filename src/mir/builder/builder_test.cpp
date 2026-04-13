@@ -21,8 +21,7 @@ TEST(MIR_Builder, simple) {
 TEST(MIR_Builder, make_instruction) {
     Builder b{};
     auto s = make_instruction<String>("bar");
-    auto i = s.as_instr();
-    b.add_inst(std::move(i));
+    b.add_inst(std::move(s));
     auto n = b.get();
     auto && insts = n->block->instructions;
     ASSERT_EQ(insts.size(), 1);
@@ -36,7 +35,7 @@ TEST(MIR_Builder, make_instruction) {
 
 TEST(MIR_Builder, set_var) {
     Builder b{};
-    auto n = b.add_inst(make_instruction<String>("bar").set_var("x").as_instr()).get();
+    auto n = b.add_inst(make_instruction<String>("bar").set_var("x")).get();
     auto && insts = n->block->instructions;
     ASSERT_EQ(insts.size(), 1);
 
@@ -51,8 +50,7 @@ TEST(MIR_Builder, funccall) {
                          .add_pos_arg(make_instruction<Number>(1))
                          .add_pos_arg(make_instruction<Number>(2))
                          .add_kw_arg(make_instruction<String>("foo"),
-                                     make_instruction<Boolean>(false))
-                         .as_instr())
+                                     make_instruction<Boolean>(false)))
               .get();
     // clang-format on
 
@@ -67,15 +65,15 @@ TEST(MIR_Builder, cursor) {
     auto & ir = b.get()->block->instructions;
 
     // clang-format off
-    b.add_inst(make_instruction<Number>(0).as_instr())
-     .add_inst(make_instruction<Number>(1).as_instr());
+    b.add_inst(make_instruction<Number>(0))
+     .add_inst(make_instruction<Number>(1));
     // clang-format on
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<Number>>(ir.back()->instruction));
 
-    b.add_condition(make_instruction<Boolean>(true).as_instr());
+    b.add_condition(make_instruction<Boolean>(true));
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<Boolean>>(ir.back()->instruction));
 
     // A new instruction should be placed before the condition
-    b.add_inst(make_instruction<Number>(2).as_instr());
+    b.add_inst(make_instruction<Number>(2));
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<Boolean>>(ir.back()->instruction));
 }

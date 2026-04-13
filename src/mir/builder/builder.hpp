@@ -68,6 +68,10 @@ template <typename T, typename... Params> class InstructionBuilder {
         return std::make_unique<IR::Instruction>(p_inst, std::move(p_var));
     }
 
+    operator std::unique_ptr<IR::Instruction>() {
+        return std::make_unique<IR::Instruction>(p_inst, std::move(p_var));
+    }
+
     IR::InstructionType as_type() const { return p_inst; }
 
     operator IR::InstructionType() const { return p_inst; }

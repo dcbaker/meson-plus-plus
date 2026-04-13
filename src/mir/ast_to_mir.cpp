@@ -251,8 +251,7 @@ struct StatementLowering {
         state.current_node->add_inst(builder::make_instruction<IR::FunctionCall>(name, "meson++")
                                          .add_pos_arg(std::move(lhs))
                                          .add_pos_arg(std::move(rhs))
-                                         .set_var(id->m_name)
-                                         .as_instr());
+                                         .set_var(id->m_name));
     }
 
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
@@ -323,13 +322,11 @@ struct StatementLowering {
         // This ensures strictness
         auto preamble = state.current_node->left_successor();
 
-        preamble.add_inst(
-            builder::make_instruction<IR::Undefined>().set_var(stmt->id.value).as_instr());
+        preamble.add_inst(builder::make_instruction<IR::Undefined>().set_var(stmt->id.value));
 
         if (stmt->id2) {
-            preamble.add_inst(builder::make_instruction<IR::Undefined>()
-                                  .set_var(stmt->id2.value().value)
-                                  .as_instr());
+            preamble.add_inst(
+                builder::make_instruction<IR::Undefined>().set_var(stmt->id2.value().value));
             // TODO: call `.keys()` to get an array of keys, we can iterate that
             // We then do the same thing in both cases, index into the array,
             // set id1 = to array[index], then in the dict case we use the dict[key]
