@@ -29,7 +29,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown additive expression type"};
         }
 
-        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -60,7 +60,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown multiplication expression type"};
         }
 
-        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -79,7 +79,7 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown unary expression type"};
         }
 
-        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->rhs))
             .as_type();
     }
@@ -93,7 +93,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Subscript> & stmt) const {
-        return Builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
+        return builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
@@ -138,18 +138,17 @@ struct ExpressionLowering {
                 throw std::runtime_error{"Unknown relation expression type"};
         }
 
-        return Builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .as_type();
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
-
         IR::InstructionType && fname = std::visit(*this, stmt->held);
         // TODO: error handling
         std::string name = std::get<std::shared_ptr<IR::String>>(fname)->m_value;
-        auto f = Builder::make_instruction<IR::FunctionCall>(name);
+        auto f = builder::make_instruction<IR::FunctionCall>(name);
 
         for (auto && a : stmt->args->positional) {
             f.add_pos_arg(std::visit(*this, a));
@@ -164,7 +163,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
-        return Builder::make_instruction<IR::FunctionCall>("get_attribute"
+        return builder::make_instruction<IR::FunctionCall>("get_attribute"
                                                            "meson++")
             .add_pos_arg(std::visit(*this, stmt->holder))
             .add_pos_arg(std::visit(*this, stmt->held))
@@ -172,7 +171,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Array> & stmt) const {
-        auto arr = Builder::make_instruction<IR::Array>();
+        auto arr = builder::make_instruction<IR::Array>();
         for (auto && v : stmt->elements) {
             arr.append(std::visit(*this, v));
         }
@@ -180,7 +179,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Dict> & stmt) const {
-        auto dict = Builder::make_instruction<IR::Dict>();
+        auto dict = builder::make_instruction<IR::Dict>();
         for (auto && [k, v] : stmt->elements) {
             dict.append(std::visit(*this, k), std::visit(*this, v));
         }
@@ -189,7 +188,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
-        return Builder::make_instruction<IR::FunctionCall>("ternary"
+        return builder::make_instruction<IR::FunctionCall>("ternary"
                                                            "meson++")
             .add_pos_arg(std::visit(*this, stmt->condition))
             .add_pos_arg(std::visit(*this, stmt->lhs))
@@ -258,7 +257,7 @@ struct StatementLowering {
         }
 
         state.current_node->block->instructions.emplace_back(
-            Builder::make_instruction<IR::FunctionCall>(name, "meson++")
+            builder::make_instruction<IR::FunctionCall>(name, "meson++")
                 .add_pos_arg(std::move(lhs))
                 .add_pos_arg(std::move(rhs))
                 .set_var(id->m_name)
@@ -268,8 +267,8 @@ struct StatementLowering {
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
         // This is the block that all of the branches of the if/elif/else web
         // will join back to
-        Builder::Builder tail{};
-        Builder::Builder cn{state.current_node};
+        builder::Builder tail{};
+        builder::Builder cn{state.current_node};
 
         // place the condition as the last instruction of the block.
         cn.add_condition(
@@ -278,7 +277,7 @@ struct StatementLowering {
         // Create a new block of the left hand side. This block will be
         // connected to the current node on the lhs, and it will connect to the
         // tail on the left hand side.
-        Builder::Builder lhs{lower_block(*stmt->ifblock.block, *this, state)};
+        builder::Builder lhs{lower_block(*stmt->ifblock.block, *this, state)};
         cn.link_left_successor(lhs);
         lhs.link_left_successor(tail);
 
@@ -286,7 +285,7 @@ struct StatementLowering {
             // Create a new block that will be the other successor, this will
             // hold the condition of the `elif` branch, and then have it's own lhs for the body,
             // and a new rhs for additional `elif` or `else` blocks
-            Builder::Builder rhs = cn.right_successor();
+            builder::Builder rhs = cn.right_successor();
             rhs.add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
 
             // Attach the body to this new lhs, following the same rules as for
@@ -296,19 +295,17 @@ struct StatementLowering {
             lhs.link_left_successor(tail);
 
             // This is now the current node, as we build our if web
-            cn.finalize();
             cn = std::move(rhs);
         }
 
         // Finally attach any else block. While this block may be empty, we'll
         // attach it anyway and allow any cleanup to be done later
-        Builder::Builder rhs{lower_block(*stmt->eblock.block, *this, state)};
+        builder::Builder rhs{lower_block(*stmt->eblock.block, *this, state)};
         cn.link_right_successor(rhs);
         rhs.link_left_successor(tail);
 
         // The tail is now the working block;
-        cn.finalize();
-        state.current_node = tail.finalize();
+        state.current_node = tail.get();
     }
 
     void operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
@@ -332,17 +329,17 @@ struct StatementLowering {
         //                        |   O body
         //                         \ /
         //                          O tail
-        Builder::Builder cn{state.current_node};
+        builder::Builder cn{state.current_node};
 
         // The preamble is used to initialize loop variables, of which there may be 1 or 2.
         // This ensures strictness
         auto preamble = cn.left_successor();
 
         preamble.add_inst(
-            Builder::make_instruction<IR::Undefined>().set_var(stmt->id.value).as_instr());
+            builder::make_instruction<IR::Undefined>().set_var(stmt->id.value).as_instr());
 
         if (stmt->id2) {
-            preamble.add_inst(Builder::make_instruction<IR::Undefined>()
+            preamble.add_inst(builder::make_instruction<IR::Undefined>()
                                   .set_var(stmt->id2.value().value)
                                   .as_instr());
             // TODO: call `.keys()` to get an array of keys, we can iterate that
@@ -355,7 +352,6 @@ struct StatementLowering {
         // This is the header where we evaluate the condition of the loop to decide if we will
         // continue or break
         cn = preamble.left_successor();
-        preamble.finalize();
 
         // TODO: we still need to:
         //  1. set the id (and id2 if necessary) to the next value on the array/dict
@@ -364,16 +360,16 @@ struct StatementLowering {
         //     go to the tail if we are
 
         // This is the block that comes after the loop
-        auto tail = cn.left_successor().finalize();
+        auto tail = cn.left_successor().get();
 
         // This is the first block of the body
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
         auto rhs = cn.right_successor();
-        auto header = cn.finalize();
+        auto header = cn.get();
 
         LoweringState lstate{
-            .current_node = rhs.finalize(),
+            .current_node = rhs.get(),
             .loop_header = header,
             .loop_tail = tail,
         };

@@ -6,33 +6,32 @@
 
 #include <cassert>
 
-namespace MIR::Builder {
+namespace MIR::builder {
 
-Builder::Builder() : p_root{std::make_shared<IR::Node>()} {};
-Builder::Builder(std::shared_ptr<IR::Node> node) : p_root{node} {
+Builder::Builder()
+    : p_root{std::make_shared<IR::Node>()}, p_cursor{p_root->block->instructions.begin()} {};
+
+Builder::Builder(std::shared_ptr<IR::Node> node)
+    : p_root{node}, p_cursor{p_root->block->instructions.end()} {
     // Put the condition into the Builder, put it back with finalize
-    if (node->block->instructions.back()->m_is_block_condition) {
-        p_condition = std::move(node->block->instructions.back());
-        node->block->instructions.pop_back();
+    if ((*p_cursor)->m_is_block_condition) {
+        p_cursor--;
     }
 };
 
-std::shared_ptr<IR::Node> Builder::finalize() {
-    if (p_condition) {
-        p_root->block->instructions.emplace_back(std::move(p_condition));
-    }
-    return p_root;
-}
+std::shared_ptr<IR::Node> Builder::get() const { return p_root; }
 
 Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
     assert(inst != nullptr);
-    p_root->block->instructions.emplace_back(std::move(inst));
+    p_cursor = p_root->block->instructions.emplace(p_cursor, std::move(inst));
+    // Set the cursor forward one so that we write instructions after the one we just inserted
+    p_cursor++;
     return *this;
 }
 
 Builder & Builder::add_condition(std::unique_ptr<IR::Instruction> && inst) {
-    p_condition = std::move(inst);
-    p_condition->m_is_block_condition = true;
+    inst->m_is_block_condition = true;
+    p_cursor = p_root->block->instructions.emplace(p_cursor, std::move(inst));
     return *this;
 }
 
@@ -66,4 +65,4 @@ Builder & Builder::link_right_successor(std::shared_ptr<IR::Node> node) {
     return *this;
 }
 
-} // namespace MIR::Builder
+} // namespace MIR::builder
