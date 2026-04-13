@@ -201,9 +201,9 @@ struct StatementLowering;
 
 /// @brief State passed between StatementLowering calls
 struct LoweringState {
-    std::shared_ptr<IR::Node> current_node;
-    std::shared_ptr<IR::Node> loop_header;
-    std::shared_ptr<IR::Node> loop_tail;
+    builder::Builder * current_node;
+    builder::Builder * loop_header;
+    builder::Builder * loop_tail;
 };
 
 std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
@@ -218,8 +218,7 @@ struct StatementLowering {
     StatementLowering & operator=(StatementLowering &&) = delete;
 
     void operator()(const std::unique_ptr<AST::Statement> & stmt, LoweringState & state) const {
-        state.current_node->block->instructions.emplace_back(
-            std::make_unique<IR::Instruction>(std::visit(el, stmt->expr)));
+        state.current_node->add_inst(std::make_unique<IR::Instruction>(std::visit(el, stmt->expr)));
     }
 
     void operator()(const std::unique_ptr<AST::Assignment> & stmt, LoweringState & state) const {
@@ -234,7 +233,7 @@ struct StatementLowering {
         std::string name;
         switch (stmt->op) {
             case AST::AssignOp::EQUAL:
-                state.current_node->block->instructions.emplace_back(
+                state.current_node->add_inst(
                     std::make_unique<IR::Instruction>(std::move(rhs), IR::Variable{id->m_name}));
                 return;
             case AST::AssignOp::ADD_EQUAL:
@@ -256,36 +255,34 @@ struct StatementLowering {
                 throw std::runtime_error{"Unknown operator"};
         }
 
-        state.current_node->block->instructions.emplace_back(
-            builder::make_instruction<IR::FunctionCall>(name, "meson++")
-                .add_pos_arg(std::move(lhs))
-                .add_pos_arg(std::move(rhs))
-                .set_var(id->m_name)
-                .as_instr());
+        state.current_node->add_inst(builder::make_instruction<IR::FunctionCall>(name, "meson++")
+                                         .add_pos_arg(std::move(lhs))
+                                         .add_pos_arg(std::move(rhs))
+                                         .set_var(id->m_name)
+                                         .as_instr());
     }
 
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
         // This is the block that all of the branches of the if/elif/else web
         // will join back to
         builder::Builder tail{};
-        builder::Builder cn{state.current_node};
 
         // place the condition as the last instruction of the block.
-        cn.add_condition(
+        state.current_node->add_condition(
             std::make_unique<IR::Instruction>(std::visit(el, stmt->ifblock.condition)));
 
         // Create a new block of the left hand side. This block will be
         // connected to the current node on the lhs, and it will connect to the
         // tail on the left hand side.
         builder::Builder lhs{lower_block(*stmt->ifblock.block, *this, state)};
-        cn.link_left_successor(lhs);
+        state.current_node->link_left_successor(lhs);
         lhs.link_left_successor(tail);
 
         for (auto && elif : stmt->efblock) {
             // Create a new block that will be the other successor, this will
             // hold the condition of the `elif` branch, and then have it's own lhs for the body,
             // and a new rhs for additional `elif` or `else` blocks
-            builder::Builder rhs = cn.right_successor();
+            builder::Builder rhs = state.current_node->right_successor();
             rhs.add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
 
             // Attach the body to this new lhs, following the same rules as for
@@ -295,17 +292,17 @@ struct StatementLowering {
             lhs.link_left_successor(tail);
 
             // This is now the current node, as we build our if web
-            cn = std::move(rhs);
+            state.current_node = &rhs;
         }
 
         // Finally attach any else block. While this block may be empty, we'll
         // attach it anyway and allow any cleanup to be done later
         builder::Builder rhs{lower_block(*stmt->eblock.block, *this, state)};
-        cn.link_right_successor(rhs);
+        state.current_node->link_right_successor(rhs);
         rhs.link_left_successor(tail);
 
         // The tail is now the working block;
-        state.current_node = tail.get();
+        state.current_node = &tail;
     }
 
     void operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
@@ -329,11 +326,9 @@ struct StatementLowering {
         //                        |   O body
         //                         \ /
         //                          O tail
-        builder::Builder cn{state.current_node};
-
         // The preamble is used to initialize loop variables, of which there may be 1 or 2.
         // This ensures strictness
-        auto preamble = cn.left_successor();
+        auto preamble = state.current_node->left_successor();
 
         preamble.add_inst(
             builder::make_instruction<IR::Undefined>().set_var(stmt->id.value).as_instr());
@@ -351,7 +346,8 @@ struct StatementLowering {
 
         // This is the header where we evaluate the condition of the loop to decide if we will
         // continue or break
-        cn = preamble.left_successor();
+        auto header = preamble.left_successor();
+        state.current_node = &header;
 
         // TODO: we still need to:
         //  1. set the id (and id2 if necessary) to the next value on the array/dict
@@ -360,39 +356,36 @@ struct StatementLowering {
         //     go to the tail if we are
 
         // This is the block that comes after the loop
-        auto tail = cn.left_successor().get();
+        auto tail = state.current_node->left_successor();
 
         // This is the first block of the body
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
-        auto rhs = cn.right_successor();
-        auto header = cn.get();
+        auto rhs = state.current_node->right_successor();
 
         LoweringState lstate{
-            .current_node = rhs.get(),
-            .loop_header = header,
-            .loop_tail = tail,
+            .current_node = &rhs,
+            .loop_header = &header,
+            .loop_tail = &tail,
         };
 
         auto lblock = lower_block(*stmt->block, *this, lstate);
-        IR::link_nodes(header, lblock, true);
-        IR::link_nodes(lblock, header);
+        header.link_right_successor(lblock);
+        header.link_left_successor(header);
 
-        state.current_node = tail;
+        state.current_node = &tail;
     }
 
     void operator()(const std::unique_ptr<AST::Break> & stmt, LoweringState & state) const {
         // in the case of an `if ...: break` this will create an empty block,
         // that's okay we can clean it up later.
-        assert(state.current_node->successors[0] == nullptr);
-        IR::link_nodes(state.current_node, state.loop_tail);
+        state.current_node->link_left_successor(*state.loop_tail);
     }
 
     void operator()(const std::unique_ptr<AST::Continue> & stmt, LoweringState & state) const {
         // in the case of an `if ...: continue` this will create an empty block,
         // that's okay we can clean it up later.
-        assert(state.current_node->successors[0] == nullptr);
-        IR::link_nodes(state.current_node, state.loop_header);
+        state.current_node->link_left_successor(*state.loop_header);
     }
 
   private:
@@ -401,8 +394,8 @@ struct StatementLowering {
 
 std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block,
                                       const StatementLowering & lower) {
-    auto root = std::make_shared<IR::Node>();
-    LoweringState state{root};
+    builder::Builder root{};
+    LoweringState state{&root};
     return lower_block(block, lower, state);
 }
 
@@ -412,7 +405,7 @@ std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const Statem
     for (auto && stmt : block.statements) {
         std::visit([&](auto && s) { lower(s, state); }, stmt);
     }
-    return root;
+    return root->get();
 }
 
 } // namespace
