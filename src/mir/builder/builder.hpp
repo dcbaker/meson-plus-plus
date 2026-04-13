@@ -17,6 +17,9 @@ template <typename, typename> constexpr bool is_one_of_variants_types = false;
 template <typename... Ts, typename T>
 constexpr bool is_one_of_variants_types<std::variant<Ts...>, T> = (std::is_same_v<T, Ts> || ...);
 
+template <typename T>
+constexpr bool is_mir_instruction = is_one_of_variants_types<MIR::IR::InstructionType, T>;
+
 } // namespace
 
 template <typename T, typename... Params> class InstructionBuilder {
@@ -75,9 +78,7 @@ class Builder {
   public:
     Builder();
 
-    template <typename T,
-              typename = std::enable_if<is_one_of_variants_types<MIR::IR::InstructionType, T>>,
-              typename... Params>
+    template <typename T, typename = std::enable_if<is_mir_instruction<T>>, typename... Params>
     InstructionBuilder<T, Params...> new_inst(Params &&... params) {
         return InstructionBuilder<T, Params...>{std::forward<Params>(params)...};
     }
