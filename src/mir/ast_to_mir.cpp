@@ -31,8 +31,7 @@ struct ExpressionLowering {
 
         return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
-            .add_pos_arg(std::visit(*this, stmt->lhs))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->lhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Boolean> & stmt) const {
@@ -62,8 +61,7 @@ struct ExpressionLowering {
 
         return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
-            .add_pos_arg(std::visit(*this, stmt->lhs))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->lhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::UnaryExpression> & stmt) const {
@@ -80,8 +78,7 @@ struct ExpressionLowering {
         }
 
         return builder::make_instruction<IR::FunctionCall>(name, "meson++")
-            .add_pos_arg(std::visit(*this, stmt->rhs))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->rhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Number> & stmt) const {
@@ -95,8 +92,7 @@ struct ExpressionLowering {
     IR::InstructionType operator()(const std::unique_ptr<AST::Subscript> & stmt) const {
         return builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
-            .add_pos_arg(std::visit(*this, stmt->lhs))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->lhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Relational> & stmt) const {
@@ -140,8 +136,7 @@ struct ExpressionLowering {
 
         return builder::make_instruction<IR::FunctionCall>(name, "meson++")
             .add_pos_arg(std::visit(*this, stmt->lhs))
-            .add_pos_arg(std::visit(*this, stmt->lhs))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->lhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
@@ -159,15 +154,14 @@ struct ExpressionLowering {
             f.add_kw_arg(std::visit(*this, k), std::visit(*this, v));
         }
 
-        return f.as_type();
+        return f;
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
         return builder::make_instruction<IR::FunctionCall>("get_attribute"
                                                            "meson++")
             .add_pos_arg(std::visit(*this, stmt->holder))
-            .add_pos_arg(std::visit(*this, stmt->held))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->held));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Array> & stmt) const {
@@ -175,7 +169,7 @@ struct ExpressionLowering {
         for (auto && v : stmt->elements) {
             arr.append(std::visit(*this, v));
         }
-        return arr.as_type();
+        return arr;
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Dict> & stmt) const {
@@ -184,7 +178,7 @@ struct ExpressionLowering {
             dict.append(std::visit(*this, k), std::visit(*this, v));
         }
 
-        return dict.as_type();
+        return dict;
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
@@ -192,8 +186,7 @@ struct ExpressionLowering {
                                                            "meson++")
             .add_pos_arg(std::visit(*this, stmt->condition))
             .add_pos_arg(std::visit(*this, stmt->lhs))
-            .add_pos_arg(std::visit(*this, stmt->rhs))
-            .as_type();
+            .add_pos_arg(std::visit(*this, stmt->rhs));
     }
 };
 

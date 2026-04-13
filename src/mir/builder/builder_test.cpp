@@ -48,10 +48,10 @@ TEST(MIR_Builder, funccall) {
     Builder b{};
     // clang-format off
     auto n = b.add_inst(make_instruction<FunctionCall>("add")
-                         .add_pos_arg(make_instruction<Number>(1).as_type())
-                         .add_pos_arg(make_instruction<Number>(2).as_type())
-                         .add_kw_arg(make_instruction<String>("foo").as_type(),
-                                     make_instruction<Boolean>(false).as_type())
+                         .add_pos_arg(make_instruction<Number>(1))
+                         .add_pos_arg(make_instruction<Number>(2))
+                         .add_kw_arg(make_instruction<String>("foo"),
+                                     make_instruction<Boolean>(false))
                          .as_instr())
               .get();
     // clang-format on

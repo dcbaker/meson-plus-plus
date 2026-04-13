@@ -70,6 +70,8 @@ template <typename T, typename... Params> class InstructionBuilder {
 
     IR::InstructionType as_type() const { return p_inst; }
 
+    operator IR::InstructionType() const { return p_inst; }
+
   private:
     std::shared_ptr<T> p_inst;
     IR::Variable p_var{};
