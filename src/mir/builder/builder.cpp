@@ -9,6 +9,13 @@
 namespace MIR::Builder {
 
 Builder::Builder() : p_root{std::make_shared<IR::Node>()} {};
+Builder::Builder(std::shared_ptr<IR::Node> node) : p_root{node} {
+    // Put the condition into the Builder, put it back with finalize
+    if (node->block->instructions.back()->m_is_block_condition) {
+        p_condition = std::move(node->block->instructions.back());
+        node->block->instructions.pop_back();
+    }
+};
 
 std::shared_ptr<IR::Node> Builder::finalize() {
     if (p_condition) {
@@ -55,7 +62,7 @@ Builder & Builder::link_right_successor(Builder & b) { return link_right_success
 
 Builder & Builder::link_right_successor(std::shared_ptr<IR::Node> node) {
     assert(p_root->successors[1] == nullptr);
-    IR::link_nodes(p_root, node);
+    IR::link_nodes(p_root, node, true);
     return *this;
 }
 

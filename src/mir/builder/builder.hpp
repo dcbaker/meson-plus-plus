@@ -82,6 +82,7 @@ InstructionBuilder<T, Params...> make_instruction(Params &&... params) {
 class Builder {
   public:
     Builder();
+    Builder(std::shared_ptr<IR::Node> node);
 
     Builder & add_inst(std::unique_ptr<IR::Instruction> && inst);
 

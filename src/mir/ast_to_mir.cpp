@@ -268,49 +268,47 @@ struct StatementLowering {
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
         // This is the block that all of the branches of the if/elif/else web
         // will join back to
-        auto tail = std::make_shared<IR::Node>();
+        Builder::Builder tail{};
+        Builder::Builder cn{state.current_node};
 
         // place the condition as the last instruction of the block.
-        // TODO: We might need a Condition{} type?
-        state.current_node->block->instructions.emplace_back(
+        cn.add_condition(
             std::make_unique<IR::Instruction>(std::visit(el, stmt->ifblock.condition)));
 
-        std::shared_ptr<IR::Node> lhs = nullptr;
-
-        // create a new block with the body of the if statement, then link that block
-        // as a successor of the parent node, and a predecessor of the tail node
-        lhs = lower_block(*stmt->ifblock.block, *this, state);
-        IR::link_nodes(state.current_node, lhs);
-        IR::link_nodes(lhs, tail);
+        // Create a new block of the left hand side. This block will be
+        // connected to the current node on the lhs, and it will connect to the
+        // tail on the left hand side.
+        Builder::Builder lhs{lower_block(*stmt->ifblock.block, *this, state)};
+        cn.link_left_successor(lhs);
+        lhs.link_left_successor(tail);
 
         for (auto && elif : stmt->efblock) {
             // Create a new block that will be the other successor, this will
             // hold the condition of the `elif` branch, and then have it's own lhs for the body,
             // and a new rhs for additional `elif` or `else` blocks
-            std::shared_ptr<IR::Node> rhs = std::make_shared<IR::Node>();
-            IR::link_nodes(state.current_node, rhs, true);
-            IR::link_nodes(rhs, tail);
+            Builder::Builder rhs = cn.right_successor();
+            rhs.add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
 
-            rhs->block->instructions.emplace_back(
-                std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
-
-            // Attach the body to this new lhs
+            // Attach the body to this new lhs, following the same rules as for
+            // the `if`
             lhs = lower_block(*elif.block, *this, state);
-            IR::link_nodes(state.current_node, lhs);
-            IR::link_nodes(lhs, tail);
+            rhs.link_left_successor(lhs);
+            lhs.link_left_successor(tail);
 
             // This is now the current node, as we build our if web
-            state.current_node = rhs;
+            cn.finalize();
+            cn = std::move(rhs);
         }
 
         // Finally attach any else block. While this block may be empty, we'll
         // attach it anyway and allow any cleanup to be done later
-        std::shared_ptr<IR::Node> rhs = lower_block(*stmt->eblock.block, *this, state);
-        IR::link_nodes(state.current_node, rhs, true);
-        IR::link_nodes(rhs, tail);
+        Builder::Builder rhs{lower_block(*stmt->eblock.block, *this, state)};
+        cn.link_right_successor(rhs);
+        rhs.link_left_successor(tail);
 
-        // Return the tail, as this is now the only block we care about
-        state.current_node = tail;
+        // The tail is now the working block;
+        cn.finalize();
+        state.current_node = tail.finalize();
     }
 
     void operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
@@ -334,47 +332,57 @@ struct StatementLowering {
         //                        |   O body
         //                         \ /
         //                          O tail
+        Builder::Builder cn{state.current_node};
 
         // The preamble is used to initialize loop variables, of which there may be 1 or 2.
         // This ensures strictness
-        auto preamble = std::make_shared<IR::Node>();
-        IR::link_nodes(state.current_node, preamble);
-        state.current_node = preamble;
+        auto preamble = cn.left_successor();
 
-        auto && id1 = std::make_shared<IR::Undefined>();
-        preamble->block->instructions.emplace_back(
-            std::make_unique<IR::Instruction>(std::move(id1), IR::Variable{stmt->id.value}));
+        preamble.add_inst(
+            Builder::make_instruction<IR::Undefined>().set_var(stmt->id.value).as_instr());
 
         if (stmt->id2) {
-            auto && id2 = std::make_shared<IR::Undefined>();
-            preamble->block->instructions.emplace_back(std::make_unique<IR::Instruction>(
-                std::move(id2), IR::Variable{stmt->id2.value().value}));
+            preamble.add_inst(Builder::make_instruction<IR::Undefined>()
+                                  .set_var(stmt->id2.value().value)
+                                  .as_instr());
+            // TODO: call `.keys()` to get an array of keys, we can iterate that
+            // We then do the same thing in both cases, index into the array,
+            // set id1 = to array[index], then in the dict case we use the dict[key]
+            // form to get the value.
         }
+        // TODO: set a variable to the length of the array in both cases
 
         // This is the header where we evaluate the condition of the loop to decide if we will
         // continue or break
-        state.loop_header = std::make_shared<IR::Node>();
-        IR::link_nodes(state.current_node, state.loop_header);
+        cn = preamble.left_successor();
+        preamble.finalize();
+
         // TODO: we still need to:
         //  1. set the id (and id2 if necessary) to the next value on the array/dict
         //  2. check that we are at the end of the array
-        //  3. do the appropriate thing based on that information.
+        //  3. go back into the rhs block if we are not at the end of the array, or
+        //     go to the tail if we are
 
         // This is the block that comes after the loop
-        state.loop_tail = std::make_shared<IR::Node>();
-        IR::link_nodes(state.loop_header, state.loop_tail, true);
-        state.current_node = state.loop_header;
+        auto tail = cn.left_successor().finalize();
 
         // This is the first block of the body
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
-        LoweringState lstate{state};
-        auto lblock = lower_block(*stmt->block, *this, lstate);
-        IR::link_nodes(state.current_node, lblock);
+        auto rhs = cn.right_successor();
+        auto header = cn.finalize();
 
-        state.current_node = state.loop_tail;
-        state.loop_header = nullptr;
-        state.loop_tail = nullptr;
+        LoweringState lstate{
+            .current_node = rhs.finalize(),
+            .loop_header = header,
+            .loop_tail = tail,
+        };
+
+        auto lblock = lower_block(*stmt->block, *this, lstate);
+        IR::link_nodes(header, lblock, true);
+        IR::link_nodes(lblock, header);
+
+        state.current_node = tail;
     }
 
     void operator()(const std::unique_ptr<AST::Break> & stmt, LoweringState & state) const {
