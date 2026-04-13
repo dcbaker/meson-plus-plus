@@ -84,6 +84,13 @@ class Builder {
     Builder();
     Builder(std::shared_ptr<IR::Node> node);
 
+    Builder(Builder && b) = default;
+    Builder & operator=(Builder &&) = default;
+
+    // Not copy safe due to unique_ptr
+    Builder(const Builder &) = delete;
+    Builder & operator=(const Builder &) = delete;
+
     Builder & add_inst(std::unique_ptr<IR::Instruction> && inst);
 
     Builder & add_condition(std::unique_ptr<IR::Instruction> && inst);
@@ -100,6 +107,9 @@ class Builder {
 
   private:
     std::shared_ptr<IR::Node> p_root;
+
+    // TODO: if we used a cursor to point at the last non-condition element we could
+    // make this copy safe
     std::unique_ptr<IR::Instruction> p_condition;
 };
 
