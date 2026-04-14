@@ -451,6 +451,7 @@ struct StatementLowering {
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
         auto rhs = state.current_node->right_successor();
+        rhs.link_left_successor(header);
 
         LoweringState lstate{
             .current_node = &rhs,
@@ -458,14 +459,11 @@ struct StatementLowering {
             .loop_tail = &tail,
             .m_tmp_var = state.m_tmp_var,
         };
-
-        builder::Builder lblock{lower_block(*stmt->block, *this, lstate)};
-
-        header.link_right_successor(lblock);
-        lblock.link_left_successor(header);
+        lower_block(*stmt->block, *this, lstate);
 
         // This may have been updated and they need to be synced
         state.m_tmp_var = lstate.m_tmp_var;
+
         state.current_node = &tail;
     }
 
