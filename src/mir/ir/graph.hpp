@@ -30,8 +30,11 @@ class Node {
     /// @brief  The block of this node
     std::shared_ptr<BasicBlock> block;
 
+    // A Node has ownership of it's successors, but to break possible reference
+    // chains they only have a weak reference to their predecessors
+
     /// @brief Possible entries to this node.
-    std::vector<std::shared_ptr<Node>> predecessors;
+    std::vector<std::weak_ptr<Node>> predecessors;
 
     /// @brief The possible exits from this node
     std::array<std::shared_ptr<Node>, 2> successors;

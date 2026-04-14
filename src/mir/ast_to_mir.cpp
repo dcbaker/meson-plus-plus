@@ -379,7 +379,7 @@ struct StatementLowering {
         const std::string cursor = state.tmp_var("loop_container_cursor");
         const std::string container_size = state.tmp_var("loop_container_size");
 
-        auto preamble = state.current_node->left_successor();
+        builder::Builder preamble = state.current_node->left_successor();
         preamble.add_inst(builder::make_instruction<IR::Undefined>().set_var(stmt->id.value));
 
         if (stmt->id2) {
@@ -409,7 +409,7 @@ struct StatementLowering {
 
         // This is the header where we evaluate the condition of the loop to decide if we will
         // continue or break
-        auto header = preamble.left_successor();
+        builder::Builder header = preamble.left_successor();
         state.current_node = &header;
 
         const std::string loop_condition = state.tmp_var("loop_condition");

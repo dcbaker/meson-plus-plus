@@ -20,7 +20,7 @@ Builder::Builder(std::shared_ptr<IR::Node> node)
 std::shared_ptr<IR::Node> Builder::get() const { return p_root; }
 
 Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
-    assert(inst != nullptr);
+    assert(inst);
     p_cursor = p_root->block->instructions.emplace(p_cursor, std::move(inst));
     // Set the cursor forward one so that we write instructions after the one we just inserted
     p_cursor++;
@@ -41,7 +41,6 @@ Builder Builder::left_successor() {
 }
 
 Builder Builder::right_successor() {
-    assert(!p_root->successors[1]);
     Builder b{};
     link_right_successor(b);
     return b;
