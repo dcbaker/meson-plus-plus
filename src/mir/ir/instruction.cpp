@@ -10,7 +10,7 @@
 namespace MIR::IR {
 
 Variable::Variable() = default;
-Variable::Variable(std::string name) : m_name{name} {};
+Variable::Variable(std::string name) : m_name{name}, m_ssa_id{0} {};
 
 Variable::operator bool() const { return !m_name.empty(); }
 

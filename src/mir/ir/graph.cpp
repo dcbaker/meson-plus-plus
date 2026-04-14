@@ -19,11 +19,12 @@ Node node_sentintel = Node{UINT32_MAX, nullptr};
 } // namespace
 
 Node::Node()
-    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}} {};
+    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}},
+      loop_header{false} {};
 Node::Node(std::shared_ptr<BasicBlock> b)
-    : id{node_id_base++}, block{b}, successors{{nullptr, nullptr}} {};
+    : id{node_id_base++}, block{b}, successors{{nullptr, nullptr}}, loop_header{false} {};
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
-    : id{i}, block{b}, successors{{nullptr, nullptr}} {};
+    : id{i}, block{b}, successors{{nullptr, nullptr}}, loop_header{false} {};
 Node::Node(bool is_header)
     : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}},
       loop_header{is_header} {};
@@ -32,7 +33,7 @@ std::string Node::serialize() const {
     std::stringstream ss{};
     ss << "Node {\n"
        << "  id = { " << id << " }\n"
-       << "  loop_header = { " << loop_header << " }\n"
+       << "  loop_header = { " << (loop_header ? "true" : "false") << " }\n"
        << "  block = {\n"
        << block->serialize() << "\n}"
        << "}";
