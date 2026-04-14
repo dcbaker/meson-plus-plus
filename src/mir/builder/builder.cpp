@@ -69,7 +69,8 @@ Builder & Builder::set_cursor_begin() {
 
 Builder & Builder::set_cursor_end() {
     p_cursor = p_root->block->instructions.end();
-    if ((*--p_root->block->instructions.end())->m_is_block_condition) {
+    if (!p_root->block->instructions.empty() &&
+        (*--p_root->block->instructions.end())->m_is_block_condition) {
         --p_cursor;
     }
     return *this;
