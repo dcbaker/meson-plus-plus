@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2025 Intel Corporation
+# Copyright © 2025-2026 Intel Corporation
 
 de_parser = custom_target(
   'deserialize.[ch]pp',
   input : 'deserialize.yy',
-  output : ['@PLAINNAME@.cpp', '@PLAINNAME@.hpp', '@PLAINNAME@_loc.hpp'],
+  output : ['@PLAINNAME@.cpp', '@PLAINNAME@.hpp', '@BASENAME@_loc.hpp'],
   command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@'],
 )
 
