@@ -25,9 +25,10 @@ std::string Variable::serialize() const {
     return ss.str();
 }
 
-Instruction::Instruction(InstructionType && inst) : instruction{std::move(inst)} {};
+Instruction::Instruction(InstructionType && inst)
+    : instruction{std::move(inst)}, m_is_block_condition{false} {};
 Instruction::Instruction(InstructionType && inst, Variable && var)
-    : instruction{std::move(inst)}, variable{std::move(var)} {};
+    : instruction{std::move(inst)}, variable{std::move(var)}, m_is_block_condition{false} {};
 
 std::string Instruction::serialize() const {
     const std::string inst = to_string(instruction);

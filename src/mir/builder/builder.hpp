@@ -105,6 +105,9 @@ class Builder {
 
     [[nodiscard]] std::shared_ptr<IR::Node> get() const;
 
+    Builder & set_cursor_begin();
+    Builder & set_cursor_end();
+
   private:
     std::shared_ptr<IR::Node> p_root;
 

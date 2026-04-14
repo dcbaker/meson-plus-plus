@@ -262,6 +262,22 @@ struct StatementLowering {
     }
 
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
+        /* The left leg of a condition is always the "main" successor that means
+         * if there is only one successor, it is the left. That also means that if
+         * the condition is true we exit to the right.
+         *
+         * Thus a if/elif/else block will look like:
+         *               O previous block
+         *              / \
+         *             |   O if block
+         *              \ / \
+         *               \   O elif block
+         *                \ / \
+         *                 \   O else block
+         *                  \ /
+         *                   O tail block
+         */
+
         // This is the block that all of the branches of the if/elif/else web
         // will join back to
         builder::Builder tail{};
@@ -330,6 +346,7 @@ struct StatementLowering {
          */
 
         const std::string array = state.tmp_var("loop_array");
+        const std::string dict = state.tmp_var("loop_dict");
         const std::string cursor = state.tmp_var("loop_container_cursor");
         const std::string container_size = state.tmp_var("loop_container_size");
 
@@ -337,17 +354,21 @@ struct StatementLowering {
         preamble.add_inst(builder::make_instruction<IR::Undefined>().set_var(stmt->id.value));
 
         if (stmt->id2) {
-            preamble.add_inst(
-                builder::make_instruction<IR::Undefined>().set_var(stmt->id2.value().value));
-
-            // TODO: call `.keys()` to get an array of keys, we can iterate that
+            // call `.keys()` to get an array of keys, we can iterate that
             // We then do the same thing in both cases, index into the array,
             // set id1 = to array[index], then in the dict case we use the dict[key]
             // form to get the value.
+            preamble
+                .add_inst(
+                    builder::make_instruction<IR::Undefined>().set_var(stmt->id2.value().value))
+                .add_inst(std::make_unique<IR::Instruction>(std::visit(el, stmt->expr),
+                                                            IR::Variable{dict}))
+                .add_inst(builder::make_instruction<IR::FunctionCall>(
+                              "keys", builder::make_instruction<IR::Identifier>(dict))
+                              .set_var(array));
         } else {
-            auto expr = std::make_unique<IR::Instruction>(std::visit(el, stmt->expr));
-            expr->variable.m_name = array;
-            preamble.add_inst(std::move(expr));
+            preamble.add_inst(
+                std::make_unique<IR::Instruction>(std::visit(el, stmt->expr), IR::Variable{array}));
         }
 
         // Find the length of the container, as well as set the default value for the cursor
@@ -366,12 +387,29 @@ struct StatementLowering {
 
         // If the cursor is the same size as the array, we've read to the end
         // and it's time to break, otherwise we can go ahead to the loop body
-        preamble
+        header.add_inst(builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
+                            .add_pos_arg(builder::make_instruction<IR::Identifier>(array))
+                            .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
+                            .set_var(stmt->id.value));
+
+        // For dictionaries set the the second reference to be the dictionary value
+        if (stmt->id2) {
+            header.add_inst(
+                builder::make_instruction<IR::FunctionCall>(
+                    "get", builder::make_instruction<IR::Identifier>(dict))
+                    .add_pos_arg(builder::make_instruction<IR::Identifier>(stmt->id.value))
+                    .set_var(stmt->id2.value().value));
+        }
+
+        // Set the condition of the block to check if the cursor is equal to the
+        // size of the array, as that means it has read off the end. Increment the cursor after
+        // checking the condition
+        header
             .add_inst(builder::make_instruction<IR::FunctionCall>("equal", "meson++")
                           .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
                           .add_pos_arg(builder::make_instruction<IR::Identifier>(container_size))
                           .set_var(loop_condition))
-            .add_inst(builder::make_instruction<IR::FunctionCall>("addition")
+            .add_inst(builder::make_instruction<IR::FunctionCall>("addition", "meson++")
                           .add_pos_arg(builder::make_instruction<IR::Identifier>("cursor"))
                           .add_pos_arg(builder::make_instruction<IR::Number>(1))
                           .set_var(cursor))
@@ -385,7 +423,6 @@ struct StatementLowering {
         // loops, which will each need their own head/tail blocks.
         auto rhs = state.current_node->right_successor();
 
-        // TODO: need some way to deal with the
         LoweringState lstate{
             .current_node = &rhs,
             .loop_header = &header,
@@ -393,16 +430,13 @@ struct StatementLowering {
             .m_tmp_var = state.m_tmp_var,
         };
 
-        auto lblock = lower_block(*stmt->block, *this, lstate);
-        // This may have been updated and they need to be synced
-        state.m_tmp_var = lstate.m_tmp_var;
-
-        // TODO: we need to add instructions to the top of the lblock
-        // to actually set id (and possibly id2) to their values
+        builder::Builder lblock{lower_block(*stmt->block, *this, lstate)};
 
         header.link_right_successor(lblock);
-        header.link_left_successor(header);
+        lblock.link_left_successor(header);
 
+        // This may have been updated and they need to be synced
+        state.m_tmp_var = lstate.m_tmp_var;
         state.current_node = &tail;
     }
 

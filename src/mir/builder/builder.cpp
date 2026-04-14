@@ -14,9 +14,7 @@ Builder::Builder()
 Builder::Builder(std::shared_ptr<IR::Node> node)
     : p_root{node}, p_cursor{p_root->block->instructions.end()} {
     // Put the condition into the Builder, put it back with finalize
-    if ((*p_cursor)->m_is_block_condition) {
-        p_cursor--;
-    }
+    set_cursor_end();
 };
 
 std::shared_ptr<IR::Node> Builder::get() const { return p_root; }
@@ -31,7 +29,8 @@ Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
 
 Builder & Builder::add_condition(std::unique_ptr<IR::Instruction> && inst) {
     inst->m_is_block_condition = true;
-    p_cursor = p_root->block->instructions.emplace(p_cursor, std::move(inst));
+    p_cursor =
+        p_root->block->instructions.emplace(p_root->block->instructions.end(), std::move(inst));
     return *this;
 }
 
@@ -62,6 +61,19 @@ Builder & Builder::link_right_successor(Builder & b) { return link_right_success
 Builder & Builder::link_right_successor(std::shared_ptr<IR::Node> node) {
     assert(p_root->successors[1] == nullptr);
     IR::link_nodes(p_root, node, true);
+    return *this;
+}
+
+Builder & Builder::set_cursor_begin() {
+    p_cursor = p_root->block->instructions.begin();
+    return *this;
+}
+
+Builder & Builder::set_cursor_end() {
+    p_cursor = p_root->block->instructions.end();
+    if ((*--p_root->block->instructions.end())->m_is_block_condition) {
+        --p_cursor;
+    }
     return *this;
 }
 

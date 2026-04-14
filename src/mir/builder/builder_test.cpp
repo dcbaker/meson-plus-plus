@@ -77,3 +77,53 @@ TEST(MIR_Builder, cursor) {
     b.add_inst(make_instruction<Number>(2));
     ASSERT_TRUE(std::holds_alternative<std::shared_ptr<Boolean>>(ir.back()->instruction));
 }
+
+TEST(MIR_Builder, set_cursor_begin) {
+    Builder b{};
+    auto & ir = b.get()->block->instructions;
+
+    // clang-format off
+    b.add_inst(make_instruction<Number>(0))
+     .add_inst(make_instruction<Number>(1))
+     .set_cursor_begin()
+     .add_inst(make_instruction<Number>(2));
+    // clang-format on
+
+    auto itr = ir.begin();
+    ASSERT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 2);
+    ASSERT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 0);
+    ASSERT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 1);
+}
+
+TEST(MIR_Builder, set_cursor_end) {
+    Builder b{};
+    auto & ir = b.get()->block->instructions;
+
+    // clang-format off
+    b.add_inst(make_instruction<Number>(0))
+     .set_cursor_begin()
+     .add_inst(make_instruction<Number>(1));
+    // clang-format on
+
+    auto itr = ir.begin();
+    EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 1);
+    EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 0);
+}
+
+TEST(MIR_Builder, set_cursor_begin_end) {
+    Builder b{};
+    auto & ir = b.get()->block->instructions;
+
+    // clang-format off
+    b.add_inst(make_instruction<Number>(0))
+     .set_cursor_begin()
+     .add_inst(make_instruction<Number>(1))
+     .set_cursor_end()
+     .add_inst(make_instruction<Number>(2));
+    // clang-format on
+
+    auto itr = ir.begin();
+    EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 1);
+    EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 0);
+    ASSERT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 2);
+}
