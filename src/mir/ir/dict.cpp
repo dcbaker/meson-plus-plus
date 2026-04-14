@@ -21,7 +21,7 @@ std::string Dict::serialize() const {
         ss << "pair = { "
            << "key = { " << std::visit(visitor, k) << " } "
            << "value = { " << std::visit(visitor, v) << " } "
-           << " } ";
+           << "} ";
     }
 
     ss << "} }";

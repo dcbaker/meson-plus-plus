@@ -13,9 +13,9 @@ std::string to_string(const PositionalArguments & p_args) {
     std::stringstream ss{};
     ss << "PositionalArguments { ";
     for (const auto & p : p_args) {
-        ss << to_string(p);
+        ss << to_string(p) << " ";
     }
-    ss << " }";
+    ss << "}";
 
     return ss.str();
 }
