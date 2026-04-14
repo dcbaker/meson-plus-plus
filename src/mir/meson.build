@@ -26,7 +26,8 @@ libmir = static_library(
     'ir/ternary.cpp',
     'ir/undefined.cpp',
   ],
-  include_directories : inc_frontend,
+  include_directories : [inc_frontend],
+  dependencies : [idep_util],
 )
 
 idep_mir = declare_dependency(link_with : [libmir, libmir_deserialize])

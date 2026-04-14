@@ -3,6 +3,7 @@
 
 #include "ast_to_mir.hpp"
 #include "builder/builder.hpp"
+#include "exceptions.hpp"
 #include "ir/instruction.hpp"
 
 #include <memory>
@@ -141,8 +142,10 @@ struct ExpressionLowering {
 
     IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
         IR::InstructionType && fname = std::visit(*this, stmt->held);
-        // TODO: error handling
-        std::string name = std::get<std::shared_ptr<IR::String>>(fname)->m_value;
+        if (!std::get<std::shared_ptr<IR::Identifier>>(fname)) {
+            throw Util::Exceptions::MesonException{"function name does not hold an identifier"};
+        }
+        std::string name = std::get<std::shared_ptr<IR::Identifier>>(fname)->m_name;
         auto f = builder::make_instruction<IR::FunctionCall>(name);
 
         for (auto && a : stmt->args->positional) {
