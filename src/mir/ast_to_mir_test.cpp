@@ -49,6 +49,10 @@ const MIR::IR::Instruction & get_ir(const MIR::IR::CFG & cfg, int index) {
     return get_ir(*cfg.root->block, index);
 }
 
+const MIR::IR::Instruction & get_ir(const MIR::IR::Node & root, int index) {
+    return get_ir(*root.block, index);
+}
+
 template <typename T> bool holds(const MIR::IR::InstructionType & inst) {
     return std::holds_alternative<std::shared_ptr<T>>(inst);
 }
@@ -73,3 +77,89 @@ TEST(ast_to_mir, assignment) {
     EXPECT_TRUE(holds<MIR::IR::String>(ir.instruction));
     ASSERT_EQ(ir.variable.m_name, "x");
 }
+
+TEST(ast_to_mir, only_if) {
+    /*
+     * We should have three blocks, with a diamond-like configuration
+     *
+     *              O block before if
+     *             / \
+     *    if body O   |
+     *             \ /
+     *              O tail
+     *
+     * The first block should have a condition of true
+     *
+     * The `if` body should have one instruction, the assignment
+     *
+     * The `tail` block should have no instructions
+     */
+    const std::string code{R"EOF(
+        if true
+            x = 0
+        endif
+        )EOF"};
+    MIR::IR::CFG cfg = parse(code);
+
+    const MIR::IR::BasicBlock & root = *cfg.root->block;
+    ASSERT_EQ(root.instructions.size(), 1);
+    EXPECT_TRUE(holds<MIR::IR::Boolean>(get_ir(root, 0).instruction));
+
+    const MIR::IR::Node & body = *cfg.root->successors[0];
+    EXPECT_EQ(body.block->instructions.size(), 1);
+
+    auto && ir = get_ir(body, 0);
+    EXPECT_EQ(ir.variable.m_name, "x");
+    EXPECT_TRUE(holds<MIR::IR::Number>(ir.instruction));
+    EXPECT_EQ(get<MIR::IR::Number>(ir.instruction).value, 0);
+
+    const MIR::IR::Node & tail = *cfg.root->successors[1];
+    EXPECT_EQ(tail.block->instructions.size(), 0);
+
+    EXPECT_EQ(*body.successors[0], tail);
+}
+
+TEST(ast_to_mir, if_else) {
+    const std::string code{R"EOF(
+        if true
+            x = 0
+        else
+            x = 1
+        endif
+        )EOF"};
+    MIR::IR::CFG cfg = parse(code);
+
+    /*
+     * We should have three blocks, with a diamond-like configuration
+     *
+     *              O block before if
+     *             / \
+     *    if body O   O else body
+     *             \ /
+     *              O tail
+     *
+     * The first block should have a condition of true
+     *
+     * The `if` body should have one instruction, the assignment
+     *
+     * The `tail` block should have no instructions
+     */
+
+    const MIR::IR::BasicBlock & root = *cfg.root->block;
+    ASSERT_EQ(root.instructions.size(), 1);
+    EXPECT_TRUE(holds<MIR::IR::Boolean>(get_ir(root, -1).instruction));
+
+    const MIR::IR::Node & body = *cfg.root->successors[0];
+    EXPECT_EQ(body.block->instructions.size(), 1);
+
+    const MIR::IR::Node & el = *cfg.root->successors[1];
+    EXPECT_EQ(el.block->instructions.size(), 1);
+
+    EXPECT_EQ(body.successors[0], el.successors[0]);
+    EXPECT_EQ(body.successors[0]->block->instructions.size(), 0);
+}
+
+// TODO: test for if/elif
+// TODO: test for if/elif/else
+
+// TODO: test for foreach

@@ -35,23 +35,22 @@ Builder & Builder::add_condition(std::unique_ptr<IR::Instruction> && inst) {
 }
 
 Builder Builder::left_successor() {
-    assert(p_root->successors[0] == nullptr);
     Builder b{};
-    IR::link_nodes(p_root, b.p_root);
+    link_left_successor(b);
     return b;
 }
 
 Builder Builder::right_successor() {
-    assert(p_root->successors[1] == nullptr);
+    assert(!p_root->successors[1]);
     Builder b{};
-    IR::link_nodes(p_root, b.p_root, true);
+    link_right_successor(b);
     return b;
 }
 
 Builder & Builder::link_left_successor(Builder & b) { return link_left_successor(b.p_root); }
 
 Builder & Builder::link_left_successor(std::shared_ptr<IR::Node> node) {
-    assert(p_root->successors[0] == nullptr);
+    assert(!p_root->successors[0]);
     IR::link_nodes(p_root, node);
     return *this;
 }
@@ -59,7 +58,7 @@ Builder & Builder::link_left_successor(std::shared_ptr<IR::Node> node) {
 Builder & Builder::link_right_successor(Builder & b) { return link_right_successor(b.p_root); }
 
 Builder & Builder::link_right_successor(std::shared_ptr<IR::Node> node) {
-    assert(p_root->successors[1] == nullptr);
+    assert(!p_root->successors[1]);
     IR::link_nodes(p_root, node, true);
     return *this;
 }

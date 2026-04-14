@@ -270,31 +270,49 @@ struct StatementLowering {
          * the condition is true we exit to the right.
          *
          * Thus a if/elif/else block will look like:
-         *               O previous block
-         *              / \
-         *             |   O if block
-         *              \ / \
-         *               \   O elif block
-         *                \ / \
-         *                 \   O else block
-         *                  \ /
-         *                   O tail block
+         *
+         *                        O₁
+         *                       / \
+         *                      O₂  O₃
+         *                      |  / \
+         *                      | O₄  O₅
+         *                      |/   / \
+         *                       \  O₆  O₇
+         *                        \/   /
+         *                         \  /
+         *                          \/
+         *                           O₈
+         *
+         *
+         * 1 previous block
+         * 2 body of if
+         * 3 condition for first elif
+         * 4 body of first elif
+         * 5 condition of additional elif...
+         * 6 body of first elif...
+         * 7 body of else
+         * 8 tail block
          */
-
-        // This is the block that all of the branches of the if/elif/else web
-        // will join back to
-        builder::Builder tail{};
 
         // place the condition as the last instruction of the block.
         state.current_node->add_condition(
             std::make_unique<IR::Instruction>(std::visit(el, stmt->ifblock.condition)));
 
+        // This is the block that all of the branches of the if/elif/else web
+        // will join back to
+        builder::Builder tail{};
+
         // Create a new block of the left hand side. This block will be
         // connected to the current node on the lhs, and it will connect to the
         // tail on the left hand side.
-        builder::Builder lhs{lower_block(*stmt->ifblock.block, *this, state)};
-        state.current_node->link_left_successor(lhs);
+        builder::Builder lhs = state.current_node->left_successor();
         lhs.link_left_successor(tail);
+
+        // Use a new state with the block we created
+        LoweringState lstate{state};
+        lstate.current_node = &lhs;
+        lower_block(*stmt->ifblock.block, *this, lstate);
+        state.m_tmp_var = lstate.m_tmp_var;
 
         for (auto && elif : stmt->efblock) {
             // Create a new block that will be the other successor, this will
@@ -303,21 +321,29 @@ struct StatementLowering {
             builder::Builder rhs = state.current_node->right_successor();
             rhs.add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
 
-            // Attach the body to this new lhs, following the same rules as for
-            // the `if`
-            lhs = lower_block(*elif.block, *this, state);
-            rhs.link_left_successor(lhs);
-            lhs.link_left_successor(tail);
+            // This is the body of the elif
+            lhs = rhs.left_successor();
+
+            lstate = {state};
+            lstate.current_node = &lhs;
+            lower_block(*elif.block, *this, lstate);
+            state.m_tmp_var = lstate.m_tmp_var;
 
             // This is now the current node, as we build our if web
             state.current_node = &rhs;
         }
 
-        // Finally attach any else block. While this block may be empty, we'll
-        // attach it anyway and allow any cleanup to be done later
-        builder::Builder rhs{lower_block(*stmt->eblock.block, *this, state)};
-        state.current_node->link_right_successor(rhs);
-        rhs.link_left_successor(tail);
+        if (stmt->eblock.block) {
+            // Finally attach any else block.
+            builder::Builder rhs = state.current_node->right_successor();
+            rhs.link_left_successor(tail);
+            lstate = {state};
+            lstate.current_node = &rhs;
+            lower_block(*stmt->eblock.block, *this, lstate);
+            state.m_tmp_var = lstate.m_tmp_var;
+        } else {
+            state.current_node->link_right_successor(tail);
+        }
 
         // The tail is now the working block;
         state.current_node = &tail;
