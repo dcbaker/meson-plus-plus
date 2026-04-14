@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2025 Intel Corporation
+// Copyright © 2021-2026 Intel Corporation
 
 #include <iostream>
 
@@ -59,8 +59,11 @@ Verb get_verb(int & argc, const char * const argv[]) {
         if (v == "vcs_tag") {
             return Verb::VCS_TAG;
         }
+        if (v == "compile") {
+            return Verb::COMPILE;
+        }
 
-        std::cerr << "Unknown action:" << v << std::endl;
+        std::cerr << "Unknown action: " << v << std::endl;
     }
 
     std::cout << usage << std::endl;
@@ -172,6 +175,43 @@ VCSTagOptions get_vcs_tag_options(int argc, char * argv[]) {
     return opts;
 }
 
+CompileOptions get_compile_options(int argc, char * argv[]) {
+    static const char * const short_opts = "h";
+    static const option long_opts[] = {
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr},
+    };
+
+    int c;
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
+        switch (c) {
+            case 'h':
+            default:
+                std::cout << usage << std::endl;
+                exit(0);
+        }
+    }
+
+    CompileOptions opts{};
+    // ++ here to pass the verb
+    int i = ++optind;
+
+    if (argc - i < 1) {
+        std::cerr << "meson++ compile command missing required command line option:\"source\""
+                  << std::endl;
+        exit(1);
+    }
+
+    opts.infile = fs::path{argv[i++]};
+
+    if (i < argc) {
+        // TODO: better error message
+        std::cerr << "Got extra arguments." << std::endl;
+        exit(1);
+    }
+    return opts;
+}
+
 } // namespace
 
 OptionV parse_opts(int argc, char * argv[]) {
@@ -187,6 +227,8 @@ OptionV parse_opts(int argc, char * argv[]) {
             return get_config_options(argc, argv);
         case Verb::VCS_TAG:
             return get_vcs_tag_options(argc, argv);
+        case Verb::COMPILE:
+            return get_compile_options(argc, argv);
         default:
             // TODO: should be unreachable
             throw std::runtime_error{"Unhandled verb"};

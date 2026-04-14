@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2025 Intel Corporation
+// Copyright © 2021-2026 Intel Corporation
 
 /**
  * Main Meson++ entrypoint
@@ -9,6 +9,7 @@
 #include "exceptions.hpp"
 #include "log.hpp"
 #include "options.hpp"
+#include "tools/compile.hpp"
 #include "tools/test.hpp"
 #include "tools/vcs_tag.hpp"
 #include "version.hpp"
@@ -39,6 +40,7 @@ struct OptionHandler {
         return Tools::generate_vcs_tag(opts.infile, opts.outfile, opts.version, opts.replacement,
                                        opts.source_dir, opts.depfile);
     }
+    int operator()(const Options::CompileOptions & opts) { return Tools::compile(opts.infile); }
 };
 
 } // namespace

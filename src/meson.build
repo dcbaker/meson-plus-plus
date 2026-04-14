@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021-2025 Intel Corporation
+# Copyright © 2021-2026 Intel Corporation
 
 subdir('util')
 subdir('frontend')
@@ -12,13 +12,14 @@ mesonpp = executable(
   [
     'main.cpp',
     'options.cpp',
+    'tools/compile.cpp',
     'tools/test.cpp',
     'tools/vcs_tag.cpp',
     version_hpp,
     locations_hpp,
   ],
   cpp_args : [
-    '-D_GNU_SOURCE',  # for getopt
+    '-D_GNU_SOURCE', # for getopt
   ],
   dependencies : [idep_frontend, idep_util, idep_mir],
   install : true,
