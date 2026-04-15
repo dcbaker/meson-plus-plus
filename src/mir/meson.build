@@ -36,7 +36,13 @@ test(
   'mir',
   executable(
     'mir_tests',
-    ['ir/graph_test.cpp', 'builder/builder_test.cpp', 'ast_to_mir_test.cpp'],
+    [
+      'ast_to_mir_test.cpp',
+      'builder/builder_test.cpp',
+      'ir/graph_test.cpp',
+      'test_helpers.cpp',
+    ],
+    include_directories : '.',
     dependencies : [idep_mir, dep_gtest, idep_frontend],
   ),
   protocol : 'gtest',

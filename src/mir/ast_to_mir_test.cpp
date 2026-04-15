@@ -5,6 +5,7 @@
 #include "driver.hpp"
 #include "ir.hpp"
 #include "node.hpp"
+#include "test_helpers.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -26,42 +27,9 @@ static MIR::IR::CFG parse(const std::string & in) {
     return cfg;
 }
 
-/// @brief Get an instruction from the CFG by index
-/// @param bb the CFG to get the instruction from
-/// @param index The index of that instruction, may be either positive or negative
-/// @return A const reference to that instruction
-const MIR::IR::Instruction & get_ir(const MIR::IR::BasicBlock & bb, int index) {
-    if (index >= 0) {
-        auto itr = bb.instructions.begin();
-        for (int i = 0; i < index; ++i) {
-            ++itr;
-        }
-        return **itr;
-    }
-    auto itr = bb.instructions.end();
-    for (int i = 0; i > index; --i) {
-        --itr;
-    }
-    return **itr;
-}
-
-const MIR::IR::Instruction & get_ir(const MIR::IR::CFG & cfg, int index) {
-    return get_ir(*cfg.root->block, index);
-}
-
-const MIR::IR::Instruction & get_ir(const MIR::IR::Node & root, int index) {
-    return get_ir(*root.block, index);
-}
-
-template <typename T> bool holds(const MIR::IR::InstructionType & inst) {
-    return std::holds_alternative<std::shared_ptr<T>>(inst);
-}
-
-template <typename T> const T & get(const MIR::IR::InstructionType & inst) {
-    return *std::get<std::shared_ptr<T>>(inst);
-}
-
 } // namespace
+
+using namespace MIR::UT;
 
 TEST(ast_to_mir, simple) {
     MIR::IR::CFG cfg = parse("'foo'");
