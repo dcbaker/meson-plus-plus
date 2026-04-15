@@ -56,9 +56,9 @@ Node::Iterator::Iterator(pointer ptr) {
 void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
     const int index = right ? 1 : 0;
 
-    assert(!pred->successors[index]);
+    assert(!pred->successors.at(index));
 
-    pred->successors[index] = succ;
+    pred->successors.at(index) = succ;
     succ->predecessors.push_back(pred);
 }
 
