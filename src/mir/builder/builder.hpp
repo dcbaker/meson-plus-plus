@@ -99,8 +99,11 @@ class Builder {
     Builder right_successor();
 
     Builder & link_left_successor(Builder &);
-    Builder & link_right_successor(Builder &);
+    Builder & link_left_successor(std::shared_ptr<Builder> &);
     Builder & link_left_successor(std::shared_ptr<IR::Node>);
+
+    Builder & link_right_successor(Builder &);
+    Builder & link_right_successor(std::shared_ptr<Builder> &);
     Builder & link_right_successor(std::shared_ptr<IR::Node>);
 
     [[nodiscard]] std::shared_ptr<IR::Node> get() const;

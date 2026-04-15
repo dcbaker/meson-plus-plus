@@ -98,10 +98,10 @@ TEST(MIR_Builder, funccall) {
     Builder b{};
     // clang-format off
     auto n = b.add_inst(make_instruction<FunctionCall>("add")
-                         .add_pos_arg(make_instruction<Number>(1))
-                         .add_pos_arg(make_instruction<Number>(2))
-                         .add_kw_arg(make_instruction<String>("foo"),
-                                     make_instruction<Boolean>(false)))
+                        .add_pos_arg(make_instruction<Number>(1))
+                        .add_pos_arg(make_instruction<Number>(2))
+                        .add_kw_arg(make_instruction<String>("foo"),
+                                    make_instruction<Boolean>(false)))
               .get();
     // clang-format on
 
@@ -148,17 +148,16 @@ TEST(MIR_Builder, set_cursor_begin) {
 
 TEST(MIR_Builder, set_cursor_end) {
     Builder b{};
-    auto & ir = b.get()->block->instructions;
 
     // clang-format off
     b.add_inst(make_instruction<Number>(0))
-     .set_cursor_begin()
+     .set_cursor_end()
      .add_inst(make_instruction<Number>(1));
     // clang-format on
 
-    auto itr = ir.begin();
-    EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 1);
-    EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 0);
+    auto & ir = b.get()->block;
+    EXPECT_EQ(get<Number>(get_ir(ir, 0).instruction).value, 0);
+    EXPECT_EQ(get<Number>(get_ir(ir, 1).instruction).value, 1);
 }
 
 TEST(MIR_Builder, set_cursor_begin_end) {

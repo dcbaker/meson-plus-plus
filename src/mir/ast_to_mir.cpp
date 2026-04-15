@@ -197,16 +197,15 @@ struct StatementLowering;
 
 /// @brief State passed between StatementLowering calls
 struct LoweringState {
-    builder::Builder * current_node;
-    builder::Builder * loop_header;
-    builder::Builder * loop_tail;
+    std::shared_ptr<builder::Builder> current_node;
+    std::shared_ptr<builder::Builder> loop_header;
+    std::shared_ptr<builder::Builder> loop_tail;
+    std::shared_ptr<uint64_t> m_tmp_var;
 
-    std::string tmp_var() { return "mesonpp_tmp_" + std::to_string(m_tmp_var++); }
+    std::string tmp_var() { return "mesonpp_tmp_" + std::to_string((*m_tmp_var)++); }
     std::string tmp_var(std::string name) {
-        return "mesonpp_tmp_" + name + "_" + std::to_string(m_tmp_var++);
+        return "mesonpp_tmp_" + name + "_" + std::to_string((*m_tmp_var)++);
     }
-
-    uint64_t m_tmp_var;
 };
 
 std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
@@ -300,53 +299,50 @@ struct StatementLowering {
 
         // This is the block that all of the branches of the if/elif/else web
         // will join back to
-        builder::Builder tail{};
+        auto tail = std::make_shared<builder::Builder>();
 
         // Create a new block of the left hand side. This block will be
         // connected to the current node on the lhs, and it will connect to the
         // tail on the left hand side.
-        builder::Builder lhs = state.current_node->left_successor();
-        lhs.link_left_successor(tail);
+        auto lhs = std::make_shared<builder::Builder>(state.current_node->left_successor());
+        lhs->link_left_successor(tail);
 
         // Use a new state with the block we created
         LoweringState lstate{state};
-        lstate.current_node = &lhs;
+        lstate.current_node = lhs;
         lower_block(*stmt->ifblock.block, *this, lstate);
-        state.m_tmp_var = lstate.m_tmp_var;
 
         for (auto && elif : stmt->efblock) {
             // Create a new block that will be the other successor, this will
             // hold the condition of the `elif` branch, and then have it's own lhs for the body,
             // and a new rhs for additional `elif` or `else` blocks
-            builder::Builder rhs = state.current_node->right_successor();
-            rhs.add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
+            auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
+            rhs->add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
 
             // This is the body of the elif
-            lhs = rhs.left_successor();
+            auto lhs = std::make_shared<builder::Builder>(rhs->left_successor());
 
             lstate = {state};
-            lstate.current_node = &lhs;
+            lstate.current_node = lhs;
             lower_block(*elif.block, *this, lstate);
-            state.m_tmp_var = lstate.m_tmp_var;
 
             // This is now the current node, as we build our if web
-            state.current_node = &rhs;
+            state.current_node = rhs;
         }
 
         if (stmt->eblock.block) {
             // Finally attach any else block.
-            builder::Builder rhs = state.current_node->right_successor();
-            rhs.link_left_successor(tail);
+            auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
+            rhs->link_left_successor(tail);
             lstate = {state};
-            lstate.current_node = &rhs;
+            lstate.current_node = rhs;
             lower_block(*stmt->eblock.block, *this, lstate);
-            state.m_tmp_var = lstate.m_tmp_var;
         } else {
             state.current_node->link_right_successor(tail);
         }
 
         // The tail is now the working block;
-        state.current_node = &tail;
+        state.current_node = tail;
     }
 
     void operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
@@ -409,8 +405,8 @@ struct StatementLowering {
 
         // This is the header where we evaluate the condition of the loop to decide if we will
         // continue or break
-        builder::Builder header = preamble.left_successor();
-        state.current_node = &header;
+        state.current_node = std::make_shared<builder::Builder>(preamble.left_successor());
+        auto header = *state.current_node;
 
         const std::string loop_condition = state.tmp_var("loop_condition");
 
@@ -445,38 +441,35 @@ struct StatementLowering {
             .add_condition(builder::make_instruction<IR::Identifier>(loop_condition));
 
         // This is the block that comes after the loop
-        auto tail = state.current_node->left_successor();
+        auto tail = std::make_shared<builder::Builder>(state.current_node->left_successor());
 
         // This is the first block of the body
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
-        auto rhs = state.current_node->right_successor();
-        rhs.link_left_successor(header);
+        auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
+        rhs->link_left_successor(header);
 
         LoweringState lstate{
-            .current_node = &rhs,
-            .loop_header = &header,
-            .loop_tail = &tail,
+            .current_node = rhs,
+            .loop_header = state.current_node,
+            .loop_tail = tail,
             .m_tmp_var = state.m_tmp_var,
         };
         lower_block(*stmt->block, *this, lstate);
 
-        // This may have been updated and they need to be synced
-        state.m_tmp_var = lstate.m_tmp_var;
-
-        state.current_node = &tail;
+        state.current_node = tail;
     }
 
     void operator()(const std::unique_ptr<AST::Break> & stmt, LoweringState & state) const {
         // in the case of an `if ...: break` this will create an empty block,
         // that's okay we can clean it up later.
-        state.current_node->link_left_successor(*state.loop_tail);
+        state.current_node->link_left_successor(state.loop_tail);
     }
 
     void operator()(const std::unique_ptr<AST::Continue> & stmt, LoweringState & state) const {
         // in the case of an `if ...: continue` this will create an empty block,
         // that's okay we can clean it up later.
-        state.current_node->link_left_successor(*state.loop_header);
+        state.current_node->link_left_successor(state.loop_header);
     }
 
   private:
@@ -485,8 +478,12 @@ struct StatementLowering {
 
 std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block,
                                       const StatementLowering & lower) {
-    builder::Builder root{};
-    LoweringState state{&root};
+    LoweringState state{
+        std::make_shared<builder::Builder>(),
+        nullptr,
+        nullptr,
+        std::make_shared<uint64_t>(0),
+    };
     return lower_block(block, lower, state);
 }
 
