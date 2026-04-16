@@ -139,7 +139,13 @@ Node::Iterator Node::Iterator::operator++(int) {
 
 CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
 
-std::string CFG::serialize() const { return root->serialize(); }
+std::string CFG::serialize() const {
+    std::stringstream ss{};
+    for (auto && n : *root) {
+        ss << n.serialize() << "\n\n";
+    }
+    return ss.str();
+}
 
 Node::Iterator CFG::begin() { return root->begin(); }
 Node::Iterator CFG::end() { return root->end(); }
