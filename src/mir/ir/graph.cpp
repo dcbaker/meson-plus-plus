@@ -57,7 +57,23 @@ std::string Node::serialize() const {
     ss << "Node {\n"
        << "  id = { " << id << " }\n"
        << "  loop_header = { " << (loop_header ? "true" : "false") << " }\n"
-       << "  block = {\n"
+       << "  predecessors = {";
+
+    for (auto && p : predecessors) {
+        ss << " " << p.lock()->id;
+    }
+    ss << " }\n";
+
+    ss << "  successors = {";
+    for (auto && s : successors) {
+        auto succ = s.lock();
+        if (succ) {
+            ss << " " << succ->id;
+        }
+    }
+    ss << " }\n";
+
+    ss << "  block = {\n"
        << block->serialize() << "\n}"
        << "}";
 
