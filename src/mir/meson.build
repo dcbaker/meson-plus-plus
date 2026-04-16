@@ -15,6 +15,7 @@ libmir = static_library(
     'ir/file.cpp',
     'ir/functioncall.cpp',
     'ir/graph.cpp',
+    'ir/helpers.cpp',
     'ir/identifier.cpp',
     'ir/instruction.cpp',
     'ir/message.cpp',
