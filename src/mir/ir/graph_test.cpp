@@ -185,3 +185,36 @@ TEST(Node, iter_visits_predecessors_before_successors_loop) {
     EXPECT_EQ(itr, preamble->end())
         << "Got: " << itr->id << ", but expected : " << preamble->end()->id << std::endl;
 }
+
+TEST(Node, iter_visits_predecessors_before_successors_loop_2) {
+    auto preamble = std::make_shared<Node>(0, nullptr);
+
+    auto header = std::make_shared<Node>(1, nullptr);
+    header->loop_header = true;
+    link_nodes(preamble, header);
+
+    auto tail = std::make_shared<Node>(2, nullptr);
+    link_nodes(header, tail, true);
+
+    auto body = std::make_shared<Node>(3, nullptr);
+    link_nodes(header, body);
+
+    auto body2 = std::make_shared<Node>(4, nullptr);
+    link_nodes(body, body2);
+    link_nodes(body2, header);
+
+    auto itr = preamble->begin();
+    EXPECT_EQ(*itr, *preamble) << "Got: " << itr->id << ", but expected: " << preamble->id
+                               << std::endl;
+    itr++;
+    EXPECT_EQ(*itr, *header) << "Got: " << itr->id << ", but expected: " << header->id << std::endl;
+    itr++;
+    EXPECT_EQ(*itr, *body) << "Got: " << itr->id << ", but expected: " << body->id << std::endl;
+    itr++;
+    EXPECT_EQ(*itr, *tail) << "Got: " << itr->id << ", but expected: " << tail->id << std::endl;
+    itr++;
+    EXPECT_EQ(*itr, *body2) << "Got: " << itr->id << ", but expected: " << body2->id << std::endl;
+    itr++;
+    EXPECT_EQ(itr, preamble->end())
+        << "Got: " << itr->id << ", but expected : " << preamble->end()->id << std::endl;
+}
