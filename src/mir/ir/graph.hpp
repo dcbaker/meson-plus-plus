@@ -36,9 +36,6 @@ class Node {
     /// @brief Possible entries to this node.
     std::vector<std::weak_ptr<Node>> predecessors;
 
-    /// @brief The possible exits from this node
-    std::array<std::shared_ptr<Node>, 2> successors;
-
     /// @brief Is this block a loop header block
     bool loop_header;
 
@@ -46,6 +43,14 @@ class Node {
 
     bool operator==(const Node & other) const;
     bool operator!=(const Node & other) const;
+
+    /// @brief Get the left successor
+    /// @return A shared ptr to the left successor
+    std::shared_ptr<Node> left_successor() const;
+
+    /// @brief Get the right successor
+    /// @return A shared_ptr to the right successor
+    std::shared_ptr<Node> right_successor() const;
 
     struct Iterator {
       public:
@@ -76,6 +81,30 @@ class Node {
 
     Iterator begin();
     Iterator end();
+
+    friend void link_nodes(std::shared_ptr<Node>, std::shared_ptr<Node>, bool right);
+
+  private:
+    /// @brief Set the left successor
+    /// @param n the node to be the successor
+    void set_left_successor(std::shared_ptr<Node> n);
+
+    /// @brief Set the right successor
+    /// @param n the node to be the successor
+    void set_right_successor(std::shared_ptr<Node> n);
+
+    void set_successor(std::shared_ptr<Node> n, int index);
+
+    bool has_successor(int index) const;
+
+    /// @brief The possible exits from this node
+    std::array<std::weak_ptr<Node>, 2> successors;
+
+    /// @brief This creates ownership of other nodes
+    ///
+    /// Notably, this breaks circular ownership when a loop
+    /// points back to the header block
+    std::array<std::shared_ptr<Node>, 2> children;
 };
 
 /// @brief Link two nodes together

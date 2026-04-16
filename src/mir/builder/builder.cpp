@@ -35,6 +35,11 @@ Builder & Builder::add_condition(std::unique_ptr<IR::Instruction> && inst) {
     return *this;
 }
 
+Builder & Builder::set_loop_header(bool v) {
+    p_root->loop_header = v;
+    return *this;
+}
+
 Builder Builder::left_successor() {
     Builder b{};
     link_left_successor(b);
@@ -54,7 +59,6 @@ Builder & Builder::link_left_successor(std::shared_ptr<Builder> & b) {
 Builder & Builder::link_left_successor(Builder & b) { return link_left_successor(b.p_root); }
 
 Builder & Builder::link_left_successor(std::shared_ptr<IR::Node> node) {
-    assert(!p_root->successors[0]);
     IR::link_nodes(p_root, node);
     return *this;
 }
@@ -66,7 +70,6 @@ Builder & Builder::link_right_successor(std::shared_ptr<Builder> & b) {
 Builder & Builder::link_right_successor(Builder & b) { return link_right_successor(b.p_root); }
 
 Builder & Builder::link_right_successor(std::shared_ptr<IR::Node> node) {
-    assert(!p_root->successors[1]);
     IR::link_nodes(p_root, node, true);
     return *this;
 }

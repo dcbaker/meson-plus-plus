@@ -438,7 +438,8 @@ struct StatementLowering {
                           .add_pos_arg(builder::make_instruction<IR::Identifier>("cursor"))
                           .add_pos_arg(builder::make_instruction<IR::Number>(1))
                           .set_var(cursor))
-            .add_condition(builder::make_instruction<IR::Identifier>(loop_condition));
+            .add_condition(builder::make_instruction<IR::Identifier>(loop_condition))
+            .set_loop_header();
 
         // This is the block that comes after the loop
         auto tail = std::make_shared<builder::Builder>(state.current_node->left_successor());
@@ -447,7 +448,6 @@ struct StatementLowering {
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
         auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
-        rhs->link_left_successor(header);
 
         LoweringState lstate{
             .current_node = rhs,
@@ -456,6 +456,7 @@ struct StatementLowering {
             .m_tmp_var = state.m_tmp_var,
         };
         lower_block(*stmt->block, *this, lstate);
+        lstate.current_node->link_left_successor(header);
 
         state.current_node = tail;
     }

@@ -19,15 +19,38 @@ Node node_sentintel = Node{UINT32_MAX, nullptr};
 } // namespace
 
 Node::Node()
-    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}},
-      loop_header{false} {};
+    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, predecessors{}, loop_header{false},
+      successors{}, children{} {};
 Node::Node(std::shared_ptr<BasicBlock> b)
-    : id{node_id_base++}, block{b}, successors{{nullptr, nullptr}}, loop_header{false} {};
+    : id{node_id_base++}, block{b}, predecessors{}, loop_header{false}, successors{}, children{} {};
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
-    : id{i}, block{b}, successors{{nullptr, nullptr}}, loop_header{false} {};
-Node::Node(bool is_header)
-    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, successors{{nullptr, nullptr}},
-      loop_header{is_header} {};
+    : id{i}, block{b}, predecessors{}, loop_header{false}, successors{}, children{} {};
+
+std::shared_ptr<Node> Node::left_successor() const { return successors[0].lock(); }
+std::shared_ptr<Node> Node::right_successor() const { return successors[1].lock(); }
+
+bool Node::has_successor(int index) const {
+    assert(index == 0 || index == 1);
+    return !!successors.at(index).lock();
+}
+
+void Node::set_successor(std::shared_ptr<Node> n, int index) {
+    assert(index == 0 || index == 1);
+    assert(!has_successor(index));
+
+    successors.at(index) = n;
+    if (!n->loop_header) {
+        children.at(index) = n;
+    }
+}
+
+void Node::set_right_successor(std::shared_ptr<Node> n) {
+    set_successor(std::forward<std::shared_ptr<Node>>(n), 1);
+}
+
+void Node::set_left_successor(std::shared_ptr<Node> n) {
+    set_successor(std::forward<std::shared_ptr<Node>>(n), 0);
+}
 
 std::string Node::serialize() const {
     std::stringstream ss{};
@@ -54,11 +77,11 @@ Node::Iterator::Iterator(pointer ptr) {
 }
 
 void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
-    const int index = right ? 1 : 0;
-
-    assert(!pred->successors.at(index));
-
-    pred->successors.at(index) = succ;
+    if (right) {
+        pred->set_right_successor(succ);
+    } else {
+        pred->set_left_successor(succ);
+    }
     succ->predecessors.push_back(pred);
 }
 
@@ -69,9 +92,17 @@ Node::Iterator::pointer Node::Iterator::operator->() { return deque.front(); }
 Node::Iterator & Node::Iterator::operator++() {
     Node * root = deque.front();
 
-    if (root->successors[0] || root->successors[1]) {
-        for (auto & n : root->successors) {
-            if (n != nullptr && processed.find(n->id) == processed.end()) {
+    if (root->has_successor(0) || root->has_successor(1)) {
+        if (root->has_successor(0)) {
+            auto n = root->left_successor();
+            if (processed.find(n->id) == processed.end()) {
+                deque.push_back(n.get());
+                processed.emplace(n->id);
+            }
+        }
+        if (root->has_successor(1)) {
+            auto n = root->right_successor();
+            if (processed.find(n->id) == processed.end()) {
                 deque.push_back(n.get());
                 processed.emplace(n->id);
             }

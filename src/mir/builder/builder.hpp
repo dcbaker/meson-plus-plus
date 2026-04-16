@@ -95,6 +95,8 @@ class Builder {
 
     Builder & add_condition(std::unique_ptr<IR::Instruction> && inst);
 
+    Builder & set_loop_header(bool v = true);
+
     Builder left_successor();
     Builder right_successor();
 
