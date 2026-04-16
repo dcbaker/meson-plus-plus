@@ -442,15 +442,15 @@ struct StatementLowering {
             .set_loop_header();
 
         // This is the block that comes after the loop
-        auto tail = std::make_shared<builder::Builder>(state.current_node->left_successor());
+        auto tail = std::make_shared<builder::Builder>(state.current_node->right_successor());
 
         // This is the first block of the body
         // We need to pass in a new state block, because we may have nested
         // loops, which will each need their own head/tail blocks.
-        auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
+        auto body = std::make_shared<builder::Builder>(state.current_node->left_successor());
 
         LoweringState lstate{
-            .current_node = rhs,
+            .current_node = body,
             .loop_header = state.current_node,
             .loop_tail = tail,
             .m_tmp_var = state.m_tmp_var,

@@ -168,10 +168,10 @@ TEST(ast_to_mir, foreach_array_simple) {
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(header, 2).instruction));
     EXPECT_TRUE(holds<MIR::IR::Identifier>(get_ir(header, 3).instruction));
 
-    const MIR::IR::Node & tail = *header.left_successor();
+    const MIR::IR::Node & tail = *header.right_successor();
     EXPECT_EQ(tail.block->instructions.size(), 0);
 
-    const MIR::IR::Node & body = *header.right_successor();
+    const MIR::IR::Node & body = *header.left_successor();
     ASSERT_EQ(body.block->instructions.size(), 1);
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(body, 0).instruction));
 
