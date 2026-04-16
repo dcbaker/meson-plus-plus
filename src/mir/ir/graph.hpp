@@ -8,8 +8,8 @@
 #include <deque>
 #include <functional>
 #include <memory>
-#include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace MIR::IR {
@@ -75,8 +75,14 @@ class Node {
         }
 
       private:
+        /// @brief A queue of items to return
         std::deque<pointer> deque;
-        std::set<uint32_t> processed;
+
+        /// @brief A fast set to check what is on the queue
+        std::unordered_set<uint32_t> queued;
+
+        /// @brief A set tracking which nodes have been returned
+        std::unordered_set<uint32_t> visited;
     };
 
     Iterator begin();

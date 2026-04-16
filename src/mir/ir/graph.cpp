@@ -73,7 +73,7 @@ Node::Iterator Node::end() { return Node::Iterator(&node_sentintel); }
 
 Node::Iterator::Iterator(pointer ptr) {
     deque.push_back(ptr);
-    processed.emplace(ptr->id);
+    queued.emplace(ptr->id);
 }
 
 void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
@@ -90,29 +90,44 @@ Node::Iterator::reference Node::Iterator::operator*() const { return *deque.fron
 Node::Iterator::pointer Node::Iterator::operator->() { return deque.front(); }
 
 Node::Iterator & Node::Iterator::operator++() {
-    Node * root = deque.front();
+    pointer current = deque.front();
+    deque.pop_front();
+    visited.emplace(current->id);
 
-    if (root->has_successor(0) || root->has_successor(1)) {
-        if (root->has_successor(0)) {
-            auto n = root->left_successor();
-            if (processed.find(n->id) == processed.end()) {
-                deque.push_back(n.get());
-                processed.emplace(n->id);
-            }
+    // Queue the previous node's successors
+    for (auto s : current->successors) {
+        auto succ = s.lock();
+        if (succ && queued.find(succ->id) == queued.end()) {
+            deque.push_back(succ.get());
+            queued.emplace(succ->id);
         }
-        if (root->has_successor(1)) {
-            auto n = root->right_successor();
-            if (processed.find(n->id) == processed.end()) {
-                deque.push_back(n.get());
-                processed.emplace(n->id);
-            }
-        }
-    } else {
-        deque.push_back(&node_sentintel);
-        processed.emplace(node_sentintel.id);
     }
 
-    deque.pop_front();
+    // If the next node (the front of the deque) has parents that have not been
+    // visited, then we can't use that one yet, push it to the back of the queue
+    // and take the next one until we've visited them all
+    if (!deque.empty()) {
+        do {
+            pointer next = deque.front();
+            assert(visited.find(next->id) == visited.end());
+            for (auto && p : next->predecessors) {
+                auto pred = p.lock();
+                if (visited.find(pred->id) == visited.end() && !pred->loop_header) {
+                    deque.push_back(next);
+                    deque.pop_front();
+                    continue;
+                }
+            }
+        } while (false);
+    }
+
+    // If the queue is empty, put the end sentinel on the queue, making that the
+    // next node
+    if (deque.empty()) {
+        deque.push_back(&node_sentintel);
+        queued.emplace(node_sentintel.id);
+    }
+
     return *this;
 }
 
