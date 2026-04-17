@@ -15,5 +15,4 @@
 #include "projectstate.hpp"
 #include "string.hpp"
 #include "target.hpp"
-#include "ternary.hpp"
 #include "undefined.hpp"

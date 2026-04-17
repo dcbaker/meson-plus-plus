@@ -23,15 +23,13 @@ class Phi;
 class Undefined;
 class Array;
 class Dict;
-class Ternary;
 class FunctionCall;
 
 using InstructionType =
     std::variant<std::shared_ptr<Message>, std::shared_ptr<Target>, std::shared_ptr<String>,
                  std::shared_ptr<Identifier>, std::shared_ptr<Number>, std::shared_ptr<Boolean>,
                  std::shared_ptr<File>, std::shared_ptr<Phi>, std::shared_ptr<Undefined>,
-                 std::shared_ptr<Array>, std::shared_ptr<Dict>, std::shared_ptr<Ternary>,
-                 std::shared_ptr<FunctionCall>>;
+                 std::shared_ptr<Array>, std::shared_ptr<Dict>, std::shared_ptr<FunctionCall>>;
 
 /// @brief Information about variable storage
 class Variable {

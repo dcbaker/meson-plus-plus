@@ -24,7 +24,6 @@ libmir = static_library(
     'ir/projectstate.cpp',
     'ir/string.cpp',
     'ir/target.cpp',
-    'ir/ternary.cpp',
     'ir/undefined.cpp',
   ],
   include_directories : [inc_frontend],
