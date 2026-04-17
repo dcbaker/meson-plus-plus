@@ -108,31 +108,6 @@ Node::Iterator::Iterator(pointer ptr) {
     queued.emplace(ptr->id);
 }
 
-void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
-    if (right) {
-        pred->set_right_successor(succ);
-    } else {
-        pred->set_left_successor(succ);
-    }
-    succ->predecessors.emplace(pred);
-}
-
-void reparent(std::shared_ptr<Node> from, std::shared_ptr<Node> to) {
-    if (auto s = from->left_successor()) {
-        s->predecessors.erase(from);
-        s->predecessors.emplace(to);
-        to->set_left_successor(s);
-        from->set_left_successor(std::shared_ptr<IR::Node>(nullptr));
-    }
-
-    if (auto s = from->right_successor()) {
-        s->predecessors.erase(from);
-        s->predecessors.emplace(to);
-        to->set_right_successor(s);
-        from->set_right_successor(std::shared_ptr<IR::Node>(nullptr));
-    }
-}
-
 Node::Iterator::reference Node::Iterator::operator*() const { return *deque.front(); }
 
 Node::Iterator::pointer Node::Iterator::operator->() { return deque.front(); }
@@ -183,6 +158,31 @@ Node::Iterator Node::Iterator::operator++(int) {
     Iterator tmp = *this;
     ++(*this);
     return tmp;
+}
+
+void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
+    if (right) {
+        pred->set_right_successor(succ);
+    } else {
+        pred->set_left_successor(succ);
+    }
+    succ->predecessors.emplace(pred);
+}
+
+void reparent(std::shared_ptr<Node> from, std::shared_ptr<Node> to) {
+    if (auto s = from->left_successor()) {
+        s->predecessors.erase(from);
+        s->predecessors.emplace(to);
+        to->set_left_successor(s);
+        from->set_left_successor(std::shared_ptr<IR::Node>(nullptr));
+    }
+
+    if (auto s = from->right_successor()) {
+        s->predecessors.erase(from);
+        s->predecessors.emplace(to);
+        to->set_right_successor(s);
+        from->set_right_successor(std::shared_ptr<IR::Node>(nullptr));
+    }
 }
 
 CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
