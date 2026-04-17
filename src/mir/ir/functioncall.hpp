@@ -16,11 +16,6 @@ using KeywordArguments = std::vector<std::pair<InstructionType, InstructionType>
 std::string serialize(const PositionalArguments & p, unsigned indent = 0);
 std::string serialize(const KeywordArguments & k, unsigned indent = 0);
 
-/// Meson allows namespaces such as modules and the `meson` object to be
-/// aliased, but it does not allow functions to be aliased. This means that we
-/// must store the namespace as an InstructionType, since it could be an
-/// identifier or an import() function call
-
 /// @brief A function call
 class FunctionCall {
   public:
@@ -37,6 +32,10 @@ class FunctionCall {
     /// @brief The name of the function
     std::string m_name;
 
+    /// Meson allows namespaces such as modules and the `meson` object to be
+    /// aliased, but it does not allow functions to be aliased. This means that we
+    /// must store the namespace as an InstructionType, since it could be an
+    /// identifier or an import() function call
     /// @brief The namespace of the function. null means that it doesn't come from a namespace
     std::optional<InstructionType> m_namespace;
 
