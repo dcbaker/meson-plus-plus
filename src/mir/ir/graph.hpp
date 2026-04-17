@@ -81,13 +81,8 @@ class Node {
         Iterator & operator++();
         Iterator operator++(int);
 
-        friend bool operator==(const Iterator & a, const Iterator & b) {
-            return a.deque.front() == b.deque.front();
-        }
-
-        friend bool operator!=(const Iterator & a, const Iterator & b) {
-            return a.deque.front() != b.deque.front();
-        }
+        friend bool operator==(const Iterator & a, const Iterator & b);
+        friend bool operator!=(const Iterator & a, const Iterator & b);
 
       private:
         /// @brief A queue of items to return

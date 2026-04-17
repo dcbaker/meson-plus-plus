@@ -95,6 +95,14 @@ bool Node::operator!=(const Node & other) const { return this->id != other.id; }
 Node::Iterator Node::begin() { return Node::Iterator(this); }
 Node::Iterator Node::end() { return Node::Iterator(&node_sentintel); }
 
+bool operator==(const Node::Iterator & a, const Node::Iterator & b) {
+    return a.deque.front() == b.deque.front();
+}
+
+bool operator!=(const Node::Iterator & a, const Node::Iterator & b) {
+    return a.deque.front() != b.deque.front();
+}
+
 Node::Iterator::Iterator(pointer ptr) {
     deque.push_back(ptr);
     queued.emplace(ptr->id);
