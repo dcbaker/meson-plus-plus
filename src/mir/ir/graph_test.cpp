@@ -218,3 +218,18 @@ TEST(Node, iter_visits_predecessors_before_successors_loop_2) {
     EXPECT_EQ(itr, preamble->end())
         << "Got: " << itr->id << ", but expected : " << preamble->end()->id << std::endl;
 }
+
+TEST(Node, reparent) {
+    auto n = std::make_shared<Node>(nullptr);
+    auto n1 = std::make_shared<Node>(nullptr);
+    auto n2 = std::make_shared<Node>(nullptr);
+    link_nodes(n, n1);
+    link_nodes(n1, n2);
+
+    auto n3 = std::make_shared<Node>(nullptr);
+    reparent(n, n3);
+    EXPECT_FALSE(n->left_successor());
+    EXPECT_EQ(n3->left_successor(), n1);
+    EXPECT_TRUE(n1->predecessors.find(n) == n1->predecessors.end());
+    EXPECT_TRUE(n1->predecessors.find(n3) != n1->predecessors.end());
+}

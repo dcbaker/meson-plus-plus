@@ -134,6 +134,12 @@ class Node {
 /// @param right if the node is the right leg (default: false)
 void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right = false);
 
+/// @brief Transfer successors from one node to another
+/// @param prev the node to take the successors from
+/// @param next the node to give them to
+/// This also updates the parents of the moved successor(s)
+void reparent(std::shared_ptr<Node> from, std::shared_ptr<Node> to);
+
 /// @brief The representation of the Control Flow Graph
 class CFG {
   public:

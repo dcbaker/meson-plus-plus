@@ -43,10 +43,11 @@ bool Node::has_successor(int index) const {
 
 void Node::set_successor(std::shared_ptr<Node> n, int index) {
     assert(index == 0 || index == 1);
-    assert(!has_successor(index));
+    // we do allow a success here if we're unsetting the successor
+    assert(!has_successor(index) || !n);
 
     successors.at(index) = n;
-    if (!n->loop_header) {
+    if (!n || !n->loop_header) {
         children.at(index) = n;
     }
 }
@@ -106,6 +107,22 @@ void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool rig
         pred->set_left_successor(succ);
     }
     succ->predecessors.emplace(pred);
+}
+
+void reparent(std::shared_ptr<Node> from, std::shared_ptr<Node> to) {
+    if (auto s = from->left_successor()) {
+        s->predecessors.erase(from);
+        s->predecessors.emplace(to);
+        to->set_left_successor(s);
+        from->set_left_successor(std::shared_ptr<IR::Node>(nullptr));
+    }
+
+    if (auto s = from->right_successor()) {
+        s->predecessors.erase(from);
+        s->predecessors.emplace(to);
+        to->set_right_successor(s);
+        from->set_right_successor(std::shared_ptr<IR::Node>(nullptr));
+    }
 }
 
 Node::Iterator::reference Node::Iterator::operator*() const { return *deque.front(); }
