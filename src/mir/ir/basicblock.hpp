@@ -17,7 +17,7 @@ class BasicBlock {
     BasicBlock();
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     /// @brief The list of instructions
     std::list<std::unique_ptr<Instruction>> instructions;

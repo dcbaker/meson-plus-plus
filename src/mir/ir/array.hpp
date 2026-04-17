@@ -16,7 +16,7 @@ class Array {
     Array(std::vector<InstructionType> v);
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     std::vector<InstructionType> m_value;
 };

@@ -11,7 +11,7 @@ namespace MIR::IR {
 Ternary::Ternary(InstructionType condition, InstructionType lhs, InstructionType rhs)
     : m_cond{condition}, m_lhs{lhs}, m_rhs{rhs} {};
 
-std::string Ternary::serialize() const {
+std::string Ternary::serialize(unsigned indent) const {
     auto && visitor = [](auto && i) -> std::string { return i->serialize(); };
 
     std::stringstream ss{};

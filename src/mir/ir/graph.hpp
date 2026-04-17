@@ -39,7 +39,7 @@ class Node {
     /// @brief Is this block a loop header block
     bool loop_header;
 
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     bool operator==(const Node & other) const;
     bool operator!=(const Node & other) const;
@@ -128,7 +128,7 @@ class CFG {
     Node::Iterator end();
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     std::shared_ptr<Node> root;
 };

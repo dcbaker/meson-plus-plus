@@ -15,7 +15,7 @@ class Ternary {
     Ternary(InstructionType condition, InstructionType lhs, InstructionType rhs);
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     InstructionType m_cond;
     InstructionType m_lhs;

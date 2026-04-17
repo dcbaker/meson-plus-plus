@@ -16,7 +16,7 @@ class Dict {
     Dict(std::map<InstructionType, InstructionType> v);
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     std::map<InstructionType, InstructionType> m_value;
 };

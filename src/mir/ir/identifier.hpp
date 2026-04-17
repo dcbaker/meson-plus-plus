@@ -14,7 +14,7 @@ class Identifier {
     Identifier(std::string name);
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     std::string m_name;
 };

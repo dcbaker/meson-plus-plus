@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2025 Intel Corporation
-
-#include "instruction.hpp"
+// Copyright © 2025-2026 Intel Corporation
 
 #include "message.hpp"
+#include "helpers.hpp"
+#include "instruction.hpp"
 
 #include <sstream>
 
@@ -28,20 +28,22 @@ std::string to_string(MessageType t) {
 
 } // namespace
 
+using Private::indenter;
+
 Message::Message(MessageType t, std::string s)
     : type{t}, message{std::move(s)}, is_error{t == MessageType::error} {};
 Message::Message(MessageType t, std::string s, bool e)
     : type{t}, message{std::move(s)}, is_error{e} {};
 
-std::string Message::serialize() const {
+std::string Message::serialize(unsigned indent) const {
     std::stringstream ss{};
-    ss << "Message { "
-       << "type = { " << to_string(type) << " } "
-       << "message = { \"" << message << "\" } "
-       << "is_error = { " << is_error << " } "
-       << "}";
+    ss << indenter(indent) << "Message {\n"
+       << indenter(indent + 1) << "type = { " << to_string(type) << " }\n"
+       << indenter(indent + 1) << "message = { \"" << message << "\" }\n"
+       << indenter(indent + 1) << "is_error = { " << is_error << " }\n"
+       << indenter(indent) << "}";
 
     return ss.str();
 }
 
-} // namespace MIR
+} // namespace MIR::IR

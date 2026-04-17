@@ -3,6 +3,7 @@
 
 #include "graph.hpp"
 #include "basicblock.hpp"
+#include "helpers.hpp"
 
 #include <cassert>
 #include <deque>
@@ -52,19 +53,21 @@ void Node::set_left_successor(std::shared_ptr<Node> n) {
     set_successor(std::forward<std::shared_ptr<Node>>(n), 0);
 }
 
-std::string Node::serialize() const {
+std::string Node::serialize(unsigned indent) const {
+    const std::string ind = Private::indenter(indent + 1);
+
     std::stringstream ss{};
-    ss << "Node {\n"
-       << "  id = { " << id << " }\n"
-       << "  loop_header = { " << (loop_header ? "true" : "false") << " }\n"
-       << "  predecessors = {";
+    ss << Private::indenter(indent) << "Node {\n"
+       << ind << "id = { " << id << " }\n"
+       << ind << "loop_header = { " << (loop_header ? "true" : "false") << " }\n"
+       << ind << "predecessors = {";
 
     for (auto && p : predecessors) {
         ss << " " << p.lock()->id;
     }
     ss << " }\n";
 
-    ss << "  successors = {";
+    ss << ind << "successors = {";
     for (auto && s : successors) {
         auto succ = s.lock();
         if (succ) {
@@ -73,9 +76,7 @@ std::string Node::serialize() const {
     }
     ss << " }\n";
 
-    ss << "  block = {\n"
-       << block->serialize() << "\n}"
-       << "}";
+    ss << ind << "block = {\n" << block->serialize(indent + 2) << "\n" << ind << "}\n" << "}";
 
     return ss.str();
 }
@@ -155,10 +156,10 @@ Node::Iterator Node::Iterator::operator++(int) {
 
 CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
 
-std::string CFG::serialize() const {
+std::string CFG::serialize(unsigned indent) const {
     std::stringstream ss{};
     for (auto && n : *root) {
-        ss << n.serialize() << "\n\n";
+        ss << n.serialize(indent) << "\n\n";
     }
     return ss.str();
 }

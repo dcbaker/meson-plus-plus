@@ -161,8 +161,7 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
-        return builder::make_instruction<IR::FunctionCall>("get_attribute"
-                                                           "meson++")
+        return builder::make_instruction<IR::FunctionCall>("get_attribute", "meson++")
             .add_pos_arg(std::visit(*this, stmt->holder))
             .add_pos_arg(std::visit(*this, stmt->held));
     }

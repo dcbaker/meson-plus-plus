@@ -2,6 +2,7 @@
 // Copyright © 2025-2026 Intel Corporation
 
 #include "functioncall.hpp"
+#include "helpers.hpp"
 #include "instruction.hpp"
 #include "instructions.hpp"
 
@@ -9,30 +10,48 @@
 
 namespace MIR::IR {
 
-std::string to_string(const PositionalArguments & p_args) {
+using Private::indenter;
+
+std::string serialize(const PositionalArguments & p_args, unsigned indent) {
     std::stringstream ss{};
-    ss << "PositionalArguments { ";
-    for (const auto & p : p_args) {
-        ss << to_string(p) << " ";
+    const std::string ind = indenter(indent);
+
+    ss << ind << "PositionalArguments { ";
+    if (!p_args.empty()) {
+        ss << "\n";
+        for (const auto & p : p_args) {
+            ss << std::visit([&indent](auto && i) { return i->serialize(indent + 1); }, p) << "\n";
+        }
+        ss << ind;
     }
     ss << "}";
 
     return ss.str();
 }
 
-std::string to_string(const KeywordArguments & k_args) {
+std::string serialize(const KeywordArguments & k_args, unsigned indent) {
+    auto && visitor = [&indent](auto && i) { return i->serialize(indent + 3); };
+    const std::string ind = indenter(indent);
     std::stringstream ss{};
-    ss << "KeywordArguments { ";
-    for (const auto & [k, v] : k_args) {
-        ss << to_string(k) << " = { " << to_string(v) << " } ";
+
+    ss << ind << "KeywordArguments { ";
+    if (!k_args.empty()) {
+        ss << "\n";
+        for (const auto & [k, v] : k_args) {
+            ss << indenter(indent + 1) << "pair = {\n"
+               << indenter(indent + 2) << "key = {\n"
+               << std::visit(visitor, k) << "\n"
+               << indenter(indent + 2) << "}\n"
+               << indenter(indent + 2) << "value = {\n"
+               << std::visit(visitor, v) << "\n"
+               << indenter(indent + 2) << "}\n"
+               << indenter(indent + 1) << "}\n";
+        }
+        ss << ind;
     }
     ss << "}";
 
     return ss.str();
-}
-
-std::string to_string(const InstructionType & inst) {
-    return std::visit([](auto && i) -> std::string { return i->serialize(); }, inst);
 }
 
 FunctionCall::FunctionCall(std::string name) : m_name{name} {};
@@ -46,16 +65,25 @@ FunctionCall::FunctionCall(std::string name, InstructionType && ns, PositionalAr
                            KeywordArguments && kws)
     : m_name{name}, m_namespace{std::move(ns)}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
 
-std::string FunctionCall::serialize() const {
+std::string FunctionCall::serialize(unsigned indent) const {
     std::stringstream ss;
-    ss << "FunctionCall { "
-       << "name = { " << m_name << " } ";
+    const std::string ind = indenter(indent + 1);
+
+    ss << indenter(indent) << "FunctionCall {\n" << ind << "name = { " << m_name << " }\n";
     if (m_namespace) {
-        ss << "namespace = { " << to_string(m_namespace.value()) << " } ";
+        ss << ind << "namespace = {\n"
+           << std::visit([&indent](auto && i) { return i->serialize(indent + 2); },
+                         m_namespace.value())
+           << "\n"
+           << ind << "}\n";
     }
-    ss << "positional_arguments = { " << to_string(m_pos) << " } "
-       << "keyword_arguments = { " << to_string(m_kws) << " } "
-       << "}";
+    ss << ind << "positional_arguments = {\n"
+       << IR::serialize(m_pos, indent + 2) << "\n"
+       << ind << "}\n"
+       << ind << "keyword_arguments = {\n"
+       << IR::serialize(m_kws, indent + 2) << "\n"
+       << ind << "}\n"
+       << indenter(indent) << "}";
     return ss.str();
 }
 

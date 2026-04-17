@@ -13,7 +13,7 @@ class Undefined {
     Undefined();
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 };
 
 } // namespace MIR::IR

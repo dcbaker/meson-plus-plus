@@ -42,7 +42,7 @@ class Variable {
     operator bool() const;
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     /// @brief The name the variable is assigned to
     std::string m_name;
@@ -59,7 +59,7 @@ class Instruction {
     Instruction(InstructionType && inst, Variable && var);
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     /// @brief The held instruction
     InstructionType instruction;

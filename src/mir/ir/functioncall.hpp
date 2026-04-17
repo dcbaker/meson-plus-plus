@@ -13,8 +13,8 @@ namespace MIR::IR {
 using PositionalArguments = std::vector<InstructionType>;
 using KeywordArguments = std::vector<std::pair<InstructionType, InstructionType>>;
 
-std::string to_string(const PositionalArguments & p);
-std::string to_string(const KeywordArguments & k);
+std::string serialize(const PositionalArguments & p, unsigned indent = 0);
+std::string serialize(const KeywordArguments & k, unsigned indent = 0);
 
 /// Meson allows namespaces such as modules and the `meson` object to be
 /// aliased, but it does not allow functions to be aliased. This means that we
@@ -32,7 +32,7 @@ class FunctionCall {
                  KeywordArguments && kws);
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize() const;
+    std::string serialize(unsigned indent = 0) const;
 
     /// @brief The name of the function
     std::string m_name;
