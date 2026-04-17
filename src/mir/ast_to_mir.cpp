@@ -5,6 +5,7 @@
 #include "builder/builder.hpp"
 #include "exceptions.hpp"
 #include "ir/instruction.hpp"
+#include "passes/remove_ternary.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -544,7 +545,17 @@ std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const Statem
 IR::CFG ast_to_mir(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     const StatementLowering lwr{};
 
-    return IR::CFG{lower_block(*block, lwr)};
+    IR::CFG cfg{lower_block(*block, lwr)};
+
+    bool progress;
+    do {
+        progress = false;
+        for (auto n : cfg) {
+            progress |= Passes::remove_ternary(n);
+        }
+    } while (progress);
+
+    return cfg;
 }
 
 } // namespace MIR
