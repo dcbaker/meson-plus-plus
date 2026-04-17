@@ -108,10 +108,9 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Relational> & stmt) const {
-        // TODO: we could rewrite not_in and not_equal as not(in) and not(equal), respectively
-        // This would save us on opcodes
         IR::FunctionId fid;
         std::string name;
+        bool negate = false;
         switch (stmt->op) {
             case AST::RelationalOp::AND:
                 name = "logical_and";
@@ -121,13 +120,12 @@ struct ExpressionLowering {
                 name = "logical_or";
                 fid = IR::FunctionId::logical_or;
                 break;
+            case AST::RelationalOp::NE:
+                negate = true;
+                [[fallthrough]];
             case AST::RelationalOp::EQ:
                 name = "equal";
                 fid = IR::FunctionId::equal;
-                break;
-            case AST::RelationalOp::NE:
-                name = "not_equal";
-                fid = IR::FunctionId::not_equal;
                 break;
             case AST::RelationalOp::GE:
                 name = "greater_equal";
@@ -146,20 +144,29 @@ struct ExpressionLowering {
                 fid = IR::FunctionId::less_equal;
                 break;
             case AST::RelationalOp::NOT_IN:
-                name = "not_in";
-                fid = IR::FunctionId::not_in;
-                break;
+                negate = true;
+                [[fallthrough]];
             case AST::RelationalOp::IN:
                 name = "in";
-                fid = IR::FunctionId::in;
+                fid = IR::FunctionId::contains;
                 break;
             default:
                 throw std::runtime_error{"Unknown relation expression type"};
         }
 
-        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
-            .add_pos_arg(std::visit(*this, stmt->lhs))
-            .add_pos_arg(std::visit(*this, stmt->lhs));
+        auto b = builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+                     .add_pos_arg(std::visit(*this, stmt->lhs))
+                     .add_pos_arg(std::visit(*this, stmt->lhs))
+                     .as_type();
+
+        // for "x != y" and "x not in y", we can rewrite that as "not(equal(x,
+        // y))" and "not(contains(x, y))", which saves us on opcodes
+        if (negate) {
+            return builder::make_instruction<IR::FunctionCall>("not", "meson++",
+                                                               IR::FunctionId::logical_not)
+                .add_pos_arg(std::move(b));
+        }
+        return b;
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
