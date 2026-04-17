@@ -19,6 +19,12 @@ Node node_sentintel = Node{UINT32_MAX, nullptr};
 
 } // namespace
 
+Predecessor::Predecessor(std::shared_ptr<Node> n) : m_p{n}, m_id{n->id} {};
+
+bool Predecessor::operator==(const Predecessor & other) const { return m_id == other.m_id; }
+
+size_t PredecessorHash::operator()(const Predecessor & p) const { return p.m_id; }
+
 Node::Node()
     : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, predecessors{}, loop_header{false},
       successors{}, children{} {};
@@ -63,7 +69,7 @@ std::string Node::serialize(unsigned indent) const {
        << ind << "predecessors = {";
 
     for (auto && p : predecessors) {
-        ss << " " << p.lock()->id;
+        ss << " " << p.m_id;
     }
     ss << " }\n";
 
@@ -99,7 +105,7 @@ void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool rig
     } else {
         pred->set_left_successor(succ);
     }
-    succ->predecessors.push_back(pred);
+    succ->predecessors.emplace(pred);
 }
 
 Node::Iterator::reference Node::Iterator::operator*() const { return *deque.front(); }
@@ -128,7 +134,7 @@ Node::Iterator & Node::Iterator::operator++() {
             pointer next = deque.front();
             assert(visited.find(next->id) == visited.end());
             for (auto && p : next->predecessors) {
-                auto pred = p.lock();
+                auto pred = p.m_p.lock();
                 if (visited.find(pred->id) == visited.end() && !pred->loop_header) {
                     deque.push_back(next);
                     deque.pop_front();

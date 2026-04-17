@@ -10,12 +10,27 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
-#include <vector>
 
 namespace MIR::IR {
 
 // I'm concerned about mega headers
 class BasicBlock;
+
+class Node;
+
+/// @brief proxies the id of a precseeding node
+struct Predecessor {
+    Predecessor(std::shared_ptr<Node> n);
+
+    bool operator==(const Predecessor & other) const;
+
+    std::weak_ptr<Node> m_p;
+    uint64_t m_id;
+};
+
+struct PredecessorHash {
+    size_t operator()(const Predecessor & p) const;
+};
 
 /// @brief A single node the Control Flow Graph
 class Node {
@@ -34,7 +49,7 @@ class Node {
     // chains they only have a weak reference to their predecessors
 
     /// @brief Possible entries to this node.
-    std::vector<std::weak_ptr<Node>> predecessors;
+    std::unordered_set<Predecessor, PredecessorHash> predecessors;
 
     /// @brief Is this block a loop header block
     bool loop_header;
