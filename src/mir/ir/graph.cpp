@@ -16,6 +16,7 @@ namespace {
 
 uint32_t node_id_base = 0;
 Node node_sentintel = Node{UINT32_MAX, nullptr};
+std::shared_ptr<Node> node_sentintel_ptr = std::make_shared<Node>(UINT32_MAX, nullptr);
 
 } // namespace
 
@@ -92,74 +93,6 @@ bool Node::operator==(const Node & other) const { return this->id == other.id; }
 
 bool Node::operator!=(const Node & other) const { return this->id != other.id; }
 
-Node::Iterator Node::begin() { return Node::Iterator(this); }
-Node::Iterator Node::end() { return Node::Iterator(&node_sentintel); }
-
-bool operator==(const Node::Iterator & a, const Node::Iterator & b) {
-    return a.deque.front() == b.deque.front();
-}
-
-bool operator!=(const Node::Iterator & a, const Node::Iterator & b) {
-    return a.deque.front() != b.deque.front();
-}
-
-Node::Iterator::Iterator(pointer ptr) {
-    deque.push_back(ptr);
-    queued.emplace(ptr->id);
-}
-
-Node::Iterator::reference Node::Iterator::operator*() const { return *deque.front(); }
-
-Node::Iterator::pointer Node::Iterator::operator->() { return deque.front(); }
-
-Node::Iterator & Node::Iterator::operator++() {
-    pointer current = deque.front();
-    deque.pop_front();
-    visited.emplace(current->id);
-
-    // Queue the previous node's successors
-    for (auto s : current->successors) {
-        auto succ = s.lock();
-        if (succ && queued.find(succ->id) == queued.end()) {
-            deque.push_back(succ.get());
-            queued.emplace(succ->id);
-        }
-    }
-
-    // If the next node (the front of the deque) has parents that have not been
-    // visited, then we can't use that one yet, push it to the back of the queue
-    // and take the next one until we've visited them all
-    if (!deque.empty()) {
-        do {
-            pointer next = deque.front();
-            assert(visited.find(next->id) == visited.end());
-            for (auto && p : next->predecessors) {
-                auto pred = p.m_p.lock();
-                if (visited.find(pred->id) == visited.end() && !pred->loop_header) {
-                    deque.push_back(next);
-                    deque.pop_front();
-                    continue;
-                }
-            }
-        } while (false);
-    }
-
-    // If the queue is empty, put the end sentinel on the queue, making that the
-    // next node
-    if (deque.empty()) {
-        deque.push_back(&node_sentintel);
-        queued.emplace(node_sentintel.id);
-    }
-
-    return *this;
-}
-
-Node::Iterator Node::Iterator::operator++(int) {
-    Iterator tmp = *this;
-    ++(*this);
-    return tmp;
-}
-
 void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
     if (right) {
         pred->set_right_successor(succ);
@@ -185,17 +118,88 @@ void reparent(std::shared_ptr<Node> from, std::shared_ptr<Node> to) {
     }
 }
 
+bool operator==(const CFG::Iterator & a, const CFG::Iterator & b) {
+    return a.deque.front() == b.deque.front();
+}
+
+bool operator!=(const CFG::Iterator & a, const CFG::Iterator & b) {
+    return a.deque.front() != b.deque.front();
+}
+
+CFG::Iterator::Iterator(value_type value) {
+    deque.push_back(value);
+    queued.emplace(value->id);
+}
+
+CFG::Iterator::reference CFG::Iterator::operator*() { return deque.front(); }
+
+CFG::Iterator::pointer CFG::Iterator::operator->() { return &deque.front(); }
+
+CFG::Iterator & CFG::Iterator::operator++() {
+    value_type current = deque.front();
+    visited.emplace(current->id);
+
+    // Queue the nodes successors
+    // Do this after visiting the node in case it's successors are mutated during
+    // that visit
+    for (auto succ : {current->left_successor(), current->right_successor()}) {
+        if (succ && queued.find(succ->id) == queued.end()) {
+            deque.push_back(succ);
+            queued.emplace(succ->id);
+        }
+    }
+
+    // We are done with this node, advance to the next one
+    deque.pop_front();
+
+    // If the next node (the front of the deque) has parents that have not been
+    // visited, then we can't use that one yet, push it to the back of the queue
+    // and take the next one until we've visited them all
+    if (!deque.empty()) {
+        bool cont;
+        do {
+            cont = false;
+            value_type value = deque.front();
+
+            if (value) {
+                for (auto && p : value->predecessors) {
+                    auto pred = p.m_p.lock();
+                    // This happens to work, but seems fragile
+                    if (visited.find(pred->id) == visited.end() && !value->loop_header) {
+                        deque.pop_front();
+                        deque.push_back(value);
+                        cont = true;
+                        break;
+                    }
+                }
+            }
+        } while (cont);
+    } else {
+        // If the queue is empty, we've (hopefully) reached the end of the
+        // graph, and we'll push the tail sentinel on there.
+        deque.push_back(node_sentintel_ptr);
+    }
+
+    return *this;
+}
+
+CFG::Iterator CFG::Iterator::operator++(int) {
+    Iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+CFG::Iterator CFG::begin() { return Iterator(root); }
+CFG::Iterator CFG::end() { return Iterator(node_sentintel_ptr); }
+
 CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
 
-std::string CFG::serialize(unsigned indent) const {
+std::string CFG::serialize(unsigned indent) {
     std::stringstream ss{};
-    for (auto && n : *root) {
-        ss << n.serialize(indent) << "\n\n";
+    for (auto n : *this) {
+        ss << n->serialize(indent) << "\n\n";
     }
     return ss.str();
 }
-
-Node::Iterator CFG::begin() { return root->begin(); }
-Node::Iterator CFG::end() { return root->end(); }
 
 } // namespace MIR::IR

@@ -67,37 +67,6 @@ class Node {
     /// @return A shared_ptr to the right successor
     std::shared_ptr<Node> right_successor() const;
 
-    struct Iterator {
-      public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = Node;
-        using pointer = Node *;
-        using reference = Node &;
-
-        Iterator(pointer ptr);
-        reference operator*() const;
-        pointer operator->();
-        Iterator & operator++();
-        Iterator operator++(int);
-
-        friend bool operator==(const Iterator & a, const Iterator & b);
-        friend bool operator!=(const Iterator & a, const Iterator & b);
-
-      private:
-        /// @brief A queue of items to return
-        std::deque<pointer> deque;
-
-        /// @brief A fast set to check what is on the queue
-        std::unordered_set<uint32_t> queued;
-
-        /// @brief A set tracking which nodes have been returned
-        std::unordered_set<uint32_t> visited;
-    };
-
-    Iterator begin();
-    Iterator end();
-
     friend void link_nodes(std::shared_ptr<Node>, std::shared_ptr<Node>, bool right);
     friend void reparent(std::shared_ptr<Node>, std::shared_ptr<Node>);
 
@@ -141,11 +110,40 @@ class CFG {
   public:
     CFG(std::shared_ptr<Node>);
 
-    Node::Iterator begin();
-    Node::Iterator end();
+    struct Iterator {
+      public:
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = std::shared_ptr<Node>;
+        using pointer = std::shared_ptr<Node> *;
+        using reference = std::shared_ptr<Node> &;
+
+        Iterator(value_type value);
+        reference operator*();
+        pointer operator->();
+        Iterator & operator++();
+        Iterator operator++(int);
+
+        friend bool operator==(const Iterator & a, const Iterator & b);
+        friend bool operator!=(const Iterator & a, const Iterator & b);
+
+      private:
+        /// @brief A queue of items to return
+        std::deque<value_type> deque;
+
+        /// @brief A fast set to check what is on the queue
+        std::unordered_set<uint32_t> queued;
+
+        /// @brief A set tracking which nodes have been returned
+        std::unordered_set<uint32_t> visited;
+    };
+
+    Iterator begin();
+    Iterator end();
 
     /// @brief provide a serialized form of this instruction
-    std::string serialize(unsigned indent = 0) const;
+    /// TODO: could be const with a const iterato...
+    std::string serialize(unsigned indent = 0);
 
     std::shared_ptr<Node> root;
 };
