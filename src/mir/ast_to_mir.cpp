@@ -19,18 +19,21 @@ using namespace Frontend;
 struct ExpressionLowering {
     IR::InstructionType operator()(const std::unique_ptr<AST::AdditiveExpression> & stmt) const {
         std::string name;
+        IR::FunctionId fid;
         switch (stmt->op) {
             case AST::AddOp::ADD:
                 name = "addition";
+                fid = IR::FunctionId::addition;
                 break;
             case AST::AddOp::SUB:
                 name = "subtraction";
+                fid = IR::FunctionId::subtraction;
                 break;
             default:
                 throw std::runtime_error{"Unknown additive expression type"};
         }
 
-        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs));
     }
@@ -46,39 +49,46 @@ struct ExpressionLowering {
     IR::InstructionType
     operator()(const std::unique_ptr<AST::MultiplicativeExpression> & stmt) const {
         std::string name;
+        IR::FunctionId fid;
         switch (stmt->op) {
             case AST::MulOp::MOD:
                 name = "modulo";
+                fid = IR::FunctionId::modulo;
                 break;
             case AST::MulOp::MUL:
                 name = "multiplication";
+                fid = IR::FunctionId::multiplication;
                 break;
             case AST::MulOp::DIV:
                 name = "division";
+                fid = IR::FunctionId::division;
                 break;
             default:
                 throw std::runtime_error{"Unknown multiplication expression type"};
         }
 
-        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::UnaryExpression> & stmt) const {
         std::string name;
+        IR::FunctionId fid;
         switch (stmt->op) {
             case AST::UnaryOp::NEG:
                 name = "negate";
+                fid = IR::FunctionId::negate;
                 break;
             case AST::UnaryOp::NOT:
                 name = "logical_not";
+                fid = IR::FunctionId::logical_not;
                 break;
             default:
                 throw std::runtime_error{"Unknown unary expression type"};
         }
 
-        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
             .add_pos_arg(std::visit(*this, stmt->rhs));
     }
 
@@ -91,51 +101,63 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Subscript> & stmt) const {
-        return builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
+        return builder::make_instruction<IR::FunctionCall>("subscript", "meson++",
+                                                           IR::FunctionId::subscript)
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs));
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Relational> & stmt) const {
         // TODO: we could rewrite not_in and not_equal as not(in) and not(equal), respectively
-        // This would save us on
+        // This would save us on opcodes
+        IR::FunctionId fid;
         std::string name;
         switch (stmt->op) {
             case AST::RelationalOp::AND:
                 name = "logical_and";
+                fid = IR::FunctionId::logical_and;
                 break;
             case AST::RelationalOp::OR:
                 name = "logical_or";
+                fid = IR::FunctionId::logical_or;
                 break;
             case AST::RelationalOp::EQ:
                 name = "equal";
+                fid = IR::FunctionId::equal;
                 break;
             case AST::RelationalOp::NE:
                 name = "not_equal";
+                fid = IR::FunctionId::not_equal;
                 break;
             case AST::RelationalOp::GE:
                 name = "greater_equal";
+                fid = IR::FunctionId::greater_equal;
                 break;
             case AST::RelationalOp::GT:
                 name = "greater_than";
+                fid = IR::FunctionId::greater_than;
                 break;
             case AST::RelationalOp::LT:
                 name = "less_than";
+                fid = IR::FunctionId::less_than;
                 break;
             case AST::RelationalOp::LE:
                 name = "less_equal";
+                fid = IR::FunctionId::less_equal;
                 break;
             case AST::RelationalOp::NOT_IN:
                 name = "not_in";
+                fid = IR::FunctionId::not_in;
                 break;
             case AST::RelationalOp::IN:
                 name = "in";
+                fid = IR::FunctionId::in;
                 break;
             default:
                 throw std::runtime_error{"Unknown relation expression type"};
         }
 
-        return builder::make_instruction<IR::FunctionCall>(name, "meson++")
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->lhs));
     }
@@ -161,7 +183,8 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
-        return builder::make_instruction<IR::FunctionCall>("get_attribute", "meson++")
+        return builder::make_instruction<IR::FunctionCall>("get_attribute", "meson++",
+                                                           IR::FunctionId::get_attribute)
             .add_pos_arg(std::visit(*this, stmt->holder))
             .add_pos_arg(std::visit(*this, stmt->held));
     }
@@ -184,8 +207,8 @@ struct ExpressionLowering {
     }
 
     IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
-        return builder::make_instruction<IR::FunctionCall>("ternary"
-                                                           "meson++")
+        return builder::make_instruction<IR::FunctionCall>("ternary", "meson++",
+                                                           IR::FunctionId::ternary)
             .add_pos_arg(std::visit(*this, stmt->condition))
             .add_pos_arg(std::visit(*this, stmt->lhs))
             .add_pos_arg(std::visit(*this, stmt->rhs));
@@ -232,6 +255,7 @@ struct StatementLowering {
         // As such, MIR doesn't have representations for them, and they're easy to convert
         // At the AST -> MIR barrier
         std::string name;
+        IR::FunctionId fid;
         switch (stmt->op) {
             case AST::AssignOp::EQUAL:
                 state.current_node->add_inst(
@@ -239,27 +263,33 @@ struct StatementLowering {
                 return;
             case AST::AssignOp::ADD_EQUAL:
                 name = "addition";
+                fid = IR::FunctionId::addition;
                 break;
             case AST::AssignOp::SUB_EQUAL:
                 name = "subtraction";
+                fid = IR::FunctionId::subtraction;
                 break;
             case AST::AssignOp::DIV_EQUAL:
                 name = "division";
+                fid = IR::FunctionId::division;
                 break;
             case AST::AssignOp::MUL_EQUAL:
                 name = "multiplication";
+                fid = IR::FunctionId::multiplication;
                 break;
             case AST::AssignOp::MOD_EQUAL:
                 name = "modulo";
+                fid = IR::FunctionId::modulo;
                 break;
             default:
                 throw std::runtime_error{"Unknown operator"};
         }
 
-        state.current_node->add_inst(builder::make_instruction<IR::FunctionCall>(name, "meson++")
-                                         .add_pos_arg(std::move(lhs))
-                                         .add_pos_arg(std::move(rhs))
-                                         .set_var(id->m_name));
+        state.current_node->add_inst(
+            builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+                .add_pos_arg(std::move(lhs))
+                .add_pos_arg(std::move(rhs))
+                .set_var(id->m_name));
     }
 
     void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
@@ -388,7 +418,8 @@ struct StatementLowering {
                 .add_inst(std::make_unique<IR::Instruction>(std::visit(el, stmt->expr),
                                                             IR::Variable{dict}))
                 .add_inst(builder::make_instruction<IR::FunctionCall>(
-                              "keys", builder::make_instruction<IR::Identifier>(dict))
+                              "keys", builder::make_instruction<IR::Identifier>(dict),
+                              IR::FunctionId::dict_keys)
                               .set_var(array));
         } else {
             preamble.add_inst(
@@ -398,7 +429,8 @@ struct StatementLowering {
         // Find the length of the container, as well as set the default value for the cursor
         preamble
             .add_inst(builder::make_instruction<IR::FunctionCall>(
-                          "length", builder::make_instruction<IR::Identifier>(array))
+                          "length", builder::make_instruction<IR::Identifier>(array),
+                          IR::FunctionId::array_length)
                           .set_var(container_size))
             .add_inst(builder::make_instruction<IR::Number>(0).set_var(cursor));
 
@@ -411,7 +443,8 @@ struct StatementLowering {
 
         // If the cursor is the same size as the array, we've read to the end
         // and it's time to break, otherwise we can go ahead to the loop body
-        header.add_inst(builder::make_instruction<IR::FunctionCall>("subscript", "meson++")
+        header.add_inst(builder::make_instruction<IR::FunctionCall>("subscript", "meson++",
+                                                                    IR::FunctionId::subscript)
                             .add_pos_arg(builder::make_instruction<IR::Identifier>(array))
                             .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
                             .set_var(stmt->id.value));
@@ -420,7 +453,8 @@ struct StatementLowering {
         if (stmt->id2) {
             header.add_inst(
                 builder::make_instruction<IR::FunctionCall>(
-                    "get", builder::make_instruction<IR::Identifier>(dict))
+                    "get", builder::make_instruction<IR::Identifier>(dict),
+                    IR::FunctionId::dict_get)
                     .add_pos_arg(builder::make_instruction<IR::Identifier>(stmt->id.value))
                     .set_var(stmt->id2.value().value));
         }
@@ -429,11 +463,13 @@ struct StatementLowering {
         // size of the array, as that means it has read off the end. Increment the cursor after
         // checking the condition
         header
-            .add_inst(builder::make_instruction<IR::FunctionCall>("equal", "meson++")
+            .add_inst(builder::make_instruction<IR::FunctionCall>("equal", "meson++",
+                                                                  IR::FunctionId::equal)
                           .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
                           .add_pos_arg(builder::make_instruction<IR::Identifier>(container_size))
                           .set_var(loop_condition))
-            .add_inst(builder::make_instruction<IR::FunctionCall>("addition", "meson++")
+            .add_inst(builder::make_instruction<IR::FunctionCall>("addition", "meson++",
+                                                                  IR::FunctionId::addition)
                           .add_pos_arg(builder::make_instruction<IR::Identifier>("cursor"))
                           .add_pos_arg(builder::make_instruction<IR::Number>(1))
                           .set_var(cursor))

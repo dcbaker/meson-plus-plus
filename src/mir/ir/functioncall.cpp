@@ -54,22 +54,30 @@ std::string serialize(const KeywordArguments & k_args, unsigned indent) {
     return ss.str();
 }
 
-FunctionCall::FunctionCall(std::string name) : m_name{name} {};
+FunctionCall::FunctionCall(std::string name)
+    : m_name{name}, m_namespace{}, m_func_id{}, m_pos{}, m_kws{} {};
 FunctionCall::FunctionCall(std::string name, InstructionType && ns)
-    : m_name{name}, m_namespace{std::move(ns)} {};
+    : m_name{name}, m_namespace{std::move(ns)}, m_func_id{}, m_pos{}, m_kws{} {};
+FunctionCall::FunctionCall(std::string name, InstructionType && ns, FunctionId fid)
+    : m_name{name}, m_namespace{std::move(ns)}, m_func_id{fid}, m_pos{}, m_kws{} {};
 FunctionCall::FunctionCall(std::string name, std::string ns)
-    : m_name{name}, m_namespace{std::make_shared<String>(ns)} {};
+    : m_name{name}, m_namespace{std::make_shared<String>(ns)}, m_func_id{}, m_pos{}, m_kws{} {};
+FunctionCall::FunctionCall(std::string name, std::string ns, FunctionId fid)
+    : m_name{name}, m_namespace{std::make_shared<String>(ns)}, m_func_id{fid}, m_pos{}, m_kws{} {};
 FunctionCall::FunctionCall(std::string name, PositionalArguments && pos, KeywordArguments && kws)
-    : m_name{name}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
+    : m_name{name}, m_func_id{}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
 FunctionCall::FunctionCall(std::string name, InstructionType && ns, PositionalArguments && pos,
                            KeywordArguments && kws)
-    : m_name{name}, m_namespace{std::move(ns)}, m_pos{std::move(pos)}, m_kws{std::move(kws)} {};
+    : m_name{name}, m_namespace{std::move(ns)}, m_func_id{}, m_pos{std::move(pos)},
+      m_kws{std::move(kws)} {};
 
 std::string FunctionCall::serialize(unsigned indent) const {
     std::stringstream ss;
     const std::string ind = indenter(indent + 1);
 
-    ss << indenter(indent) << "FunctionCall {\n" << ind << "name = { " << m_name << " }\n";
+    ss << indenter(indent) << "FunctionCall {\n"
+       << ind << "name = { " << m_name << " }\n"
+       << ind << "func_id = { " << static_cast<int>(m_func_id) << " }\n";
     if (m_namespace) {
         ss << ind << "namespace = {\n"
            << std::visit([&indent](auto && i) { return i->serialize(indent + 2); },
