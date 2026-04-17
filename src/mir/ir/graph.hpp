@@ -104,6 +104,7 @@ class Node {
     Iterator end();
 
     friend void link_nodes(std::shared_ptr<Node>, std::shared_ptr<Node>, bool right);
+    friend void reparent(std::shared_ptr<Node>, std::shared_ptr<Node>);
 
   private:
     /// @brief Set the left successor
