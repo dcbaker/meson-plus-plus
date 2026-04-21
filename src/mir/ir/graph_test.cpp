@@ -267,3 +267,100 @@ TEST(reparent, simple) {
     EXPECT_TRUE(n1.predecessors.find(&n) == n1.predecessors.end());
     EXPECT_TRUE(n1.predecessors.find(&n3) != n1.predecessors.end());
 }
+
+TEST(Node, depth_simple) {
+    CFG cfg{};
+    Node * n0{cfg.head()};
+    Node * n1{cfg.next()};
+    Node * n2{cfg.next()};
+
+    link_nodes(n0, n1);
+    link_nodes(n1, n2);
+    link_nodes(n2, cfg.tail());
+
+    Node * n3{cfg.next()};
+    link_nodes(n3, cfg.tail());
+    link_nodes(n2, n3);
+
+    EXPECT_EQ(n0->depth, 0);
+    EXPECT_EQ(n1->depth, 1);
+    EXPECT_EQ(n2->depth, 2);
+    EXPECT_EQ(n3->depth, 3);
+    EXPECT_EQ(cfg.tail()->depth, 4);
+}
+
+TEST(Node, no_change) {
+    CFG cfg{};
+    Node * n0{cfg.head()};
+    Node * n1{cfg.next()};
+    Node * n2{cfg.next()};
+
+    link_nodes(n0, n1);
+    link_nodes(n1, n2);
+    link_nodes(n2, cfg.tail());
+
+    Node * n3{cfg.next()};
+    Node * n4{cfg.next()};
+    Node * n5{cfg.next()};
+    Node * n6{cfg.next()};
+    link_nodes(n1, n3, true);
+    link_nodes(n3, n4);
+    link_nodes(n4, n5);
+    link_nodes(n5, n6);
+    link_nodes(n6, cfg.tail());
+
+    EXPECT_EQ(n0->depth, 0);
+    EXPECT_EQ(n1->depth, 1);
+    EXPECT_EQ(n2->depth, 2);
+    EXPECT_EQ(n3->depth, 2);
+    EXPECT_EQ(n4->depth, 3);
+    EXPECT_EQ(n5->depth, 4);
+    EXPECT_EQ(n6->depth, 5);
+    EXPECT_EQ(cfg.tail()->depth, 6);
+
+    link_nodes(n2, n6);
+    EXPECT_EQ(n6->depth, 5);
+    EXPECT_EQ(cfg.tail()->depth, 6);
+}
+
+TEST(Node, deep) {
+    CFG cfg{};
+    Node * n0{cfg.head()};
+    Node * n1{cfg.next()};
+    Node * n2{cfg.next()};
+
+    link_nodes(n0, n1);
+    link_nodes(n1, n2);
+    link_nodes(n2, cfg.tail());
+
+    Node * n3{cfg.next()};
+    Node * n4{cfg.next()};
+    Node * n5{cfg.next()};
+    Node * n6{cfg.next()};
+    link_nodes(n1, n3, true);
+    link_nodes(n3, n4);
+    link_nodes(n4, n5);
+    link_nodes(n5, n6);
+    link_nodes(n6, cfg.tail());
+
+    EXPECT_EQ(n0->depth, 0);
+    EXPECT_EQ(n1->depth, 1);
+    EXPECT_EQ(n2->depth, 2);
+    EXPECT_EQ(n3->depth, 2);
+    EXPECT_EQ(n4->depth, 3);
+    EXPECT_EQ(n5->depth, 4);
+    EXPECT_EQ(n6->depth, 5);
+    EXPECT_EQ(cfg.tail()->depth, 6);
+
+    link_nodes(n6, n2);
+    // Should not have changed
+    EXPECT_EQ(n0->depth, 0);
+    EXPECT_EQ(n3->depth, 2);
+    EXPECT_EQ(n4->depth, 3);
+    EXPECT_EQ(n5->depth, 4);
+    EXPECT_EQ(n6->depth, 5);
+
+    // Should have changed
+    EXPECT_EQ(n2->depth, 6);
+    EXPECT_EQ(cfg.tail()->depth, 7);
+}

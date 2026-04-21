@@ -29,7 +29,11 @@ class Node {
   public:
     Node(uint32_t i, std::shared_ptr<BasicBlock> b);
 
+    /// @brief The unique identifier for this block
     const uint32_t id;
+
+    /// @brief The depth of this block in the graph
+    uint32_t depth;
 
     /// @brief  The block of this node
     std::shared_ptr<BasicBlock> block;

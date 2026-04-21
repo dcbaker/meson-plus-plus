@@ -22,10 +22,22 @@ size_t NodeHash::operator()(const Node & p) const { return p.id; }
 size_t NodeHash::operator()(const Node * p) const { return p->id; }
 
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
-    : id{i}, block{b}, predecessors{}, successors{}, loop_header{false} {};
+    : id{i}, depth{0}, block{b}, predecessors{}, successors{}, loop_header{false} {};
 
-Node * Node::left_successor() const { return successors[0]; }
-Node * Node::right_successor() const { return successors[1]; }
+Node * Node::left_successor() const { return successors.at(0); }
+Node * Node::right_successor() const { return successors.at(1); }
+
+void update_depth(Node * node, uint32_t parent_depth) {
+    if (node->depth <= parent_depth) {
+        node->depth = parent_depth + 1;
+        if (auto s = node->successors.at(0)) {
+            update_depth(s, node->depth);
+        }
+        if (auto s = node->successors.at(1)) {
+            update_depth(s, node->depth);
+        }
+    }
+}
 
 void Node::set_successor(Node * n, int index) {
     assert(index == 0 || index == 1);
@@ -34,14 +46,22 @@ void Node::set_successor(Node * n, int index) {
     assert(successors.at(index) == nullptr || successors.at(index)->id == UINT32_MAX ||
            n == nullptr);
 
-    // If we are replacing the left tail successor, we want to move that
-    // successor to be the successor of the new block if it doesn't have one.
-    // We do not walk down looking for later successors as we consider that the
-    // callers job to handle
-    if (successors.at(index) && successors.at(index)->id == UINT32_MAX) {
-        assert(index == 0);
-        if (!n->successors.at(0)) {
-            n->set_left_successor(successors.at(index));
+    if (n != nullptr) {
+        // If the depth of the new successor is less than the depth of the current
+        // node, increase that depth
+        if (depth >= n->depth) {
+            update_depth(n, depth);
+        }
+
+        // If we are replacing the left tail successor, we want to move that
+        // successor to be the successor of the new block if it doesn't have one.
+        // We do not walk down looking for later successors as we consider that the
+        // callers job to handle
+        if (successors.at(index) && successors.at(index)->id == UINT32_MAX) {
+            assert(index == 0);
+            if (!n->successors.at(0)) {
+                n->set_left_successor(successors.at(index));
+            }
         }
     }
 
