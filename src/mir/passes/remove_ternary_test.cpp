@@ -11,21 +11,22 @@ using namespace MIR;
 using namespace MIR::builder;
 
 TEST(MirPasses_RemoveTernary, basic) {
+    IR::CFG cfg{};
+
     const std::string var_name = "x";
 
-    std::shared_ptr<IR::Node> n =
-        Builder{}
-            .add_inst(make_instruction<IR::Number>(0))
-            .add_inst(
-                make_instruction<IR::FunctionCall>("ternary", "meson++", IR::FunctionId::ternary)
-                    .add_pos_arg(make_instruction<IR::Boolean>(true))
-                    .add_pos_arg(make_instruction<IR::String>("foo"))
-                    .add_pos_arg(make_instruction<IR::String>("bar"))
-                    .set_var(var_name))
-            .add_inst(make_instruction<IR::Number>(1))
-            .get();
+    IR::Node * n = Builder{&cfg}
+                       .add_inst(make_instruction<IR::Number>(0))
+                       .add_inst(make_instruction<IR::FunctionCall>("ternary", "meson++",
+                                                                    IR::FunctionId::ternary)
+                                     .add_pos_arg(make_instruction<IR::Boolean>(true))
+                                     .add_pos_arg(make_instruction<IR::String>("foo"))
+                                     .add_pos_arg(make_instruction<IR::String>("bar"))
+                                     .set_var(var_name))
+                       .add_inst(make_instruction<IR::Number>(1))
+                       .get();
 
-    ASSERT_TRUE(MIR::Passes::remove_ternary(n));
+    ASSERT_TRUE(MIR::Passes::remove_ternary(&cfg, n));
     ASSERT_EQ(n->block->instructions.size(), 2);
 
     auto lhs = n->left_successor();

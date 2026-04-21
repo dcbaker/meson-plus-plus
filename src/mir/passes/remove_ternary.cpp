@@ -10,7 +10,7 @@
 
 namespace MIR::Passes {
 
-bool remove_ternary(std::shared_ptr<IR::Node> node) {
+bool remove_ternary(IR::CFG * cfg, IR::Node * node) {
     auto && test_func = [](const std::unique_ptr<IR::Instruction> & i) -> bool {
         if (std::holds_alternative<std::shared_ptr<IR::FunctionCall>>(i->instruction)) {
             auto f = std::get<std::shared_ptr<IR::FunctionCall>>(i->instruction);
@@ -48,17 +48,18 @@ bool remove_ternary(std::shared_ptr<IR::Node> node) {
         itr = insts.erase(itr);
 
         // put the instructions following the ternary into the new block
-        builder::Builder tail{};
+        builder::Builder tail{cfg};
         auto & tail_insts = tail.get()->block->instructions;
         tail_insts.splice(tail_insts.end(), insts, itr, insts.end());
 
         // Give the original node's successors to the tail
+        // FIXME: this gets us compiling, but it's wrong
         reparent(node, tail.get());
 
         // deconstruct the ternary, making the condition of the ternary the
         // condition of the original block, and constructing two new blocks
         // for the values, and then returning to the tail
-        builder::Builder node_b{node};
+        builder::Builder node_b{cfg, node};
         node_b.add_condition(
             std::make_unique<IR::Instruction>(std::move(ternary_func->m_pos.at(0))));
 

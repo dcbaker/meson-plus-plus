@@ -14,52 +14,29 @@ namespace MIR::IR {
 
 namespace {
 
-uint32_t node_id_base = 0;
 Node node_sentintel = Node{UINT32_MAX, nullptr};
-std::shared_ptr<Node> node_sentintel_ptr = std::make_shared<Node>(UINT32_MAX, nullptr);
 
 } // namespace
 
-Predecessor::Predecessor(std::shared_ptr<Node> n) : m_p{n}, m_id{n->id} {};
+size_t NodeHash::operator()(const Node & p) const { return p.id; }
+size_t NodeHash::operator()(const Node * p) const { return p->id; }
 
-bool Predecessor::operator==(const Predecessor & other) const { return m_id == other.m_id; }
-
-size_t PredecessorHash::operator()(const Predecessor & p) const { return p.m_id; }
-
-Node::Node()
-    : id{node_id_base++}, block{std::make_shared<BasicBlock>()}, predecessors{}, loop_header{false},
-      successors{}, children{} {};
-Node::Node(std::shared_ptr<BasicBlock> b)
-    : id{node_id_base++}, block{b}, predecessors{}, loop_header{false}, successors{}, children{} {};
 Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
-    : id{i}, block{b}, predecessors{}, loop_header{false}, successors{}, children{} {};
+    : id{i}, block{b}, predecessors{}, successors{}, loop_header{false} {};
 
-std::shared_ptr<Node> Node::left_successor() const { return successors[0].lock(); }
-std::shared_ptr<Node> Node::right_successor() const { return successors[1].lock(); }
+Node * Node::left_successor() const { return successors[0]; }
+Node * Node::right_successor() const { return successors[1]; }
 
-bool Node::has_successor(int index) const {
+void Node::set_successor(Node * n, int index) {
     assert(index == 0 || index == 1);
-    return !!successors.at(index).lock();
-}
-
-void Node::set_successor(std::shared_ptr<Node> n, int index) {
-    assert(index == 0 || index == 1);
-    // we do allow a success here if we're unsetting the successor
-    assert(!has_successor(index) || !n);
+    assert(successors.at(index) == nullptr || n == nullptr);
 
     successors.at(index) = n;
-    if (!n || !n->loop_header) {
-        children.at(index) = n;
-    }
 }
 
-void Node::set_right_successor(std::shared_ptr<Node> n) {
-    set_successor(std::forward<std::shared_ptr<Node>>(n), 1);
-}
+void Node::set_right_successor(Node * n) { set_successor(std::forward<Node *>(n), 1); }
 
-void Node::set_left_successor(std::shared_ptr<Node> n) {
-    set_successor(std::forward<std::shared_ptr<Node>>(n), 0);
-}
+void Node::set_left_successor(Node * n) { set_successor(std::forward<Node *>(n), 0); }
 
 std::string Node::serialize(unsigned indent) const {
     const std::string ind = Private::indenter(indent + 1);
@@ -71,13 +48,12 @@ std::string Node::serialize(unsigned indent) const {
        << ind << "predecessors = {";
 
     for (auto && p : predecessors) {
-        ss << " " << p.m_id;
+        ss << " " << p->id;
     }
     ss << " }\n";
 
     ss << ind << "successors = {";
-    for (auto && s : successors) {
-        auto succ = s.lock();
+    for (auto && succ : successors) {
         if (succ) {
             ss << " " << succ->id;
         }
@@ -93,7 +69,7 @@ bool Node::operator==(const Node & other) const { return this->id == other.id; }
 
 bool Node::operator!=(const Node & other) const { return this->id != other.id; }
 
-void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool right) {
+void link_nodes(Node * pred, Node * succ, bool right) {
     if (right) {
         pred->set_right_successor(succ);
     } else {
@@ -102,19 +78,19 @@ void link_nodes(std::shared_ptr<Node> pred, std::shared_ptr<Node> succ, bool rig
     succ->predecessors.emplace(pred);
 }
 
-void reparent(std::shared_ptr<Node> from, std::shared_ptr<Node> to) {
+void reparent(Node * from, Node * to) {
     if (auto s = from->left_successor()) {
         s->predecessors.erase(from);
         s->predecessors.emplace(to);
         to->set_left_successor(s);
-        from->set_left_successor(std::shared_ptr<IR::Node>(nullptr));
+        from->set_left_successor(nullptr);
     }
 
     if (auto s = from->right_successor()) {
         s->predecessors.erase(from);
         s->predecessors.emplace(to);
         to->set_right_successor(s);
-        from->set_right_successor(std::shared_ptr<IR::Node>(nullptr));
+        from->set_right_successor(nullptr);
     }
 }
 
@@ -126,17 +102,17 @@ bool operator!=(const CFG::Iterator & a, const CFG::Iterator & b) {
     return a.deque.front() != b.deque.front();
 }
 
-CFG::Iterator::Iterator(value_type value) {
-    deque.push_back(value);
-    queued.emplace(value->id);
+CFG::Iterator::Iterator(pointer ptr, pointer tail) : p_tail{tail} {
+    deque.push_back(ptr);
+    queued.emplace(ptr->id);
 }
 
-CFG::Iterator::reference CFG::Iterator::operator*() { return deque.front(); }
+CFG::Iterator::reference CFG::Iterator::operator*() { return *deque.front(); }
 
-CFG::Iterator::pointer CFG::Iterator::operator->() { return &deque.front(); }
+CFG::Iterator::pointer CFG::Iterator::operator->() { return deque.front(); }
 
 CFG::Iterator & CFG::Iterator::operator++() {
-    value_type current = deque.front();
+    pointer current = deque.front();
     visited.emplace(current->id);
 
     // Queue the nodes successors
@@ -159,11 +135,10 @@ CFG::Iterator & CFG::Iterator::operator++() {
         bool cont;
         do {
             cont = false;
-            value_type value = deque.front();
+            pointer value = deque.front();
 
             if (value) {
-                for (auto && p : value->predecessors) {
-                    auto pred = p.m_p.lock();
+                for (auto && pred : value->predecessors) {
                     // This happens to work, but seems fragile
                     if (visited.find(pred->id) == visited.end() && !value->loop_header) {
                         deque.pop_front();
@@ -177,7 +152,7 @@ CFG::Iterator & CFG::Iterator::operator++() {
     } else {
         // If the queue is empty, we've (hopefully) reached the end of the
         // graph, and we'll push the tail sentinel on there.
-        deque.push_back(node_sentintel_ptr);
+        deque.push_back(p_tail);
     }
 
     return *this;
@@ -189,15 +164,29 @@ CFG::Iterator CFG::Iterator::operator++(int) {
     return tmp;
 }
 
-CFG::Iterator CFG::begin() { return Iterator(root); }
-CFG::Iterator CFG::end() { return Iterator(node_sentintel_ptr); }
+CFG::Iterator CFG::begin() { return Iterator(head(), tail()); }
+CFG::Iterator CFG::end() { return Iterator(tail(), tail()); }
 
-CFG::CFG(std::shared_ptr<Node> r) : root{r} {};
+CFG::CFG() : nodes{}, p_block_counter{0} {
+    nodes.emplace(p_block_counter,
+                  std::make_unique<Node>(p_block_counter, std::make_shared<BasicBlock>()));
+    nodes.emplace(UINT32_MAX, std::make_unique<Node>(UINT32_MAX, nullptr));
+}
+
+Node * CFG::head() const { return nodes.at(0).get(); }
+Node * CFG::tail() const { return nodes.at(UINT32_MAX).get(); }
+
+Node * CFG::next() {
+    assert(p_block_counter != UINT32_MAX);
+    const uint32_t i = ++p_block_counter;
+    nodes.emplace(i, std::make_unique<Node>(i, std::make_shared<BasicBlock>()));
+    return nodes.at(i).get();
+}
 
 std::string CFG::serialize(unsigned indent) {
     std::stringstream ss{};
     for (auto n : *this) {
-        ss << n->serialize(indent) << "\n\n";
+        ss << n.serialize(indent) << "\n\n";
     }
     return ss.str();
 }

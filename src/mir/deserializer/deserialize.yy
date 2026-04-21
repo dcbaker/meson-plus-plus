@@ -21,7 +21,7 @@
 }
 
 %parse-param { Scanner & scanner }
-%parse-param { std::shared_ptr<MIR::IR::Node> & node }
+%parse-param { CFG & cfg }
 
 %locations
 %initial-action {

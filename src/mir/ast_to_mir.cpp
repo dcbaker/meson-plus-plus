@@ -232,14 +232,16 @@ struct LoweringState {
     std::shared_ptr<builder::Builder> loop_tail;
     std::shared_ptr<uint64_t> m_tmp_var;
 
+    IR::CFG * cfg;
+
     std::string tmp_var() { return "mesonpp_tmp_" + std::to_string((*m_tmp_var)++); }
     std::string tmp_var(std::string name) {
         return "mesonpp_tmp_" + name + "_" + std::to_string((*m_tmp_var)++);
     }
 };
 
-std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
-                                      LoweringState & state);
+void lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
+                 LoweringState & state);
 
 /// @brief Lower AST statements into MIR representations
 struct StatementLowering {
@@ -336,7 +338,7 @@ struct StatementLowering {
 
         // This is the block that all of the branches of the if/elif/else web
         // will join back to
-        auto tail = std::make_shared<builder::Builder>();
+        auto tail = std::make_shared<builder::Builder>(state.cfg);
 
         // Create a new block of the left hand side. This block will be
         // connected to the current node on the lhs, and it will connect to the
@@ -497,6 +499,7 @@ struct StatementLowering {
             .loop_header = state.current_node,
             .loop_tail = tail,
             .m_tmp_var = state.m_tmp_var,
+            .cfg = state.cfg,
         };
         lower_block(*stmt->block, *this, lstate);
         lstate.current_node->link_left_successor(header);
@@ -520,24 +523,23 @@ struct StatementLowering {
     const ExpressionLowering el;
 };
 
-std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block,
-                                      const StatementLowering & lower) {
+IR::CFG lower_block(const AST::CodeBlock & block, const StatementLowering & lower) {
+    IR::CFG cfg{};
     LoweringState state{
-        std::make_shared<builder::Builder>(),
-        nullptr,
-        nullptr,
-        std::make_shared<uint64_t>(0),
+        .current_node = std::make_shared<builder::Builder>(&cfg, cfg.head()),
+        .m_tmp_var = std::make_shared<uint64_t>(0),
+        .cfg = &cfg,
     };
-    return lower_block(block, lower, state);
+    lower_block(block, lower, state);
+    return cfg;
 }
 
-std::shared_ptr<IR::Node> lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
-                                      LoweringState & state) {
+void lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
+                 LoweringState & state) {
     auto root = state.current_node;
     for (auto && stmt : block.statements) {
         std::visit([&](auto && s) { lower(s, state); }, stmt);
     }
-    return root->get();
 }
 
 } // namespace
@@ -547,13 +549,9 @@ IR::CFG ast_to_mir(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
 
     IR::CFG cfg{lower_block(*block, lwr)};
 
-    bool progress;
-    do {
-        progress = false;
-        for (auto n : cfg) {
-            progress |= Passes::remove_ternary(n);
-        }
-    } while (progress);
+    for (auto & n : cfg) {
+        Passes::remove_ternary(&cfg, &n);
+    }
 
     return cfg;
 }

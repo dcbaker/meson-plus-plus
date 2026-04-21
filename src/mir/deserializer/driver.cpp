@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2025 Intel Corporation
+// Copyright © 2021-2026 Intel Corporation
 
 #include "driver.hpp"
 #include "deserialize.yy.hpp"
@@ -20,16 +20,16 @@ CFG Driver::parse(const std::string & s) {
 };
 
 CFG Driver::parse(std::istream & iss) {
-    auto node = std::make_shared<Node>();
+    CFG cfg{};
     auto scanner = std::make_unique<Scanner>(&iss, name);
-    auto parser = std::make_unique<Parser>(*scanner, node);
+    auto parser = std::make_unique<Parser>(*scanner, cfg);
 
     int res = parser->parse();
     if (res != 0) {
         throw std::exception{};
     }
 
-    return node;
+    return cfg;
 };
 
 } // namespace MIR::IR::Serial

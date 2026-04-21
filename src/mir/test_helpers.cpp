@@ -9,7 +9,7 @@ namespace MIR::UT {
 /// @param bb the CFG to get the instruction from
 /// @param index The index of that instruction, may be either positive or negative
 /// @return A const reference to that instruction
-const MIR::IR::Instruction & get_ir(const MIR::IR::BasicBlock & bb, int index) {
+const MIR::IR::Instruction & get_ir(const MIR::IR::BasicBlock & bb, int64_t index) {
     if (index >= 0) {
         auto itr = bb.instructions.begin();
         for (int i = 0; i < index; ++i) {
@@ -24,12 +24,16 @@ const MIR::IR::Instruction & get_ir(const MIR::IR::BasicBlock & bb, int index) {
     return **itr;
 }
 
-const MIR::IR::Instruction & get_ir(const MIR::IR::CFG & cfg, int index) {
-    return get_ir(*cfg.root->block, index);
+const MIR::IR::Instruction & get_ir(const MIR::IR::CFG & cfg, int64_t index) {
+    return get_ir(*cfg.head()->block, index);
 }
 
-const MIR::IR::Instruction & get_ir(const MIR::IR::Node & root, int index) {
+const MIR::IR::Instruction & get_ir(const MIR::IR::Node & root, int64_t index) {
     return get_ir(*root.block, index);
+}
+
+const MIR::IR::Instruction & get_ir(const MIR::IR::Node * root, int64_t index) {
+    return get_ir(*root->block, index);
 }
 
 } // namespace MIR::UT

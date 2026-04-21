@@ -12,7 +12,8 @@ using namespace MIR::builder;
 using namespace MIR::UT;
 
 TEST(MIR_Builder, simple) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     auto i = std::make_unique<Instruction>(std::make_shared<String>("foo"));
     b.add_inst(std::move(i));
     auto n = b.get();
@@ -21,7 +22,8 @@ TEST(MIR_Builder, simple) {
 }
 
 TEST(MIR_Builder, constructor_from_non_empty_block_no_condition) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
 
     // clang-format off
     b.add_inst(make_instruction<Number>(0))
@@ -29,17 +31,18 @@ TEST(MIR_Builder, constructor_from_non_empty_block_no_condition) {
      .add_inst(make_instruction<Number>(1));
     // clang-format on
 
-    b = {b.get()};
+    b = {&cfg, b.get()};
     auto itr = b.get()->block->instructions.begin();
     EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 1);
     EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 0);
 
     b.add_inst(make_instruction<Number>(42));
-    EXPECT_EQ(get<Number>(get_ir(b.get()->block, -1).instruction).value, 42);
+    EXPECT_EQ(get<Number>(get_ir(b.get(), -1).instruction).value, 42);
 }
 
 TEST(MIR_Builder, constructor_from_non_empty_block_with_condition) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
 
     // clang-format off
     b.add_inst(make_instruction<Number>(0))
@@ -48,7 +51,7 @@ TEST(MIR_Builder, constructor_from_non_empty_block_with_condition) {
      .add_condition(make_instruction<Boolean>(true));
     // clang-format on
 
-    b = {b.get()};
+    b = {&cfg, b.get()};
     auto itr = b.get()->block->instructions.begin();
     EXPECT_EQ(b.get()->block->instructions.size(), 3);
     EXPECT_EQ(std::get<std::shared_ptr<Number>>((*itr++)->instruction)->value, 1);
@@ -56,21 +59,23 @@ TEST(MIR_Builder, constructor_from_non_empty_block_with_condition) {
     EXPECT_EQ(std::get<std::shared_ptr<Boolean>>((*itr++)->instruction)->value, true);
 
     b.add_inst(make_instruction<Number>(42));
-    EXPECT_EQ(get<Number>(get_ir(b.get()->block, -2).instruction).value, 42);
-    EXPECT_EQ(get<Boolean>(get_ir(b.get()->block, -1).instruction).value, true);
+    EXPECT_EQ(get<Number>(get_ir(b.get(), -2).instruction).value, 42);
+    EXPECT_EQ(get<Boolean>(get_ir(b.get(), -1).instruction).value, true);
 }
 
 TEST(MIR_Builder, constructor_from_empty_block) {
-    Builder b{std::make_shared<Node>()};
+    CFG cfg{};
+    Builder b{&cfg, cfg.head()};
 
     EXPECT_EQ(b.get()->block->instructions.size(), 0);
 
     b.add_inst(make_instruction<Number>(42));
-    EXPECT_EQ(get<Number>(get_ir(b.get()->block, -1).instruction).value, 42);
+    EXPECT_EQ(get<Number>(get_ir(b.get(), -1).instruction).value, 42);
 }
 
 TEST(MIR_Builder, make_instruction) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     auto s = make_instruction<String>("bar");
     b.add_inst(std::move(s));
     auto n = b.get();
@@ -85,7 +90,8 @@ TEST(MIR_Builder, make_instruction) {
 }
 
 TEST(MIR_Builder, set_var) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     auto n = b.add_inst(make_instruction<String>("bar").set_var("x")).get();
     auto && insts = n->block->instructions;
     ASSERT_EQ(insts.size(), 1);
@@ -95,7 +101,8 @@ TEST(MIR_Builder, set_var) {
 }
 
 TEST(MIR_Builder, funccall) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     // clang-format off
     auto n = b.add_inst(make_instruction<FunctionCall>("add")
                         .add_pos_arg(make_instruction<Number>(1))
@@ -112,7 +119,8 @@ TEST(MIR_Builder, funccall) {
 }
 
 TEST(MIR_Builder, cursor) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     auto & ir = b.get()->block->instructions;
 
     // clang-format off
@@ -130,7 +138,8 @@ TEST(MIR_Builder, cursor) {
 }
 
 TEST(MIR_Builder, set_cursor_begin) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     auto & ir = b.get()->block->instructions;
 
     // clang-format off
@@ -147,7 +156,8 @@ TEST(MIR_Builder, set_cursor_begin) {
 }
 
 TEST(MIR_Builder, set_cursor_end) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
 
     // clang-format off
     b.add_inst(make_instruction<Number>(0))
@@ -155,13 +165,13 @@ TEST(MIR_Builder, set_cursor_end) {
      .add_inst(make_instruction<Number>(1));
     // clang-format on
 
-    auto & ir = b.get()->block;
-    EXPECT_EQ(get<Number>(get_ir(ir, 0).instruction).value, 0);
-    EXPECT_EQ(get<Number>(get_ir(ir, 1).instruction).value, 1);
+    EXPECT_EQ(get<Number>(get_ir(b.get(), 0).instruction).value, 0);
+    EXPECT_EQ(get<Number>(get_ir(b.get(), 1).instruction).value, 1);
 }
 
 TEST(MIR_Builder, set_cursor_begin_end) {
-    Builder b{};
+    CFG cfg{};
+    Builder b{&cfg};
     auto & ir = b.get()->block->instructions;
 
     // clang-format off
