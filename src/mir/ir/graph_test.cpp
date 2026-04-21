@@ -17,6 +17,7 @@ TEST(CFG, iter_pre_fix) {
     link_nodes(n0, n2, true);
     link_nodes(n1, n3);
     link_nodes(n2, n3, true);
+    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
 
     auto itr = cfg.begin();
     EXPECT_EQ(*itr, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
@@ -41,6 +42,7 @@ TEST(CFG, iter_post_fix) {
     link_nodes(n0, n2, true);
     link_nodes(n1, n3);
     link_nodes(n2, n3, true);
+    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
 
     auto itr = cfg.begin();
     EXPECT_EQ(*itr++, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
@@ -65,6 +67,7 @@ TEST(CFG, iter_for_loop) {
     link_nodes(n0, n2, true);
     link_nodes(n1, n3);
     link_nodes(n2, n3);
+    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
 
     uint64_t counter = 0;
     for (auto itr = cfg.begin(); itr != cfg.end(); itr++) {
@@ -83,6 +86,7 @@ TEST(CFG, iter_range) {
     link_nodes(n0, n2, true);
     link_nodes(n1, n3);
     link_nodes(n2, n3, true);
+    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
 
     uint64_t counter = 0;
     for (auto i : cfg) {
@@ -106,6 +110,7 @@ TEST(CFG, iter_visits_predecessors_before_successors) {
     Node * n4{cfg.next()};
     link_nodes(n2, n4);
     link_nodes(n3, n4);
+    link_nodes(n4, cfg.tail()); // This is done automatically in the ast_to_mir
 
     auto itr = cfg.begin();
     EXPECT_EQ(*itr, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
@@ -137,6 +142,7 @@ TEST(CFG, iter_visits_predecessors_before_successors_2) {
     Node * n4{cfg.next()};
     link_nodes(n2, n4);
     link_nodes(n3, n4);
+    link_nodes(n4, cfg.tail()); // This is done automatically in the ast_to_mir
 
     auto itr = cfg.begin();
     EXPECT_EQ(*itr, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
@@ -163,6 +169,7 @@ TEST(CFG, iter_visits_predecessors_before_successors_loop) {
 
     Node * tail{cfg.next()};
     link_nodes(header, tail, true);
+    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
 
     Node * body{cfg.next()};
     link_nodes(header, body);
@@ -192,6 +199,7 @@ TEST(CFG, iter_visits_predecessors_before_successors_loop_2) {
 
     Node * tail{cfg.next()};
     link_nodes(header, tail, true);
+    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
 
     Node * body{cfg.next()};
     link_nodes(header, body);
@@ -227,7 +235,25 @@ TEST(Node, eq) {
     EXPECT_EQ(n2, n2);
 }
 
-TEST(Node, reparent) {
+TEST(link_nodes, tail) {
+    CFG cfg{};
+    Node * n0{cfg.head()};
+    Node * n1{cfg.next()};
+    Node * n2{cfg.next()};
+
+    link_nodes(n0, n1);
+    link_nodes(n1, cfg.tail());
+    ASSERT_EQ(n0->left_successor(), n1);
+    ASSERT_EQ(n1->left_successor(), cfg.tail());
+
+    link_nodes(n1, n2);
+
+    EXPECT_EQ(n0->left_successor(), n1);
+    EXPECT_EQ(n1->left_successor(), n2);
+    EXPECT_EQ(n2->left_successor(), cfg.tail());
+}
+
+TEST(reparent, simple) {
     Node n{0, nullptr};
     Node n1{1, nullptr};
     Node n2{2, nullptr};

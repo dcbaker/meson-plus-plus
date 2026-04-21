@@ -542,12 +542,24 @@ void lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
     }
 }
 
+/// @brief Link all nodes with no other ending to the special tail node
+/// @param cfg
+void link_to_tail(IR::CFG & cfg) {
+    for (auto & n : cfg) {
+        if (!n.successors.at(0) && !n.successors.at(1)) {
+            IR::link_nodes(&n, cfg.tail());
+        }
+    }
+}
+
 } // namespace
 
 IR::CFG ast_to_mir(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
     const StatementLowering lwr{};
 
     IR::CFG cfg{lower_block(*block, lwr)};
+
+    link_to_tail(cfg);
 
     for (auto & n : cfg) {
         Passes::remove_ternary(&cfg, &n);

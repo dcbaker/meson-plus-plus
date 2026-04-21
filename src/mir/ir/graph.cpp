@@ -29,7 +29,21 @@ Node * Node::right_successor() const { return successors[1]; }
 
 void Node::set_successor(Node * n, int index) {
     assert(index == 0 || index == 1);
-    assert(successors.at(index) == nullptr || n == nullptr);
+
+    // We can replace the special tail node, but in that case we need to move it
+    assert(successors.at(index) == nullptr || successors.at(index)->id == UINT32_MAX ||
+           n == nullptr);
+
+    // If we are replacing the left tail successor, we want to move that
+    // successor to be the successor of the new block if it doesn't have one.
+    // We do not walk down looking for later successors as we consider that the
+    // callers job to handle
+    if (successors.at(index) && successors.at(index)->id == UINT32_MAX) {
+        assert(index == 0);
+        if (!n->successors.at(0)) {
+            n->set_left_successor(successors.at(index));
+        }
+    }
 
     successors.at(index) = n;
 }
@@ -149,10 +163,6 @@ CFG::Iterator & CFG::Iterator::operator++() {
                 }
             }
         } while (cont);
-    } else {
-        // If the queue is empty, we've (hopefully) reached the end of the
-        // graph, and we'll push the tail sentinel on there.
-        deque.push_back(p_tail);
     }
 
     return *this;
