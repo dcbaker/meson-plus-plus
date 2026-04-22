@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -17,7 +18,9 @@ namespace MIR::IR {
 // I'm concerned about mega headers
 class BasicBlock;
 
+// Circular definitions...
 class Node;
+class CFG;
 
 struct NodeHash {
     size_t operator()(const Node & p) const;
@@ -27,7 +30,7 @@ struct NodeHash {
 /// @brief A single node the Control Flow Graph
 class Node {
   public:
-    Node(uint32_t i, std::shared_ptr<BasicBlock> b);
+    Node(uint32_t i, std::shared_ptr<BasicBlock> b, CFG * const cfg);
 
     /// @brief The unique identifier for this block
     const uint32_t id;
@@ -69,6 +72,41 @@ class Node {
     void set_right_successor(Node * n);
 
     void set_successor(Node * n, int index);
+
+    struct Iterator {
+      public:
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Node;
+        using pointer = Node *;
+        using reference = Node &;
+
+        Iterator(pointer head);
+        reference operator*();
+        pointer operator->();
+        Iterator & operator++();
+        Iterator operator++(int);
+
+        friend bool operator==(const Iterator & a, const Iterator & b);
+        friend bool operator!=(const Iterator & a, const Iterator & b);
+
+      private:
+        /// @brief The current pointer
+        pointer p_current;
+
+        /// @brief The depth of the starting node
+        /// We should never visit a node with a higher depth than this
+        uint32_t p_depth;
+
+        /// @brief A queue of items to return
+        std::map<uint32_t, std::deque<pointer>> p_queue;
+    };
+
+    Iterator begin();
+    Iterator end();
+
+  private:
+    CFG * const p_cfg;
 };
 
 /// @brief Link two nodes together
@@ -99,39 +137,9 @@ class CFG {
     /// TODO: could be const with a const iterator...
     std::string serialize(unsigned indent = 0);
 
-    struct Iterator {
-      public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = Node;
-        using pointer = Node *;
-        using reference = Node &;
-
-        Iterator(pointer head, pointer tail);
-        reference operator*();
-        pointer operator->();
-        Iterator & operator++();
-        Iterator operator++(int);
-
-        friend bool operator==(const Iterator & a, const Iterator & b);
-        friend bool operator!=(const Iterator & a, const Iterator & b);
-
-      private:
-        /// @brief A queue of items to return
-        std::deque<pointer> deque;
-
-        /// @brief A fast set to check what is on the queue
-        std::unordered_set<uint32_t> queued;
-
-        /// @brief A set tracking which nodes have been returned
-        std::unordered_set<uint32_t> visited;
-
-        /// @brief The last node of the web
-        pointer p_tail;
-    };
-
-    Iterator begin();
-    Iterator end();
+    // Convenience wrapper around Node iterators
+    Node::Iterator begin();
+    Node::Iterator end();
 
   private:
     /// @brief The counter for the block

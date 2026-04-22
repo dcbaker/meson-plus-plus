@@ -4,7 +4,9 @@
 #include "graph.hpp"
 #include "basicblock.hpp"
 #include "helpers.hpp"
+#include "utils.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <deque>
 #include <set>
@@ -12,29 +14,52 @@
 
 namespace MIR::IR {
 
-namespace {
-
-Node node_sentintel = Node{UINT32_MAX, nullptr};
-
-} // namespace
-
 size_t NodeHash::operator()(const Node & p) const { return p.id; }
 size_t NodeHash::operator()(const Node * p) const { return p->id; }
 
-Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b)
-    : id{i}, depth{0}, block{b}, predecessors{}, successors{}, loop_header{false} {};
+Node::Node(uint32_t i, std::shared_ptr<BasicBlock> b, CFG * const cfg)
+    : id{i}, depth{0}, block{b}, predecessors{}, successors{}, loop_header{false}, p_cfg{cfg} {};
 
 Node * Node::left_successor() const { return successors.at(0); }
 Node * Node::right_successor() const { return successors.at(1); }
 
-void update_depth(Node * node, uint32_t parent_depth) {
-    if (node->depth <= parent_depth) {
-        node->depth = parent_depth + 1;
+// TODO: could this be implemented as iteration instead of recursion?
+void update_depth(Node * node, const Node * const parent) {
+    // I would need to implement a depth-free iterator to do this as iteration
+    // instead of recursion. That may still be desirable.
+
+    // If the successor is a loop header, we need to ensure that we are
+    // not setting the depth to the loop body (right arm) depth + 1, instead
+    // in that case the header should not be updated.
+    //
+    // If this is the node is a successor is a loop header, we check to see
+    // if this node is a child of that successor, if it is we stop
+    //
+    // TODO: this algorithm sucks
+    if (node->loop_header && node->successors.at(0)) {
+        std::deque<Node *> queue{node->successors.at(0)};
+        while (!queue.empty()) {
+            const Node * const n = queue.front();
+            queue.pop_front();
+            if (*n == *parent) {
+                return;
+            }
+            for (auto succ : n->successors) {
+                if (succ && succ->depth > node->depth) {
+                    queue.push_back(succ);
+                }
+            }
+        }
+    }
+
+    if (node->depth <= parent->depth) {
+        node->depth = parent->depth + 1;
+
         if (auto s = node->successors.at(0)) {
-            update_depth(s, node->depth);
+            update_depth(s, node);
         }
         if (auto s = node->successors.at(1)) {
-            update_depth(s, node->depth);
+            update_depth(s, node);
         }
     }
 }
@@ -49,9 +74,7 @@ void Node::set_successor(Node * n, int index) {
     if (n != nullptr) {
         // If the depth of the new successor is less than the depth of the current
         // node, increase that depth
-        if (depth >= n->depth) {
-            update_depth(n, depth);
-        }
+        update_depth(n, this);
 
         // If we are replacing the left tail successor, we want to move that
         // successor to be the successor of the new block if it doesn't have one.
@@ -103,6 +126,62 @@ bool Node::operator==(const Node & other) const { return this->id == other.id; }
 
 bool Node::operator!=(const Node & other) const { return this->id != other.id; }
 
+Node::Iterator Node::begin() { return Iterator(this); }
+Node::Iterator Node::end() { return Iterator(this->p_cfg->tail()); }
+
+Node::Iterator::Iterator(pointer head)
+    : p_current{head}, p_depth{head->depth}, p_queue{{head->id, {}}} {};
+
+Node::Iterator::reference Node::Iterator::operator*() { return *p_current; }
+
+Node::Iterator::pointer Node::Iterator::operator->() { return p_current; }
+
+Node::Iterator Node::Iterator::operator++(int) {
+    Iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+Node::Iterator & Node::Iterator::operator++() {
+    for (Node * succ : p_current->successors) {
+        // Queue any successors if they have not already been queued
+        if (succ && succ->depth > p_depth) {
+            // Create the entry if it doesn't exist
+            auto & deq = p_queue[succ->depth];
+            if (std::find(deq.begin(), deq.end(), succ) == deq.end()) {
+                deq.emplace_back(succ);
+            }
+        }
+    }
+
+#ifdef MESONPP_DEBUG
+    if (p_depth > 0) {
+        for (int64_t i = p_depth - 1; i > 0; --i) {
+            assert(p_queue[i].empty());
+        }
+    }
+#endif
+
+    if (p_queue.at(p_depth).empty()) {
+        p_depth++;
+        // We should never have a case where a depth is empty, that's a bug
+        assert(!p_queue[p_depth].empty());
+    }
+
+    p_current = p_queue.at(p_depth).front();
+    p_queue.at(p_depth).pop_front();
+
+    return *this;
+}
+
+bool operator==(const Node::Iterator & a, const Node::Iterator & b) {
+    return a.p_current == b.p_current;
+}
+
+bool operator!=(const Node::Iterator & a, const Node::Iterator & b) {
+    return a.p_current != b.p_current;
+}
+
 void link_nodes(Node * pred, Node * succ, bool right) {
     if (right) {
         pred->set_right_successor(succ);
@@ -128,79 +207,13 @@ void reparent(Node * from, Node * to) {
     }
 }
 
-bool operator==(const CFG::Iterator & a, const CFG::Iterator & b) {
-    return a.deque.front() == b.deque.front();
-}
-
-bool operator!=(const CFG::Iterator & a, const CFG::Iterator & b) {
-    return a.deque.front() != b.deque.front();
-}
-
-CFG::Iterator::Iterator(pointer ptr, pointer tail) : p_tail{tail} {
-    deque.push_back(ptr);
-    queued.emplace(ptr->id);
-}
-
-CFG::Iterator::reference CFG::Iterator::operator*() { return *deque.front(); }
-
-CFG::Iterator::pointer CFG::Iterator::operator->() { return deque.front(); }
-
-CFG::Iterator & CFG::Iterator::operator++() {
-    pointer current = deque.front();
-    visited.emplace(current->id);
-
-    // Queue the nodes successors
-    // Do this after visiting the node in case it's successors are mutated during
-    // that visit
-    for (auto succ : {current->left_successor(), current->right_successor()}) {
-        if (succ && queued.find(succ->id) == queued.end()) {
-            deque.push_back(succ);
-            queued.emplace(succ->id);
-        }
-    }
-
-    // We are done with this node, advance to the next one
-    deque.pop_front();
-
-    // If the next node (the front of the deque) has parents that have not been
-    // visited, then we can't use that one yet, push it to the back of the queue
-    // and take the next one until we've visited them all
-    if (!deque.empty()) {
-        bool cont;
-        do {
-            cont = false;
-            pointer value = deque.front();
-
-            if (value) {
-                for (auto && pred : value->predecessors) {
-                    // This happens to work, but seems fragile
-                    if (visited.find(pred->id) == visited.end() && !value->loop_header) {
-                        deque.pop_front();
-                        deque.push_back(value);
-                        cont = true;
-                        break;
-                    }
-                }
-            }
-        } while (cont);
-    }
-
-    return *this;
-}
-
-CFG::Iterator CFG::Iterator::operator++(int) {
-    Iterator tmp = *this;
-    ++(*this);
-    return tmp;
-}
-
-CFG::Iterator CFG::begin() { return Iterator(head(), tail()); }
-CFG::Iterator CFG::end() { return Iterator(tail(), tail()); }
+Node::Iterator CFG::begin() { return head()->begin(); }
+Node::Iterator CFG::end() { return head()->end(); }
 
 CFG::CFG() : nodes{}, p_block_counter{0} {
     nodes.emplace(p_block_counter,
-                  std::make_unique<Node>(p_block_counter, std::make_shared<BasicBlock>()));
-    nodes.emplace(UINT32_MAX, std::make_unique<Node>(UINT32_MAX, nullptr));
+                  std::make_unique<Node>(p_block_counter, std::make_shared<BasicBlock>(), this));
+    nodes.emplace(UINT32_MAX, std::make_unique<Node>(UINT32_MAX, nullptr, this));
 }
 
 Node * CFG::head() const { return nodes.at(0).get(); }
@@ -209,7 +222,7 @@ Node * CFG::tail() const { return nodes.at(UINT32_MAX).get(); }
 Node * CFG::next() {
     assert(p_block_counter != UINT32_MAX);
     const uint32_t i = ++p_block_counter;
-    nodes.emplace(i, std::make_unique<Node>(i, std::make_shared<BasicBlock>()));
+    nodes.emplace(i, std::make_unique<Node>(i, std::make_shared<BasicBlock>(), this));
     return nodes.at(i).get();
 }
 

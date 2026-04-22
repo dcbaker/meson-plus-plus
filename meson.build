@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021-2025 Intel Corporation
+# Copyright © 2021-2026 Intel Corporation
 
 project(
   'meson++',
@@ -11,6 +11,10 @@ project(
 )
 
 cpp = meson.get_compiler('cpp')
+
+if get_option('debug')
+  add_project_arguments('-DMESONPP_DEBUG', language : 'cpp')
+endif
 
 add_project_arguments(
   cpp.get_supported_arguments(
