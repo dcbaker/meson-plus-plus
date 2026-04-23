@@ -20,20 +20,66 @@ class BasicBlock;
 
 // Circular definitions...
 class Node;
-class CFG;
+
+/// @brief The representation of the Control Flow Graph
+class CFG {
+  public:
+    using NodeVec = std::vector<std::unique_ptr<Node>>;
+
+    CFG();
+
+    /// @brief Ownership of every node within the graph
+    NodeVec nodes;
+
+    Node * head() const;
+    Node * next();
+
+    void sort();
+
+    /// @brief provide a serialized form of this instruction
+    /// TODO: could be const with a const iterator...
+    std::string serialize(unsigned indent = 0);
+
+    // Convenience wrapper around Node iterators
+    NodeVec::iterator begin();
+    NodeVec::iterator end();
+    NodeVec::const_iterator cbegin() const;
+    NodeVec::const_iterator cend() const;
+    NodeVec::reverse_iterator rbegin();
+    NodeVec::reverse_iterator rend();
+    NodeVec::const_reverse_iterator crbegin() const;
+    NodeVec::const_reverse_iterator crend() const;
+
+  private:
+    uint32_t p_const_ids;
+    uint32_t p_next_const_id();
+};
 
 struct NodeHash {
-    size_t operator()(const Node & p) const;
-    size_t operator()(const Node * p) const;
+    size_t operator()(const Node * const node) const;
 };
 
 /// @brief A single node the Control Flow Graph
 class Node {
   public:
-    Node(uint32_t i, std::shared_ptr<BasicBlock> b, CFG * const cfg);
+    using PredecessorType = std::unordered_set<Node *, NodeHash>;
+
+    Node(uint32_t const_id, uint32_t id, std::shared_ptr<BasicBlock> b, CFG * const cfg);
+
+    // Nodes cannot be copied
+    Node(const Node &) = delete;
+    Node & operator=(const Node &) = delete;
+
+    // It might be possible to implement a move operator, but I don't have a use
+    // for one ATM, so just deleting explicitly
+    Node(Node && node) = delete;
+    Node & operator=(Node && node) = delete;
 
     /// @brief The unique identifier for this block
-    const uint32_t id;
+    const uint32_t m_const_id;
+
+    /// @brief The index of this block in the CFG
+    uint32_t id;
 
     /// @brief The depth of this block in the graph
     uint32_t depth;
@@ -42,7 +88,7 @@ class Node {
     std::shared_ptr<BasicBlock> block;
 
     /// @brief Possible entries to this node.
-    std::unordered_set<Node *, NodeHash> predecessors;
+    PredecessorType predecessors;
 
     /// @brief The possible exits from this node
     std::array<Node *, 2> successors;
@@ -54,6 +100,7 @@ class Node {
 
     bool operator==(const Node & other) const;
     bool operator!=(const Node & other) const;
+    bool operator<(const Node & other) const;
 
     /// @brief Get the left successor
     /// @return A shared ptr to the left successor
@@ -71,74 +118,21 @@ class Node {
     /// @param n the node to be the successor
     void set_right_successor(Node * n);
 
-    void set_successor(Node * n, int index);
-
-    struct Iterator {
-      public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = Node;
-        using pointer = Node *;
-        using reference = Node &;
-
-        Iterator(pointer head);
-        reference operator*();
-        pointer operator->();
-        Iterator & operator++();
-        Iterator operator++(int);
-
-        friend bool operator==(const Iterator & a, const Iterator & b);
-        friend bool operator!=(const Iterator & a, const Iterator & b);
-
-      private:
-        /// @brief The current pointer
-        pointer p_current;
-
-        /// @brief The depth of the starting node
-        /// We should never visit a node with a higher depth than this
-        uint32_t p_depth;
-
-        /// @brief A queue of items to return
-        std::map<uint32_t, std::deque<pointer>> p_queue;
-    };
-
-    Iterator begin();
-    Iterator end();
-
-    struct RIterator {
-      public:
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = Node;
-        using pointer = Node *;
-        using reference = Node &;
-
-        RIterator(pointer head);
-        reference operator*();
-        pointer operator->();
-        RIterator & operator++();
-        RIterator operator++(int);
-
-        friend bool operator==(const RIterator & a, const RIterator & b);
-        friend bool operator!=(const RIterator & a, const RIterator & b);
-
-      private:
-        /// @brief The current pointer
-        pointer p_current;
-
-        /// @brief The depth of the starting node
-        /// We should never visit a node with a higher depth than this
-        uint32_t p_depth;
-
-        /// @brief A queue of items to return
-        std::map<uint32_t, std::deque<pointer>> p_queue;
-    };
-
-    RIterator rbegin();
-    RIterator rend();
+    CFG::NodeVec::iterator begin();
+    CFG::NodeVec::iterator end();
+    CFG::NodeVec::const_iterator cbegin() const;
+    CFG::NodeVec::const_iterator cend() const;
+    CFG::NodeVec::reverse_iterator rbegin();
+    CFG::NodeVec::reverse_iterator rend();
+    CFG::NodeVec::const_reverse_iterator crbegin() const;
+    CFG::NodeVec::const_reverse_iterator crend() const;
 
   private:
-    CFG * const p_cfg;
+    /// @brief Pointer to the CFG that owns this Node
+    CFG * p_cfg;
+
+    void set_successor(Node * n, int index);
+    Node * get_successor(int index) const;
 };
 
 /// @brief Link two nodes together
@@ -152,33 +146,5 @@ void link_nodes(Node * pred, Node * succ, bool right = false);
 /// @param next the node to give them to
 /// This also updates the parents of the moved successor(s)
 void reparent(Node * from, Node * to);
-
-/// @brief The representation of the Control Flow Graph
-class CFG {
-  public:
-    CFG();
-
-    /// @brief Ownership of every node within the graph
-    std::unordered_map<uint32_t, std::unique_ptr<Node>> nodes;
-
-    Node * head() const;
-    Node * tail() const;
-    Node * next();
-
-    /// @brief provide a serialized form of this instruction
-    /// TODO: could be const with a const iterator...
-    std::string serialize(unsigned indent = 0);
-
-    // Convenience wrapper around Node iterators
-    Node::Iterator begin();
-    Node::Iterator end();
-
-    Node::RIterator rbegin();
-    Node::RIterator rend();
-
-  private:
-    /// @brief The counter for the block
-    uint32_t p_block_counter;
-};
 
 } // namespace MIR::IR

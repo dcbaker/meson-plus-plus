@@ -7,221 +7,423 @@
 
 using namespace MIR::IR;
 
-TEST(Node, iter_pre_fix) {
-    CFG cfg{};
+TEST(CFG, sort) {
+    CFG cfg;
     Node * n0{cfg.head()};
+    Node * n3{cfg.next()};
     Node * n1{cfg.next()};
     Node * n2{cfg.next()};
-    Node * n3{cfg.next()};
-    link_nodes(n0, n1);
-    link_nodes(n0, n2, true);
-    link_nodes(n1, n3);
-    link_nodes(n2, n3, true);
-    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
 
-    auto itr = n0->begin();
-    EXPECT_EQ(*itr, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
-    ASSERT_NE(++itr, n0->end());
-    EXPECT_EQ(*itr, *n1) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
-    ASSERT_NE(++itr, n0->end());
-    EXPECT_EQ(*itr, *n2) << "Got: " << itr->id << ", but expected: " << n2->id << std::endl;
-    ASSERT_NE(++itr, n0->end());
-    EXPECT_EQ(*itr, *n3) << "Got: " << itr->id << ", but expected: " << n3->id << std::endl;
-
-    ASSERT_EQ(++itr, n0->end()) << "Got: " << itr->id << ", but expected : " << cfg.tail()->id
-                                << std::endl;
-}
-
-TEST(Node, iter_post_fix) {
-    CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
-    Node * n3{cfg.next()};
-    link_nodes(n0, n1);
-    link_nodes(n0, n2, true);
-    link_nodes(n1, n3);
-    link_nodes(n2, n3, true);
-    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    auto itr = n0->begin();
-    EXPECT_EQ(*itr++, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
-    ASSERT_NE(itr, n0->end());
-    EXPECT_EQ(*itr++, *n1) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
-    ASSERT_NE(itr, n0->end());
-    EXPECT_EQ(*itr++, *n2) << "Got: " << itr->id << ", but expected: " << n2->id << std::endl;
-    ASSERT_NE(itr, n0->end());
-    EXPECT_EQ(*itr++, *n3) << "Got: " << itr->id << ", but expected: " << n3->id << std::endl;
-
-    ASSERT_EQ(itr, n0->end()) << "Got: " << itr->id << ", but expected : " << cfg.tail()->id
-                              << std::endl;
-}
-
-TEST(Node, iter_for_loop) {
-    CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
-    Node * n3{cfg.next()};
     link_nodes(n0, n1);
     link_nodes(n0, n2, true);
     link_nodes(n1, n3);
     link_nodes(n2, n3);
-    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
+    cfg.sort();
 
+    EXPECT_EQ(*cfg.nodes.at(0), *n0)
+        << "expected: " << n0->id << ", but got: " << cfg.nodes.at(0)->id;
+    EXPECT_EQ(*cfg.nodes.at(1), *n2)
+        << "expected: " << n2->id << ", but got: " << cfg.nodes.at(1)->id;
+    EXPECT_EQ(*cfg.nodes.at(2), *n1)
+        << "expected: " << n2->id << ", but got: " << cfg.nodes.at(2)->id;
+    EXPECT_EQ(*cfg.nodes.at(3), *n3)
+        << "expected: " << n3->id << ", but got: " << cfg.nodes.at(3)->id;
+}
+
+class NodeIterTest : public testing::Test {
+  protected:
+    NodeIterTest() : cfg{}, n0{cfg.head()}, n3{cfg.next()}, n1{cfg.next()}, n2{cfg.next()} {
+        /*
+         *           O n0
+         *          / \
+         *      n1 O   O n2
+         *          \ /
+         *           O n3
+         */
+        link_nodes(n0, n1);
+        link_nodes(n0, n2, true);
+        link_nodes(n1, n3);
+        link_nodes(n2, n3);
+        cfg.sort();
+    }
+
+    CFG cfg;
+    Node * n0;
+    Node * n3;
+    Node * n1;
+    Node * n2;
+};
+
+TEST_F(NodeIterTest, prefix_forward) {
+    auto itr = cfg.begin();
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+    ASSERT_NE(++itr, cfg.end());
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    ASSERT_NE(++itr, cfg.end());
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    ASSERT_NE(++itr, cfg.end());
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+
+    ASSERT_EQ(++itr, cfg.end()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                << std::endl;
+}
+
+TEST_F(NodeIterTest, node_prefix_forward) {
+    auto itr = n0->begin();
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    ASSERT_NE(++itr, n0->end());
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    ASSERT_NE(++itr, n0->end());
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+
+    ASSERT_EQ(++itr, n0->end()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                << std::endl;
+}
+
+TEST_F(NodeIterTest, node_prefix_forward_partial) {
+    auto itr = n2->begin();
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+
+    ASSERT_EQ(++itr, n0->end()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                << std::endl;
+}
+
+TEST_F(NodeIterTest, prefix_reverse) {
+    auto itr = cfg.rbegin();
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+    ASSERT_NE(++itr, cfg.rend());
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    ASSERT_NE(++itr, cfg.rend());
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    ASSERT_NE(++itr, cfg.rend());
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+
+    ASSERT_EQ(++itr, cfg.rend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                 << std::endl;
+}
+
+TEST_F(NodeIterTest, node_prefix_reverse) {
+    auto itr = n3->rbegin();
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    ASSERT_NE(++itr, n3->rend());
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    ASSERT_NE(++itr, n3->rend());
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+
+    ASSERT_EQ(++itr, n3->rend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                 << std::endl;
+}
+
+TEST_F(NodeIterTest, node_prefix_reverse_partial) {
+    auto itr = n2->rbegin();
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+
+    ASSERT_EQ(++itr, n3->rend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                 << std::endl;
+}
+
+TEST_F(NodeIterTest, postfix_forward) {
+    auto itr = cfg.begin();
+    EXPECT_EQ(**(itr++), *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+    ASSERT_NE(itr, cfg.end());
+    EXPECT_EQ(**(itr++), *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    ASSERT_NE(itr, cfg.end());
+    EXPECT_EQ(**(itr++), *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    ASSERT_NE(itr, cfg.end());
+    EXPECT_EQ(**(itr++), *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+
+    ASSERT_EQ(itr, cfg.end()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                              << std::endl;
+}
+
+TEST_F(NodeIterTest, postfix_reverse) {
+    auto itr = cfg.rbegin();
+    EXPECT_EQ(**(itr++), *n3) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+    ASSERT_NE(itr, cfg.rend());
+    EXPECT_EQ(**(itr++), *n1) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    ASSERT_NE(itr, cfg.rend());
+    EXPECT_EQ(**(itr++), *n2) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    ASSERT_NE(itr, cfg.rend());
+    EXPECT_EQ(**(itr++), *n0) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+
+    ASSERT_EQ(itr, cfg.rend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                               << std::endl;
+}
+
+TEST_F(NodeIterTest, for_loop_forward) {
     uint64_t counter = 0;
-    for (auto itr = n0->begin(); itr != n0->end(); itr++) {
-        counter += itr->id;
+    for (auto itr = cfg.begin(); itr != cfg.end(); itr++) {
+        counter += (*itr)->id;
     }
     ASSERT_EQ(counter, 6);
 }
 
-TEST(Node, iter_range) {
-    CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
-    Node * n3{cfg.next()};
-    link_nodes(n0, n1);
-    link_nodes(n0, n2, true);
-    link_nodes(n1, n3);
-    link_nodes(n2, n3, true);
-    link_nodes(n3, cfg.tail()); // This is done automatically in the ast_to_mir
-
+TEST_F(NodeIterTest, for_loop_reverse) {
     uint64_t counter = 0;
-    for (auto i : *n0) {
-        counter += i.id;
+    for (auto itr = cfg.rbegin(); itr != cfg.rend(); itr++) {
+        counter += (*itr)->id;
     }
     ASSERT_EQ(counter, 6);
 }
 
-TEST(Node, iter_visits_predecessors_before_successors) {
-    CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    link_nodes(n0, n1);
+TEST_F(NodeIterTest, iter_range_forward) {
+    uint64_t counter = 0;
+    for (auto & i : cfg) {
+        counter += i->id;
+    }
+    ASSERT_EQ(counter, 6);
+}
 
-    Node * n2{cfg.next()};
-    link_nodes(n1, n2);
+class NodeDiamondIteratorTest : public testing::Test {
+  protected:
+    NodeDiamondIteratorTest()
+        : cfg{}, n0{cfg.head()}, n1{cfg.next()}, n2{cfg.next()}, n3{cfg.next()}, n4{cfg.next()} {
+        /*
+         *           O n0
+         *          / \
+         *      n1 O   O n3
+         *         |   |
+         *      n2 O   |
+         *          \ /
+         *           O n4
+         */
+        link_nodes(n0, n1);
+        link_nodes(n1, n2);
+        link_nodes(n0, n3, true);
+        link_nodes(n2, n4);
+        link_nodes(n3, n4);
+    }
 
-    Node * n3{cfg.next()};
-    link_nodes(n0, n3, true);
+    CFG cfg;
+    Node * n0;
+    Node * n1;
+    Node * n2;
+    Node * n3;
+    Node * n4;
+};
 
-    Node * n4{cfg.next()};
-    link_nodes(n2, n4);
-    link_nodes(n3, n4);
-    link_nodes(n4, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    auto itr = n0->begin();
-    EXPECT_EQ(*itr, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
+TEST_F(NodeDiamondIteratorTest, visit_predecessors_before_successors_forward) {
+    auto itr = cfg.begin();
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n1) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n3) << "Got: " << itr->id << ", but expected: " << n3->id << std::endl;
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n2) << "Got: " << itr->id << ", but expected: " << n2->id << std::endl;
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n4) << "Got: " << itr->id << ", but expected: " << n4->id << std::endl;
+    EXPECT_EQ(**itr, *n4) << "Got: " << (*itr)->id << ", but expected: " << n4->id << std::endl;
     itr++;
-    EXPECT_EQ(itr, n0->end()) << "Got: " << itr->id << ", but expected : " << cfg.tail()->id
+    EXPECT_EQ(itr, cfg.end()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
                               << std::endl;
 }
 
-TEST(Node, iter_visits_predecessors_before_successors_2) {
+TEST_F(NodeDiamondIteratorTest, visit_predecessors_before_successors_reverse) {
+    auto itr = cfg.rbegin();
+    EXPECT_EQ(**itr, *n4) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n4->id << std::endl;
+    itr++;
+    EXPECT_EQ(itr, cfg.rend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                               << std::endl;
+}
+
+class NodeDiamondIteratorTest2 : public testing::Test {
+  protected:
+    NodeDiamondIteratorTest2()
+        : cfg{}, n0{cfg.head()}, n1{cfg.next()}, n2{cfg.next()}, n3{cfg.next()}, n4{cfg.next()} {
+        /*
+         *           O n0
+         *          / \
+         *      n3 O   O n1
+         *         |   |
+         *         \   O n2
+         *          \ /
+         *           O n4
+         */
+        link_nodes(n0, n1, true);
+        link_nodes(n1, n2);
+        link_nodes(n0, n3);
+        link_nodes(n2, n4);
+        link_nodes(n3, n4);
+    }
+
+    CFG cfg;
+    Node * n0;
+    Node * n1;
+    Node * n2;
+    Node * n3;
+    Node * n4;
+};
+
+TEST_F(NodeDiamondIteratorTest2, visit_predecessors_before_successors_forward) {
+    auto itr = cfg.cbegin();
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n4) << "Got: " << (*itr)->id << ", but expected: " << n4->id << std::endl;
+    itr++;
+    EXPECT_EQ(itr, cfg.cend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                               << std::endl;
+}
+
+TEST_F(NodeDiamondIteratorTest2, visit_predecessors_before_successors_reverse) {
+    auto itr = cfg.crbegin();
+    EXPECT_EQ(**itr, *n4) << "Got: " << (*itr)->id << ", but expected: " << n0->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n2) << "Got: " << (*itr)->id << ", but expected: " << n3->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n1) << "Got: " << (*itr)->id << ", but expected: " << n2->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n3) << "Got: " << (*itr)->id << ", but expected: " << n1->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *n0) << "Got: " << (*itr)->id << ", but expected: " << n4->id << std::endl;
+    itr++;
+    EXPECT_EQ(itr, cfg.crend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
+                                << std::endl;
+}
+
+class NodeBasicLoopTest : public testing::Test {
+  protected:
+    NodeBasicLoopTest()
+        : cfg{}, preamble{cfg.head()}, header{cfg.next()}, tail{cfg.next()}, body{cfg.next()} {
+        /*
+         *           O preamble
+         *           |
+         *           O header
+         *          / \
+         *    body O   |
+         *            /
+         *           O tail
+         */
+        header->loop_header = true;
+        link_nodes(preamble, header);
+        link_nodes(header, tail, true);
+        link_nodes(header, body);
+        link_nodes(body, header);
+    };
+
     CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    link_nodes(n0, n1, true);
+    Node * preamble;
+    Node * header;
+    Node * tail;
+    Node * body;
+};
 
-    Node * n2{cfg.next()};
-    link_nodes(n1, n2);
-
-    Node * n3{cfg.next()};
-    link_nodes(n0, n3);
-
-    Node * n4{cfg.next()};
-    link_nodes(n2, n4);
-    link_nodes(n3, n4);
-    link_nodes(n4, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    auto itr = n0->begin();
-    EXPECT_EQ(*itr, *n0) << "Got: " << itr->id << ", but expected: " << n0->id << std::endl;
+TEST_F(NodeBasicLoopTest, iter_visits_predecessors_before_successors_forward) {
+    auto itr = cfg.begin();
+    EXPECT_EQ(**itr, *preamble) << "Got: " << (*itr)->id << ", but expected: " << preamble->id
+                                << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n3) << "Got: " << itr->id << ", but expected: " << n3->id << std::endl;
+    EXPECT_EQ(**itr, *header) << "Got: " << (*itr)->id << ", but expected: " << header->id
+                              << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n1) << "Got: " << itr->id << ", but expected: " << n1->id << std::endl;
+    EXPECT_EQ(**itr, *body) << "Got: " << (*itr)->id << ", but expected: " << body->id << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n2) << "Got: " << itr->id << ", but expected: " << n2->id << std::endl;
+    EXPECT_EQ(**itr, *tail) << "Got: " << (*itr)->id << ", but expected: " << tail->id << std::endl;
     itr++;
-    EXPECT_EQ(*itr, *n4) << "Got: " << itr->id << ", but expected: " << n4->id << std::endl;
-    itr++;
-    EXPECT_EQ(itr, n0->end()) << "Got: " << itr->id << ", but expected : " << cfg.tail()->id
+    EXPECT_EQ(itr, cfg.end()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
                               << std::endl;
 }
 
-TEST(Node, iter_visits_predecessors_before_successors_loop) {
-    CFG cfg{};
-    Node * preamble{cfg.head()};
-
-    Node * header{cfg.next()};
-    header->loop_header = true;
-    link_nodes(preamble, header);
-
-    Node * tail{cfg.next()};
-    link_nodes(header, tail, true);
-    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    Node * body{cfg.next()};
-    link_nodes(header, body);
-    link_nodes(body, header);
-
-    auto itr = preamble->begin();
-    EXPECT_EQ(*itr, *preamble) << "Got: " << itr->id << ", but expected: " << preamble->id
-                               << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *header) << "Got: " << itr->id << ", but expected: " << header->id << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *body) << "Got: " << itr->id << ", but expected: " << body->id << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *tail) << "Got: " << itr->id << ", but expected: " << tail->id << std::endl;
-    itr++;
-    EXPECT_EQ(itr, preamble->end())
-        << "Got: " << itr->id << ", but expected : " << cfg.tail()->id << std::endl;
+TEST_F(NodeBasicLoopTest, depth) {
+    /*
+     *           O preamble
+     *           |
+     *           O header
+     *          / \
+     *    body O   O tail
+     */
+    EXPECT_EQ(preamble->depth, 0);
+    EXPECT_EQ(header->depth, 1);
+    EXPECT_EQ(body->depth, 2);
+    EXPECT_EQ(tail->depth, 2);
 }
 
-TEST(Node, iter_visits_predecessors_before_successors_loop_2) {
+class NodeLoopMultiBodyTest : public testing::Test {
+  protected:
+    NodeLoopMultiBodyTest()
+        : cfg{}, preamble{cfg.head()}, header{cfg.next()}, tail{cfg.next()}, body{cfg.next()},
+          body2{cfg.next()} {
+        /*
+         *           O preamble
+         *           |
+         *           O header
+         *          / \
+         *    body O   |
+         *            /
+         *           O tail
+         */
+        header->loop_header = true;
+        link_nodes(preamble, header);
+        link_nodes(header, tail, true);
+        link_nodes(header, body);
+        link_nodes(body, body2);
+        link_nodes(body2, header);
+    };
+
     CFG cfg{};
-    Node * preamble{cfg.head()};
+    Node * preamble;
+    Node * header;
+    Node * tail;
+    Node * body;
+    Node * body2;
+};
 
-    Node * header{cfg.next()};
-    header->loop_header = true;
-    link_nodes(preamble, header);
+TEST_F(NodeLoopMultiBodyTest, depth) {
+    /*
+     *           O preamble
+     *           |
+     *           O header
+     *          / \
+     *    body O   O tail
+     */
+    EXPECT_EQ(preamble->depth, 0);
+    EXPECT_EQ(header->depth, 1);
+    EXPECT_EQ(body->depth, 2);
+    EXPECT_EQ(body2->depth, 3);
+    EXPECT_EQ(tail->depth, 2);
+}
 
-    Node * tail{cfg.next()};
-    link_nodes(header, tail, true);
-    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    Node * body{cfg.next()};
-    link_nodes(header, body);
-
-    Node * body2{cfg.next()};
-    link_nodes(body, body2);
-    link_nodes(body2, header);
-
-    auto itr = preamble->begin();
-    EXPECT_EQ(*itr, *preamble) << "Got: " << itr->id << ", but expected: " << preamble->id
+TEST_F(NodeLoopMultiBodyTest, iter_visits_predecessors_before_successors) {
+    /*
+     *           O preamble
+     *           |
+     *         > O header
+     *        / / \
+     *       | O   |  body
+     *        \|   |
+     *         O   |  body2
+     *            /
+     *           O tail
+     */
+    auto itr = cfg.cbegin();
+    EXPECT_EQ(**itr, *preamble) << "Got: " << (*itr)->id << ", but expected: " << preamble->id
+                                << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *header) << "Got: " << (*itr)->id << ", but expected: " << header->id
+                              << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *body) << "Got: " << (*itr)->id << ", but expected: " << body->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *tail) << "Got: " << (*itr)->id << ", but expected: " << tail->id << std::endl;
+    itr++;
+    EXPECT_EQ(**itr, *body2) << "Got: " << (*itr)->id << ", but expected: " << body2->id
+                             << std::endl;
+    itr++;
+    EXPECT_EQ(itr, cfg.cend()) << "Got: " << (*itr)->id << ", but expected : tail sentinel"
                                << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *header) << "Got: " << itr->id << ", but expected: " << header->id << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *body) << "Got: " << itr->id << ", but expected: " << body->id << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *tail) << "Got: " << itr->id << ", but expected: " << tail->id << std::endl;
-    itr++;
-    EXPECT_EQ(*itr, *body2) << "Got: " << itr->id << ", but expected: " << body2->id << std::endl;
-    itr++;
-    EXPECT_EQ(itr, preamble->end())
-        << "Got: " << itr->id << ", but expected : " << cfg.tail()->id << std::endl;
 }
 
 TEST(Node, eq) {
@@ -234,24 +436,6 @@ TEST(Node, eq) {
     EXPECT_EQ(*n1, *n1);
     EXPECT_NE(*n0, *n1);
     EXPECT_EQ(*n2, *n2);
-}
-
-TEST(link_nodes, tail) {
-    CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
-
-    link_nodes(n0, n1);
-    link_nodes(n1, cfg.tail());
-    ASSERT_EQ(n0->left_successor(), n1);
-    ASSERT_EQ(n1->left_successor(), cfg.tail());
-
-    link_nodes(n1, n2);
-
-    EXPECT_EQ(n0->left_successor(), n1);
-    EXPECT_EQ(n1->left_successor(), n2);
-    EXPECT_EQ(n2->left_successor(), cfg.tail());
 }
 
 TEST(reparent, simple) {
@@ -278,17 +462,14 @@ TEST(Node, depth_simple) {
 
     link_nodes(n0, n1);
     link_nodes(n1, n2);
-    link_nodes(n2, cfg.tail());
 
     Node * n3{cfg.next()};
-    link_nodes(n3, cfg.tail());
     link_nodes(n2, n3);
 
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n1->depth, 1);
     EXPECT_EQ(n2->depth, 2);
     EXPECT_EQ(n3->depth, 3);
-    EXPECT_EQ(cfg.tail()->depth, 4);
 }
 
 TEST(Node, depth_no_change) {
@@ -299,7 +480,6 @@ TEST(Node, depth_no_change) {
 
     link_nodes(n0, n1);
     link_nodes(n1, n2);
-    link_nodes(n2, cfg.tail());
 
     Node * n3{cfg.next()};
     Node * n4{cfg.next()};
@@ -309,7 +489,6 @@ TEST(Node, depth_no_change) {
     link_nodes(n3, n4);
     link_nodes(n4, n5);
     link_nodes(n5, n6);
-    link_nodes(n6, cfg.tail());
 
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n1->depth, 1);
@@ -318,11 +497,9 @@ TEST(Node, depth_no_change) {
     EXPECT_EQ(n4->depth, 3);
     EXPECT_EQ(n5->depth, 4);
     EXPECT_EQ(n6->depth, 5);
-    EXPECT_EQ(cfg.tail()->depth, 6);
 
     link_nodes(n2, n6);
     EXPECT_EQ(n6->depth, 5);
-    EXPECT_EQ(cfg.tail()->depth, 6);
 }
 
 TEST(Node, depth_deep) {
@@ -333,7 +510,6 @@ TEST(Node, depth_deep) {
 
     link_nodes(n0, n1);
     link_nodes(n1, n2);
-    link_nodes(n2, cfg.tail());
 
     Node * n3{cfg.next()};
     Node * n4{cfg.next()};
@@ -343,7 +519,6 @@ TEST(Node, depth_deep) {
     link_nodes(n3, n4);
     link_nodes(n4, n5);
     link_nodes(n5, n6);
-    link_nodes(n6, cfg.tail());
 
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n1->depth, 1);
@@ -352,7 +527,6 @@ TEST(Node, depth_deep) {
     EXPECT_EQ(n4->depth, 3);
     EXPECT_EQ(n5->depth, 4);
     EXPECT_EQ(n6->depth, 5);
-    EXPECT_EQ(cfg.tail()->depth, 6);
 
     link_nodes(n6, n2);
     // Should not have changed
@@ -364,39 +538,6 @@ TEST(Node, depth_deep) {
 
     // Should have changed
     EXPECT_EQ(n2->depth, 6);
-    EXPECT_EQ(cfg.tail()->depth, 7);
-}
-
-TEST(Node, depth_loop) {
-    /*
-     *           O preamble
-     *           |
-     *           O header
-     *          / \
-     *    body O   O tail
-     *            /
-     *           O end
-     */
-    CFG cfg{};
-    Node * preamble{cfg.head()};
-
-    Node * header{cfg.next()};
-    header->loop_header = true;
-    link_nodes(preamble, header);
-
-    Node * tail{cfg.next()};
-    link_nodes(header, tail, true);
-    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    Node * body{cfg.next()};
-    link_nodes(header, body);
-    link_nodes(body, header);
-
-    EXPECT_EQ(preamble->depth, 0);
-    EXPECT_EQ(header->depth, 1);
-    EXPECT_EQ(body->depth, 2);
-    EXPECT_EQ(tail->depth, 2);
-    EXPECT_EQ(cfg.tail()->depth, 3);
 }
 
 TEST(Node, depth_loop_with_break) {
@@ -408,8 +549,6 @@ TEST(Node, depth_loop_with_break) {
      *    body O   |
      *          \ /
      *           O tail
-     *           |
-     *           O end
      */
     CFG cfg{};
     Node * preamble{cfg.head()};
@@ -420,7 +559,6 @@ TEST(Node, depth_loop_with_break) {
 
     Node * tail{cfg.next()};
     link_nodes(header, tail, true);
-    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
 
     Node * body{cfg.next()};
     link_nodes(header, body);
@@ -431,41 +569,4 @@ TEST(Node, depth_loop_with_break) {
     EXPECT_EQ(header->depth, 1);
     EXPECT_EQ(body->depth, 2);
     EXPECT_EQ(tail->depth, 3);
-    EXPECT_EQ(cfg.tail()->depth, 4);
-}
-
-TEST(Node, depth_loop_with_multiple_body_blocks) {
-    CFG cfg{};
-    Node * preamble{cfg.head()};
-
-    Node * header{cfg.next()};
-    header->loop_header = true;
-    link_nodes(preamble, header);
-
-    Node * tail{cfg.next()};
-    link_nodes(header, tail, true);
-    link_nodes(tail, cfg.tail()); // This is done automatically in the ast_to_mir
-
-    Node * body{cfg.next()};
-    link_nodes(header, body);
-
-    Node * body2{cfg.next()};
-    Node * body3{cfg.next()};
-    Node * body4{cfg.next()};
-    link_nodes(body, body2);
-    link_nodes(body, body3, true);
-    link_nodes(body2, body4);
-    link_nodes(body3, body4);
-
-    link_nodes(body4, header);
-    link_nodes(body4, tail, true);
-
-    EXPECT_EQ(preamble->depth, 0);
-    EXPECT_EQ(header->depth, 1);
-    EXPECT_EQ(body->depth, 2);
-    EXPECT_EQ(body2->depth, 3);
-    EXPECT_EQ(body3->depth, 3);
-    EXPECT_EQ(body4->depth, 4);
-    EXPECT_EQ(tail->depth, 5);
-    EXPECT_EQ(cfg.tail()->depth, 6);
 }
