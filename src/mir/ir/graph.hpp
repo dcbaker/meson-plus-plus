@@ -105,6 +105,38 @@ class Node {
     Iterator begin();
     Iterator end();
 
+    struct RIterator {
+      public:
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Node;
+        using pointer = Node *;
+        using reference = Node &;
+
+        RIterator(pointer head);
+        reference operator*();
+        pointer operator->();
+        RIterator & operator++();
+        RIterator operator++(int);
+
+        friend bool operator==(const RIterator & a, const RIterator & b);
+        friend bool operator!=(const RIterator & a, const RIterator & b);
+
+      private:
+        /// @brief The current pointer
+        pointer p_current;
+
+        /// @brief The depth of the starting node
+        /// We should never visit a node with a higher depth than this
+        uint32_t p_depth;
+
+        /// @brief A queue of items to return
+        std::map<uint32_t, std::deque<pointer>> p_queue;
+    };
+
+    RIterator rbegin();
+    RIterator rend();
+
   private:
     CFG * const p_cfg;
 };
@@ -140,6 +172,9 @@ class CFG {
     // Convenience wrapper around Node iterators
     Node::Iterator begin();
     Node::Iterator end();
+
+    Node::RIterator rbegin();
+    Node::RIterator rend();
 
   private:
     /// @brief The counter for the block

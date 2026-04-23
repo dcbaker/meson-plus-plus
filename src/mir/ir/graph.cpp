@@ -182,6 +182,63 @@ bool operator!=(const Node::Iterator & a, const Node::Iterator & b) {
     return a.p_current != b.p_current;
 }
 
+Node::RIterator Node::rbegin() { return RIterator(this->p_cfg->tail()); }
+Node::RIterator Node::rend() { return RIterator(this); }
+
+Node::RIterator::RIterator(pointer head)
+    : p_current{head}, p_depth{head->depth}, p_queue{{head->id, {}}} {};
+
+Node::RIterator::reference Node::RIterator::operator*() { return *p_current; }
+
+Node::RIterator::pointer Node::RIterator::operator->() { return p_current; }
+
+Node::RIterator Node::RIterator::operator++(int) {
+    RIterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+// It's annoying how much of this is copied from the forward iterator
+Node::RIterator & Node::RIterator::operator++() {
+    for (Node * succ : p_current->successors) {
+        // Queue any successors if they have not already been queued
+        if (succ && succ->depth < p_depth) {
+            // Create the entry if it doesn't exist
+            auto & deq = p_queue[succ->depth];
+            if (std::find(deq.begin(), deq.end(), succ) == deq.end()) {
+                deq.emplace_back(succ);
+            }
+        }
+    }
+
+#ifdef MESONPP_DEBUG
+    if (p_depth < 0) {
+        for (int64_t i = p_depth + 1; i > 0; ++i) {
+            assert(p_queue[i].empty());
+        }
+    }
+#endif
+
+    if (p_queue.at(p_depth).empty()) {
+        p_depth--;
+        // We should never have a case where a depth is empty, that's a bug
+        assert(!p_queue[p_depth].empty());
+    }
+
+    p_current = p_queue.at(p_depth).front();
+    p_queue.at(p_depth).pop_front();
+
+    return *this;
+}
+
+bool operator==(const Node::RIterator & a, const Node::RIterator & b) {
+    return a.p_current == b.p_current;
+}
+
+bool operator!=(const Node::RIterator & a, const Node::RIterator & b) {
+    return a.p_current != b.p_current;
+}
+
 void link_nodes(Node * pred, Node * succ, bool right) {
     if (right) {
         pred->set_right_successor(succ);
@@ -209,6 +266,9 @@ void reparent(Node * from, Node * to) {
 
 Node::Iterator CFG::begin() { return head()->begin(); }
 Node::Iterator CFG::end() { return head()->end(); }
+
+Node::RIterator CFG::rbegin() { return head()->rbegin(); }
+Node::RIterator CFG::rend() { return head()->rend(); }
 
 CFG::CFG() : nodes{}, p_block_counter{0} {
     nodes.emplace(p_block_counter,
