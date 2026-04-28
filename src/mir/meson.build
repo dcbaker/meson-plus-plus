@@ -11,6 +11,7 @@ libmir = static_library(
     'ir/array.cpp',
     'ir/basicblock.cpp',
     'ir/boolean.cpp',
+    'ir/cfg.cpp',
     'ir/dict.cpp',
     'ir/file.cpp',
     'ir/functioncall.cpp',
