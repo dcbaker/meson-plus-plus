@@ -9,7 +9,7 @@
 
 namespace MIR::Passes {
 
-bool remove_ternary(IR::CFG * cfg, IR::Node * node) {
+bool remove_ternary(IR::CFG * cfg, IR::BasicBlock * node) {
     auto && test_func = [](const std::unique_ptr<IR::Instruction> & i) -> bool {
         if (std::holds_alternative<std::shared_ptr<IR::FunctionCall>>(i->instruction)) {
             auto f = std::get<std::shared_ptr<IR::FunctionCall>>(i->instruction);

@@ -11,13 +11,13 @@ namespace MIR::builder {
 Builder::Builder(IR::CFG * cfg)
     : p_cfg{cfg}, p_node{cfg->next()}, p_cursor{p_node->instructions.begin()} {};
 
-Builder::Builder(IR::CFG * cfg, IR::Node * node)
+Builder::Builder(IR::CFG * cfg, IR::BasicBlock * node)
     : p_cfg{cfg}, p_node{node}, p_cursor{p_node->instructions.begin()} {
     // Put the condition into the Builder, put it back with finalize
     set_cursor_end();
 };
 
-IR::Node * Builder::get() const { return p_node; }
+IR::BasicBlock * Builder::get() const { return p_node; }
 
 Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
     assert(inst);
@@ -57,8 +57,8 @@ Builder & Builder::link_left_successor(std::shared_ptr<Builder> & b) {
 
 Builder & Builder::link_left_successor(Builder & b) { return link_left_successor(b.p_node); }
 
-Builder & Builder::link_left_successor(IR::Node * node) {
-    IR::link_nodes(p_node, node);
+Builder & Builder::link_left_successor(IR::BasicBlock * node) {
+    IR::link_blocks(p_node, node);
     return *this;
 }
 
@@ -68,8 +68,8 @@ Builder & Builder::link_right_successor(std::shared_ptr<Builder> & b) {
 
 Builder & Builder::link_right_successor(Builder & b) { return link_right_successor(b.p_node); }
 
-Builder & Builder::link_right_successor(IR::Node * node) {
-    IR::link_nodes(p_node, node, true);
+Builder & Builder::link_right_successor(IR::BasicBlock * node) {
+    IR::link_blocks(p_node, node, true);
     return *this;
 }
 

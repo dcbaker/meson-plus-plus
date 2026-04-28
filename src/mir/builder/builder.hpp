@@ -89,7 +89,7 @@ InstructionBuilder<T, Params...> make_instruction(Params &&... params) {
 class Builder {
   public:
     Builder(IR::CFG * cfg);
-    Builder(IR::CFG * cfg, IR::Node * node);
+    Builder(IR::CFG * cfg, IR::BasicBlock * node);
 
     Builder & add_inst(std::unique_ptr<IR::Instruction> && inst);
 
@@ -102,13 +102,13 @@ class Builder {
 
     Builder & link_left_successor(Builder &);
     Builder & link_left_successor(std::shared_ptr<Builder> &);
-    Builder & link_left_successor(IR::Node *);
+    Builder & link_left_successor(IR::BasicBlock *);
 
     Builder & link_right_successor(Builder &);
     Builder & link_right_successor(std::shared_ptr<Builder> &);
-    Builder & link_right_successor(IR::Node *);
+    Builder & link_right_successor(IR::BasicBlock *);
 
-    [[nodiscard]] IR::Node * get() const;
+    [[nodiscard]] IR::BasicBlock * get() const;
 
     Builder & set_cursor_begin();
     Builder & set_cursor_end();
@@ -116,7 +116,7 @@ class Builder {
   private:
     IR::CFG * p_cfg;
 
-    IR::Node * p_node;
+    IR::BasicBlock * p_node;
 
     // Iterator pointing into the instructions as to where to add
     // the next instruction

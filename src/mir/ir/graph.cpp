@@ -16,7 +16,7 @@ namespace MIR::IR {
 
 namespace {
 
-void update_depth(Node * node, const Node * const parent) {
+void update_depth(BasicBlock * block, const BasicBlock * const parent) {
     // I would need to implement a depth-free iterator to do this as iteration
     // instead of recursion. That may still be desirable.
 
@@ -26,32 +26,32 @@ void update_depth(Node * node, const Node * const parent) {
     // not setting the depth to the loop body (right arm) depth + 1, instead
     // in that case the header should not be updated.
     //
-    // If this is the node is a successor is a loop header, we check to see
-    // if this node is a child of that successor, if it is we stop
+    // If this is the block is a successor is a loop header, we check to see
+    // if this block is a child of that successor, if it is we stop
     //
     // TODO: this algorithm sucks
-    if (auto s = node->successors.at(0); node->loop_header && s) {
-        std::deque<Node *> queue{s};
+    if (auto s = block->successors.at(0); block->loop_header && s) {
+        std::deque<BasicBlock *> queue{s};
         while (!queue.empty()) {
-            Node * n = queue.front();
+            BasicBlock * n = queue.front();
             queue.pop_front();
             if (*n == *parent) {
                 return;
             }
 
             for (auto succ : n->successors) {
-                if (succ && succ->depth > node->depth) {
+                if (succ && succ->depth > block->depth) {
                     queue.push_back(succ);
                 }
             }
         }
     }
 
-    if (node->depth <= parent->depth) {
-        node->depth = parent->depth + 1;
-        for (auto && s : node->successors) {
+    if (block->depth <= parent->depth) {
+        block->depth = parent->depth + 1;
+        for (auto && s : block->successors) {
             if (s) {
-                update_depth(s, node);
+                update_depth(s, block);
             }
         }
     }
@@ -59,30 +59,30 @@ void update_depth(Node * node, const Node * const parent) {
 
 } // namespace
 
-size_t NodeHash::operator()(const Node * const node) const { return node->m_const_id; }
+size_t BlockHash::operator()(const BasicBlock * const block) const { return block->m_const_id; }
 
-Node::Node(uint32_t const_id, uint32_t id, CFG * const cfg)
+BasicBlock::BasicBlock(uint32_t const_id, uint32_t id, CFG * const cfg)
     : m_const_id{const_id}, id{id}, depth{0}, instructions{}, predecessors{}, successors{},
       loop_header{false}, p_cfg{cfg} {};
 
-Node * Node::get_successor(int index) const {
+BasicBlock * BasicBlock::get_successor(int index) const {
     assert(index == 0 || index == 1);
     return successors.at(index);
 }
 
-Node * Node::left_successor() const { return get_successor(0); }
+BasicBlock * BasicBlock::left_successor() const { return get_successor(0); }
 
-Node * Node::right_successor() const { return get_successor(1); }
+BasicBlock * BasicBlock::right_successor() const { return get_successor(1); }
 
-void Node::set_successor(Node * n, int index) {
+void BasicBlock::set_successor(BasicBlock * n, int index) {
     assert(index == 0 || index == 1);
 
-    // We can replace the special tail node, but in that case we need to move it
+    // Do not silently replace a block
     assert(!successors.at(index) || n == nullptr);
 
     if (n != nullptr) {
         // If the depth of the new successor is less than the depth of the current
-        // node, increase that depth
+        // block increase that depth
         update_depth(n, this);
     }
 
@@ -90,15 +90,19 @@ void Node::set_successor(Node * n, int index) {
     p_cfg->sort();
 }
 
-void Node::set_right_successor(Node * n) { set_successor(std::forward<Node *>(n), 1); }
+void BasicBlock::set_right_successor(BasicBlock * n) {
+    set_successor(std::forward<BasicBlock *>(n), 1);
+}
 
-void Node::set_left_successor(Node * n) { set_successor(std::forward<Node *>(n), 0); }
+void BasicBlock::set_left_successor(BasicBlock * n) {
+    set_successor(std::forward<BasicBlock *>(n), 0);
+}
 
-std::string Node::serialize(unsigned indent) const {
+std::string BasicBlock::serialize(unsigned indent) const {
     const std::string ind = Private::indenter(indent + 1);
 
     std::stringstream ss{};
-    ss << Private::indenter(indent) << "Node {\n"
+    ss << Private::indenter(indent) << "BasicBlock {\n"
        << ind << "id = { " << id << " }\n"
        << ind << "loop_header = { " << (loop_header ? "true" : "false") << " }\n"
        << ind << "predecessors = {" << ind << "instructions = {";
@@ -126,13 +130,13 @@ std::string Node::serialize(unsigned indent) const {
     return ss.str();
 }
 
-bool Node::operator==(const Node & other) const { return this->id == other.id; }
+bool BasicBlock::operator==(const BasicBlock & other) const { return this->id == other.id; }
 
-bool Node::operator!=(const Node & other) const { return this->id != other.id; }
+bool BasicBlock::operator!=(const BasicBlock & other) const { return this->id != other.id; }
 
-bool Node::operator<(const Node & other) const { return depth < other.depth; }
+bool BasicBlock::operator<(const BasicBlock & other) const { return depth < other.depth; }
 
-CFG::NodeVec::iterator Node::begin() {
+CFG::NodeVec::iterator BasicBlock::begin() {
     // Because the storage is flat, even when we run forward to this index + 1,
     // we can still be returning blocks with the same depth as the start block,
     // which is incorrect.
@@ -142,32 +146,32 @@ CFG::NodeVec::iterator Node::begin() {
     }
     return itr;
 }
-CFG::NodeVec::iterator Node::end() { return p_cfg->end(); }
+CFG::NodeVec::iterator BasicBlock::end() { return p_cfg->end(); }
 
-CFG::NodeVec::const_iterator Node::cbegin() const {
+CFG::NodeVec::const_iterator BasicBlock::cbegin() const {
     auto itr = std::next(p_cfg->cbegin(), id);
     while ((*itr)->depth <= depth) {
         itr = std::next(itr);
     }
     return itr;
 }
-CFG::NodeVec::const_iterator Node::cend() const { return p_cfg->cend(); }
+CFG::NodeVec::const_iterator BasicBlock::cend() const { return p_cfg->cend(); }
 
-CFG::NodeVec::reverse_iterator Node::rbegin() {
+CFG::NodeVec::reverse_iterator BasicBlock::rbegin() {
     // we have the distance from the start of the vector, but we need to get the
     // distance from the back
     const uint64_t distance = p_cfg->nodes.size() - id;
     return std::next(p_cfg->rbegin(), distance);
 }
-CFG::NodeVec::reverse_iterator Node::rend() { return p_cfg->rend(); }
+CFG::NodeVec::reverse_iterator BasicBlock::rend() { return p_cfg->rend(); }
 
-CFG::NodeVec::const_reverse_iterator Node::crbegin() const {
+CFG::NodeVec::const_reverse_iterator BasicBlock::crbegin() const {
     const uint64_t distance = p_cfg->nodes.size() - id;
     return std::next(p_cfg->crbegin(), distance);
 }
-CFG::NodeVec::const_reverse_iterator Node::crend() const { return p_cfg->crend(); }
+CFG::NodeVec::const_reverse_iterator BasicBlock::crend() const { return p_cfg->crend(); }
 
-void link_nodes(Node * pred, Node * succ, bool right) {
+void link_blocks(BasicBlock * pred, BasicBlock * succ, bool right) {
     if (right) {
         pred->set_right_successor(succ);
     } else {
@@ -176,7 +180,7 @@ void link_nodes(Node * pred, Node * succ, bool right) {
     succ->predecessors.emplace(pred);
 }
 
-void reparent(Node * from, Node * to) {
+void reparent(BasicBlock * from, BasicBlock * to) {
     if (auto s = from->left_successor()) {
         s->predecessors.erase(from);
         s->predecessors.emplace(to);

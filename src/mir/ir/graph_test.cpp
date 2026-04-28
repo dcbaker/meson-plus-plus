@@ -9,15 +9,15 @@ using namespace MIR::IR;
 
 TEST(CFG, sort) {
     CFG cfg;
-    Node * n0{cfg.head()};
-    Node * n3{cfg.next()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
+    BasicBlock * n0{cfg.head()};
+    BasicBlock * n3{cfg.next()};
+    BasicBlock * n1{cfg.next()};
+    BasicBlock * n2{cfg.next()};
 
-    link_nodes(n0, n1);
-    link_nodes(n0, n2, true);
-    link_nodes(n1, n3);
-    link_nodes(n2, n3);
+    link_blocks(n0, n1);
+    link_blocks(n0, n2, true);
+    link_blocks(n1, n3);
+    link_blocks(n2, n3);
     cfg.sort();
 
     EXPECT_EQ(*cfg.nodes.at(0), *n0)
@@ -40,18 +40,18 @@ class NodeIterTest : public testing::Test {
          *          \ /
          *           O n3
          */
-        link_nodes(n0, n1);
-        link_nodes(n0, n2, true);
-        link_nodes(n1, n3);
-        link_nodes(n2, n3);
+        link_blocks(n0, n1);
+        link_blocks(n0, n2, true);
+        link_blocks(n1, n3);
+        link_blocks(n2, n3);
         cfg.sort();
     }
 
     CFG cfg;
-    Node * n0;
-    Node * n3;
-    Node * n1;
-    Node * n2;
+    BasicBlock * n0;
+    BasicBlock * n3;
+    BasicBlock * n1;
+    BasicBlock * n2;
 };
 
 TEST_F(NodeIterTest, prefix_forward) {
@@ -187,19 +187,19 @@ class NodeDiamondIteratorTest : public testing::Test {
          *          \ /
          *           O n4
          */
-        link_nodes(n0, n1);
-        link_nodes(n1, n2);
-        link_nodes(n0, n3, true);
-        link_nodes(n2, n4);
-        link_nodes(n3, n4);
+        link_blocks(n0, n1);
+        link_blocks(n1, n2);
+        link_blocks(n0, n3, true);
+        link_blocks(n2, n4);
+        link_blocks(n3, n4);
     }
 
     CFG cfg;
-    Node * n0;
-    Node * n1;
-    Node * n2;
-    Node * n3;
-    Node * n4;
+    BasicBlock * n0;
+    BasicBlock * n1;
+    BasicBlock * n2;
+    BasicBlock * n3;
+    BasicBlock * n4;
 };
 
 TEST_F(NodeDiamondIteratorTest, visit_predecessors_before_successors_forward) {
@@ -247,19 +247,19 @@ class NodeDiamondIteratorTest2 : public testing::Test {
          *          \ /
          *           O n4
          */
-        link_nodes(n0, n1, true);
-        link_nodes(n1, n2);
-        link_nodes(n0, n3);
-        link_nodes(n2, n4);
-        link_nodes(n3, n4);
+        link_blocks(n0, n1, true);
+        link_blocks(n1, n2);
+        link_blocks(n0, n3);
+        link_blocks(n2, n4);
+        link_blocks(n3, n4);
     }
 
     CFG cfg;
-    Node * n0;
-    Node * n1;
-    Node * n2;
-    Node * n3;
-    Node * n4;
+    BasicBlock * n0;
+    BasicBlock * n1;
+    BasicBlock * n2;
+    BasicBlock * n3;
+    BasicBlock * n4;
 };
 
 TEST_F(NodeDiamondIteratorTest2, visit_predecessors_before_successors_forward) {
@@ -308,17 +308,17 @@ class NodeBasicLoopTest : public testing::Test {
          *           O tail
          */
         header->loop_header = true;
-        link_nodes(preamble, header);
-        link_nodes(header, tail, true);
-        link_nodes(header, body);
-        link_nodes(body, header);
+        link_blocks(preamble, header);
+        link_blocks(header, tail, true);
+        link_blocks(header, body);
+        link_blocks(body, header);
     };
 
     CFG cfg{};
-    Node * preamble;
-    Node * header;
-    Node * tail;
-    Node * body;
+    BasicBlock * preamble;
+    BasicBlock * header;
+    BasicBlock * tail;
+    BasicBlock * body;
 };
 
 TEST_F(NodeBasicLoopTest, iter_visits_predecessors_before_successors_forward) {
@@ -366,19 +366,19 @@ class NodeLoopMultiBodyTest : public testing::Test {
          *           O tail
          */
         header->loop_header = true;
-        link_nodes(preamble, header);
-        link_nodes(header, tail, true);
-        link_nodes(header, body);
-        link_nodes(body, body2);
-        link_nodes(body2, header);
+        link_blocks(preamble, header);
+        link_blocks(header, tail, true);
+        link_blocks(header, body);
+        link_blocks(body, body2);
+        link_blocks(body2, header);
     };
 
     CFG cfg{};
-    Node * preamble;
-    Node * header;
-    Node * tail;
-    Node * body;
-    Node * body2;
+    BasicBlock * preamble;
+    BasicBlock * header;
+    BasicBlock * tail;
+    BasicBlock * body;
+    BasicBlock * body2;
 };
 
 TEST_F(NodeLoopMultiBodyTest, depth) {
@@ -428,9 +428,9 @@ TEST_F(NodeLoopMultiBodyTest, iter_visits_predecessors_before_successors) {
 
 TEST(Node, eq) {
     CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
+    BasicBlock * n0{cfg.head()};
+    BasicBlock * n1{cfg.next()};
+    BasicBlock * n2{cfg.next()};
 
     EXPECT_EQ(*n0, *n0);
     EXPECT_EQ(*n1, *n1);
@@ -440,13 +440,13 @@ TEST(Node, eq) {
 
 TEST(reparent, simple) {
     CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
-    link_nodes(n0, n1);
-    link_nodes(n1, n2);
+    BasicBlock * n0{cfg.head()};
+    BasicBlock * n1{cfg.next()};
+    BasicBlock * n2{cfg.next()};
+    link_blocks(n0, n1);
+    link_blocks(n1, n2);
 
-    Node * n3{cfg.next()};
+    BasicBlock * n3{cfg.next()};
     reparent(n0, n3);
     EXPECT_FALSE(n0->left_successor());
     EXPECT_EQ(n3->left_successor(), n1);
@@ -456,15 +456,15 @@ TEST(reparent, simple) {
 
 TEST(Node, depth_simple) {
     CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
+    BasicBlock * n0{cfg.head()};
+    BasicBlock * n1{cfg.next()};
+    BasicBlock * n2{cfg.next()};
 
-    link_nodes(n0, n1);
-    link_nodes(n1, n2);
+    link_blocks(n0, n1);
+    link_blocks(n1, n2);
 
-    Node * n3{cfg.next()};
-    link_nodes(n2, n3);
+    BasicBlock * n3{cfg.next()};
+    link_blocks(n2, n3);
 
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n1->depth, 1);
@@ -474,21 +474,21 @@ TEST(Node, depth_simple) {
 
 TEST(Node, depth_no_change) {
     CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
+    BasicBlock * n0{cfg.head()};
+    BasicBlock * n1{cfg.next()};
+    BasicBlock * n2{cfg.next()};
 
-    link_nodes(n0, n1);
-    link_nodes(n1, n2);
+    link_blocks(n0, n1);
+    link_blocks(n1, n2);
 
-    Node * n3{cfg.next()};
-    Node * n4{cfg.next()};
-    Node * n5{cfg.next()};
-    Node * n6{cfg.next()};
-    link_nodes(n1, n3, true);
-    link_nodes(n3, n4);
-    link_nodes(n4, n5);
-    link_nodes(n5, n6);
+    BasicBlock * n3{cfg.next()};
+    BasicBlock * n4{cfg.next()};
+    BasicBlock * n5{cfg.next()};
+    BasicBlock * n6{cfg.next()};
+    link_blocks(n1, n3, true);
+    link_blocks(n3, n4);
+    link_blocks(n4, n5);
+    link_blocks(n5, n6);
 
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n1->depth, 1);
@@ -498,27 +498,27 @@ TEST(Node, depth_no_change) {
     EXPECT_EQ(n5->depth, 4);
     EXPECT_EQ(n6->depth, 5);
 
-    link_nodes(n2, n6);
+    link_blocks(n2, n6);
     EXPECT_EQ(n6->depth, 5);
 }
 
 TEST(Node, depth_deep) {
     CFG cfg{};
-    Node * n0{cfg.head()};
-    Node * n1{cfg.next()};
-    Node * n2{cfg.next()};
+    BasicBlock * n0{cfg.head()};
+    BasicBlock * n1{cfg.next()};
+    BasicBlock * n2{cfg.next()};
 
-    link_nodes(n0, n1);
-    link_nodes(n1, n2);
+    link_blocks(n0, n1);
+    link_blocks(n1, n2);
 
-    Node * n3{cfg.next()};
-    Node * n4{cfg.next()};
-    Node * n5{cfg.next()};
-    Node * n6{cfg.next()};
-    link_nodes(n1, n3, true);
-    link_nodes(n3, n4);
-    link_nodes(n4, n5);
-    link_nodes(n5, n6);
+    BasicBlock * n3{cfg.next()};
+    BasicBlock * n4{cfg.next()};
+    BasicBlock * n5{cfg.next()};
+    BasicBlock * n6{cfg.next()};
+    link_blocks(n1, n3, true);
+    link_blocks(n3, n4);
+    link_blocks(n4, n5);
+    link_blocks(n5, n6);
 
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n1->depth, 1);
@@ -528,7 +528,7 @@ TEST(Node, depth_deep) {
     EXPECT_EQ(n5->depth, 4);
     EXPECT_EQ(n6->depth, 5);
 
-    link_nodes(n6, n2);
+    link_blocks(n6, n2);
     // Should not have changed
     EXPECT_EQ(n0->depth, 0);
     EXPECT_EQ(n3->depth, 2);
@@ -551,19 +551,19 @@ TEST(Node, depth_loop_with_break) {
      *           O tail
      */
     CFG cfg{};
-    Node * preamble{cfg.head()};
+    BasicBlock * preamble{cfg.head()};
 
-    Node * header{cfg.next()};
+    BasicBlock * header{cfg.next()};
     header->loop_header = true;
-    link_nodes(preamble, header);
+    link_blocks(preamble, header);
 
-    Node * tail{cfg.next()};
-    link_nodes(header, tail, true);
+    BasicBlock * tail{cfg.next()};
+    link_blocks(header, tail, true);
 
-    Node * body{cfg.next()};
-    link_nodes(header, body);
-    link_nodes(body, header);
-    link_nodes(body, tail, true);
+    BasicBlock * body{cfg.next()};
+    link_blocks(header, body);
+    link_blocks(body, header);
+    link_blocks(body, tail, true);
 
     EXPECT_EQ(preamble->depth, 0);
     EXPECT_EQ(header->depth, 1);

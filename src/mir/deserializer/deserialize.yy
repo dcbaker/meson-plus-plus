@@ -49,7 +49,7 @@
 %token                  LCURLY              "{"
 %token                  RCURLY              "}"
 
-%nterm <std::shared_ptr<MIR::IR::Node>>              program
+%nterm <std::unique_ptr<MIR::IR::BasicBlock>>              program
 
 %left                   EQUAL
 %left                   LCURLY RCURLY

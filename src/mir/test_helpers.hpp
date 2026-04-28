@@ -14,8 +14,8 @@ namespace MIR::UT {
 /// @param index The index of that instruction, may be either positive or negative
 /// @return A const reference to that instruction
 const MIR::IR::Instruction & get_ir(const MIR::IR::CFG & cfg, int64_t index);
-const MIR::IR::Instruction & get_ir(const MIR::IR::Node & root, int64_t index);
-const MIR::IR::Instruction & get_ir(const MIR::IR::Node * root, int64_t index);
+const MIR::IR::Instruction & get_ir(const MIR::IR::BasicBlock & root, int64_t index);
+const MIR::IR::Instruction & get_ir(const MIR::IR::BasicBlock * root, int64_t index);
 
 template <typename T> constexpr bool holds(const MIR::IR::InstructionType & inst) {
     return std::holds_alternative<std::shared_ptr<T>>(inst);

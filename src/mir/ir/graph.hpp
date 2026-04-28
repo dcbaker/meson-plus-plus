@@ -16,20 +16,20 @@
 namespace MIR::IR {
 
 // Circular definitions...
-class Node;
+class BasicBlock;
 
 /// @brief The representation of the Control Flow Graph
 class CFG {
   public:
-    using NodeVec = std::vector<std::unique_ptr<Node>>;
+    using NodeVec = std::vector<std::unique_ptr<BasicBlock>>;
 
     CFG();
 
     /// @brief Ownership of every node within the graph
     NodeVec nodes;
 
-    Node * head() const;
-    Node * next();
+    BasicBlock * head() const;
+    BasicBlock * next();
 
     void sort();
 
@@ -52,25 +52,25 @@ class CFG {
     uint32_t p_next_const_id();
 };
 
-struct NodeHash {
-    size_t operator()(const Node * const node) const;
+struct BlockHash {
+    size_t operator()(const BasicBlock * const node) const;
 };
 
 /// @brief A single node the Control Flow Graph
-class Node {
+class BasicBlock {
   public:
-    using PredecessorType = std::unordered_set<Node *, NodeHash>;
+    using PredecessorType = std::unordered_set<BasicBlock *, BlockHash>;
 
-    Node(uint32_t const_id, uint32_t id, CFG * const cfg);
+    BasicBlock(uint32_t const_id, uint32_t id, CFG * const cfg);
 
     // Nodes cannot be copied
-    Node(const Node &) = delete;
-    Node & operator=(const Node &) = delete;
+    BasicBlock(const BasicBlock &) = delete;
+    BasicBlock & operator=(const BasicBlock &) = delete;
 
     // It might be possible to implement a move operator, but I don't have a use
     // for one ATM, so just deleting explicitly
-    Node(Node && node) = delete;
-    Node & operator=(Node && node) = delete;
+    BasicBlock(BasicBlock && node) = delete;
+    BasicBlock & operator=(BasicBlock && node) = delete;
 
     /// @brief The unique identifier for this block
     const uint32_t m_const_id;
@@ -89,32 +89,32 @@ class Node {
     PredecessorType predecessors;
 
     /// @brief The possible exits from this node
-    std::array<Node *, 2> successors;
+    std::array<BasicBlock *, 2> successors;
 
     /// @brief Is this block a loop header block
     bool loop_header;
 
     std::string serialize(unsigned indent = 0) const;
 
-    bool operator==(const Node & other) const;
-    bool operator!=(const Node & other) const;
-    bool operator<(const Node & other) const;
+    bool operator==(const BasicBlock & other) const;
+    bool operator!=(const BasicBlock & other) const;
+    bool operator<(const BasicBlock & other) const;
 
     /// @brief Get the left successor
     /// @return A shared ptr to the left successor
-    Node * left_successor() const;
+    BasicBlock * left_successor() const;
 
     /// @brief Get the right successor
     /// @return A shared_ptr to the right successor
-    Node * right_successor() const;
+    BasicBlock * right_successor() const;
 
     /// @brief Set the left successor
     /// @param n the node to be the successor
-    void set_left_successor(Node * n);
+    void set_left_successor(BasicBlock * n);
 
     /// @brief Set the right successor
     /// @param n the node to be the successor
-    void set_right_successor(Node * n);
+    void set_right_successor(BasicBlock * n);
 
     CFG::NodeVec::iterator begin();
     CFG::NodeVec::iterator end();
@@ -129,20 +129,20 @@ class Node {
     /// @brief Pointer to the CFG that owns this Node
     CFG * p_cfg;
 
-    void set_successor(Node * n, int index);
-    Node * get_successor(int index) const;
+    void set_successor(BasicBlock * n, int index);
+    BasicBlock * get_successor(int index) const;
 };
 
 /// @brief Link two nodes together
-/// @param pred the Predecessor node
-/// @param succ the Successor node
+/// @param pred the Predecessor block
+/// @param succ the Successor block
 /// @param right if the node is the right leg (default: false)
-void link_nodes(Node * pred, Node * succ, bool right = false);
+void link_blocks(BasicBlock * pred, BasicBlock * succ, bool right = false);
 
 /// @brief Transfer successors from one node to another
 /// @param prev the node to take the successors from
 /// @param next the node to give them to
 /// This also updates the parents of the moved successor(s)
-void reparent(Node * from, Node * to);
+void reparent(BasicBlock * from, BasicBlock * to);
 
 } // namespace MIR::IR

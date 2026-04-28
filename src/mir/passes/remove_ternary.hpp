@@ -7,6 +7,6 @@
 
 namespace MIR::Passes {
 
-bool remove_ternary(IR::CFG * cfg, IR::Node * node);
+bool remove_ternary(IR::CFG * cfg, IR::BasicBlock * node);
 
 }

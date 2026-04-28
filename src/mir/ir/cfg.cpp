@@ -10,22 +10,24 @@
 namespace MIR::IR {
 
 CFG::CFG() : nodes{}, p_const_ids{0} {
-    nodes.emplace_back(std::make_unique<Node>(p_next_const_id(), nodes.size(), this));
+    nodes.emplace_back(std::make_unique<BasicBlock>(p_next_const_id(), nodes.size(), this));
 }
 
 uint32_t CFG::p_next_const_id() { return p_const_ids++; }
 
-Node * CFG::head() const { return nodes.at(0).get(); }
+BasicBlock * CFG::head() const { return nodes.at(0).get(); }
 
-Node * CFG::next() {
-    auto & v = nodes.emplace_back(std::make_unique<Node>(p_next_const_id(), nodes.size(), this));
+BasicBlock * CFG::next() {
+    auto & v =
+        nodes.emplace_back(std::make_unique<BasicBlock>(p_next_const_id(), nodes.size(), this));
     return v.get();
 }
 
 void CFG::sort() {
-    std::sort(
-        nodes.begin(), nodes.end(),
-        [](const std::unique_ptr<Node> & i, const std::unique_ptr<Node> & j) { return *i < *j; });
+    std::sort(nodes.begin(), nodes.end(),
+              [](const std::unique_ptr<BasicBlock> & i, const std::unique_ptr<BasicBlock> & j) {
+                  return *i < *j;
+              });
     for (uint64_t i = 0; i < nodes.size(); ++i) {
         nodes.at(i)->id = i;
     }
