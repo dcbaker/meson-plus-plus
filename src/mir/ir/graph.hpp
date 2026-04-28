@@ -5,18 +5,15 @@
 
 #include <array>
 #include <cstdint>
-#include <deque>
 #include <functional>
-#include <map>
+#include <list>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 
-namespace MIR::IR {
+#include "instruction.hpp"
 
-// I'm concerned about mega headers
-class BasicBlock;
+namespace MIR::IR {
 
 // Circular definitions...
 class Node;
@@ -64,7 +61,7 @@ class Node {
   public:
     using PredecessorType = std::unordered_set<Node *, NodeHash>;
 
-    Node(uint32_t const_id, uint32_t id, std::shared_ptr<BasicBlock> b, CFG * const cfg);
+    Node(uint32_t const_id, uint32_t id, CFG * const cfg);
 
     // Nodes cannot be copied
     Node(const Node &) = delete;
@@ -84,8 +81,9 @@ class Node {
     /// @brief The depth of this block in the graph
     uint32_t depth;
 
-    /// @brief  The block of this node
-    std::shared_ptr<BasicBlock> block;
+    /// @brief The list of instructions in this node
+    // TODO: There are reasons why this is a unique ptr, explain them
+    std::list<std::unique_ptr<IR::Instruction>> instructions;
 
     /// @brief Possible entries to this node.
     PredecessorType predecessors;

@@ -3,7 +3,6 @@
 
 #include "remove_ternary.hpp"
 #include "builder/builder.hpp"
-#include "ir/basicblock.hpp"
 #include "ir/functioncall.hpp"
 
 #include <algorithm>
@@ -22,7 +21,7 @@ bool remove_ternary(IR::CFG * cfg, IR::Node * node) {
     bool progress = false;
 
     while (true) {
-        auto & insts = node->block->instructions;
+        auto & insts = node->instructions;
         auto itr = std::find_if(insts.begin(), insts.end(), test_func);
         if (itr == insts.end()) {
             break;
@@ -49,7 +48,7 @@ bool remove_ternary(IR::CFG * cfg, IR::Node * node) {
 
         // put the instructions following the ternary into the new block
         builder::Builder tail{cfg};
-        auto & tail_insts = tail.get()->block->instructions;
+        auto & tail_insts = tail.get()->instructions;
         tail_insts.splice(tail_insts.end(), insts, itr, insts.end());
 
         // Give the original node's successors to the tail

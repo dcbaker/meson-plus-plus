@@ -9,7 +9,6 @@ libmir = static_library(
     'ast_to_mir.cpp',
     'builder/builder.cpp',
     'ir/array.cpp',
-    'ir/basicblock.cpp',
     'ir/boolean.cpp',
     'ir/cfg.cpp',
     'ir/dict.cpp',

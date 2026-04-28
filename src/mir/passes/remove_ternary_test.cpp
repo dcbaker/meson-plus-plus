@@ -27,20 +27,20 @@ TEST(MirPasses_RemoveTernary, basic) {
                        .get();
 
     ASSERT_TRUE(MIR::Passes::remove_ternary(&cfg, n));
-    ASSERT_EQ(n->block->instructions.size(), 2);
+    ASSERT_EQ(n->instructions.size(), 2);
 
     auto lhs = n->left_successor();
     ASSERT_TRUE(lhs);
-    ASSERT_EQ(lhs->block->instructions.size(), 1);
-    ASSERT_EQ(lhs->block->instructions.front()->variable.m_name, var_name);
+    ASSERT_EQ(lhs->instructions.size(), 1);
+    ASSERT_EQ(lhs->instructions.front()->variable.m_name, var_name);
 
     auto rhs = n->right_successor();
     ASSERT_TRUE(rhs);
-    ASSERT_EQ(rhs->block->instructions.size(), 1);
-    ASSERT_EQ(rhs->block->instructions.front()->variable.m_name, var_name);
+    ASSERT_EQ(rhs->instructions.size(), 1);
+    ASSERT_EQ(rhs->instructions.front()->variable.m_name, var_name);
 
     auto tail = lhs->left_successor();
     ASSERT_TRUE(tail);
     ASSERT_EQ(tail, rhs->left_successor());
-    ASSERT_EQ(tail->block->instructions.size(), 1);
+    ASSERT_EQ(tail->instructions.size(), 1);
 }

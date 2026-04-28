@@ -9,10 +9,10 @@
 namespace MIR::builder {
 
 Builder::Builder(IR::CFG * cfg)
-    : p_cfg{cfg}, p_node{cfg->next()}, p_cursor{p_node->block->instructions.begin()} {};
+    : p_cfg{cfg}, p_node{cfg->next()}, p_cursor{p_node->instructions.begin()} {};
 
 Builder::Builder(IR::CFG * cfg, IR::Node * node)
-    : p_cfg{cfg}, p_node{node}, p_cursor{p_node->block->instructions.begin()} {
+    : p_cfg{cfg}, p_node{node}, p_cursor{p_node->instructions.begin()} {
     // Put the condition into the Builder, put it back with finalize
     set_cursor_end();
 };
@@ -21,7 +21,7 @@ IR::Node * Builder::get() const { return p_node; }
 
 Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
     assert(inst);
-    p_cursor = p_node->block->instructions.emplace(p_cursor, std::move(inst));
+    p_cursor = p_node->instructions.emplace(p_cursor, std::move(inst));
     // Set the cursor forward one so that we write instructions after the one we
     // just inserted
     ++p_cursor;
@@ -30,8 +30,7 @@ Builder & Builder::add_inst(std::unique_ptr<IR::Instruction> && inst) {
 
 Builder & Builder::add_condition(std::unique_ptr<IR::Instruction> && inst) {
     inst->m_is_block_condition = true;
-    p_cursor =
-        p_node->block->instructions.emplace(p_node->block->instructions.end(), std::move(inst));
+    p_cursor = p_node->instructions.emplace(p_node->instructions.end(), std::move(inst));
     return *this;
 }
 
@@ -75,17 +74,17 @@ Builder & Builder::link_right_successor(IR::Node * node) {
 }
 
 Builder & Builder::set_cursor_begin() {
-    p_cursor = p_node->block->instructions.begin();
+    p_cursor = p_node->instructions.begin();
     return *this;
 }
 
 Builder & Builder::set_cursor_end() {
-    if (!p_node->block->instructions.empty()) {
-        p_cursor = p_node->block->instructions.end();
+    if (!p_node->instructions.empty()) {
+        p_cursor = p_node->instructions.end();
 
         // If the last instruction is a condition, then set the cursor before
         // that
-        auto prev = --p_node->block->instructions.end();
+        auto prev = --p_node->instructions.end();
         if ((*prev)->m_is_block_condition) {
             p_cursor = prev;
         }

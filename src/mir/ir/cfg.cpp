@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2025-2026 Intel Corporation
 
-#include "basicblock.hpp"
 #include "graph.hpp"
 #include "helpers.hpp"
 
@@ -11,8 +10,7 @@
 namespace MIR::IR {
 
 CFG::CFG() : nodes{}, p_const_ids{0} {
-    nodes.emplace_back(std::make_unique<Node>(p_next_const_id(), nodes.size(),
-                                              std::make_shared<BasicBlock>(), this));
+    nodes.emplace_back(std::make_unique<Node>(p_next_const_id(), nodes.size(), this));
 }
 
 uint32_t CFG::p_next_const_id() { return p_const_ids++; }
@@ -20,8 +18,7 @@ uint32_t CFG::p_next_const_id() { return p_const_ids++; }
 Node * CFG::head() const { return nodes.at(0).get(); }
 
 Node * CFG::next() {
-    auto & v = nodes.emplace_back(std::make_unique<Node>(p_next_const_id(), nodes.size(),
-                                                         std::make_shared<BasicBlock>(), this));
+    auto & v = nodes.emplace_back(std::make_unique<Node>(p_next_const_id(), nodes.size(), this));
     return v.get();
 }
 

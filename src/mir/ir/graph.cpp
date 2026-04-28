@@ -2,13 +2,14 @@
 // Copyright © 2025-2026 Intel Corporation
 
 #include "graph.hpp"
-#include "basicblock.hpp"
 #include "helpers.hpp"
+#include "instruction.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <deque>
+#include <list>
 #include <sstream>
 
 namespace MIR::IR {
@@ -60,8 +61,8 @@ void update_depth(Node * node, const Node * const parent) {
 
 size_t NodeHash::operator()(const Node * const node) const { return node->m_const_id; }
 
-Node::Node(uint32_t const_id, uint32_t id, std::shared_ptr<BasicBlock> b, CFG * const cfg)
-    : m_const_id{const_id}, id{id}, depth{0}, block{b}, predecessors{}, successors{},
+Node::Node(uint32_t const_id, uint32_t id, CFG * const cfg)
+    : m_const_id{const_id}, id{id}, depth{0}, instructions{}, predecessors{}, successors{},
       loop_header{false}, p_cfg{cfg} {};
 
 Node * Node::get_successor(int index) const {
@@ -100,7 +101,14 @@ std::string Node::serialize(unsigned indent) const {
     ss << Private::indenter(indent) << "Node {\n"
        << ind << "id = { " << id << " }\n"
        << ind << "loop_header = { " << (loop_header ? "true" : "false") << " }\n"
-       << ind << "predecessors = {";
+       << ind << "predecessors = {" << ind << "instructions = {";
+    for (auto && inst : instructions) {
+        ss << "\n" << inst->serialize(indent + 2);
+    }
+    if (!instructions.empty()) {
+        ss << "\n";
+    }
+    ss << ind << "}";
 
     for (auto && p : predecessors) {
         ss << " " << p->id;
@@ -113,9 +121,7 @@ std::string Node::serialize(unsigned indent) const {
             ss << " " << succ->id;
         }
     }
-    ss << " }\n";
-
-    ss << ind << "block = {\n" << block->serialize(indent + 2) << "\n" << ind << "}\n" << "}";
+    ss << Private::indenter(indent) << " }";
 
     return ss.str();
 }

@@ -33,13 +33,13 @@ using namespace MIR::UT;
 
 TEST(ast_to_mir, simple) {
     MIR::IR::CFG cfg{parse("'foo'")};
-    ASSERT_EQ(cfg.head()->block->instructions.size(), 1);
+    ASSERT_EQ(cfg.head()->instructions.size(), 1);
     ASSERT_TRUE(holds<MIR::IR::String>(get_ir(cfg, -1).instruction));
 }
 
 TEST(ast_to_mir, assignment) {
     MIR::IR::CFG cfg{parse("x = 'foo'")};
-    EXPECT_EQ(cfg.head()->block->instructions.size(), 1);
+    EXPECT_EQ(cfg.head()->instructions.size(), 1);
 
     const MIR::IR::Instruction & ir = get_ir(cfg, 0);
     EXPECT_TRUE(holds<MIR::IR::String>(ir.instruction));
@@ -69,12 +69,12 @@ TEST(ast_to_mir, only_if) {
         )EOF"};
     MIR::IR::CFG cfg = parse(code);
 
-    const MIR::IR::BasicBlock & root = *cfg.head()->block;
+    const MIR::IR::Node & root = *cfg.head();
     ASSERT_EQ(root.instructions.size(), 1);
     EXPECT_TRUE(holds<MIR::IR::Boolean>(get_ir(root, 0).instruction));
 
     const MIR::IR::Node & body = *cfg.head()->left_successor();
-    EXPECT_EQ(body.block->instructions.size(), 1);
+    EXPECT_EQ(body.instructions.size(), 1);
 
     auto && ir = get_ir(body, 0);
     EXPECT_EQ(ir.variable.m_name, "x");
@@ -82,7 +82,7 @@ TEST(ast_to_mir, only_if) {
     EXPECT_EQ(get<MIR::IR::Number>(ir.instruction).value, 0);
 
     const MIR::IR::Node & tail = *cfg.head()->right_successor();
-    EXPECT_EQ(tail.block->instructions.size(), 0);
+    EXPECT_EQ(tail.instructions.size(), 0);
 
     EXPECT_EQ(*body.left_successor(), tail);
 }
@@ -113,18 +113,18 @@ TEST(ast_to_mir, if_else) {
      * The `tail` block should have no instructions
      */
 
-    const MIR::IR::BasicBlock & root = *cfg.head()->block;
+    const MIR::IR::Node & root = *cfg.head();
     ASSERT_EQ(root.instructions.size(), 1);
     EXPECT_TRUE(holds<MIR::IR::Boolean>(get_ir(root, -1).instruction));
 
     const MIR::IR::Node & body = *cfg.head()->left_successor();
-    EXPECT_EQ(body.block->instructions.size(), 1);
+    EXPECT_EQ(body.instructions.size(), 1);
 
     const MIR::IR::Node & el = *cfg.head()->right_successor();
-    EXPECT_EQ(el.block->instructions.size(), 1);
+    EXPECT_EQ(el.instructions.size(), 1);
 
     EXPECT_EQ(body.left_successor(), el.left_successor());
-    EXPECT_EQ(body.left_successor()->block->instructions.size(), 0);
+    EXPECT_EQ(body.left_successor()->instructions.size(), 0);
 }
 
 // TODO: test for if/elif
@@ -155,24 +155,24 @@ TEST(ast_to_mir, foreach_array_simple) {
     MIR::IR::CFG cfg = parse(code);
 
     const MIR::IR::Node & preamble = *cfg.head()->left_successor();
-    ASSERT_EQ(preamble.block->instructions.size(), 4);
+    ASSERT_EQ(preamble.instructions.size(), 4);
     EXPECT_TRUE(holds<MIR::IR::Undefined>(get_ir(preamble, 0).instruction));
     EXPECT_TRUE(holds<MIR::IR::Array>(get_ir(preamble, 1).instruction));
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(preamble, 2).instruction));
     EXPECT_TRUE(holds<MIR::IR::Number>(get_ir(preamble, 3).instruction));
 
     const MIR::IR::Node & header = *preamble.left_successor();
-    ASSERT_EQ(header.block->instructions.size(), 4);
+    ASSERT_EQ(header.instructions.size(), 4);
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(header, 0).instruction));
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(header, 1).instruction));
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(header, 2).instruction));
     EXPECT_TRUE(holds<MIR::IR::Identifier>(get_ir(header, 3).instruction));
 
     const MIR::IR::Node & tail = *header.right_successor();
-    EXPECT_EQ(tail.block->instructions.size(), 0);
+    EXPECT_EQ(tail.instructions.size(), 0);
 
     const MIR::IR::Node & body = *header.left_successor();
-    ASSERT_EQ(body.block->instructions.size(), 1);
+    ASSERT_EQ(body.instructions.size(), 1);
     EXPECT_TRUE(holds<MIR::IR::FunctionCall>(get_ir(body, 0).instruction));
 
     ASSERT_EQ(*body.left_successor(), header);
