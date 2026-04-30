@@ -8,7 +8,7 @@
 
 namespace MIR::IR {
 
-Phi::Phi(uint64_t left, std::string name, uint64_t right)
+Phi::Phi(Instruction * left, std::string name, Instruction * right)
     : m_name{name}, m_left{left}, m_right{right} {};
 
 std::string Phi::serialize(unsigned indent) const {
@@ -18,8 +18,8 @@ std::string Phi::serialize(unsigned indent) const {
 
     ss << ind1 << "Phi {\n"
        << ind2 << "name = { " << m_name << " }\n"
-       << ind2 << "left = { " << m_left << " }\n"
-       << ind2 << "right = { " << m_right << " }\n"
+       << ind2 << "left = { " << m_left->variable.serialize() << " }\n"
+       << ind2 << "right = { " << m_right->variable.serialize() << " }\n"
        << ind1 << "}";
     return ss.str();
 }
