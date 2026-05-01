@@ -11,6 +11,8 @@
 
 namespace MIR::IR::Serial {
 
+Driver::Driver() = default;
+
 CFG Driver::parse(const std::string & s) {
     name = s;
 

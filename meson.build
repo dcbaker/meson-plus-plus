@@ -43,4 +43,6 @@ dep_gtest = dependency(
   fallback : ['gtest', 'gtest_main_dep'],
 )
 
+dep_cli11 = dependency('CLI11')
+
 subdir('src')

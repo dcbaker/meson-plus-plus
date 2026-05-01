@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-/* Copyright © 2025 Intel Corporation */
+/* Copyright © 2025-2026 Intel Corporation */
 
 %{
 
@@ -46,7 +46,7 @@ using token = MIR::IR::Serial::Parser::token;
                                     lval->build<std::string>(yytext);
                                     return token::STRING;
                                 }
-[a-zA-z]+                       {
+[a-zA-Z][a-zA-Z0-9]*            {
                                     lval->build<std::string>(yytext);
                                     return token::IDENTIFIER;
                                 }

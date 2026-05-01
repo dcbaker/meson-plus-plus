@@ -7,8 +7,6 @@ subdir('mir')
 
 version_hpp = vcs_tag(input : 'version.hpp.in', output : 'version.hpp')
 
-dep_cli11 = dependency('CLI11')
-
 mesonpp = executable(
   'meson++',
   [
