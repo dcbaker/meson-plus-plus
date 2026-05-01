@@ -3,7 +3,6 @@
 
 #include "options.hpp"
 #include "exceptions.hpp"
-#include "version.hpp"
 
 #include <CLI/CLI.hpp>
 
