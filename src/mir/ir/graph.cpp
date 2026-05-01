@@ -105,17 +105,9 @@ std::string BasicBlock::serialize(unsigned indent) const {
     ss << Private::indenter(indent) << "BasicBlock {\n"
        << ind << "id = { " << id << " }\n"
        << ind << "loop_header = { " << (loop_header ? "true" : "false") << " }\n"
-       << ind << "predecessors = {" << ind << "instructions = {";
-    for (auto && inst : instructions) {
-        ss << "\n" << inst->serialize(indent + 2);
-    }
-    if (!instructions.empty()) {
-        ss << "\n";
-    }
-    ss << ind << "}";
-
+       << ind << "predecessors = {";
     for (auto && p : predecessors) {
-        ss << " " << p->id;
+        ss << " " << p;
     }
     ss << " }\n";
 
@@ -125,7 +117,18 @@ std::string BasicBlock::serialize(unsigned indent) const {
             ss << " " << succ->id;
         }
     }
-    ss << Private::indenter(indent) << " }";
+    ss << " }\n";
+
+    ss << ind << "instructions = {";
+    for (auto && inst : instructions) {
+        ss << "\n" << inst->serialize(indent + 2);
+    }
+    if (!instructions.empty()) {
+        ss << "\n";
+    }
+    ss << ind << "}\n";
+
+    ss << Private::indenter(indent) << "}\n";
 
     return ss.str();
 }
