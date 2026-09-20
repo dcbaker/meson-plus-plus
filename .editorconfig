@@ -10,3 +10,6 @@ insert_final_newline = true
 
 [{meson.build,meson_options.txt}]
 indent_size = 2
+
+[*.{yml,.yaml,json}]
+indent_size = 2
