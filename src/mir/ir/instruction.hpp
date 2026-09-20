@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright © 2025-2026 Intel Corporation
+// Copyright © 2025-2026 Dylan Baker
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>
