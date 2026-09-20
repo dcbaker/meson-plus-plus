@@ -1,96 +1,51 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021-2024 Intel Corporation
+# Copyright © 2025-2026 Intel Corporation
 
-subdir('meson')
+subdir('deserializer')
 
 libmir = static_library(
   'mir',
   [
     'ast_to_mir.cpp',
-    'lower.cpp',
-    'mir.cpp',
-    'passes/compilers.cpp',
-    'passes/constant_folding.cpp',
-    'passes/constant_propogation.cpp',
-    'passes/custom_target_program_replacement.cpp',
-    'passes/dead_code.cpp',
-    'passes/dependency_objects.cpp',
-    'passes/disabler.cpp',
-    'passes/flatten.cpp',
-    'passes/free_functions.cpp',
-    'passes/insert_phis.cpp',
-    'passes/join_blocks.cpp',
-    'passes/machines.cpp',
-    'passes/combine_add_arguments.cpp',
-    'passes/print.cpp',
-    'passes/program_objects.cpp',
-    'passes/pruning.cpp',
-    'passes/string_objects.cpp',
-    'passes/threaded.cpp',
-    'passes/value_numbering.cpp',
-    'passes/walkers.cpp',
-    locations_hpp,
+    'builder/builder.cpp',
+    'ir/array.cpp',
+    'ir/boolean.cpp',
+    'ir/cfg.cpp',
+    'ir/dict.cpp',
+    'ir/file.cpp',
+    'ir/functioncall.cpp',
+    'ir/graph.cpp',
+    'ir/helpers.cpp',
+    'ir/identifier.cpp',
+    'ir/instruction.cpp',
+    'ir/message.cpp',
+    'ir/number.cpp',
+    'ir/phi.cpp',
+    'ir/projectstate.cpp',
+    'ir/string.cpp',
+    'ir/target.cpp',
+    'ir/undefined.cpp',
+    'passes/remove_ternary.cpp',
   ],
-  include_directories : inc_frontend,
-  dependencies : [idep_util, idep_meson, dependency('threads')],
+  include_directories : [inc_frontend],
+  dependencies : [idep_util],
 )
 
-inc_mir = include_directories('.')
-
-idep_mir = declare_dependency(
-  link_with : libmir,
-  include_directories : inc_mir,
-  dependencies : [idep_meson],
-)
+idep_mir = declare_dependency(link_with : [libmir, libmir_deserialize])
 
 test(
-  'ast_to_mir_test',
+  'mir',
   executable(
-    'ast_to_mir_test',
-    ['ast_to_mir_test.cpp', locations_hpp],
-    dependencies : [idep_frontend, idep_mir, dep_gtest],
-  ),
-  protocol : 'gtest',
-)
-
-test(
-  'mir_test',
-  executable(
-    'mir_test',
+    'mir_tests',
     [
-      'mir_tests.cpp',
-      locations_hpp,
+      'ast_to_mir_test.cpp',
+      'builder/builder_test.cpp',
+      'ir/graph_test.cpp',
+      'passes/remove_ternary_test.cpp',
+      'test_helpers.cpp',
     ],
-    dependencies : [idep_frontend, idep_mir, dep_gtest],
-  ),
-  protocol : 'gtest',
-)
-
-test(
-  'mir_passes',
-  executable(
-    'mir_passes_test',
-    [
-      'passes/tests/branch_pruning_test.cpp',
-      'passes/tests/const_folding_test.cpp',
-      'passes/tests/constant_propogation_test.cpp',
-      'passes/tests/custom_target_program_replacement_test.cpp',
-      'passes/tests/dead_code_test.cpp',
-      'passes/tests/disabler_test.cpp',
-      'passes/tests/fixup_phis_test.cpp',
-      'passes/tests/flatten_test.cpp',
-      'passes/tests/free_functions_test.cpp',
-      'passes/tests/insert_compiler_test.cpp',
-      'passes/tests/insert_phis_test.cpp',
-      'passes/tests/join_blocks_test.cpp',
-      'passes/tests/lower_test.cpp',
-      'passes/tests/machine_lower_test.cpp',
-      'passes/tests/test_utils.cpp',
-      'passes/tests/value_numbering_test.cpp',
-      'passes/tests/walker_tests.cpp',
-      locations_hpp,
-    ],
-    dependencies : [idep_frontend, idep_mir, idep_util, dep_gtest],
+    include_directories : '.',
+    dependencies : [idep_mir, dep_gtest, idep_frontend],
   ),
   protocol : 'gtest',
 )

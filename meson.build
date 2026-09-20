@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021-2024 Intel Corporation
+# Copyright © 2021-2026 Intel Corporation
 
 project(
   'meson++',
@@ -11,6 +11,10 @@ project(
 )
 
 cpp = meson.get_compiler('cpp')
+
+if get_option('debug')
+  add_project_arguments('-DMESONPP_DEBUG', language : 'cpp')
+endif
 
 add_project_arguments(
   cpp.get_supported_arguments(
@@ -39,5 +43,6 @@ dep_gtest = dependency(
   fallback : ['gtest', 'gtest_main_dep'],
 )
 
+dep_cli11 = dependency('CLI11')
+
 subdir('src')
-subdir('tests')

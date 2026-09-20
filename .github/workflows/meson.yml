@@ -44,13 +44,13 @@ jobs:
       - name: apt
         run: |
           sudo apt update
-          sudo apt install libfl-dev libgtest-dev ninja-build ccache clang
+          sudo apt install libfl-dev libgtest-dev libcli11-dev ninja-build ccache clang
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - name: install meson
-        run: pip install meson==0.60.3
+        run: pip install meson==1.3
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -65,3 +65,27 @@ jobs:
             meson setup builddir ${{ matrix.cfg.setup_options }}
             ninja -C builddir
             ninja -C builddir test
+<<<<<<< HEAD:.github/workflows/meson.yml
+=======
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: apt
+        run: |
+          sudo apt update
+          sudo apt install libfl-dev libcli11-dev libgtest-dev ninja-build clang-tidy
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: install meson
+        run: pip install meson==1.3
+      - name: generate headers
+        run: |
+          meson setup builddir
+          ninja -C builddir src/version.hpp src/frontend/parser.yy.hpp
+      - name: clang-tidy
+        run: |
+          ninja -C builddir clang-tidy
+>>>>>>> 1c6639d (ci: update ci requirements):.github/workflows/ubuntu.yml

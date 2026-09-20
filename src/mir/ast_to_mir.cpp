@@ -1,349 +1,559 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2024-2025 Intel Corporation
-
-#include <filesystem>
+// Copyright © 2025-2026 Intel Corporation
 
 #include "ast_to_mir.hpp"
+#include "builder/builder.hpp"
 #include "exceptions.hpp"
+#include "ir/instruction.hpp"
+#include "passes/remove_ternary.hpp"
 
-namespace fs = std::filesystem;
+#include <memory>
+#include <stdexcept>
 
 namespace MIR {
 
 namespace {
 
-/// Get just the subdir, without the source_root
-fs::path get_subdir(const fs::path & full_path, const State::Persistant & pstate) {
-    // This works for our case, but is probably wrong in a generic sense
-    return fs::relative(full_path, pstate.source_root).parent_path();
-}
+using namespace Frontend;
 
-/**
- * Lowers AST expressions into MIR objects.
- */
+/// @brief Lower AST expressions into MIR representations
 struct ExpressionLowering {
-
-    explicit ExpressionLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
-
-    const MIR::State::Persistant & pstate;
-
-    Object operator()(const std::unique_ptr<Frontend::AST::String> & expr) const {
-        return std::make_shared<String>(expr->value);
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::FunctionCall> & expr) const {
-        // I think that a function can only be an ID, I think
-        auto fname_id = std::visit(*this, expr->held);
-        IdentifierPtr fname_ptr;
-        try {
-            fname_ptr = std::get<IdentifierPtr>(fname_id);
-        } catch (std::bad_variant_access &) {
-            // TODO: Better error message witht the thing being called
-            throw Util::Exceptions::MesonException{"Object is not callable"};
-        }
-        const std::string & fname = fname_ptr->value;
-
-        // Get the positional arguments
-        std::vector<Object> pos{};
-        for (const auto & i : expr->args->positional) {
-            pos.emplace_back(std::visit(*this, i));
-        }
-
-        std::unordered_map<std::string, Object> kwargs{};
-        for (const auto & [k, v] : expr->args->keyword) {
-            auto key_obj = std::visit(*this, k);
-            try {
-                auto key_ptr = std::get<IdentifierPtr>(key_obj);
-                kwargs.emplace(key_ptr->value, std::visit(*this, v));
-            } catch (std::bad_variant_access &) {
-                // TODO: Better error message witht the thing being called
-                throw Util::Exceptions::MesonException{"keyword arguments must be identifiers"};
-            }
-        }
-
-        const fs::path subdir = get_subdir(fs::path{expr->loc.filename}, pstate);
-
-        // We have to move positional arguments because Object isn't copy-able
-        // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_shared<FunctionCall>(fname, std::move(pos), std::move(kwargs),
-                                              std::move(subdir));
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::Boolean> & expr) const {
-        return std::make_shared<Boolean>(expr->value);
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::Number> & expr) const {
-        return std::make_shared<Number>(expr->value);
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::Identifier> & expr) const {
-        if (expr->value == "meson") {
-            return std::make_shared<Meson>();
-        }
-        return std::make_shared<Identifier>(expr->value);
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::Array> & expr) const {
-        auto arr = std::make_shared<Array>();
-        for (const auto & i : expr->elements) {
-            arr->value.emplace_back(std::visit(*this, i));
-        }
-        return arr;
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::Dict> & expr) const {
-        auto dict = std::make_shared<Dict>();
-        for (const auto & [k, v] : expr->elements) {
-            auto key_obj = std::visit(*this, k);
-            try {
-                auto key_ptr = std::get<StringPtr>(key_obj);
-                dict->value.emplace(key_ptr->value, std::visit(*this, v));
-            } catch (std::bad_variant_access &) {
-                // TODO: Better error message witht the thing being called
-                throw Util::Exceptions::MesonException{"Dictionary keys must be strings"};
-            }
-        }
-        return std::move(dict);
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::GetAttribute> & expr) const {
-        MIR::Object holding_obj = std::visit(*this, expr->holder);
-
-        // Meson only allows methods in objects, so we can enforce that this is a function
-        MIR::Object method = std::visit(*this, expr->held);
-        auto func = std::get<MIR::FunctionCallPtr>(method);
-        func->holder = holding_obj;
-
-        return std::move(func);
-    };
-
-    // XXX: all of thse are lies to get things compiling
-    Object operator()(const std::unique_ptr<Frontend::AST::AdditiveExpression> & expr) const {
-        return std::make_shared<String>("placeholder: add");
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::MultiplicativeExpression> & expr) const {
-        return std::make_shared<String>("placeholder: mul");
-    };
-
-    Object operator()(const std::unique_ptr<Frontend::AST::UnaryExpression> & expr) const {
+    IR::InstructionType operator()(const std::unique_ptr<AST::AdditiveExpression> & stmt) const {
         std::string name;
-        switch (expr->op) {
-            case Frontend::AST::UnaryOp::NOT:
-                name = "unary_not";
+        IR::FunctionId fid;
+        switch (stmt->op) {
+            case AST::AddOp::ADD:
+                name = "addition";
+                fid = IR::FunctionId::addition;
                 break;
-            case Frontend::AST::UnaryOp::NEG:
-                name = "unary_neg";
+            case AST::AddOp::SUB:
+                name = "subtraction";
+                fid = IR::FunctionId::subtraction;
                 break;
             default:
-                throw std::exception{}; // Should be unreachable
+                throw std::runtime_error{"Unknown additive expression type"};
         }
 
-        fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
-        std::vector<Object> pos{};
-        pos.emplace_back(std::visit(*this, expr->rhs));
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs));
+    }
 
-        // We have to move positional arguments because Object isn't copy-able
-        // TODO: filename is currently absolute, but we need the source dir to make it relative
-        return std::make_shared<FunctionCall>(name, std::move(pos), path);
-    };
+    IR::InstructionType operator()(const std::unique_ptr<AST::Boolean> & stmt) const {
+        return std::make_shared<IR::Boolean>(stmt->value);
+    }
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Subscript> & expr) const {
-        return std::make_shared<String>("placeholder: subscript");
-    };
+    IR::InstructionType operator()(const std::unique_ptr<AST::Identifier> & stmt) const {
+        return std::make_shared<IR::Identifier>(stmt->value);
+    }
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Relational> & expr) const {
-        std::vector<Object> pos{};
-        pos.emplace_back(std::visit(*this, expr->lhs));
-        pos.emplace_back(std::visit(*this, expr->rhs));
-
-        std::string func_name;
-        switch (expr->op) {
-            case Frontend::AST::RelationalOp::EQ:
-                func_name = "rel_eq";
+    IR::InstructionType
+    operator()(const std::unique_ptr<AST::MultiplicativeExpression> & stmt) const {
+        std::string name;
+        IR::FunctionId fid;
+        switch (stmt->op) {
+            case AST::MulOp::MOD:
+                name = "modulo";
+                fid = IR::FunctionId::modulo;
                 break;
-            case Frontend::AST::RelationalOp::NE:
-                func_name = "rel_ne";
+            case AST::MulOp::MUL:
+                name = "multiplication";
+                fid = IR::FunctionId::multiplication;
                 break;
-            case Frontend::AST::RelationalOp::GT:
-                func_name = "rel_gt";
+            case AST::MulOp::DIV:
+                name = "division";
+                fid = IR::FunctionId::division;
                 break;
-            case Frontend::AST::RelationalOp::GE:
-                func_name = "rel_ge";
-                break;
-            case Frontend::AST::RelationalOp::LT:
-                func_name = "rel_lt";
-                break;
-            case Frontend::AST::RelationalOp::LE:
-                func_name = "rel_le";
-                break;
-            case Frontend::AST::RelationalOp::AND:
-                func_name = "logic_and";
-                break;
-            case Frontend::AST::RelationalOp::OR:
-                func_name = "logic_or";
-                break;
-            case Frontend::AST::RelationalOp::IN:
-                func_name = "contains";
-                break;
-            case Frontend::AST::RelationalOp::NOT_IN:
-                func_name = "not_contains";
-                break;
+            default:
+                throw std::runtime_error{"Unknown multiplication expression type"};
         }
-        fs::path path = get_subdir(fs::path{expr->loc.filename}, pstate);
 
-        return std::make_shared<FunctionCall>(func_name, std::move(pos), path);
-    };
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs));
+    }
 
-    Object operator()(const std::unique_ptr<Frontend::AST::Ternary> & expr) const {
-        return std::make_shared<String>("placeholder: tern");
-    };
+    IR::InstructionType operator()(const std::unique_ptr<AST::UnaryExpression> & stmt) const {
+        std::string name;
+        IR::FunctionId fid;
+        switch (stmt->op) {
+            case AST::UnaryOp::NEG:
+                name = "negate";
+                fid = IR::FunctionId::negate;
+                break;
+            case AST::UnaryOp::NOT:
+                name = "logical_not";
+                fid = IR::FunctionId::logical_not;
+                break;
+            default:
+                throw std::runtime_error{"Unknown unary expression type"};
+        }
+
+        return builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+            .add_pos_arg(std::visit(*this, stmt->rhs));
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::Number> & stmt) const {
+        return std::make_shared<IR::Number>(stmt->value);
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::String> & stmt) const {
+        return std::make_shared<IR::String>(stmt->value);
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::Subscript> & stmt) const {
+        return builder::make_instruction<IR::FunctionCall>("subscript", "meson++",
+                                                           IR::FunctionId::subscript)
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->lhs));
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::Relational> & stmt) const {
+        IR::FunctionId fid;
+        std::string name;
+        bool negate = false;
+        switch (stmt->op) {
+            case AST::RelationalOp::AND:
+                name = "logical_and";
+                fid = IR::FunctionId::logical_and;
+                break;
+            case AST::RelationalOp::OR:
+                name = "logical_or";
+                fid = IR::FunctionId::logical_or;
+                break;
+            case AST::RelationalOp::NE:
+                negate = true;
+                [[fallthrough]];
+            case AST::RelationalOp::EQ:
+                name = "equal";
+                fid = IR::FunctionId::equal;
+                break;
+            case AST::RelationalOp::GE:
+                name = "greater_equal";
+                fid = IR::FunctionId::greater_equal;
+                break;
+            case AST::RelationalOp::GT:
+                name = "greater_than";
+                fid = IR::FunctionId::greater_than;
+                break;
+            case AST::RelationalOp::LT:
+                name = "less_than";
+                fid = IR::FunctionId::less_than;
+                break;
+            case AST::RelationalOp::LE:
+                name = "less_equal";
+                fid = IR::FunctionId::less_equal;
+                break;
+            case AST::RelationalOp::NOT_IN:
+                negate = true;
+                [[fallthrough]];
+            case AST::RelationalOp::IN:
+                name = "in";
+                fid = IR::FunctionId::contains;
+                break;
+            default:
+                throw std::runtime_error{"Unknown relation expression type"};
+        }
+
+        auto b = builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+                     .add_pos_arg(std::visit(*this, stmt->lhs))
+                     .add_pos_arg(std::visit(*this, stmt->lhs))
+                     .as_type();
+
+        // for "x != y" and "x not in y", we can rewrite that as "not(equal(x,
+        // y))" and "not(contains(x, y))", which saves us on opcodes
+        if (negate) {
+            return builder::make_instruction<IR::FunctionCall>("not", "meson++",
+                                                               IR::FunctionId::logical_not)
+                .add_pos_arg(std::move(b));
+        }
+        return b;
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::FunctionCall> & stmt) const {
+        IR::InstructionType && fname = std::visit(*this, stmt->held);
+        if (!std::get<std::shared_ptr<IR::Identifier>>(fname)) {
+            throw Util::Exceptions::MesonException{"function name does not hold an identifier"};
+        }
+        std::string name = std::get<std::shared_ptr<IR::Identifier>>(fname)->m_name;
+        auto f = builder::make_instruction<IR::FunctionCall>(name);
+
+        for (auto && a : stmt->args->positional) {
+            f.add_pos_arg(std::visit(*this, a));
+        }
+
+        IR::KeywordArguments && kws{};
+        for (auto && [k, v] : stmt->args->keyword) {
+            f.add_kw_arg(std::visit(*this, k), std::visit(*this, v));
+        }
+
+        return f;
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::GetAttribute> & stmt) const {
+        return builder::make_instruction<IR::FunctionCall>("get_attribute", "meson++",
+                                                           IR::FunctionId::get_attribute)
+            .add_pos_arg(std::visit(*this, stmt->holder))
+            .add_pos_arg(std::visit(*this, stmt->held));
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::Array> & stmt) const {
+        auto arr = builder::make_instruction<IR::Array>();
+        for (auto && v : stmt->elements) {
+            arr.append(std::visit(*this, v));
+        }
+        return arr;
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::Dict> & stmt) const {
+        auto dict = builder::make_instruction<IR::Dict>();
+        for (auto && [k, v] : stmt->elements) {
+            dict.append(std::visit(*this, k), std::visit(*this, v));
+        }
+
+        return dict;
+    }
+
+    IR::InstructionType operator()(const std::unique_ptr<AST::Ternary> & stmt) const {
+        return builder::make_instruction<IR::FunctionCall>("ternary", "meson++",
+                                                           IR::FunctionId::ternary)
+            .add_pos_arg(std::visit(*this, stmt->condition))
+            .add_pos_arg(std::visit(*this, stmt->lhs))
+            .add_pos_arg(std::visit(*this, stmt->rhs));
+    }
 };
 
-/**
- * Lowers AST statements into MIR objects.
- */
+struct StatementLowering;
+
+/// @brief State passed between StatementLowering calls
+struct LoweringState {
+    std::shared_ptr<builder::Builder> current_node;
+    std::shared_ptr<builder::Builder> loop_header;
+    std::shared_ptr<builder::Builder> loop_tail;
+    std::shared_ptr<uint64_t> m_tmp_var;
+
+    IR::CFG * cfg;
+
+    std::string tmp_var() { return "mesonpp_tmp_" + std::to_string((*m_tmp_var)++); }
+    std::string tmp_var(std::string name) {
+        return "mesonpp_tmp_" + name + "_" + std::to_string((*m_tmp_var)++);
+    }
+};
+
+void lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
+                 LoweringState & state);
+
+/// @brief Lower AST statements into MIR representations
 struct StatementLowering {
 
-    explicit StatementLowering(const MIR::State::Persistant & ps) : pstate{ps} {};
+    StatementLowering() : el{} {};
 
-    const MIR::State::Persistant & pstate;
+    StatementLowering(StatementLowering &&) = delete;
+    StatementLowering & operator=(StatementLowering &&) = delete;
 
-    std::shared_ptr<CFGNode>
-    operator()(std::shared_ptr<CFGNode> list,
-               const std::unique_ptr<Frontend::AST::Statement> & stmt) const {
-        const ExpressionLowering l{pstate};
-        list->block->instructions.emplace_back(std::visit(l, stmt->expr));
-        return list;
-    };
+    void operator()(const std::unique_ptr<AST::Statement> & stmt, LoweringState & state) const {
+        state.current_node->add_inst(std::make_unique<IR::Instruction>(std::visit(el, stmt->expr)));
+    }
 
-    std::shared_ptr<CFGNode>
-    operator()(std::shared_ptr<CFGNode> head,
-               const std::unique_ptr<Frontend::AST::IfStatement> & stmt) const {
-        assert(head);
-        const ExpressionLowering l{pstate};
+    void operator()(const std::unique_ptr<AST::Assignment> & stmt, LoweringState & state) const {
+        IR::InstructionType lhs = std::visit(el, stmt->lhs);
+        // TODO: error handling
+        auto & id = std::get<std::shared_ptr<IR::Identifier>>(lhs);
+        IR::InstructionType rhs = std::visit(el, stmt->rhs);
 
-        // TODO: we could optimize here by deciding if we have any elif/else
-        // statements, and using a predicated jump?
-
-        // We will create a branch node, which will be placed at the end of the
-        // head node, this will, in turn, link to all of the subsequent nodes,
-        // which will return to a newly created tail node.
-        auto tail = std::make_shared<CFGNode>();
-        auto branch = std::make_shared<MIR::Branch>();
-
-        {
-            auto if_node = std::make_shared<CFGNode>();
-            link_nodes(head, if_node);
-            branch->branches.emplace_back(std::visit(l, stmt->ifblock.condition), if_node);
-            for (auto && i : stmt->ifblock.block->statements) {
-                if_node =
-                    std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
-            }
-
-            // Finally, insert a jump from the last block reached by the if
-            // pointing to our tail block.
-            if_node->block->instructions.emplace_back(std::make_shared<Jump>(tail));
-            link_nodes(if_node, tail);
+        // In Meson operators like x *= y are short for x = x * y
+        // As such, MIR doesn't have representations for them, and they're easy to convert
+        // At the AST -> MIR barrier
+        std::string name;
+        IR::FunctionId fid;
+        switch (stmt->op) {
+            case AST::AssignOp::EQUAL:
+                state.current_node->add_inst(
+                    std::make_unique<IR::Instruction>(std::move(rhs), IR::Variable{id->m_name}));
+                return;
+            case AST::AssignOp::ADD_EQUAL:
+                name = "addition";
+                fid = IR::FunctionId::addition;
+                break;
+            case AST::AssignOp::SUB_EQUAL:
+                name = "subtraction";
+                fid = IR::FunctionId::subtraction;
+                break;
+            case AST::AssignOp::DIV_EQUAL:
+                name = "division";
+                fid = IR::FunctionId::division;
+                break;
+            case AST::AssignOp::MUL_EQUAL:
+                name = "multiplication";
+                fid = IR::FunctionId::multiplication;
+                break;
+            case AST::AssignOp::MOD_EQUAL:
+                name = "modulo";
+                fid = IR::FunctionId::modulo;
+                break;
+            default:
+                throw std::runtime_error{"Unknown operator"};
         }
 
-        if (!stmt->efblock.empty()) {
-            for (const auto & el : stmt->efblock) {
-                auto if_node = std::make_shared<CFGNode>();
-                link_nodes(head, if_node);
-                branch->branches.emplace_back(std::visit(l, el.condition), if_node);
-                for (auto && i : el.block->statements) {
-                    if_node =
-                        std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
-                }
-                // Finally, insert a jump from the last block reached by the if
-                // pointing to our tail block.
-                if_node->block->instructions.emplace_back(std::make_shared<Jump>(tail));
-                link_nodes(if_node, tail);
-            }
+        state.current_node->add_inst(
+            builder::make_instruction<IR::FunctionCall>(name, "meson++", fid)
+                .add_pos_arg(std::move(lhs))
+                .add_pos_arg(std::move(rhs))
+                .set_var(id->m_name));
+    }
+
+    void operator()(const std::unique_ptr<AST::IfStatement> & stmt, LoweringState & state) const {
+        /* The left leg of a condition is always the "main" successor that means
+         * if there is only one successor, it is the left. That also means that if
+         * the condition is true we exit to the right.
+         *
+         * Thus a if/elif/else block will look like:
+         *
+         *                        O₁
+         *                       / \
+         *                      O₂  O₃
+         *                      |  / \
+         *                      | O₄  O₅
+         *                      |/   / \
+         *                       \  O₆  O₇
+         *                        \/   /
+         *                         \  /
+         *                          \/
+         *                           O₈
+         *
+         *
+         * 1 previous block
+         * 2 body of if
+         * 3 condition for first elif
+         * 4 body of first elif
+         * 5 condition of additional elif...
+         * 6 body of first elif...
+         * 7 body of else
+         * 8 tail block
+         */
+
+        // place the condition as the last instruction of the block.
+        state.current_node->add_condition(
+            std::make_unique<IR::Instruction>(std::visit(el, stmt->ifblock.condition)));
+
+        // This is the block that all of the branches of the if/elif/else web
+        // will join back to
+        auto tail = std::make_shared<builder::Builder>(state.cfg);
+
+        // Create a new block of the left hand side. This block will be
+        // connected to the current node on the lhs, and it will connect to the
+        // tail on the left hand side.
+        auto lhs = std::make_shared<builder::Builder>(state.current_node->left_successor());
+        lhs->link_left_successor(tail);
+
+        // Use a new state with the block we created
+        LoweringState lstate{state};
+        lstate.current_node = lhs;
+        lower_block(*stmt->ifblock.block, *this, lstate);
+
+        for (auto && elif : stmt->efblock) {
+            // Create a new block that will be the other successor, this will
+            // hold the condition of the `elif` branch, and then have it's own lhs for the body,
+            // and a new rhs for additional `elif` or `else` blocks
+            auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
+            rhs->add_condition(std::make_unique<IR::Instruction>(std::visit(el, elif.condition)));
+
+            // This is the body of the elif
+            auto lhs = std::make_shared<builder::Builder>(rhs->left_successor());
+
+            lstate = {state};
+            lstate.current_node = lhs;
+            lower_block(*elif.block, *this, lstate);
+
+            // This is now the current node, as we build our if web
+            state.current_node = rhs;
         }
 
         if (stmt->eblock.block) {
-            auto if_node = std::make_shared<CFGNode>();
-            link_nodes(head, if_node);
-            branch->branches.emplace_back(std::make_shared<Boolean>(true), if_node);
-            for (auto && i : stmt->eblock.block->statements) {
-                if_node =
-                    std::visit([&](const auto & a) { return this->operator()(if_node, a); }, i);
-            }
-
-            // Finally, insert a jump from the last block reached by the if
-            // pointing to our tail block.
-            if_node->block->instructions.emplace_back(std::make_shared<Jump>(tail));
-            link_nodes(if_node, tail);
+            // Finally attach any else block.
+            auto rhs = std::make_shared<builder::Builder>(state.current_node->right_successor());
+            rhs->link_left_successor(tail);
+            lstate = {state};
+            lstate.current_node = rhs;
+            lower_block(*stmt->eblock.block, *this, lstate);
         } else {
-            // This case there's an implicit else block, to jump to the tail
-            branch->branches.emplace_back(std::make_shared<Boolean>(true), tail);
-            link_nodes(head, tail);
+            state.current_node->link_right_successor(tail);
         }
-        head->block->instructions.insert(head->block->instructions.end(), branch);
 
-        return tail;
-    };
+        // The tail is now the working block;
+        state.current_node = tail;
+    }
 
-    std::shared_ptr<CFGNode>
-    operator()(std::shared_ptr<CFGNode> list,
-               const std::unique_ptr<Frontend::AST::Assignment> & stmt) const {
-        const ExpressionLowering l{pstate};
-        auto target = std::visit(l, stmt->lhs);
-        auto value = std::visit(l, stmt->rhs);
+    void operator()(const std::unique_ptr<AST::ForeachStatement> & stmt,
+                    LoweringState & state) const {
+        /* A loop will end up being turned into at least 4 basic blocks
+         *  1. A preamble which is used to force strictness, as well as set up
+         *     and variables required before deconstructing the loop
+         *  2. A header, this is where the condition of the loop is evaluated,
+         *     and either continues to the body, or exits to the tail
+         *  3. The body is the first block of the body of the loop. There may be
+         *     additional successors to this block depending on the structure of
+         *     the loop itself.
+         *  4. The tail is the first block after the loop, it's the place that all
+         *     exits to the loop will link to.
+         *
+         *                          O preamble
+         *                          |
+         *                          O header
+         *                         / \
+         *                        |   O body
+         *                         \ /
+         *                          O tail
+         *
+         * The preamble is used to initialize loop variables, of which there may be 1 or 2.
+         * This ensures strictness auto preamble = state.current_node->left_successor();
+         */
 
-        // XXX: need to handle mutative assignments
-        assert(stmt->op == Frontend::AST::AssignOp::EQUAL);
+        const std::string array = state.tmp_var("loop_array");
+        const std::string dict = state.tmp_var("loop_dict");
+        const std::string cursor = state.tmp_var("loop_container_cursor");
+        const std::string container_size = state.tmp_var("loop_container_size");
 
-        MIR::IdentifierPtr name_ptr;
-        try {
-            name_ptr = std::get<IdentifierPtr>(target);
-        } catch (std::bad_variant_access &) {
-            // TODO: Better error message with the thing being called
-            throw Util::Exceptions::MesonException{
-                "Expected an Identifier but got something else. This might be a bug, or might be "
-                "an incomplete implementation"};
+        builder::Builder preamble = state.current_node->left_successor();
+        preamble.add_inst(builder::make_instruction<IR::Undefined>().set_var(stmt->id.value));
+
+        if (stmt->id2) {
+            // call `.keys()` to get an array of keys, we can iterate that
+            // We then do the same thing in both cases, index into the array,
+            // set id1 = to array[index], then in the dict case we use the dict[key]
+            // form to get the value.
+            preamble
+                .add_inst(
+                    builder::make_instruction<IR::Undefined>().set_var(stmt->id2.value().value))
+                .add_inst(std::make_unique<IR::Instruction>(std::visit(el, stmt->expr),
+                                                            IR::Variable{dict}))
+                .add_inst(builder::make_instruction<IR::FunctionCall>(
+                              "keys", builder::make_instruction<IR::Identifier>(dict),
+                              IR::FunctionId::dict_keys)
+                              .set_var(array));
+        } else {
+            preamble.add_inst(
+                std::make_unique<IR::Instruction>(std::visit(el, stmt->expr), IR::Variable{array}));
         }
-        std::visit(MIR::VariableSetter{name_ptr->value}, value);
 
-        list->block->instructions.emplace_back(value);
-        return list;
-    };
+        // Find the length of the container, as well as set the default value for the cursor
+        preamble
+            .add_inst(builder::make_instruction<IR::FunctionCall>(
+                          "length", builder::make_instruction<IR::Identifier>(array),
+                          IR::FunctionId::array_length)
+                          .set_var(container_size))
+            .add_inst(builder::make_instruction<IR::Number>(0).set_var(cursor));
 
-    // XXX: None of this is actually implemented
-    std::shared_ptr<CFGNode>
-    operator()(std::shared_ptr<CFGNode> list,
-               const std::unique_ptr<Frontend::AST::ForeachStatement> & stmt) const {
-        return list;
-    };
-    std::shared_ptr<CFGNode> operator()(std::shared_ptr<CFGNode> list,
-                                        const std::unique_ptr<Frontend::AST::Break> & stmt) const {
-        return list;
-    };
-    std::shared_ptr<CFGNode>
-    operator()(std::shared_ptr<CFGNode> list,
-               const std::unique_ptr<Frontend::AST::Continue> & stmt) const {
-        return list;
-    };
+        // This is the header where we evaluate the condition of the loop to decide if we will
+        // continue or break
+        state.current_node = std::make_shared<builder::Builder>(preamble.left_successor());
+        auto header = *state.current_node;
+
+        const std::string loop_condition = state.tmp_var("loop_condition");
+
+        // If the cursor is the same size as the array, we've read to the end
+        // and it's time to break, otherwise we can go ahead to the loop body
+        header.add_inst(builder::make_instruction<IR::FunctionCall>("subscript", "meson++",
+                                                                    IR::FunctionId::subscript)
+                            .add_pos_arg(builder::make_instruction<IR::Identifier>(array))
+                            .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
+                            .set_var(stmt->id.value));
+
+        // For dictionaries set the the second reference to be the dictionary value
+        if (stmt->id2) {
+            header.add_inst(
+                builder::make_instruction<IR::FunctionCall>(
+                    "get", builder::make_instruction<IR::Identifier>(dict),
+                    IR::FunctionId::dict_get)
+                    .add_pos_arg(builder::make_instruction<IR::Identifier>(stmt->id.value))
+                    .set_var(stmt->id2.value().value));
+        }
+
+        // Set the condition of the block to check if the cursor is equal to the
+        // size of the array, as that means it has read off the end. Increment the cursor after
+        // checking the condition
+        header
+            .add_inst(builder::make_instruction<IR::FunctionCall>("equal", "meson++",
+                                                                  IR::FunctionId::equal)
+                          .add_pos_arg(builder::make_instruction<IR::Identifier>(cursor))
+                          .add_pos_arg(builder::make_instruction<IR::Identifier>(container_size))
+                          .set_var(loop_condition))
+            .add_inst(builder::make_instruction<IR::FunctionCall>("addition", "meson++",
+                                                                  IR::FunctionId::addition)
+                          .add_pos_arg(builder::make_instruction<IR::Identifier>("cursor"))
+                          .add_pos_arg(builder::make_instruction<IR::Number>(1))
+                          .set_var(cursor))
+            .add_condition(builder::make_instruction<IR::Identifier>(loop_condition))
+            .set_loop_header();
+
+        // This is the block that comes after the loop
+        auto tail = std::make_shared<builder::Builder>(state.current_node->right_successor());
+
+        // This is the first block of the body
+        // We need to pass in a new state block, because we may have nested
+        // loops, which will each need their own head/tail blocks.
+        auto body = std::make_shared<builder::Builder>(state.current_node->left_successor());
+
+        LoweringState lstate{
+            .current_node = body,
+            .loop_header = state.current_node,
+            .loop_tail = tail,
+            .m_tmp_var = state.m_tmp_var,
+            .cfg = state.cfg,
+        };
+        lower_block(*stmt->block, *this, lstate);
+        lstate.current_node->link_left_successor(header);
+
+        state.current_node = tail;
+    }
+
+    void operator()(const std::unique_ptr<AST::Break> & stmt, LoweringState & state) const {
+        // in the case of an `if ...: break` this will create an empty block,
+        // that's okay we can clean it up later.
+        state.current_node->link_left_successor(state.loop_tail);
+    }
+
+    void operator()(const std::unique_ptr<AST::Continue> & stmt, LoweringState & state) const {
+        // in the case of an `if ...: continue` this will create an empty block,
+        // that's okay we can clean it up later.
+        state.current_node->link_left_successor(state.loop_header);
+    }
+
+  private:
+    const ExpressionLowering el;
 };
+
+IR::CFG lower_block(const AST::CodeBlock & block, const StatementLowering & lower) {
+    IR::CFG cfg{};
+    LoweringState state{
+        .current_node = std::make_shared<builder::Builder>(&cfg, cfg.head()),
+        .m_tmp_var = std::make_shared<uint64_t>(0),
+        .cfg = &cfg,
+    };
+    lower_block(block, lower, state);
+    return cfg;
+}
+
+void lower_block(const AST::CodeBlock & block, const StatementLowering & lower,
+                 LoweringState & state) {
+    auto root = state.current_node;
+    for (auto && stmt : block.statements) {
+        std::visit([&](auto && s) { lower(s, state); }, stmt);
+    }
+}
 
 } // namespace
 
-/**
- * Lower AST representation into MIR.
- */
-CFG lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> & block,
-              const MIR::State::Persistant & pstate) {
-    auto root_block = std::make_shared<CFGNode>();
-    auto current_block = root_block;
-    const StatementLowering lower{pstate};
-    for (const auto & i : block->statements) {
-        current_block = std::visit([&](const auto & a) { return lower(current_block, a); }, i);
+IR::CFG ast_to_mir(const std::unique_ptr<Frontend::AST::CodeBlock> & block) {
+    const StatementLowering lwr{};
+
+    IR::CFG cfg{lower_block(*block, lwr)};
+
+    for (auto & n : cfg) {
+        Passes::remove_ternary(&cfg, n.get());
     }
 
-    return CFG{root_block};
+    return cfg;
 }
 
 } // namespace MIR
