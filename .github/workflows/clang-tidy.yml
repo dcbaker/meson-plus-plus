@@ -1,0 +1,45 @@
+# This is a basic workflow to help you get started with Actions
+
+name: clang-tidy
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.clang-tidy'
+      - '.github/workflows/clang-tidy.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.clang-tidy'
+      - '.github/workflows/clang-tidy.yml'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: apt
+        run: |
+          sudo apt update
+          sudo apt install libfl-dev libgtest-dev ninja-build clang-tidy
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: install meson
+        run: pip install meson==0.60.3
+      - name: generate headers
+        run: |
+          meson setup builddir
+          ninja -C builddir src/version.hpp src/frontend/parser.yy.hpp
+      - name: clang-tidy
+        run: |
+          ninja -C builddir clang-tidy
