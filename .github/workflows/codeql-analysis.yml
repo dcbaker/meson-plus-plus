@@ -14,9 +14,19 @@ name: "CodeQL"
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - '.github/workflows/codeql-analysis.yml'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - '.github/workflows/codeql-analysis.yml'
   schedule:
     - cron: '42 3 * * 4'
 
