@@ -1,7 +1,9 @@
 // SPDX-License-Indentifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2026 Intel Corporation
 
 /// Catch all for generic utilities
+
+#pragma once
 
 #include <string>
 #include <vector>
@@ -31,5 +33,10 @@ std::string replace(std::string src, std::string_view replace, std::string_view 
 /// @param src The string to be quoted
 /// @return a new string that is properly quoted
 std::string makefile_quote(std::string src);
+
+/// @brief An assertion with a message parameter
+/// @param condition abort when true
+/// @param msg The message to print when aborting
+void assert_msg(bool condition, std::string_view msg);
 
 } // namespace Util

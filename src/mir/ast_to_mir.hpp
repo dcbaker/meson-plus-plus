@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2025-2026 Intel Corporation
 
 #pragma once
 
-#include "mir.hpp"
+#include "ir.hpp"
 #include "node.hpp"
-#include "state/state.hpp"
-
-#include <memory>
 
 namespace MIR {
 
-/// Lower AST to IR
-CFG lower_ast(const std::unique_ptr<Frontend::AST::CodeBlock> &, const MIR::State::Persistant &);
+IR::CFG ast_to_mir(const std::unique_ptr<Frontend::AST::CodeBlock> & block);
 
-}; // namespace MIR
+}

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021-2024 Intel Corporation
+// Copyright © 2021-2026 Intel Corporation
 
 /**
  * Meson++ argument parsing
@@ -23,8 +23,8 @@ namespace Options {
 /// Which action we're taking
 enum class Verb {
     CONFIGURE,
-    TEST,
     VCS_TAG,
+    COMPILE,
 };
 
 /**
@@ -35,13 +35,6 @@ struct ConfigureOptions {
     fs::path sourcedir;
     fs::path builddir;
     std::unordered_map<std::string, std::string> options;
-};
-
-/**
- * Options for the test subcommand
- */
-struct TestOptions {
-    fs::path builddir;
 };
 
 /**
@@ -62,7 +55,13 @@ struct VCSTagOptions {
     std::string depfile;
 };
 
-using OptionV = std::variant<ConfigureOptions, TestOptions, VCSTagOptions>;
+/// @brief Options for the compile command
+struct CompileOptions {
+    /// @brief The input file for the MIR compiler
+    fs::path infile;
+};
+
+using OptionV = std::variant<ConfigureOptions, VCSTagOptions, CompileOptions>;
 
 /// Parse options and return an Options object
 OptionV parse_opts(int argc, char * argv[]);

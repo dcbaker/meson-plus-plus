@@ -1,8 +1,9 @@
 // SPDX-License-Indentifier: Apache-2.0
-// Copyright © 2024 Intel Corporation
+// Copyright © 2024-2026 Intel Corporation
 
 #include "utils.hpp"
 
+#include <iostream>
 #include <sstream>
 
 namespace Util {
@@ -55,6 +56,15 @@ std::string makefile_quote(std::string src) {
     src = replace(src, "#", "\\#");
     src = replace(src, "$", "$$");
     return src;
+}
+
+void assert_msg(bool condition, std::string_view msg) {
+#ifndef NDEBUG
+    if (!condition) {
+        std::cerr << "Assertion Failed: " << msg << std::endl;
+        std::abort();
+    }
+#endif
 }
 
 } // namespace Util

@@ -29,13 +29,13 @@ jobs:
       - name: apt
         run: |
           sudo apt update
-          sudo apt install libfl-dev ninja-build clang-format
+          sudo apt install libcli11-dev libfl-dev libgtest-dev ninja-build clang-format
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - name: install meson
-        run: pip install meson==0.60.3
+        run: pip install meson==1.3
       - name: generate headers
         run: |
           meson setup builddir

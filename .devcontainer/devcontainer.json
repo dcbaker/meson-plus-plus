@@ -9,7 +9,7 @@
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
     "ghcr.io/devcontainers-extra/features/apt-packages:1": {
-      "packages": "meson,muon-meson,ninja-build,libfl-dev,libgtest-dev,libgtest-dev,libgmock-dev,clang-tidy,clang-format,flex,bison,ccache,python3,python-is-python3,clang"
+      "packages": "meson,muon-meson,ninja-build,libcli11-dev,libfl-dev,libgtest-dev,libgtest-dev,libgmock-dev,clang-tidy,clang-format,flex,bison,ccache,python3,python-is-python3,clang"
     }
   },
 
